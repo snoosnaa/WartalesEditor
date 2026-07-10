@@ -22,14 +22,14 @@
             <Button Name="OpenButton"
                     Width="80"
                     Margin="5"
-                    Click="OpenButton_Click">
+                    Command="{Binding OpenCommand}">
                 Open
             </Button>
 
             <Button Name="SaveButton"
                     Width="80"
                     Margin="5"
-                    Click="SaveButton_Click">
+                    >
                 Save
             </Button>
         </ToolBar>
@@ -51,9 +51,11 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TreeView Name="DataTree"
-                      Grid.Column="0"
-                      Margin="5"/>
+            <ListBox
+                Grid.Column="0"
+                Margin="5"
+                ItemsSource="{Binding Sheets}"
+                DisplayMemberPath="Name"/>
 
             <GridSplitter Grid.Column="1"
                           Width="5"

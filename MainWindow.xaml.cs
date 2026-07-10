@@ -1,30 +1,16 @@
-﻿using Microsoft.Win32;
-using System.Windows;
+﻿using System.Windows;
+using WartalesEditor.ViewModels;
 
-namespace WartalesEditor
+namespace WartalesEditor;
+
+public partial class MainWindow : Window
 {
-    public partial class MainWindow : Window
+    public MainViewModel ViewModel { get; } = new();
+
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
 
-        private void OpenButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-
-            dialog.Filter = "JSON (*.json;*.cdb)|*.json;*.cdb|All Files (*.*)|*.*";
-
-            if (dialog.ShowDialog() == true)
-            {
-                StatusText.Text = $"Loaded: {dialog.FileName}";
-            }
-        }
-
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Save functionality coming in Phase 1.");
-        }
+        DataContext = ViewModel;
     }
 }
