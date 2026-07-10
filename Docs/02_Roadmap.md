@@ -1,73 +1,167 @@
 ﻿# Roadmap
 
-**Version:** 0.1
+**Version:** 0.2
 **Status:** Active
 **Last Updated:** 2026-07-10
-**Applies To:** Project Planning
+**Applies To:** Entire Project
 
 ---
 
-# Table of Contents
+# Project Roadmap
 
-- Version 1.0
-- Version 1.1
-- Version 2.0
-- Future Ideas
+The roadmap is organized into milestones rather than individual tasks. Each milestone represents a meaningful increase in the editor's capabilities.
 
 ---
 
-# Version 1.0
+# Version 0.1.0
 
-## Completed
+## Project Foundation
 
-- Project creation
-- MVVM foundation
-- Open command
-- JSON loading
-- Project model
-- Sheet model
-- Entry model
-- Display sheet list
+Status: ✅ Complete
 
-## In Progress
+Features
 
-- Load entries
+- WPF project created
+- MVVM architecture established
+- JSON parsing
+- Documentation framework
+- GitHub integration
+
+---
+
+# Version 0.2.0
+
+## Browse Entries
+
+Status: ✅ Complete
+
+Features
+
+- Open CDB files
+- Display sheets
 - Display entries
-- Dynamic property editor
+- Display properties
+- Three-pane interface
+- PropertyModel architecture
 
-## Planned
+---
 
-- Edit values
-- Save
-- Preserve formatting
-- Unsaved changes indicator
-- Original value display
-- Reset property
-- Search
+# Version 0.3.0
+
+## Property Editing
+
+Status: 🚧 In Progress
+
+Goals
+
+- Editable property values
+- Detect modified values
+- Highlight modified values
+- Support multiple property types
+
+---
+
+# Version 0.4.0
+
+## Saving
+
+Planned
+
+Goals
+
+- Save modified CDB files
+- Preserve original structure
+- Prevent accidental data loss
+
+---
+
+# Version 0.5.0
+
+## Search & Navigation
+
+Planned
+
+Goals
+
+- Search sheets
+- Search entries
+- Search properties
+- Improved navigation
 
 ---
 
 # Version 1.1
 
-- Automatic backups
+## Quality of Life
+
+Planned
+
+Goals
+
+- Group empty sheets
+- Display entry counts
+- Improved status bar
 - Property descriptions
-- Window layout persistence
+- Remember user preferences
+
+---
+
+# Version 1.2
+
+## Batch Operations
+
+Planned
+
+Goals
+
+- Batch editing
+- Property filtering
+- Preview changes
+- Set/Add/Multiply operations
+- Apply changes safely
+
+---
+
+# Version 1.3
+
+## Change Migration
+
+Planned
+
+Goals
+
+- Compare CDB files
+- Export change sets
+- Import change sets
+- Apply changes to newer game versions
+- Conflict detection
+- Migration preview
 
 ---
 
 # Version 2.0
 
-- Global search
+## Advanced Features
+
+Future Consideration
+
+Possible Features
+
 - Undo / Redo
-- Compare two `data.cdb` files
-- Session recovery
+- Compare projects
+- Raw JSON viewer
+- Plugin architecture
+- Scripting support
+- Advanced validation
 
 ---
 
-# Future Ideas
+# Guiding Principles
 
-Ideas recorded here are intentionally outside the current roadmap.
+Every feature should support one or more of the following goals:
 
-- Guided editing views
-- Expert mode (only if a real need is identified)
-- Additional editor productivity features
+- Reduce repetitive work.
+- Preserve the original game data.
+- Make editing safer.
+- Keep the interface simple.
+- Build incrementally.

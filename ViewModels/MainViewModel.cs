@@ -28,6 +28,40 @@ public class MainViewModel : ObservableObject
     public ObservableCollection<SheetModel> Sheets =>
         Project?.Sheets ?? new ObservableCollection<SheetModel>();
 
+    private SheetModel? selectedSheet;
+
+    public SheetModel? SelectedSheet
+    {
+        get => selectedSheet;
+        set
+        {
+            if (SetProperty(ref selectedSheet, value))
+            {
+                OnPropertyChanged(nameof(Entries));
+            }
+        }
+    }
+
+    public ObservableCollection<EntryModel> Entries =>
+        SelectedSheet?.Entries ?? new ObservableCollection<EntryModel>();
+
+    private EntryModel? selectedEntry;
+
+    public EntryModel? SelectedEntry
+    {
+        get => selectedEntry;
+        set
+        {
+            if (SetProperty(ref selectedEntry, value))
+            {
+                OnPropertyChanged(nameof(Properties));
+            }
+        }
+    }
+
+    public ObservableCollection<PropertyModel> Properties =>
+        SelectedEntry?.Properties ?? new ObservableCollection<PropertyModel>();
+
     private string currentFile = string.Empty;
 
     private string status = "Ready";
@@ -60,9 +94,6 @@ public class MainViewModel : ObservableObject
 
                 Status = $"Loaded: {System.IO.Path.GetFileName(CurrentFile)}";
 
-                MessageBox.Show(
-                    $"Loaded {Project.Sheets.Count} sheets.\n\n" +
-                    $"First sheet: {Project.Sheets[0].Name}");
             }
         });
     }

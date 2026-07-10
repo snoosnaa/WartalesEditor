@@ -1,143 +1,211 @@
 ﻿# Architecture
 
-**Status:** Active  
-**Last Updated:** 2026-07-10  
-**Applies To:** Source Code
-
----
-
-# Table of Contents
-
-- Overview
-- Design Goals
-- Architecture Layers
-- Project Structure
-- Data Flow
-- MVVM Pattern
-- Future Architecture
+**Version:** 0.2
+**Status:** Active
+**Last Updated:** 2026-07-10
+**Applies To:** Entire Project
 
 ---
 
 # Overview
 
-Wartales Editor is built as a WPF desktop application using the Model-View-ViewModel (MVVM) architectural pattern.
+Wartales Editor follows the Model-View-ViewModel (MVVM) architectural pattern.
 
-The project is organized into logical layers so that the user interface remains independent from the file parsing and business logic.
+The primary goals are:
 
----
-
-# Design Goals
-
-- Separate UI from data processing.
-- Keep models independent of the user interface.
-- Support future expansion without major refactoring.
-- Make each component easy to test.
-- Favor readability over unnecessary complexity.
+- Separate user interface from business logic.
+- Keep models independent of the UI.
+- Support incremental feature development.
+- Preserve the original CDB structure.
 
 ---
 
-# Architecture Layers
-
-UI (Views)
-
-↓
-
-ViewModels
-
-↓
-
-Models
-
-↓
-
-Services
-
-↓
-
-data.cdb
-
----
-
-# Current Project Structure
+# Project Structure
 
 WartalesEditor
 
-- Helpers
-- Models
-- Services
-- ViewModels
-- Views
-- Docs
-- Resources
-- Samples
-- Tests
+├── Helpers
+
+├── Models
+
+├── Services
+
+├── ViewModels
+
+├── Views
+
+└── Docs
 
 ---
 
-# Data Flow
+# Model Hierarchy
 
-1. User opens a data.cdb file.
-2. JsonDataService parses the file.
-3. A ProjectModel is created.
-4. ProjectModel contains SheetModel objects.
-5. Each SheetModel contains EntryModel objects.
-6. MainViewModel exposes these collections to the UI.
-7. WPF data binding updates the interface automatically.
+ProjectModel
 
----
+↓
 
-# MVVM Pattern
+SheetModel
 
-## Models
+↓
 
-Represent the Wartales data.
+EntryModel
 
-Examples:
+↓
 
-- ProjectModel
-- SheetModel
-- EntryModel
+PropertyModel
+
+Each level owns the level beneath it.
 
 ---
 
-## ViewModels
+# Selection Flow
 
-Provide data and commands to the UI.
+The editor always navigates in one direction.
 
-Current:
+Project
 
-- MainViewModel
+↓
 
----
+SelectedSheet
 
-## Services
+↓
 
-Responsible for reading and writing files.
+Entries
 
-Current:
+↓
 
-- JsonDataService
+SelectedEntry
 
----
+↓
 
-## Helpers
+Properties
 
-Infrastructure shared across the application.
-
-Examples:
-
-- ObservableObject
-- RelayCommand
+This flow should remain consistent throughout the project.
 
 ---
 
-# Future Architecture
+# Responsibilities
 
-Planned additions include:
+## ProjectModel
 
-- PropertyModel
-- SaveService
-- Undo/Redo Manager
-- Search Service
-- Backup Service
-- Validation Service
+Represents the currently opened CDB project.
+
+Owns:
+
+- Sheets
+
+---
+
+## SheetModel
+
+Represents one sheet within the project.
+
+Owns:
+
+- Entries
+
+---
+
+## EntryModel
+
+Represents one record within a sheet.
+
+Owns:
+
+- Properties
+
+Also stores:
+
+- DisplayName
+
+---
+
+## PropertyModel
+
+Represents one editable property.
+
+Current members:
+
+- Name
+- Value
+
+Future members may include:
+
+- OriginalValue
+- IsModified
+- Description
+- DataType
+- EditorType
+
+---
+
+# Services
+
+## JsonDataService
+
+Responsible for:
+
+- Loading CDB JSON.
+- Parsing models.
+- Saving models (future).
+
+Services should never contain UI code.
+
+---
+
+# ViewModels
+
+MainViewModel currently exposes:
+
+- Project
+- Sheets
+- SelectedSheet
+- Entries
+- SelectedEntry
+- Properties
+
+Future ViewModels should follow the same MVVM principles.
+
+---
+
+# User Interface
+
+Current layout
+
+Sheets
+
+|
+
+Entries
+
+|
+
+Properties
+
+The UI should remain focused on gameplay concepts rather than JSON structure.
+
+---
+
+# Design Principles
+
+- Build incrementally.
+- Prefer composition over duplication.
+- Keep responsibilities small.
+- Preserve user data.
+- Avoid unnecessary complexity.
+- Keep the UI approachable for modders.
+
+---
+
+# Future Expansion
+
+The architecture is intentionally designed to support:
+
+- Property editing
+- Change tracking
+- Batch operations
+- Change migration
+- Undo / Redo
+- Additional editor types
+
+without requiring major structural changes.

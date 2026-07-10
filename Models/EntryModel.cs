@@ -6,8 +6,10 @@ public class EntryModel
 {
     public string Id { get; set; } = "";
 
+    public string DisplayName { get; set; } = "";
+
     public string Name { get; set; } = "";
 
-    public ObservableCollection<KeyValuePair<string, object?>> Properties { get; }
+    public ObservableCollection<PropertyModel> Properties { get; }
         = new();
 }

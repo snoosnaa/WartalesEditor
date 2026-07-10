@@ -65,10 +65,43 @@ public class JsonDataService
             if (string.IsNullOrWhiteSpace(name))
                 continue;
 
-            project.Sheets.Add(new SheetModel
+            SheetModel sheetModel = new()
             {
                 Name = name
-            });
+            };
+
+            JArray? entries = (JArray?)sheet["lines"];
+
+            if (entries != null)
+            {
+                int entryNumber = 1;
+
+                foreach (JObject entry in entries)
+                {
+                    string displayName = entry["id"]?.ToString() ?? entryNumber.ToString();
+
+                    EntryModel entryModel = new()
+                    {
+                        Id = entryNumber.ToString(),
+                        DisplayName = displayName
+                    };
+
+                    foreach (JProperty property in entry.Properties())
+                    {
+                        entryModel.Properties.Add(new PropertyModel
+                        {
+                            Name = property.Name,
+                            Value = property.Value.ToString()
+                        });
+                    }
+
+                    sheetModel.Entries.Add(entryModel);
+
+                    entryNumber++;
+                }
+            }
+
+            project.Sheets.Add(sheetModel);
         }
 
         return project;

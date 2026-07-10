@@ -51,24 +51,53 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <ListBox
-                Grid.Column="0"
-                Margin="5"
-                ItemsSource="{Binding Sheets}"
-                DisplayMemberPath="Name"/>
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="180"/>
+                </Grid.ColumnDefinitions>
+
+                <ListBox
+                    Grid.Column="0"
+                    Margin="5"
+                    ItemsSource="{Binding Sheets}"
+                    SelectedItem="{Binding SelectedSheet}"
+                    DisplayMemberPath="Name"/>
+
+                <ListBox
+                    Grid.Column="1"
+                    Margin="5"
+                    ItemsSource="{Binding Entries}"
+                    SelectedItem="{Binding SelectedEntry}"
+                    DisplayMemberPath="DisplayName"/>
+            </Grid>
 
             <GridSplitter Grid.Column="1"
                           Width="5"
                           HorizontalAlignment="Stretch"/>
 
-            <ScrollViewer Grid.Column="2">
-                <StackPanel Name="PropertyPanel"
-                            Margin="10">
-                    <TextBlock Text="Select an item"
-                               FontSize="20"
-                               FontWeight="Bold"/>
-                </StackPanel>
-            </ScrollViewer>
+            <ListView
+                Grid.Column="2"
+                Margin="5"
+                ItemsSource="{Binding Properties}">
+
+                <ListView.View>
+                    <GridView>
+
+                        <GridViewColumn
+                            Header="Property"
+                            Width="200"
+                            DisplayMemberBinding="{Binding Name}" />
+
+                        <GridViewColumn
+                            Header="Value"
+                            Width="350"
+                            DisplayMemberBinding="{Binding Value}" />
+
+                    </GridView>
+                </ListView.View>
+
+            </ListView>
         </Grid>
 
         <!-- Status Bar -->

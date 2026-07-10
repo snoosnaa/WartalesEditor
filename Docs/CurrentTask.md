@@ -1,63 +1,62 @@
 ﻿# Current Task
 
-**Version:** 0.1
-**Status:** Active
+**Document Version:** 1.0  
 **Last Updated:** 2026-07-10
-**Applies To:** Current Development
-
----
-
-# Table of Contents
-
-- Current Milestone
-- Current Task
-- Progress
-- Next Steps
 
 ---
 
 # Current Milestone
 
-Milestone 4 - Entry Loading
+## Milestone 0.3.0 - Property Editing
+
+### Goal
+
+Transform the property viewer into a fully functional property editor.
+
+---
+
+# Completed This Milestone
+
+- Added SelectedEntry to the ViewModel.
+- Completed the MVVM selection pipeline.
+- Implemented the three-pane editor layout.
+- Displayed properties for the selected entry.
+- Introduced PropertyModel.
+- Replaced KeyValuePair with PropertyModel throughout the application.
+- Refactored JsonDataService.
+- Updated UI bindings.
 
 ---
 
 # Current Task
 
-Task 4.1
+Make property values editable.
 
-Load EntryModel objects into each SheetModel while parsing the original data.cdb.
-
-Current implementation loads the project and displays sheets. The next step is to populate the entries for each sheet and display them in the middle pane.
-
----
-
-# Progress
-
-Completed
-
-- Project loads successfully.
-- Sheet list is displayed.
-- MVVM architecture established.
-- Documentation framework established.
-
-In Progress
-
-- Loading EntryModel objects.
-
-Not Started
-
-- Entry browser
-- Property editor
-- Saving
-- Editing
-- Search
+The first implementation should focus on simple value types while maintaining the existing architecture.
 
 ---
 
 # Next Steps
 
-1. Populate EntryModel objects.
-2. Display entries for the selected sheet.
-3. Display editable properties.
-4. Replace temporary MessageBox with status updates.
+1. Replace read-only property values with editable controls.
+2. Update PropertyModel when values change.
+3. Track modified properties.
+4. Highlight modified values.
+5. Save modified CDB files.
+
+---
+
+# Known Future Improvements
+
+- Group empty sheets into a collapsible section.
+- Display entry counts beside sheet names.
+- Improve the status bar.
+- Add property descriptions.
+- Add batch editing.
+- Add change migration between game versions.
+
+---
+
+# Notes
+
+The current focus is completing the core editing workflow before adding quality-of-life features.
