@@ -25,8 +25,47 @@ public class MainViewModel : ObservableObject
         }
     }
 
-    public ObservableCollection<SheetModel> Sheets =>
-        Project?.Sheets ?? new ObservableCollection<SheetModel>();
+    public ObservableCollection<SheetModel> Sheets
+    {
+        get
+        {
+            if (Project == null)
+                return new ObservableCollection<SheetModel>();
+
+            IEnumerable<SheetModel> visibleSheets = Project.Sheets;
+
+            if (!ShowEmptyCategories)
+            {
+                visibleSheets =
+                    visibleSheets.Where(sheet => sheet.Entries.Count > 0);
+            }
+
+            if (SearchScope == "Categories" &&
+                !string.IsNullOrWhiteSpace(SearchText))
+            {
+                visibleSheets = visibleSheets.Where(sheet =>
+                    sheet.Name.Contains(
+                        SearchText,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            return new ObservableCollection<SheetModel>(visibleSheets);
+        }
+    }
+
+    private bool showEmptyCategories;
+
+    public bool ShowEmptyCategories
+    {
+        get => showEmptyCategories;
+        set
+        {
+            if (SetProperty(ref showEmptyCategories, value))
+            {
+                OnPropertyChanged(nameof(Sheets));
+            }
+        }
+    }
 
     private SheetModel? selectedSheet;
 
@@ -37,13 +76,29 @@ public class MainViewModel : ObservableObject
         {
             if (SetProperty(ref selectedSheet, value))
             {
+                SelectedEntry = null;
                 OnPropertyChanged(nameof(Entries));
             }
         }
     }
 
-    public ObservableCollection<EntryModel> Entries =>
-        SelectedSheet?.Entries ?? new ObservableCollection<EntryModel>();
+    public ObservableCollection<EntryModel> Entries
+    {
+        get
+        {
+            if (SelectedSheet == null)
+                return new ObservableCollection<EntryModel>();
+
+            if (string.IsNullOrWhiteSpace(SearchText))
+                return SelectedSheet.Entries;
+
+            return new ObservableCollection<EntryModel>(
+                SelectedSheet.Entries.Where(entry =>
+                    entry.DisplayName.Contains(
+                        SearchText,
+                        StringComparison.OrdinalIgnoreCase)));
+        }
+    }
 
     private EntryModel? selectedEntry;
 
@@ -62,6 +117,36 @@ public class MainViewModel : ObservableObject
     public ObservableCollection<PropertyModel> Properties =>
         SelectedEntry?.Properties ?? new ObservableCollection<PropertyModel>();
 
+    private string searchText = string.Empty;
+
+    public string SearchText
+    {
+        get => searchText;
+        set
+        {
+            if (SetProperty(ref searchText, value))
+            {
+                OnPropertyChanged(nameof(Sheets));
+                OnPropertyChanged(nameof(Entries));
+            }
+        }
+    }
+
+    private string searchScope = "Settings";
+
+    public string SearchScope
+    {
+        get => searchScope;
+        set
+        {
+            if (SetProperty(ref searchScope, value))
+            {
+                OnPropertyChanged(nameof(Sheets));
+                OnPropertyChanged(nameof(Entries));
+            }
+        }
+    }
+
     private string currentFile = string.Empty;
 
     private string status = "Ready";
@@ -77,7 +162,11 @@ public class MainViewModel : ObservableObject
         set => SetProperty(ref currentFile, value);
     }
     private readonly JsonDataService jsonDataService = new();
+
     public ICommand OpenCommand { get; }
+
+    public ICommand SaveCommand { get; }
+
     public MainViewModel()
     {
         OpenCommand = new RelayCommand(_ =>
@@ -96,5 +185,23 @@ public class MainViewModel : ObservableObject
 
             }
         });
+
+        SaveCommand = new RelayCommand(
+            _ =>
+            {
+                SaveFileDialog dialog = new()
+                {
+                    Filter = "CDB Files (*.cdb)|*.cdb|All Files (*.*)|*.*",
+                    FileName = "data.cdb"
+                };
+
+                if (dialog.ShowDialog() == true && Project != null)
+                {
+                    jsonDataService.SaveProject(Project, dialog.FileName);
+
+                    Status = $"Saved: {System.IO.Path.GetFileName(dialog.FileName)}";
+                }
+            },
+            _ => Project != null);
     }
 }
