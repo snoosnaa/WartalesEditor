@@ -1,16 +1,21 @@
 ﻿using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows;
+using System.Linq;
 using System.Windows.Input;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
 using WartalesEditor.Services;
-using System.Collections.Generic;
 
 namespace WartalesEditor.ViewModels;
 
 public class MainViewModel : ObservableObject
 {
+    private readonly JsonDataService jsonDataService = new();
+    private readonly SearchService searchService = new();
+    private readonly LocalizationService localizationService = new();
+
     private ProjectModel? project;
 
     public ProjectModel? Project
@@ -20,7 +25,13 @@ public class MainViewModel : ObservableObject
         {
             if (SetProperty(ref project, value))
             {
+                SelectedSheet = null;
+                SearchResults.Clear();
+
                 OnPropertyChanged(nameof(Sheets));
+                OnPropertyChanged(nameof(FindAnythingHeader));
+
+                RefreshSearchResults();
             }
         }
     }
@@ -89,14 +100,27 @@ public class MainViewModel : ObservableObject
             if (SelectedSheet == null)
                 return new ObservableCollection<EntryModel>();
 
-            if (string.IsNullOrWhiteSpace(SearchText))
+            if (SearchScope != "Settings" ||
+                string.IsNullOrWhiteSpace(SearchText))
+            {
                 return SelectedSheet.Entries;
+            }
 
             return new ObservableCollection<EntryModel>(
                 SelectedSheet.Entries.Where(entry =>
-                    entry.DisplayName.Contains(
-                        SearchText,
-                        StringComparison.OrdinalIgnoreCase)));
+                {
+                    string localizedName =
+                        localizationService.GetLocalizedName(entry.DisplayName)
+                        ?? string.Empty;
+
+                    return entry.DisplayName.Contains(
+                               SearchText,
+                               StringComparison.OrdinalIgnoreCase)
+                           ||
+                           localizedName.Contains(
+                               SearchText,
+                               StringComparison.OrdinalIgnoreCase);
+                }));
         }
     }
 
@@ -109,6 +133,7 @@ public class MainViewModel : ObservableObject
         {
             if (SetProperty(ref selectedEntry, value))
             {
+                SelectedProperty = null;
                 OnPropertyChanged(nameof(Properties));
             }
         }
@@ -116,6 +141,46 @@ public class MainViewModel : ObservableObject
 
     public ObservableCollection<PropertyModel> Properties =>
         SelectedEntry?.Properties ?? new ObservableCollection<PropertyModel>();
+
+    private PropertyModel? selectedProperty;
+
+    public PropertyModel? SelectedProperty
+    {
+        get => selectedProperty;
+        set => SetProperty(ref selectedProperty, value);
+    }
+
+    public ObservableCollection<SearchResultModel> SearchResults { get; }
+        = new();
+
+    public bool HasSearchText =>
+        !string.IsNullOrWhiteSpace(SearchText);
+
+    public string FindAnythingHeader =>
+    $"Find Anything ({SearchResults.Count})";
+
+    private string localizationStatus = "Localization: Not loaded";
+
+    public string LocalizationStatus
+    {
+        get => localizationStatus;
+        set => SetProperty(ref localizationStatus, value);
+    }
+
+    private SearchResultModel? selectedSearchResult;
+
+    public SearchResultModel? SelectedSearchResult
+    {
+        get => selectedSearchResult;
+        set
+        {
+            if (SetProperty(ref selectedSearchResult, value) &&
+                value != null)
+            {
+                NavigateToSearchResult(value);
+            }
+        }
+    }
 
     private string searchText = string.Empty;
 
@@ -128,6 +193,9 @@ public class MainViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(Sheets));
                 OnPropertyChanged(nameof(Entries));
+                OnPropertyChanged(nameof(HasSearchText));
+
+                RefreshSearchResults();
             }
         }
     }
@@ -149,6 +217,12 @@ public class MainViewModel : ObservableObject
 
     private string currentFile = string.Empty;
 
+    public string CurrentFile
+    {
+        get => currentFile;
+        set => SetProperty(ref currentFile, value);
+    }
+
     private string status = "Ready";
 
     public string Status
@@ -156,24 +230,24 @@ public class MainViewModel : ObservableObject
         get => status;
         set => SetProperty(ref status, value);
     }
-    public string CurrentFile
-    {
-        get => currentFile;
-        set => SetProperty(ref currentFile, value);
-    }
-    private readonly JsonDataService jsonDataService = new();
 
     public ICommand OpenCommand { get; }
 
     public ICommand SaveCommand { get; }
 
+    public ICommand NavigateSearchResultCommand { get; }
+
     public MainViewModel()
     {
         OpenCommand = new RelayCommand(_ =>
         {
-            OpenFileDialog dialog = new();
-
-            dialog.Filter = "CDB Files (*.cdb)|*.cdb|JSON Files (*.json)|*.json|All Files (*.*)|*.*";
+            OpenFileDialog dialog = new()
+            {
+                Filter =
+                    "CDB Files (*.cdb)|*.cdb|" +
+                    "JSON Files (*.json)|*.json|" +
+                    "All Files (*.*)|*.*"
+            };
 
             if (dialog.ShowDialog() == true)
             {
@@ -181,8 +255,28 @@ public class MainViewModel : ObservableObject
 
                 Project = jsonDataService.LoadProject(CurrentFile);
 
-                Status = $"Loaded: {System.IO.Path.GetFileName(CurrentFile)}";
+                string localizationFile =
+                    System.IO.Path.Combine(
+                        AppDomain.CurrentDomain.BaseDirectory,
+                        "export_en.xml");
 
+                if (System.IO.File.Exists(localizationFile))
+                {
+                    localizationService.Load(localizationFile);
+
+                    LocalizationStatus =
+                        $"Localization: English ({localizationService.EntryCount:N0})";
+                }
+                else
+                {
+                    LocalizationStatus =
+                        "Localization: English not found";
+                }
+
+                RefreshSearchResults();
+
+                Status =
+                    $"Loaded: {System.IO.Path.GetFileName(CurrentFile)}";
             }
         });
 
@@ -191,17 +285,77 @@ public class MainViewModel : ObservableObject
             {
                 SaveFileDialog dialog = new()
                 {
-                    Filter = "CDB Files (*.cdb)|*.cdb|All Files (*.*)|*.*",
+                    Filter =
+                        "CDB Files (*.cdb)|*.cdb|" +
+                        "All Files (*.*)|*.*",
                     FileName = "data.cdb"
                 };
 
                 if (dialog.ShowDialog() == true && Project != null)
                 {
-                    jsonDataService.SaveProject(Project, dialog.FileName);
+                    jsonDataService.SaveProject(
+                        Project,
+                        dialog.FileName);
 
-                    Status = $"Saved: {System.IO.Path.GetFileName(dialog.FileName)}";
+                    Status =
+                        $"Saved: {System.IO.Path.GetFileName(dialog.FileName)}";
                 }
             },
             _ => Project != null);
+
+        NavigateSearchResultCommand = new RelayCommand(
+            parameter =>
+            {
+                SearchResultModel? result =
+                    parameter as SearchResultModel
+                    ?? SelectedSearchResult;
+
+                NavigateToSearchResult(result);
+            },
+            parameter =>
+                parameter is SearchResultModel ||
+                SelectedSearchResult != null);
+    }
+
+    private void RefreshSearchResults()
+    {
+        SearchResults.Clear();
+        SelectedSearchResult = null;
+
+        foreach (SearchResultModel result in
+                 searchService.Search(
+                     Project,
+                     SearchText,
+                     localizationService))
+        {
+            SearchResults.Add(result);
+        }
+
+        OnPropertyChanged(nameof(FindAnythingHeader));
+    }
+
+    private void NavigateToSearchResult(SearchResultModel? result)
+    {
+        if (result?.Category == null || result.Setting == null)
+            return;
+
+        SelectedSheet = result.Category;
+
+        OnPropertyChanged(nameof(Entries));
+
+        SelectedEntry = result.Setting;
+
+        if (!string.IsNullOrWhiteSpace(result.MatchedProperty))
+        {
+            SelectedProperty = result.Setting.Properties
+                .FirstOrDefault(property =>
+                    string.Equals(
+                        property.Name,
+                        result.MatchedProperty,
+                        StringComparison.OrdinalIgnoreCase));
+        }
+
+        Status =
+            $"Selected: {result.CategoryName} → {result.SettingName}";
     }
 }

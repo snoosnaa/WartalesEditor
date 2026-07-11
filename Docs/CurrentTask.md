@@ -1,62 +1,99 @@
 ﻿# Current Task
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-10
+**Document Version:** 1.1
+**Last Updated:** 2026-07-11
 
 ---
 
 # Current Milestone
 
-## Milestone 0.3.0 - Property Editing
+## Milestone 0.4.0 - Edit Anything
 
 ### Goal
 
-Transform the property viewer into a fully functional property editor.
+Transform the editor from a basic text editor into a safe, intelligent gameplay editor.
+
+The focus of this milestone is improving the editing experience rather than adding new navigation features.
 
 ---
 
 # Completed This Milestone
 
-- Added SelectedEntry to the ViewModel.
-- Completed the MVVM selection pipeline.
-- Implemented the three-pane editor layout.
-- Displayed properties for the selected entry.
-- Introduced PropertyModel.
-- Replaced KeyValuePair with PropertyModel throughout the application.
-- Refactored JsonDataService.
-- Updated UI bindings.
+## Find Anything v1
+
+Completed
+
+- Global Find Anything panel
+- Search across all Categories
+- Search internal IDs
+- Search English display names
+- Search property names
+- Search property values
+- Localization-aware searching
+- Automatic navigation to search results
+- Automatic property selection
+- Simplified search interface
 
 ---
 
 # Current Task
 
-Make property values editable.
+Implement smarter property editing.
 
-The first implementation should focus on simple value types while maintaining the existing architecture.
+The editor should begin recognizing property types and present controls appropriate for the data being edited.
+
+Examples include:
+
+- Numbers
+- Booleans
+- Enumerations
+- Strings
+
+The initial implementation should remain simple while providing a solid foundation for future editor types.
 
 ---
 
 # Next Steps
 
-1. Replace read-only property values with editable controls.
-2. Update PropertyModel when values change.
-3. Track modified properties.
-4. Highlight modified values.
-5. Save modified CDB files.
+## Phase 1
+
+- Detect property data types.
+- Introduce type-aware property editors.
+- Display checkboxes for booleans.
+- Display numeric editors for numeric values.
+- Continue using text editing for unsupported types.
+
+## Phase 2
+
+- Detect modified values.
+- Highlight modified properties.
+- Display modified indicators.
+- Prepare change tracking.
+
+## Phase 3
+
+- Validate edited values.
+- Prevent invalid saves.
+- Display validation messages.
 
 ---
 
 # Known Future Improvements
 
-- Group empty sheets into a collapsible section.
-- Display entry counts beside sheet names.
-- Improve the status bar.
-- Add property descriptions.
-- Add batch editing.
-- Add change migration between game versions.
+- Property descriptions
+- Tooltips
+- Batch editing
+- Mod Profiles
+- QuickBMS integration
+- Change migration
+- Undo / Redo
 
 ---
 
 # Notes
 
-The current focus is completing the core editing workflow before adding quality-of-life features.
+The immediate objective is no longer finding data.
+
+The editor can now quickly locate gameplay objects through Find Anything.
+
+The focus now shifts toward making gameplay modifications safer, smarter, and easier to perform.

@@ -1,34 +1,39 @@
 ﻿# Wartales Editor Dashboard
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-07-10
+**Document Version:** 1.2
+**Last Updated:** 2026-07-11
 
 ---
 
 # Project Status
 
-**Current Phase:** Phase 2 - Property Editing
+**Current Phase:** Phase 4 - Edit Anything
 
-**Overall Progress:** Approximately 25%
+**Overall Progress:** Approximately 50%
 
-The application has successfully transitioned from a basic file loader into a functional data browser with a three-pane interface. The current focus is converting the property viewer into a fully functional property editor.
+The application has successfully transitioned from a functional gameplay editor into a tool capable of quickly locating and navigating to nearly any editable game object.
+
+The editor now supports end-to-end gameplay editing together with localization-aware global search.
 
 ---
 
 # Current Milestone
 
-## Milestone 0.3.0 - Property Editing
+## Milestone 0.4.0 - Edit Anything
 
 ### Objective
 
-Allow users to modify property values and prepare the application for saving changes back to the CDB.
+Expand the editor beyond basic text editing by introducing safer, smarter property editors and validation.
 
 ### Current Progress
 
-- [ ] Editable property values
-- [ ] Detect modified values
-- [ ] Visual indication of modified values
-- [ ] Save modified CDB
+- [ ] Type-aware editors
+- [ ] Numeric controls
+- [ ] Boolean checkboxes
+- [ ] Dropdown editors
+- [ ] Validation
+- [ ] Modified value highlighting
+- [ ] Change tracking
 
 ---
 
@@ -49,22 +54,53 @@ Features
 
 ---
 
-## Milestone 0.2.0 - Browse Entries
+## Milestone 0.2.0 - Data Browser
 
 Completed
 
 Features
 
 - Open CDB files
-- Load project
-- Display sheets
-- Display entries
-- Display entry properties
+- Display Categories
+- Display Settings
+- Display Properties
 - Three-pane interface
-- Entry selection
-- Property viewing
-- Internal ID display
-- PropertyModel architecture introduced
+- PropertyModel architecture
+
+---
+
+## Milestone 0.3.0 - First Functional Editor
+
+Completed
+
+Features
+
+- Editable properties
+- RootDocument synchronization
+- Save modified CDB
+- Reload edited files
+- Successful in-game verification
+- Show Empty Categories
+- Search scopes
+
+---
+
+## Milestone 0.3.1 - Find Anything v1
+
+Completed
+
+Features
+
+- Global Find Anything panel
+- Search every Category
+- Search internal IDs
+- Search English names
+- Search property names
+- Search property values
+- Localization-aware search
+- Direct navigation to search results
+- Automatic property selection
+- Simplified search interface
 
 ---
 
@@ -72,151 +108,194 @@ Features
 
 ## Milestone 0.4.0
 
-Saving
+Edit Anything
 
-- Save modified CDB
-- Preserve file structure
-- Prevent accidental data loss
+- Type-aware editors
+- Validation
+- Modified indicators
+- Better editing controls
+- Property descriptions
 
 ---
 
 ## Milestone 0.5.0
 
-Search & Navigation
+Workflow
 
-- Search sheets
-- Search entries
-- Search properties
-- Navigation improvements
-
----
-
-## Version 1.1
-
-Quality of Life
-
-- Group empty sheets
-- Display entry counts
-- Improved status bar
-- Better property descriptions
+- QuickBMS integration
+- Save & Exit
+- Backup on Save
+- Recent Files
+- Remember preferences
 
 ---
 
-## Version 1.2
+## Version 1.0
 
-Batch Operations
+Public Release
 
-- Update multiple entries
-- Filtering
-- Preview changes
-- Set/Add/Multiply operations
-
----
-
-## Version 1.3
-
-Change Migration
-
-- Compare CDB files
-- Export change sets
-- Import change sets
-- Conflict detection
-- Apply edits to updated game versions
+- Complete editing workflow
+- Localization support
+- Mod Profiles
+- Batch editing
+- Validation
+- Migration support
 
 ---
 
-# Current Architecture
+# Current Workflow
 
-Current data flow
-
-Project
-
-↓
-
-Sheets
+```
+Open
 
 ↓
 
-SelectedSheet
+Find Anything
 
 ↓
 
-Entries
+Edit
 
 ↓
 
-SelectedEntry
+Save
 
 ↓
 
-Properties
+Package
+
+↓
+
+Play
+```
+
+This workflow has now been successfully verified.
 
 ---
 
 # Current Capabilities
 
-The editor can currently:
+The editor currently supports:
 
 - Open CDB files
 - Parse project data
-- Display all sheets
-- Display entries for a selected sheet
-- Display properties for a selected entry
-- Navigate using a three-pane interface
-
-The editor cannot yet:
-
-- Edit property values
-- Save changes
-- Search data
-- Perform batch operations
+- Browse Categories
+- Browse Settings
+- View Properties
+- Edit Properties
+- Save modified CDB files
+- Reload modified CDB files
+- Search Categories
+- Search Settings
+- Search English display names
+- Search internal IDs
+- Search property names
+- Search property values
+- Global Find Anything
+- Localization-aware searching
+- Navigate directly to search results
+- Verify gameplay modifications inside Wartales
 
 ---
 
 # Current Priorities
 
-Priority 1
+## Priority 1
 
-Finish property editing.
+Complete Edit Anything.
 
-Priority 2
+Focus:
 
-Implement saving.
+- Type-aware editors
+- Validation
+- Change tracking
+- Safer editing
 
-Priority 3
+---
 
-Search and navigation improvements.
+## Priority 2
 
-Priority 4
+Improve workflow.
 
-Quality of life features.
+- QuickBMS integration
+- Save & Exit
+- Recent Files
+- Backup on Save
+
+---
+
+## Priority 3
+
+Mod Profiles
+
+- Save profiles
+- Load profiles
+- Share profiles
+
+---
+
+## Priority 4
+
+Quality of Life
+
+- Property descriptions
+- Developer mode
+- Better navigation
+- Better status information
 
 ---
 
 # Backlog Highlights
 
-- Batch property editing
-- Change migration between game versions
+High Priority
+
+- Validation
+- Type-aware editing
+- QuickBMS integration
+
+Medium Priority
+
+- Batch editing
+- Mod Profiles
+- Change migration
 - Undo / Redo
-- Compare two CDB files
-- Property descriptions
-- Optional grouping of empty sheets
-- Raw JSON viewer
-- Plugin architecture (future consideration)
+
+Future Ideas
+
+- Compare CDB files
+- Plugin architecture
+- Developer mode
+- Performance diagnostics
+
+---
+
+# Most Recent Accomplishment
+
+Completed **Find Anything v1**.
+
+Users can now locate gameplay objects using:
+
+- English names
+- Internal IDs
+- Property names
+- Property values
+
+and immediately navigate to the correct Category, Setting, and Property with a single click.
 
 ---
 
 # Notes
 
-This document serves as the project's high-level overview.
+This document serves as the project's executive overview.
 
-Detailed implementation notes belong in:
+Detailed implementation information belongs in:
 
 - CurrentTask.md
 - DevelopmentJournal.md
 - KnowledgeBase.md
+- Architecture.md
 - Roadmap.md
 
-The Dashboard should always answer the question:
+The Dashboard should always answer one question:
 
-**"What is the current state of the project?"**
+> **"What is the current state of the project today?"**
