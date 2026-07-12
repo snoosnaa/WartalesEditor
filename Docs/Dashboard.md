@@ -1,131 +1,154 @@
 ﻿# Wartales Editor Dashboard
 
-**Document Version:** 1.2
-**Last Updated:** 2026-07-11
+**Application Version:** 0.4.0
+**Document Version:** 1.3
+**Last Updated:** 2026-07-12
 
 ---
 
 # Project Status
 
-**Current Phase:** Phase 4 - Edit Anything
+**Current Phase:** Phase 5 – Editing Platform
 
-**Overall Progress:** Approximately 50%
+**Overall Progress:** Approximately 65%
 
-The application has successfully transitioned from a functional gameplay editor into a tool capable of quickly locating and navigating to nearly any editable game object.
+The project has evolved from a functional gameplay editor into a robust editing platform with intelligent editing, safe editing, and reusable editing infrastructure.
 
-The editor now supports end-to-end gameplay editing together with localization-aware global search.
+The editor now provides a reliable workflow for editing, tracking, reverting, and saving gameplay changes while maintaining a clean MVVM architecture.
 
 ---
 
 # Current Milestone
 
-## Milestone 0.4.0 - Edit Anything
+## Milestone 0.5.0 – Change Summary (Pass 1)
 
 ### Objective
 
-Expand the editor beyond basic text editing by introducing safer, smarter property editors and validation.
+Provide users with a clear summary of every modification made during the current editing session before saving.
 
-### Current Progress
+### Planned Features
 
-- [ ] Type-aware editors
-- [ ] Numeric controls
-- [ ] Boolean checkboxes
-- [ ] Dropdown editors
-- [ ] Validation
-- [ ] Modified value highlighting
-- [ ] Change tracking
+- [ ] Modified property collection
+- [ ] Change Summary window
+- [ ] Group changes by Category
+- [ ] Group changes by Setting
+- [ ] Display Original Value
+- [ ] Display Current Value
+- [ ] Navigate directly to changed properties
+- [ ] Foundation for future batch editing
 
 ---
 
 # Completed Milestones
 
-## Milestone 0.1.0 - Project Foundation
+## Milestone 0.1.0 – Project Foundation
 
 Completed
 
-Features
+### Features
 
-- Project created
-- MVVM architecture established
-- Git repository created
-- GitHub repository connected
-- Documentation structure created
-- JSON loading implemented
+- WPF application
+- MVVM architecture
+- Git repository
+- GitHub integration
+- Documentation system
+- JSON loading
 
 ---
 
-## Milestone 0.2.0 - Data Browser
+## Milestone 0.2.0 – Data Browser
 
 Completed
 
-Features
+### Features
 
-- Open CDB files
-- Display Categories
-- Display Settings
-- Display Properties
+- Categories
+- Settings
+- Properties
 - Three-pane interface
 - PropertyModel architecture
 
 ---
 
-## Milestone 0.3.0 - First Functional Editor
+## Milestone 0.3.0 – First Functional Editor
 
 Completed
 
-Features
+### Features
 
 - Editable properties
 - RootDocument synchronization
 - Save modified CDB
 - Reload edited files
-- Successful in-game verification
+- In-game verification
 - Show Empty Categories
 - Search scopes
 
 ---
 
-## Milestone 0.3.1 - Find Anything v1
+## Milestone 0.3.1 – Find Anything & Smart Editors
 
 Completed
 
-Features
+### Features
 
-- Global Find Anything panel
-- Search every Category
-- Search internal IDs
-- Search English names
-- Search property names
-- Search property values
+- Global Find Anything
 - Localization-aware search
-- Direct navigation to search results
-- Automatic property selection
-- Simplified search interface
+- Search by:
+  - Internal IDs
+  - English names
+  - Property names
+  - Property values
+- Direct navigation
+- Type-aware property editors
+- Validation framework
+- Reference-aware dropdown editors
+- Smart property editor selection
+
+---
+
+## Milestone 0.4.0 – Safe Editing
+
+Completed
+
+### Features
+
+- Property modification tracking
+- Project modification tracking
+- Original value capture
+- Reset Property
+- Modified indicators
+- Modification status
+- Unlimited Undo
+- Unlimited Redo
+- Ctrl+Z / Ctrl+Y
+- EditHistoryService
+- PropertyEditAction
+- Reusable editing history architecture
 
 ---
 
 # Upcoming Milestones
 
-## Milestone 0.4.0
+## Milestone 0.5.0
 
-Edit Anything
+Change Summary
 
-- Type-aware editors
-- Validation
-- Modified indicators
-- Better editing controls
-- Property descriptions
+- Review all pending edits
+- Group changes
+- Navigation to modified properties
+- Save review workflow
 
 ---
 
-## Milestone 0.5.0
+## Milestone 0.6.0
 
-Workflow
+Workflow Improvements
 
 - QuickBMS integration
+- Recent Files
 - Save & Exit
 - Backup on Save
-- Recent Files
 - Remember preferences
 
 ---
@@ -135,17 +158,18 @@ Workflow
 Public Release
 
 - Complete editing workflow
-- Localization support
-- Mod Profiles
-- Batch editing
 - Validation
-- Migration support
+- Batch editing
+- Import / Merge
+- Mod Profiles
+- Localization support
+- Documentation complete
 
 ---
 
 # Current Workflow
 
-```
+```text
 Open
 
 ↓
@@ -155,6 +179,14 @@ Find Anything
 ↓
 
 Edit
+
+↓
+
+Track Changes
+
+↓
+
+Undo / Redo
 
 ↓
 
@@ -169,7 +201,7 @@ Package
 Play
 ```
 
-This workflow has now been successfully verified.
+This workflow has been verified through live gameplay testing.
 
 ---
 
@@ -177,24 +209,39 @@ This workflow has now been successfully verified.
 
 The editor currently supports:
 
+## Navigation
+
 - Open CDB files
-- Parse project data
 - Browse Categories
 - Browse Settings
-- View Properties
-- Edit Properties
-- Save modified CDB files
-- Reload modified CDB files
-- Search Categories
-- Search Settings
-- Search English display names
-- Search internal IDs
-- Search property names
-- Search property values
+- Browse Properties
 - Global Find Anything
 - Localization-aware searching
-- Navigate directly to search results
-- Verify gameplay modifications inside Wartales
+- Direct navigation
+
+## Editing
+
+- Edit gameplay properties
+- Type-aware editors
+- Reference-aware dropdowns
+- Validation
+- RootDocument synchronization
+- Save edited CDB files
+
+## Safe Editing
+
+- Property tracking
+- Project tracking
+- Reset Property
+- Modified indicators
+- Window title dirty indicator
+- Modification status
+- Unlimited Undo
+- Unlimited Redo
+
+## Verification
+
+- Successful in-game gameplay verification
 
 ---
 
@@ -202,35 +249,34 @@ The editor currently supports:
 
 ## Priority 1
 
-Complete Edit Anything.
+Change Summary
 
 Focus:
 
-- Type-aware editors
-- Validation
-- Change tracking
-- Safer editing
+- Summarize edits
+- Review changes
+- Navigation from summary
 
 ---
 
 ## Priority 2
 
-Improve workflow.
+Workflow Improvements
 
 - QuickBMS integration
-- Save & Exit
 - Recent Files
+- Save & Exit
 - Backup on Save
 
 ---
 
 ## Priority 3
 
-Mod Profiles
+Advanced Editing
 
-- Save profiles
-- Load profiles
-- Share profiles
+- Batch editing
+- Import / Merge
+- Mod Profiles
 
 ---
 
@@ -240,8 +286,8 @@ Quality of Life
 
 - Property descriptions
 - Developer mode
+- Better diagnostics
 - Better navigation
-- Better status information
 
 ---
 
@@ -249,38 +295,44 @@ Quality of Life
 
 High Priority
 
-- Validation
-- Type-aware editing
-- QuickBMS integration
+- Change Summary
+- Batch Editing
+- Import / Merge
 
 Medium Priority
 
-- Batch editing
+- QuickBMS integration
 - Mod Profiles
-- Change migration
-- Undo / Redo
+- Property descriptions
+
+Low Priority
+
+- Preserve text caret position during Undo/Redo in text editors
+- Developer mode
+- Performance diagnostics
 
 Future Ideas
 
 - Compare CDB files
 - Plugin architecture
-- Developer mode
-- Performance diagnostics
+- Rule-based validation
+- Advanced diagnostics
 
 ---
 
 # Most Recent Accomplishment
 
-Completed **Find Anything v1**.
+Completed **Safe Editing**.
 
-Users can now locate gameplay objects using:
+The editor now supports:
 
-- English names
-- Internal IDs
-- Property names
-- Property values
+- Property modification tracking
+- Project dirty-state tracking
+- Reset Property
+- Unlimited Undo/Redo
+- Reusable editing history infrastructure
 
-and immediately navigate to the correct Category, Setting, and Property with a single click.
+This establishes the foundation for all future editing workflows.
 
 ---
 
@@ -292,8 +344,8 @@ Detailed implementation information belongs in:
 
 - CurrentTask.md
 - DevelopmentJournal.md
-- KnowledgeBase.md
 - Architecture.md
+- KnowledgeBase.md
 - Roadmap.md
 
 The Dashboard should always answer one question:

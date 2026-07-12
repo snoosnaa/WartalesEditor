@@ -1,83 +1,340 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Helpers;
+using WartalesEditor.Services;
 
 namespace WartalesEditor.Models;
 
 public class PropertyModel : ObservableObject
 {
+    private static readonly PropertyDefinitionService definitionService =
+        new();
+
+    private static readonly ReferenceDataService referenceDataService =
+        ReferenceDataService.Instance;
+
     private object? value;
 
-    public string Name { get; set; } = "";
+    private JToken? originalValue;
+
+    private bool isModified;
+
+    public event EventHandler? ModifiedChanged;
+
+    public event EventHandler<PropertyValueChangedEventArgs>?
+        ValueChanged;
+
+    public string SheetName { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
 
     public JProperty? SourceProperty { get; set; }
+
+    public PropertyDefinition Definition =>
+        definitionService.GetDefinition(Name);
+
+    public PropertyKind Kind =>
+        Definition.Kind;
+
+    public PropertyEditorType EditorType
+    {
+        get
+        {
+            if (Definition.EditorType ==
+                PropertyEditorType.Dropdown)
+            {
+                return referenceDataService.HasValues(
+                    SheetName,
+                    Name)
+                    ? PropertyEditorType.Dropdown
+                    : GetInferredEditorType();
+            }
+
+            if (Definition.EditorType !=
+                PropertyEditorType.Text)
+            {
+                return Definition.EditorType;
+            }
+
+            return GetInferredEditorType();
+        }
+    }
+
+    public bool IsInteger =>
+        SourceProperty?.Value.Type == JTokenType.Integer;
+
+    public bool IsDecimal =>
+        SourceProperty?.Value.Type == JTokenType.Float;
+
+    public IReadOnlyList<ReferenceValueModel> AvailableValues =>
+        referenceDataService.GetValues(
+            SheetName,
+            Name);
+
+    public bool IsEditable =>
+        Kind != PropertyKind.Internal &&
+        EditorType != PropertyEditorType.ReadOnly &&
+        EditorType != PropertyEditorType.Complex;
+
+    public bool IsReadOnly =>
+        !IsEditable;
+
+    public bool IsModified
+    {
+        get => isModified;
+        private set
+        {
+            if (SetProperty(ref isModified, value))
+            {
+                OnPropertyChanged(nameof(CanReset));
+
+                ModifiedChanged?.Invoke(
+                    this,
+                    EventArgs.Empty);
+            }
+        }
+    }
+
+    public bool CanReset =>
+        IsModified && !IsReadOnly;
 
     public object? Value
     {
         get => value;
         set
         {
-            if (SetProperty(ref this.value, value))
-            {
-                UpdateSourceProperty(value);
-            }
+            if (!SetProperty(ref this.value, value))
+                return;
+
+            ApplyDisplayValue(value);
         }
     }
 
-    private void UpdateSourceProperty(object? newValue)
+    public void CaptureOriginalValue()
+    {
+        originalValue =
+            SourceProperty?.Value.DeepClone();
+
+        UpdateModifiedState();
+    }
+
+    public void AcceptCurrentValue()
+    {
+        CaptureOriginalValue();
+    }
+
+    public void ResetToOriginal()
+    {
+        if (originalValue == null ||
+            SourceProperty == null)
+        {
+            return;
+        }
+
+        ApplyTokenValue(originalValue);
+    }
+
+    internal void ApplyHistoryValue(
+        JToken historyValue)
     {
         if (SourceProperty == null)
             return;
 
-        JToken currentValue = SourceProperty.Value;
+        ApplyTokenValue(historyValue);
+    }
 
-        string textValue = newValue?.ToString() ?? string.Empty;
+    private void ApplyDisplayValue(
+        object? newValue)
+    {
+        if (SourceProperty == null ||
+            IsReadOnly)
+        {
+            return;
+        }
+
+        JToken previousValue =
+            SourceProperty.Value.DeepClone();
+
+        UpdateSourceProperty(newValue);
+
+        JToken currentValue =
+            SourceProperty.Value.DeepClone();
+
+        UpdateModifiedState();
+
+        RaiseValueChanged(
+            previousValue,
+            currentValue);
+    }
+
+    private void ApplyTokenValue(
+        JToken newValue)
+    {
+        if (SourceProperty == null)
+            return;
+
+        JToken previousValue =
+            SourceProperty.Value.DeepClone();
+
+        SourceProperty.Value =
+            newValue.DeepClone();
+
+        value =
+            GetTokenDisplayValue(
+                SourceProperty.Value);
+
+        OnPropertyChanged(nameof(Value));
+
+        UpdateModifiedState();
+
+        RaiseValueChanged(
+            previousValue,
+            SourceProperty.Value);
+    }
+
+    private void RaiseValueChanged(
+        JToken previousValue,
+        JToken newValue)
+    {
+        if (JToken.DeepEquals(
+                previousValue,
+                newValue))
+        {
+            return;
+        }
+
+        ValueChanged?.Invoke(
+            this,
+            new PropertyValueChangedEventArgs(
+                previousValue,
+                newValue));
+    }
+
+    private void UpdateModifiedState()
+    {
+        if (SourceProperty == null ||
+            originalValue == null)
+        {
+            IsModified = false;
+            return;
+        }
+
+        IsModified =
+            !JToken.DeepEquals(
+                originalValue,
+                SourceProperty.Value);
+    }
+
+    private static object? GetTokenDisplayValue(
+        JToken token)
+    {
+        return token.Type switch
+        {
+            JTokenType.Boolean =>
+                token.Value<bool>(),
+
+            _ =>
+                token.ToString()
+        };
+    }
+
+    private PropertyEditorType GetInferredEditorType()
+    {
+        if (SourceProperty == null)
+            return PropertyEditorType.Text;
+
+        return SourceProperty.Value.Type switch
+        {
+            JTokenType.Integer =>
+                PropertyEditorType.Number,
+
+            JTokenType.Float =>
+                PropertyEditorType.Number,
+
+            JTokenType.Boolean =>
+                PropertyEditorType.Boolean,
+
+            JTokenType.Array =>
+                PropertyEditorType.Complex,
+
+            JTokenType.Object =>
+                PropertyEditorType.Complex,
+
+            _ =>
+                PropertyEditorType.Text
+        };
+    }
+
+    private void UpdateSourceProperty(
+        object? newValue)
+    {
+        if (SourceProperty == null ||
+            IsReadOnly)
+        {
+            return;
+        }
+
+        JToken currentValue =
+            SourceProperty.Value;
+
+        string textValue =
+            newValue?.ToString()
+            ?? string.Empty;
 
         switch (currentValue.Type)
         {
             case JTokenType.String:
-                SourceProperty.Value = textValue;
+                SourceProperty.Value =
+                    textValue;
                 break;
 
             case JTokenType.Integer:
                 if (long.TryParse(
-                    textValue,
-                    NumberStyles.Integer,
-                    CultureInfo.InvariantCulture,
-                    out long integerValue))
+                        textValue,
+                        NumberStyles.Integer,
+                        CultureInfo.InvariantCulture,
+                        out long integerValue))
                 {
-                    SourceProperty.Value = integerValue;
+                    SourceProperty.Value =
+                        integerValue;
                 }
 
                 break;
 
             case JTokenType.Float:
                 if (double.TryParse(
-                    textValue,
-                    NumberStyles.Float,
-                    CultureInfo.InvariantCulture,
-                    out double decimalValue))
+                        textValue,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out double decimalValue))
                 {
-                    SourceProperty.Value = decimalValue;
+                    SourceProperty.Value =
+                        decimalValue;
                 }
 
                 break;
 
             case JTokenType.Boolean:
-                if (bool.TryParse(textValue, out bool booleanValue))
+                if (newValue is bool directBoolean)
                 {
-                    SourceProperty.Value = booleanValue;
+                    SourceProperty.Value =
+                        directBoolean;
+                }
+                else if (bool.TryParse(
+                             textValue,
+                             out bool parsedBoolean))
+                {
+                    SourceProperty.Value =
+                        parsedBoolean;
                 }
 
                 break;
 
             case JTokenType.Null:
-                SourceProperty.Value = textValue;
-                break;
-
-            case JTokenType.Array:
-            case JTokenType.Object:
-                // Complex values are read-only until dedicated editors are added.
+                SourceProperty.Value =
+                    textValue;
                 break;
         }
     }

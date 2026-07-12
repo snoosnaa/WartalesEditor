@@ -1,8 +1,8 @@
 ﻿# Architecture
 
-**Version:** 0.4
+**Version:** 0.5
 **Status:** Active
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-07-12
 **Applies To:** Entire Project
 
 ---
@@ -11,15 +11,16 @@
 
 Wartales Editor follows the Model-View-ViewModel (MVVM) architectural pattern.
 
-The primary goals are:
+The primary architectural goals are:
 
-- Separate user interface from business logic.
+- Separate presentation from business logic.
 - Keep models independent of the UI.
-- Support incremental feature development.
-- Preserve the original CDB structure.
-- Modify the original JSON document directly without reconstructing game data.
+- Preserve the original Wartales CDB structure.
+- Modify the original JSON document directly.
+- Build reusable editing infrastructure before implementing advanced features.
+- Favor extensible services over feature-specific implementations.
 
-The editor now supports complete gameplay editing together with localization-aware global navigation.
+The editor has evolved beyond a simple property editor into a modular editing platform that supports intelligent editing, safe editing, and reusable editing history.
 
 ---
 
@@ -36,7 +37,7 @@ WartalesEditor
 └── Views
 ```
 
-Each folder has a clearly defined responsibility.
+Each folder owns a specific responsibility.
 
 ---
 
@@ -56,11 +57,11 @@ Supporting models:
 
 ```
 SearchResultModel
+ReferenceValueModel
+PropertyValueChangedEventArgs
 ```
 
-The internal model names intentionally match the structure of Wartales.
-
-The user interface presents these objects using gameplay-oriented terminology.
+The internal model names intentionally mirror the Wartales data structure while the UI presents gameplay-oriented terminology.
 
 | Internal Model | User Interface |
 |----------------|----------------|
@@ -70,9 +71,7 @@ The user interface presents these objects using gameplay-oriented terminology.
 
 ---
 
-# Selection Flow
-
-Navigation always flows downward.
+# Navigation Flow
 
 ```
 Project
@@ -86,13 +85,13 @@ SelectedEntry
 Properties
 ```
 
-Changing a higher-level selection clears selections beneath it to prevent invalid state.
+Changing a higher-level selection automatically clears lower-level selections to prevent invalid editor state.
 
 ---
 
-# Find Anything Flow
+# Find Anything Architecture
 
-The global navigation system is implemented independently of the editor hierarchy.
+Search remains completely independent of editing.
 
 ```
 Search Text
@@ -110,29 +109,110 @@ SelectedEntry
 SelectedProperty
 ```
 
-This architecture keeps searching completely independent from editing while allowing direct navigation into the editor.
+Search is treated as a navigation system rather than a filtering system.
 
 ---
 
-# Editing Pipeline
+# Property Editing Pipeline
 
 ```
-User edits TextBox
+User edits Property
+
         ↓
+
 PropertyModel.Value
+
         ↓
+
 SourceProperty
+
         ↓
+
 JProperty
+
         ↓
+
 RootDocument
+
         ↓
+
 JsonDataService.SaveProject()
+
         ↓
-Modified data.cdb
+
+Modified CDB
 ```
 
-The original document is modified directly without rebuilding the JSON structure.
+The JSON document is modified directly.
+
+No intermediate data model is reconstructed.
+
+---
+
+# Modification Tracking Architecture
+
+```
+PropertyModel
+
+        │
+
+ModifiedChanged
+
+        │
+
+        ▼
+
+MainViewModel
+
+        │
+
+        ├── Project.IsModified
+        ├── ModifiedPropertyCount
+        ├── WindowTitle
+        ├── ModificationStatus
+        └── ModifiedProperties
+```
+
+Property models own modification detection.
+
+The ViewModel owns application state.
+
+This keeps editing logic independent from presentation.
+
+---
+
+# Undo / Redo Architecture
+
+```
+PropertyModel
+
+        │
+
+ValueChanged
+
+        │
+
+        ▼
+
+EditHistoryService
+
+        │
+
+        ▼
+
+PropertyEditAction
+
+        │
+
+        ├── Undo()
+        └── Redo()
+```
+
+The history service records every property edit while remaining independent from the user interface.
+
+History actions operate directly on PropertyModel rather than UI controls.
+
+This architecture is reusable for future editing features.
 
 ---
 
@@ -144,7 +224,8 @@ Owns:
 
 - RootDocument
 - Sheets
-- Project metadata
+- File metadata
+- Project modification state
 
 Acts as the root object for the editor.
 
@@ -152,7 +233,7 @@ Acts as the root object for the editor.
 
 ## SheetModel
 
-Represents one Category.
+Represents one gameplay Category.
 
 Owns:
 
@@ -160,14 +241,15 @@ Owns:
 
 Future responsibilities:
 
-- Entry counts
 - Visibility state
+- Statistics
+- Validation summaries
 
 ---
 
 ## EntryModel
 
-Represents one Setting.
+Represents one gameplay Setting.
 
 Owns:
 
@@ -180,36 +262,54 @@ Stores:
 
 Future responsibilities:
 
-- Validation state
-- Modified state
+- Validation summary
+- Change summary
 
 ---
 
 ## PropertyModel
 
-Represents one editable property.
+Represents one editable gameplay property.
 
-Current members:
+Current responsibilities:
 
-- Name
-- Value
-- SourceProperty
+- Value editing
+- Original value capture
+- Modification detection
+- Reset to original
+- Type-aware editing
+- Validation
+- Raising modification events
+- Raising value-change events
 
-Future members:
-
-- OriginalValue
-- IsModified
-- DataType
-- EditorType
-- ValidationState
+PropertyModel intentionally owns editing behavior rather than UI behavior.
 
 ---
 
 ## SearchResultModel
 
-Represents one Find Anything result.
+Represents a Find Anything result.
 
-Contains the information required to navigate directly to the correct editor location.
+Contains all information required to navigate directly into the editor.
+
+---
+
+## ReferenceValueModel
+
+Represents one valid selectable value for dropdown editors.
+
+Keeps display text independent from stored values.
+
+---
+
+## PropertyValueChangedEventArgs
+
+Carries:
+
+- Previous value
+- New value
+
+Allows editing history to remain independent from PropertyModel.
 
 ---
 
@@ -222,6 +322,7 @@ Responsible for:
 - Loading JSON
 - Parsing CDB
 - Building ProjectModel
+- Capturing original values
 - Saving RootDocument
 
 ---
@@ -233,9 +334,9 @@ Responsible for:
 - Global searching
 - Property searching
 - Result generation
-- Navigation data
+- Navigation information
 
-Contains no UI code.
+Contains no UI logic.
 
 ---
 
@@ -244,29 +345,53 @@ Contains no UI code.
 Responsible for:
 
 - Loading localization XML
-- Looking up localized names
-- Supporting future language packs
+- Localized name lookup
+- Future language support
 
-The service remains language-independent.
+Remains language independent.
+
+---
+
+## ReferenceDataService
+
+Responsible for:
+
+- Discovering valid references
+- Populating dropdown editors
+- Managing reference lookups
+
+---
+
+## EditHistoryService
+
+Responsible for:
+
+- Recording edits
+- Undo
+- Redo
+- Session history
+- History notifications
+
+Contains no UI logic.
+
+Future features such as Batch Editing and Import/Merge will reuse this service.
 
 ---
 
 # ViewModels
 
-MainViewModel exposes:
+MainViewModel coordinates:
 
-- Project
-- Categories
-- Settings
-- Properties
-- Find Anything
+- Project state
+- Selection
 - Search
-- Localization status
-- Editor state
+- Navigation
+- Modification tracking
+- Undo/Redo
+- Commands
+- Status reporting
 
-The ViewModel coordinates interaction between the UI and Services.
-
-Business logic remains inside Models and Services.
+Business logic remains inside Models and Services whenever practical.
 
 ---
 
@@ -275,6 +400,14 @@ Business logic remains inside Models and Services.
 Current layout:
 
 ```
+Toolbar
+
+↓
+
+Search
+
+↓
+
 Find Anything
 
 ↓
@@ -288,9 +421,13 @@ Settings
 ↓
 
 Properties
+
+↓
+
+Status Bar
 ```
 
-The interface intentionally emphasizes gameplay concepts over internal implementation details.
+The interface intentionally exposes gameplay concepts while hiding implementation details.
 
 ---
 
@@ -298,32 +435,38 @@ The interface intentionally emphasizes gameplay concepts over internal implement
 
 ## Gameplay First
 
-The editor exists to simplify gameplay modding.
-
-Technical implementation should remain largely invisible to users.
+The editor exists to improve the gameplay modding workflow.
 
 ---
 
 ## Preserve Original Data
 
-Modify existing JSON whenever possible.
+Modify the existing JSON document whenever possible.
 
-Avoid rebuilding or normalizing structures unnecessarily.
+Avoid rebuilding data structures.
 
 ---
 
 ## Separation of Responsibilities
 
-- Models represent data.
-- Services implement logic.
-- ViewModels coordinate state.
+- Models own data and editing behavior.
+- Services own reusable logic.
+- ViewModels coordinate application state.
 - Views present information.
+
+---
+
+## Infrastructure Before Features
+
+Whenever practical, reusable infrastructure should be implemented before feature-specific functionality.
+
+This reduces future refactoring and keeps the architecture consistent.
 
 ---
 
 ## Documentation First
 
-Every completed milestone should include documentation updates before committing changes.
+Every completed milestone should include documentation updates before the associated Git commit.
 
 ---
 
@@ -331,12 +474,15 @@ Every completed milestone should include documentation updates before committing
 
 The core architecture is now considered stable.
 
-Future features such as:
+Current infrastructure already supports future implementation of:
 
-- Validation
-- Type-aware editors
+- Change Summary
+- Batch Editing
+- Import / Merge
+- Validation Summary
+- Property History
+- Modified-only filtering
+- Advanced Undo/Redo
 - Mod Profiles
-- Batch editing
-- Change migration
 
-can all build upon the existing architecture without requiring major restructuring.
+Future milestones should primarily extend existing services rather than introducing parallel architectures.

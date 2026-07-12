@@ -2,7 +2,69 @@
 
 All notable changes to Wartales Editor are documented in this file.
 
-The format is inspired by "Keep a Changelog" and adapted for this project.
+The format is inspired by Keep a Changelog and adapted for this project.
+
+---
+
+# Version 0.4.0 - Safe Editing Infrastructure
+
+**Released:** 2026-07-12
+
+## Added
+
+### Safe Editing
+
+- Property modification tracking
+- Project modification tracking
+- Original value capture
+- Reset Property
+- Modified property indicators
+- Modified property counter
+- Window title modification indicator
+- Modification status reporting
+
+### Undo / Redo
+
+- Unlimited session undo history
+- Unlimited session redo history
+- Undo toolbar command
+- Redo toolbar command
+- Ctrl+Z support
+- Ctrl+Y support
+- Automatic history reset when opening a project
+
+### Editing Infrastructure
+
+- EditHistoryService
+- PropertyEditAction
+- Property value change events
+- Reusable history architecture
+- History-aware property editing
+- Foundation for Change Summary
+- Foundation for Batch Editing
+- Foundation for Import/Merge
+
+## Changed
+
+- PropertyModel now tracks original values.
+- JsonDataService now captures original values after loading.
+- Saving establishes a new editing baseline.
+- Modification state now updates automatically throughout the application.
+- Undo/Redo integrated into the MVVM editing workflow.
+
+## Verified
+
+Successfully verified:
+
+- Property tracking
+- Project tracking
+- Reset Property
+- Unlimited Undo
+- Unlimited Redo
+- Toolbar commands
+- Keyboard shortcuts
+- Save state reset
+- History reset when opening another project
 
 ---
 
@@ -14,7 +76,7 @@ The format is inspired by "Keep a Changelog" and adapted for this project.
 
 ### Search
 
-- Global **Find Anything** panel
+- Global Find Anything panel
 - Search across every Category
 - Search internal IDs
 - Search English localized names
@@ -32,12 +94,22 @@ The format is inspired by "Keep a Changelog" and adapted for this project.
 - Localization-aware searching
 - Combined display of English names and internal IDs
 
+### Smart Editing
+
+- Type-aware property editors
+- Validation framework
+- Dropdown editor framework
+- Category-aware reference discovery
+- ReferenceValueModel
+- Smart property editor selection
+
 ## Changed
 
-- Renamed **Search Results** to **Find Anything**
-- Simplified the search results interface
-- Combined localized names and internal IDs into a single Name column
-- Improved search navigation throughout the application
+- Renamed Search Results → Find Anything
+- Simplified the search interface.
+- Combined localized names and internal IDs into a single Name column.
+- Improved search navigation.
+- Built an extensible property editor architecture.
 
 ---
 
@@ -54,18 +126,18 @@ The format is inspired by "Keep a Changelog" and adapted for this project.
 - Git repository
 - GitHub integration
 - Project documentation
-- JSON parsing using Newtonsoft.Json
+- Newtonsoft.Json integration
 
 ### User Interface
 
-- Three-pane editor layout
+- Three-pane editor
 - Categories pane
 - Settings pane
 - Properties pane
 - Status bar
 - Pane headers
 - Search scope selector
-- Show Empty Categories option
+- Show Empty Categories
 
 ### Data Model
 
@@ -81,24 +153,24 @@ The format is inspired by "Keep a Changelog" and adapted for this project.
 - Property viewing
 - Category search
 - Setting search
-- Automatic selection synchronization
+- Selection synchronization
 
 ### Editing
 
 - Editable property values
-- Direct RootDocument editing
+- RootDocument editing
 - SourceProperty binding
 - Save modified CDB files
 - Reload edited CDB files
 
 ## Changed
 
-- Renamed UI terminology:
+- Renamed:
   - Sheets → Categories
   - Entries → Settings
 - Hidden empty Categories by default.
-- Improved navigation between Categories and Settings.
-- Replaced read-only property display with editable controls.
+- Improved navigation.
+- Replaced read-only properties with editable controls.
 
 ## Verified
 
@@ -136,10 +208,11 @@ Successfully verified inside Wartales.
 
 # Future Releases
 
-Future versions will continue documenting:
+Future releases will continue documenting:
 
-- Added features
-- Changed behavior
+- New features
+- Architectural improvements
+- User interface enhancements
 - Bug fixes
 - Performance improvements
 - Documentation updates

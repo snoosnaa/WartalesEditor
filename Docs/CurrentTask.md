@@ -1,99 +1,160 @@
 ﻿# Current Task
 
-**Document Version:** 1.1
-**Last Updated:** 2026-07-11
+## Milestone
+
+**Change Summary – Pass 1**
 
 ---
 
-# Current Milestone
+## Current Status
 
-## Milestone 0.4.0 - Edit Anything
+The project builds successfully.
 
-### Goal
+The editing platform foundation is now complete.
 
-Transform the editor from a basic text editor into a safe, intelligent gameplay editor.
+Recently completed:
 
-The focus of this milestone is improving the editing experience rather than adding new navigation features.
+### Safe Editing
 
----
+- Property modification tracking
+- Project modification tracking
+- Original value capture
+- Reset Property
+- Modified indicators
+- Modification counter
+- Window title dirty indicator
+- Modification status
 
-# Completed This Milestone
+### Undo / Redo
 
-## Find Anything v1
+- Unlimited session undo history
+- Unlimited session redo history
+- Undo / Redo toolbar commands
+- Ctrl+Z support
+- Ctrl+Y support
+- Automatic history reset when opening a new project
 
-Completed
+### Editing Infrastructure
 
-- Global Find Anything panel
-- Search across all Categories
-- Search internal IDs
-- Search English display names
-- Search property names
-- Search property values
-- Localization-aware searching
-- Automatic navigation to search results
-- Automatic property selection
-- Simplified search interface
+- EditHistoryService
+- PropertyEditAction
+- Property value change events
+- Reusable editing history architecture
 
----
+Current build status:
 
-# Current Task
-
-Implement smarter property editing.
-
-The editor should begin recognizing property types and present controls appropriate for the data being edited.
-
-Examples include:
-
-- Numbers
-- Booleans
-- Enumerations
-- Strings
-
-The initial implementation should remain simple while providing a solid foundation for future editor types.
+✅ Build succeeds.
 
 ---
 
-# Next Steps
+## Current Objective
 
-## Phase 1
+Implement **Change Summary – Pass 1**.
 
-- Detect property data types.
-- Introduce type-aware property editors.
-- Display checkboxes for booleans.
-- Display numeric editors for numeric values.
-- Continue using text editing for unsupported types.
+The editor should provide users with a clear review of every pending modification before saving.
 
-## Phase 2
+The summary should display:
 
-- Detect modified values.
-- Highlight modified properties.
-- Display modified indicators.
-- Prepare change tracking.
+- Category
+- Setting
+- Property
+- Original Value
+- Current Value
 
-## Phase 3
-
-- Validate edited values.
-- Prevent invalid saves.
-- Display validation messages.
+The architecture should build directly upon the existing modification tracking and EditHistoryService without introducing duplicate tracking systems.
 
 ---
 
-# Known Future Improvements
+## Scope
 
-- Property descriptions
-- Tooltips
-- Batch editing
-- Mod Profiles
-- QuickBMS integration
-- Change migration
-- Undo / Redo
+Implement:
+
+- Modified property collection
+- Change Summary model(s)
+- Change Summary window
+- Navigation from summary to modified property
+- Grouping by Category and Setting
+- Foundation for future filtering and batch editing
+
+Do **not** implement yet:
+
+- Batch Editing
+- Import / Merge
+- Advanced Undo / Redo
+- Save confirmation workflow
+- Exit confirmation
+- Change filtering
+- Export of change summaries
 
 ---
 
-# Notes
+## Files Expected to Change
 
-The immediate objective is no longer finding data.
+- MainViewModel.cs
+- MainWindow.xaml
+- New Change Summary View
+- New Change Summary ViewModel
+- New Change Summary model(s)
+- EditHistoryService.cs (only if required for integration)
 
-The editor can now quickly locate gameplay objects through Find Anything.
+---
 
-The focus now shifts toward making gameplay modifications safer, smarter, and easier to perform.
+## Architecture Notes
+
+The existing editing pipeline should remain unchanged.
+
+Current flow:
+
+```text
+PropertyModel
+        │
+ModifiedChanged
+        │
+        ▼
+MainViewModel
+        │
+        ▼
+Project.IsModified
+```
+
+History flow:
+
+```text
+PropertyModel
+        │
+ValueChanged
+        │
+        ▼
+EditHistoryService
+        │
+        ▼
+Undo / Redo
+```
+
+Change Summary should consume the existing modification tracking rather than creating a second change-tracking mechanism.
+
+---
+
+## Known Minor Issues
+
+Low Priority
+
+- Toolbar Undo may reposition the text caret within certain WPF text editors after a programmatic value update.
+- This does not affect data integrity and is not currently scheduled for resolution.
+
+---
+
+## Build Status
+
+✅ Last build successful
+
+---
+
+## Next Chat
+
+Upload:
+
+- Project Snapshot.md
+- CurrentTask.md
+
+Then continue implementing **Change Summary – Pass 1**.

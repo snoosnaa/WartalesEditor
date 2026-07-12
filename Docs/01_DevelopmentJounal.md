@@ -1,8 +1,8 @@
 ﻿# Development Journal
 
-**Version:** 0.4
+**Version:** 0.5
 **Status:** Active
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-07-12
 **Applies To:** Entire Project
 
 ---
@@ -13,6 +13,7 @@
 - Session 002
 - Session 003
 - Session 004
+- Session 005
 
 ---
 
@@ -47,7 +48,7 @@ Initial project setup and application foundation.
 
 ## Current Status
 
-The application successfully opens and parses the original `data.cdb` and displays the list of sheets.
+The application successfully opens and parses the original `data.cdb` and displays the list of Categories.
 
 ## Milestone Achieved
 
@@ -63,16 +64,15 @@ Display entries and build the three-pane editor.
 
 ## Summary
 
-Completed the transition from a sheet browser into a functional three-pane data browser.
+Completed the transition from a category browser into a functional three-pane data browser.
 
 ## Completed
 
 - Added `SelectedEntry` to the ViewModel.
 - Completed the MVVM selection pipeline.
-- Displayed entries for the selected Category.
+- Displayed Settings for the selected Category.
 - Added the third Properties pane.
-- Displayed properties for the selected Setting.
-- Introduced `PropertyModel`.
+- Displayed editable PropertyModel objects.
 - Replaced `KeyValuePair<string, object?>` with `PropertyModel`.
 - Updated `JsonDataService`.
 - Updated UI bindings.
@@ -87,7 +87,7 @@ Completed the transition from a sheet browser into a functional three-pane data 
 
 ## Current Status
 
-The application now provides a complete three-pane browsing experience.
+The application provides a complete three-pane browsing experience.
 
 Users can:
 
@@ -186,7 +186,7 @@ Improve search, navigation and localization.
 
 ## Summary
 
-Completed **Find Anything v1**, transforming search from a simple filter into a global navigation system.
+Completed Find Anything v1 while laying the foundation for intelligent editing.
 
 ## Completed
 
@@ -194,7 +194,7 @@ Completed **Find Anything v1**, transforming search from a simple filter into a 
 
 - Introduced `SearchService`.
 - Introduced `SearchResultModel`.
-- Added a dedicated Find Anything results panel.
+- Added the Find Anything panel.
 - Added global searching across all Categories.
 - Added searching by:
   - Internal IDs
@@ -202,45 +202,119 @@ Completed **Find Anything v1**, transforming search from a simple filter into a 
   - Property names
   - Property values
 - Added automatic navigation to matching Categories and Settings.
-- Added automatic property selection for matched properties.
-- Added result count.
-- Added automatic hiding of the results panel when no search is active.
+- Added automatic property selection.
+- Added search result counts.
 
 ### Localization
 
 - Introduced `LocalizationService`.
 - Added support for importing `export_en.xml`.
 - Added localization-aware searching.
-- Combined English display names with internal IDs throughout the search results.
-- Established the architecture for supporting additional game languages in the future.
+- Combined localized names with internal IDs throughout the editor.
 
-### User Interface
+### Smart Editing Foundation
 
-- Simplified the search results layout.
-- Replaced separate Setting and Localized Name columns with a single Name column.
-- Renamed **Search Results** to **Find Anything**.
-- Improved navigation consistency throughout the editor.
+- Introduced type-aware property editors.
+- Added validation.
+- Added dropdown framework.
+- Added category-aware reference discovery.
+- Introduced `ReferenceValueModel`.
+- Added smart property editors based on data type.
+- Established the architecture for future intelligent editors.
 
 ## Major Decisions
 
-- Treat search primarily as a navigation tool rather than a filtering tool.
-- Display English names whenever available while always preserving the internal ID.
-- Keep internal navigation data separate from what is displayed to the user.
-- Build localization support in a language-independent way while initially supporting English.
+- Treat search primarily as navigation.
+- Keep display names separate from internal identifiers.
+- Build language-independent localization support.
+- Build an extensible editor framework rather than individual editors.
 
 ## Current Status
 
-Users can now locate virtually any editable gameplay element using the information they already know, regardless of where it exists within the game's data.
+The editor now supports intelligent navigation together with context-aware property editing.
 
 ## Milestone Achieved
 
-Find Anything v1 completed.
+Find Anything v1 and Smart Property Editors completed.
 
 ## Next Focus
 
-Begin **Edit Anything** by introducing:
+Implement safe editing infrastructure.
 
-- Type-aware property editors.
-- Validation.
-- Change tracking.
-- Improved editing safety.
+---
+
+# Session 005
+
+## Summary
+
+Completed the editing safety infrastructure that transforms the editor from a simple property editor into a reliable editing application.
+
+## Completed
+
+### Safe Editing
+
+- Added original value capture for every editable property.
+- Added property modification tracking.
+- Added project modification tracking.
+- Added visual modified indicators.
+- Added modified property counting.
+- Added dynamic window title modification indicator.
+- Added Reset Property.
+- Added modification status reporting.
+- Established the foundation for future Change Summary support.
+
+### Undo / Redo
+
+- Implemented unlimited session undo history.
+- Implemented unlimited session redo history.
+- Added Undo and Redo commands.
+- Added toolbar controls.
+- Added Ctrl+Z support.
+- Added Ctrl+Y support.
+- Added automatic history clearing when opening a new project.
+
+### History Architecture
+
+- Introduced `EditHistoryService`.
+- Introduced `PropertyEditAction`.
+- Introduced property value change events carrying previous and new values.
+- Decoupled history recording from property editing.
+- Built a reusable history architecture for future batch editing, import/merge, and change summaries.
+
+### Verification
+
+Successfully verified:
+
+- Property modification tracking.
+- Project dirty-state tracking.
+- Reset Property.
+- Multiple modified properties.
+- Save state reset.
+- Unlimited Undo.
+- Unlimited Redo.
+- Toolbar commands.
+- Keyboard shortcuts.
+- History reset when opening a new project.
+
+### Known Minor Issue
+
+- Undo performed from the toolbar may reposition the text caret within certain WPF text editors. This does not affect data integrity and is considered a low-priority UI refinement.
+
+## Major Decisions
+
+- Treat editing history as a reusable application service.
+- Keep undo/redo independent from property editing.
+- Build infrastructure before implementing advanced editing features.
+- Preserve clean MVVM separation throughout the editing pipeline.
+
+## Current Status
+
+The editor now provides a safe editing environment with modification tracking, reset capability, and unlimited session undo/redo.
+
+## Milestone Achieved
+
+Version 0.4.0 — Safe Editing Infrastructure
+
+## Next Focus
+
+Implement Change Summary – Pass 1 using the new modification and history infrastructure.

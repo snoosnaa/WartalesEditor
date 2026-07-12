@@ -3,13 +3,127 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:selectors="clr-namespace:WartalesEditor.Selectors"
+        xmlns:converters="clr-namespace:WartalesEditor.Converters"
+        xmlns:validation="clr-namespace:WartalesEditor.Validation"
         mc:Ignorable="d"
-        Title="Wartales Editor"
+        Title="{Binding WindowTitle}"
         Height="750"
         Width="1200"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <converters:BooleanToVisibilityConverter
+            x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- Standard text property -->
+        <DataTemplate x:Key="TextEditorTemplate">
+            <TextBox Width="330"
+                     IsReadOnly="{Binding IsReadOnly}"
+                     Background="{x:Null}"
+                     Text="{Binding Value,
+                                    Mode=TwoWay,
+                                    UpdateSourceTrigger=PropertyChanged}"/>
+        </DataTemplate>
+
+        <!-- Integer or decimal property -->
+        <DataTemplate x:Key="NumberEditorTemplate">
+            <TextBox Width="330"
+                     IsReadOnly="{Binding IsReadOnly}"
+                     Background="{x:Null}">
+
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+
+                        <Setter Property="ToolTip"
+                                Value="{x:Null}"/>
+
+                        <Style.Triggers>
+                            <Trigger Property="Validation.HasError"
+                                     Value="True">
+
+                                <Setter Property="ToolTip"
+                                        Value="{Binding RelativeSource={RelativeSource Self},
+                                                        Path=(Validation.Errors)[0].ErrorContent}"/>
+
+                            </Trigger>
+                        </Style.Triggers>
+
+                    </Style>
+                </TextBox.Style>
+
+                <TextBox.Text>
+                    <Binding Path="Value"
+                             Mode="TwoWay"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnExceptions="True"
+                             NotifyOnValidationError="True">
+
+                        <Binding.ValidationRules>
+                            <validation:PropertyValidationRule
+                                ValidationStep="UpdatedValue"/>
+                        </Binding.ValidationRules>
+
+                    </Binding>
+                </TextBox.Text>
+
+            </TextBox>
+        </DataTemplate>
+
+        <!-- Boolean property -->
+        <DataTemplate x:Key="BooleanEditorTemplate">
+            <CheckBox IsChecked="{Binding Value,
+                                          Mode=TwoWay,
+                                          UpdateSourceTrigger=PropertyChanged}"
+                      IsEnabled="{Binding IsEditable}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"/>
+        </DataTemplate>
+
+        <!-- Property with a known list of valid choices -->
+        <DataTemplate x:Key="DropdownEditorTemplate">
+            <ComboBox Width="330"
+                      ItemsSource="{Binding AvailableValues}"
+                      DisplayMemberPath="Display"
+                      SelectedValuePath="Value"
+                      SelectedValue="{Binding Value,
+                                              Mode=TwoWay,
+                                              UpdateSourceTrigger=PropertyChanged}"
+                      IsEnabled="{Binding IsEditable}"/>
+        </DataTemplate>
+
+        <!-- Array or object awaiting a dedicated editor -->
+        <DataTemplate x:Key="ComplexEditorTemplate">
+            <TextBox Width="330"
+                     MinHeight="55"
+                     MaxHeight="180"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     Background="Gainsboro"
+                     Text="{Binding Value}"/>
+        </DataTemplate>
+
+        <!-- Internal or otherwise protected property -->
+        <DataTemplate x:Key="ReadOnlyEditorTemplate">
+            <TextBox Width="330"
+                     IsReadOnly="True"
+                     Background="Gainsboro"
+                     Text="{Binding Value}"/>
+        </DataTemplate>
+
+        <selectors:PropertyEditorTemplateSelector
+            x:Key="PropertyEditorSelector"
+            TextTemplate="{StaticResource TextEditorTemplate}"
+            NumberTemplate="{StaticResource NumberEditorTemplate}"
+            BooleanTemplate="{StaticResource BooleanEditorTemplate}"
+            DropdownTemplate="{StaticResource DropdownEditorTemplate}"
+            ComplexTemplate="{StaticResource ComplexEditorTemplate}"
+            ReadOnlyTemplate="{StaticResource ReadOnlyEditorTemplate}"/>
+
     </Window.Resources>
 
     <Grid>
@@ -23,6 +137,7 @@
 
         <!-- Toolbar -->
         <ToolBar Grid.Row="0">
+
             <Button Name="OpenButton"
                     Width="80"
                     Margin="5"
@@ -36,6 +151,36 @@
                     Command="{Binding SaveCommand}">
                 Save
             </Button>
+
+            <Separator/>
+
+            <Button Name="UndoButton"
+                    Width="80"
+                    Margin="5"
+                    Focusable="False"
+                    Command="{Binding UndoCommand}"
+                    ToolTip="{Binding UndoDescription}">
+                Undo
+            </Button>
+
+            <Button Name="RedoButton"
+                    Width="80"
+                    Margin="5"
+                    Focusable="False"
+                    Command="{Binding RedoCommand}"
+                    ToolTip="{Binding RedoDescription}">
+                Redo
+            </Button>
+
+            <Separator/>
+
+            <Button Name="ResetPropertyButton"
+                    Width="120"
+                    Margin="5"
+                    Command="{Binding ResetSelectedPropertyCommand}">
+                Reset Property
+            </Button>
+
         </ToolBar>
 
         <!-- Search -->
@@ -74,18 +219,19 @@
                       VerticalAlignment="Center"
                       IsChecked="{Binding ShowEmptyCategories,
                                           Mode=TwoWay}"/>
+
             <TextBlock Text="{Binding LocalizationStatus}"
                        VerticalAlignment="Center"
                        Margin="20,0,0,0"/>
 
         </DockPanel>
 
-        <!-- Global Search Results -->
+        <!-- Find Anything -->
         <Grid Grid.Row="2"
               Margin="5,0,5,5"
               MaxHeight="160"
               Visibility="{Binding HasSearchText,
-                           Converter={StaticResource BooleanToVisibilityConverter}}">
+                                   Converter={StaticResource BooleanToVisibilityConverter}}">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -106,12 +252,12 @@
                     <GridView>
 
                         <GridViewColumn Header="Category"
-                    Width="180"
-                    DisplayMemberBinding="{Binding CategoryName}"/>
+                                        Width="180"
+                                        DisplayMemberBinding="{Binding CategoryName}"/>
 
                         <GridViewColumn Header="Name"
-                    Width="600"
-                    DisplayMemberBinding="{Binding DisplayName}"/>
+                                        Width="600"
+                                        DisplayMemberBinding="{Binding DisplayName}"/>
 
                     </GridView>
                 </ListView.View>
@@ -122,6 +268,7 @@
 
         <!-- Main Area -->
         <Grid Grid.Row="3">
+
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="370"/>
                 <ColumnDefinition Width="5"/>
@@ -191,33 +338,128 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
-                           Text="Properties"
-                           FontWeight="Bold"
-                           Margin="10,5,5,0"/>
+                <Grid Grid.Row="0"
+                      Margin="10,5,5,0">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="Properties"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ModificationStatus}"
+                               Margin="10,0,5,0"
+                               VerticalAlignment="Center">
+
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+
+                                <Setter Property="FontWeight"
+                                        Value="Normal"/>
+
+                                <Setter Property="Foreground"
+                                        Value="Gray"/>
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasModifications}"
+                                                 Value="True">
+
+                                        <Setter Property="FontWeight"
+                                                Value="SemiBold"/>
+
+                                        <Setter Property="Foreground"
+                                                Value="DarkOrange"/>
+
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+                            </Style>
+                        </TextBlock.Style>
+
+                    </TextBlock>
+
+                </Grid>
 
                 <ListView Grid.Row="1"
                           Margin="5"
                           ItemsSource="{Binding Properties}"
                           SelectedItem="{Binding SelectedProperty,
-                                 Mode=TwoWay}">
+                                                 Mode=TwoWay}">
+
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsModified}"
+                                             Value="True">
+
+                                    <Setter Property="Background"
+                                            Value="LightGoldenrodYellow"/>
+
+                                    <Setter Property="FontWeight"
+                                            Value="SemiBold"/>
+
+                                </DataTrigger>
+                            </Style.Triggers>
+
+                        </Style>
+                    </ListView.ItemContainerStyle>
 
                     <ListView.View>
                         <GridView>
 
+                            <GridViewColumn Header=""
+                                            Width="28">
+
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+
+                                        <TextBlock Text="●"
+                                                   Foreground="DarkOrange"
+                                                   FontSize="12"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="This property has unsaved changes"
+                                                   Visibility="{Binding IsModified,
+                                                                        Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+
+                            </GridViewColumn>
+
                             <GridViewColumn Header="Property"
-                                            Width="200"
-                                            DisplayMemberBinding="{Binding Name}"/>
+                                            Width="200">
+
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+
+                                        <TextBlock Text="{Binding Name}"
+                                                   VerticalAlignment="Center"/>
+
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+
+                            </GridViewColumn>
 
                             <GridViewColumn Header="Value"
                                             Width="350">
 
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="330"
-                                                 Text="{Binding Value,
-                                                                Mode=TwoWay,
-                                                                UpdateSourceTrigger=PropertyChanged}"/>
+
+                                        <ContentControl
+                                            Content="{Binding}"
+                                            ContentTemplateSelector="{StaticResource PropertyEditorSelector}"/>
+
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
 
@@ -234,10 +476,63 @@
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="4">
-            <TextBlock Name="StatusText"
-                       Text="{Binding Status}"/>
+
+            <Grid Width="{Binding RelativeSource={RelativeSource AncestorType=StatusBar},
+                                  Path=ActualWidth}">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Name="StatusText"
+                           Text="{Binding Status}"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Margin="10,0,10,0"
+                            VerticalAlignment="Center">
+
+                    <TextBlock Text="●"
+                               Foreground="DarkOrange"
+                               Margin="0,0,5,0"
+                               Visibility="{Binding HasModifications,
+                                                    Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <TextBlock Text="{Binding ModificationStatus}">
+
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+
+                                <Setter Property="Foreground"
+                                        Value="Gray"/>
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasModifications}"
+                                                 Value="True">
+
+                                        <Setter Property="Foreground"
+                                                Value="DarkOrange"/>
+
+                                        <Setter Property="FontWeight"
+                                                Value="SemiBold"/>
+
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+                            </Style>
+                        </TextBlock.Style>
+
+                    </TextBlock>
+
+                </StackPanel>
+
+            </Grid>
+
         </StatusBar>
 
     </Grid>
 
-</Window>
+</Window>                    
