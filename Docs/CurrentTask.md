@@ -1,8 +1,8 @@
 ﻿# Current Task
 
-## Milestone
+## Current Milestone
 
-**Change Summary – Pass 1**
+**Documentation, Version 0.5.0 Commit, and Project Cleanup**
 
 ---
 
@@ -10,36 +10,7 @@
 
 The project builds successfully.
 
-The editing platform foundation is now complete.
-
-Recently completed:
-
-### Safe Editing
-
-- Property modification tracking
-- Project modification tracking
-- Original value capture
-- Reset Property
-- Modified indicators
-- Modification counter
-- Window title dirty indicator
-- Modification status
-
-### Undo / Redo
-
-- Unlimited session undo history
-- Unlimited session redo history
-- Undo / Redo toolbar commands
-- Ctrl+Z support
-- Ctrl+Y support
-- Automatic history reset when opening a new project
-
-### Editing Infrastructure
-
-- EditHistoryService
-- PropertyEditAction
-- Property value change events
-- Reusable editing history architecture
+The Change Summary milestone has been completed and fully verified.
 
 Current build status:
 
@@ -47,63 +18,139 @@ Current build status:
 
 ---
 
+## Recently Completed
+
+### Change Summary
+
+- Read-only Change Summary window
+- Live modified-property summary
+- Category grouping
+- Localized setting names
+- Original value display
+- Current value display
+- Automatic refresh after edits
+- Automatic refresh after Undo
+- Automatic refresh after Redo
+- Automatic refresh after Reset Property
+- Automatic refresh after Save
+- Automatic refresh after opening another project
+- Toolbar command
+- Double-click navigation to modified property
+- Modeless Change Summary window
+
+### Editing Infrastructure
+
+- ChangeSummaryItemModel
+- ChangeSummaryViewModel
+- Snapshot-based Change Summary architecture
+- Navigation callback architecture
+- Reuse of existing PropertyModel modification tracking
+- No duplicate change tracking
+
+### Runtime Verification
+
+Successfully verified:
+
+- Live updates
+- Undo integration
+- Redo integration
+- Reset Property integration
+- Save baseline reset
+- Navigation from Change Summary
+- Double-click navigation
+- Localized setting names
+- Category grouping
+- Window reopening
+- Modeless window behavior
+
+---
+
 ## Current Objective
 
-Implement **Change Summary – Pass 1**.
+Complete the Version 0.5.0 release.
 
-The editor should provide users with a clear review of every pending modification before saving.
+Remaining work:
 
-The summary should display:
+- Update project documentation
+- Review documentation consistency
+- Create Version 0.5.0 Git commit
+- Push to GitHub
 
-- Category
-- Setting
-- Property
-- Original Value
-- Current Value
-
-The architecture should build directly upon the existing modification tracking and EditHistoryService without introducing duplicate tracking systems.
+No additional code changes are planned for Version 0.5.0 unless a critical issue is discovered.
 
 ---
 
-## Scope
+## Next Planned Milestones
 
-Implement:
+Priority order:
 
-- Modified property collection
-- Change Summary model(s)
-- Change Summary window
-- Navigation from summary to modified property
-- Grouping by Category and Setting
-- Foundation for future filtering and batch editing
+### 1. Mod Profiles / Change Migration
 
-Do **not** implement yet:
+Primary objective:
 
-- Batch Editing
-- Import / Merge
-- Advanced Undo / Redo
-- Save confirmation workflow
-- Exit confirmation
-- Change filtering
-- Export of change summaries
+Allow users to preserve their edits across future Wartales updates.
+
+Expected capabilities:
+
+- Save reusable mod profiles
+- Export only modified values
+- Import changes into newer game data
+- Intelligent matching of modified entries
+- Merge preview before applying changes
 
 ---
 
-## Files Expected to Change
+### 2. Validation Framework
 
-- MainViewModel.cs
-- MainWindow.xaml
-- New Change Summary View
-- New Change Summary ViewModel
-- New Change Summary model(s)
-- EditHistoryService.cs (only if required for integration)
+Primary objective:
+
+Prevent invalid edits before export.
+
+Expected capabilities:
+
+- Missing reference detection
+- Invalid reference detection
+- Invalid value detection
+- Required property validation
+- Duplicate detection
+- Validation report
+
+---
+
+### 3. Content Creation Tools
+
+Primary objective:
+
+Allow creation of additional game content.
+
+Initial focus:
+
+- Add Camp Structures
+- Add Crafting Stations
+- Add Camp Anvil
+- Future game object creation tools
+
+---
+
+### 4. UI Modernization
+
+Planned improvements:
+
+- Command area redesign
+- Workflow improvements
+- Larger action buttons
+- Toolbar simplification
+- Layout polish
+- Spacing improvements
+- Future icon support
 
 ---
 
 ## Architecture Notes
 
-The existing editing pipeline should remain unchanged.
+The editing architecture remains stable.
 
-Current flow:
+Current editing flow:
 
 ```text
 PropertyModel
@@ -131,7 +178,15 @@ EditHistoryService
 Undo / Redo
 ```
 
-Change Summary should consume the existing modification tracking rather than creating a second change-tracking mechanism.
+Change Summary consumes the existing modification state without introducing a second change-tracking system.
+
+This architecture will also support future:
+
+- Batch Editing
+- Import / Merge
+- Validation
+- Change Export
+- Change Filtering
 
 ---
 
@@ -139,8 +194,10 @@ Change Summary should consume the existing modification tracking rather than cre
 
 Low Priority
 
-- Toolbar Undo may reposition the text caret within certain WPF text editors after a programmatic value update.
-- This does not affect data integrity and is not currently scheduled for resolution.
+- Programmatic Undo/Redo may reposition the text caret within certain WPF text editors.
+- This does not affect data integrity.
+
+Deferred to the future UI Modernization milestone.
 
 ---
 
@@ -157,4 +214,4 @@ Upload:
 - Project Snapshot.md
 - CurrentTask.md
 
-Then continue implementing **Change Summary – Pass 1**.
+Continue with the Version 0.5.0 release process or begin the next approved milestone.

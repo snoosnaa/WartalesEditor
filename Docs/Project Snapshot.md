@@ -1,8 +1,8 @@
 ﻿# Wartales Editor
 ## Project Snapshot
 
-**Application Version:** 0.4.0
-**Documentation Version:** 0.5
+**Application Version:** 0.5.0  
+**Documentation Version:** 0.6  
 **Last Updated:** 2026-07-12
 
 ---
@@ -11,7 +11,7 @@
 
 Wartales Editor is a desktop WPF application for editing Wartales game data safely, intelligently, and efficiently.
 
-The editor is intended to understand the structure of the game's data rather than simply exposing JSON. Whenever possible it should guide users toward valid edits, prevent accidental mistakes, and provide workflows tailored to gameplay concepts instead of raw data structures.
+The editor is intended to understand the structure of the game's data rather than simply exposing JSON. Whenever possible, it should guide users toward valid edits, prevent accidental mistakes, and provide workflows tailored to gameplay concepts instead of raw data structures.
 
 The long-term goal is a professional-quality editor that supports both casual modders and advanced creators.
 
@@ -21,19 +21,29 @@ The long-term goal is a professional-quality editor that supports both casual mo
 
 **Status:** Builds Successfully ✅
 
-**Current Milestone**
+**Current Release:** Version 0.5.0
 
-**Change Summary – Pass 1**
+**Current Milestone Status:** Change Summary – Pass 1 completed
 
-The project has successfully transitioned from building editor features to building reusable editing infrastructure.
+The project has transitioned from a functional editor into a reusable editing platform.
 
-Current focus is improving the editing workflow rather than simply adding additional editors.
+The current application supports:
+
+- Intelligent navigation
+- Localization-aware searching
+- Type-aware editing
+- Safe modification tracking
+- Unlimited Undo / Redo
+- Live Change Summary
+- Direct navigation to modified properties
+
+The immediate focus is completing the Version 0.5.0 documentation, commit, and push before beginning the next milestone.
 
 ---
 
 # Development Philosophy
 
-Whenever possible:
+Whenever practical:
 
 - Prevent mistakes instead of correcting them later.
 - Infer behavior from game data instead of hardcoding values.
@@ -41,31 +51,33 @@ Whenever possible:
 - Build reusable infrastructure before specialized features.
 - Keep MVVM separation clean.
 - Favor maintainability over quick implementations.
+- Extend existing application state instead of creating parallel systems.
+- Runtime-test completed behavior before committing.
 
 ---
 
 # Technology
 
-### Language
+## Language
 
 - C#
 
-### Framework
+## Framework
 
 - .NET
 - WPF
 - MVVM
 
-### IDE
+## IDE
 
 - Visual Studio Community
 
-### Version Control
+## Version Control
 
 - Git
 - GitHub
 
-### JSON
+## JSON
 
 - Newtonsoft.Json
 
@@ -73,9 +85,9 @@ Whenever possible:
 
 # Current Architecture
 
-## Models
+## Primary Model Hierarchy
 
-```
+```text
 ProjectModel
     ↓
 SheetModel
@@ -85,32 +97,46 @@ EntryModel
 PropertyModel
 ```
 
+User interface terminology:
+
+| Internal Model | User Interface |
+|---|---|
+| SheetModel | Category |
+| EntryModel | Setting |
+| PropertyModel | Property |
+
 Supporting models:
 
 - SearchResultModel
 - ReferenceValueModel
 - PropertyValueChangedEventArgs
+- PropertyEditAction
+- ChangeSummaryItemModel
 
 ---
 
-## PropertyModel
+# PropertyModel
 
 Current responsibilities:
 
 - Type-aware editing
 - Automatic editor selection
 - Original value capture
-- Modification tracking
+- Modification detection
 - Reset to original
 - Validation support
 - Reference lookup
-- Property change notifications
+- Property modification notifications
+- Property value-change notifications
+- Display-ready original and current values
+
+`PropertyModel.IsModified` is the single source of truth for determining whether a property currently differs from its saved baseline.
 
 ---
 
-## Services
+# Services
 
-### JsonDataService
+## JsonDataService
 
 Responsible for:
 
@@ -118,31 +144,34 @@ Responsible for:
 - Saving projects
 - Parsing JSON
 - Building ProjectModel
-- Capturing original values
+- Capturing original property values
+- Establishing a new baseline after saving
 
 ---
 
-### SearchService
+## SearchService
 
 Responsible for:
 
-- Global navigation
+- Global Find Anything searching
 - Property searching
-- Result generation
+- Search result generation
+- Navigation metadata
 
 ---
 
-### LocalizationService
+## LocalizationService
 
 Responsible for:
 
 - English localization
 - Localized searching
+- Localized display names
 - Future language support
 
 ---
 
-### PropertyDefinitionService
+## PropertyDefinitionService
 
 Responsible for:
 
@@ -153,17 +182,18 @@ Responsible for:
 
 ---
 
-### ReferenceDataService
+## ReferenceDataService
 
 Responsible for:
 
 - Reference discovery
 - Dropdown population
 - Reference lookup
+- Shared reference data through a singleton instance
 
 ---
 
-### EditHistoryService
+## EditHistoryService
 
 Responsible for:
 
@@ -171,44 +201,152 @@ Responsible for:
 - Undo
 - Redo
 - Session history
+- History state notifications
 
-This service is intentionally reusable for future editing workflows.
+This service remains intentionally independent from the Change Summary.
+
+Edit history answers:
+
+> What happened?
+
+Change Summary answers:
+
+> What is currently different?
+
+---
+
+# ViewModels
+
+## MainViewModel
+
+Coordinates:
+
+- Project state
+- Category, Setting, and Property selection
+- Find Anything
+- Navigation
+- Modification state
+- Undo / Redo
+- Change Summary snapshot generation
+- Window commands
+- Status reporting
+
+---
+
+## ChangeSummaryViewModel
+
+Responsible for:
+
+- Presenting modified-property snapshots
+- Category grouping
+- Selection
+- Navigation commands
+- Live refresh while the window remains open
 
 ---
 
 # Current Editing Pipeline
 
-```
+```text
 User Edit
-
-↓
-
-PropertyModel
-
-↓
-
+    ↓
+PropertyModel.Value
+    ↓
+SourceProperty
+    ↓
 RootDocument
-
-↓
-
+    ↓
 Modification Tracking
-
-↓
-
+    ↓
 Edit History
-
-↓
-
+    ↓
+Change Summary
+    ↓
 Save
 ```
 
 Editing occurs directly against the original JSON document.
 
+No replacement JSON document is reconstructed for saving.
+
+---
+
+# Modification Tracking
+
+Implemented:
+
+- ✅ Original value capture
+- ✅ Property modification tracking
+- ✅ Project modification tracking
+- ✅ Reset Property
+- ✅ Modified row indicators
+- ✅ Modified-property counter
+- ✅ Window title dirty indicator
+- ✅ Modification status reporting
+- ✅ New baseline after Save
+
+Current-state comparison is based on `JToken.DeepEquals`.
+
+A property is no longer considered modified when its current value again matches its saved baseline, regardless of how many edits occurred.
+
+---
+
+# Undo / Redo
+
+Implemented:
+
+- ✅ Unlimited session Undo
+- ✅ Unlimited session Redo
+- ✅ Toolbar commands
+- ✅ Ctrl+Z
+- ✅ Ctrl+Y
+- ✅ History reset when opening another project
+- ✅ Undo and Redo integration with modification tracking
+- ✅ Undo permitted after saving
+
+Undo after saving intentionally creates a new unsaved change relative to the newly saved baseline.
+
+Known minor issue:
+
+- Programmatic Undo / Redo may move the caret to the beginning of certain WPF text editors.
+- This does not affect data integrity.
+- Deferred to a future UI modernization milestone.
+
+---
+
+# Change Summary
+
+Implemented:
+
+- ✅ Read-only Change Summary window
+- ✅ Live modified-property review
+- ✅ Category grouping
+- ✅ Localized Setting names
+- ✅ Property names
+- ✅ Original values
+- ✅ Current values
+- ✅ Navigate button
+- ✅ Double-click navigation
+- ✅ Main editor focus after navigation
+- ✅ Working Close button
+- ✅ Automatic refresh after Edit
+- ✅ Automatic refresh after Undo
+- ✅ Automatic refresh after Redo
+- ✅ Automatic refresh after Reset Property
+- ✅ Automatic refresh after Save
+- ✅ Automatic refresh after opening another project
+- ✅ Correct empty state
+- ✅ Correct window reopening behavior
+
+The Change Summary is built from temporary snapshots of the current project state.
+
+It does not maintain its own modification history or duplicate original-value storage.
+
 ---
 
 # Property Editors
 
-Implemented
+Implemented:
 
 - ✅ Text
 - ✅ Number
@@ -217,40 +355,11 @@ Implemented
 - ✅ Read Only
 - ✅ Complex Placeholder
 
-Editors are selected automatically using property metadata and JSON types.
-
----
-
-# Safe Editing
-
-Implemented
-
-- ✅ Original value capture
-- ✅ Property modification tracking
-- ✅ Project modification tracking
-- ✅ Reset Property
-- ✅ Modified indicators
-- ✅ Modification counter
-- ✅ Window title dirty indicator
-
----
-
-# Undo / Redo
-
-Implemented
-
-- ✅ Unlimited session undo
-- ✅ Unlimited session redo
-- ✅ Toolbar commands
-- ✅ Ctrl+Z
-- ✅ Ctrl+Y
-- ✅ Automatic history reset when opening a project
+Editors are selected automatically using property metadata, reference availability, and JSON token types.
 
 ---
 
 # Search
-
-Implemented
 
 Find Anything supports:
 
@@ -258,139 +367,196 @@ Find Anything supports:
 - Settings
 - Properties
 - Internal IDs
-- English localization
+- English localized names
 - Property names
 - Property values
 
-Selecting a result automatically navigates directly to the matching editor location.
+Selecting a result automatically navigates to the matching Category and Setting and selects the matching Property when applicable.
 
 ---
 
 # Current User Workflow
 
-```
+```text
 Open
-
-↓
-
+    ↓
 Find Anything
-
-↓
-
+    ↓
 Edit
-
-↓
-
+    ↓
 Track Changes
-
-↓
-
+    ↓
 Undo / Redo
-
-↓
-
+    ↓
+Review Change Summary
+    ↓
 Save
-
-↓
-
+    ↓
 Package
-
-↓
-
+    ↓
 Play
 ```
 
-This workflow has been verified through live gameplay testing.
+The editing and packaging workflow has been verified through live gameplay testing.
 
 ---
 
 # Completed Milestones
 
-## Foundation
+## Project Foundation
 
-- ✅ Project loading
-- ✅ Project saving
-- ✅ Three-pane editor
+- ✅ WPF application
+- ✅ MVVM architecture
+- ✅ Git and GitHub integration
+- ✅ Documentation system
+- ✅ JSON loading
 
 ---
 
-## Navigation
+## Data Browser
+
+- ✅ Three-pane editor
+- ✅ Categories
+- ✅ Settings
+- ✅ Properties
+- ✅ Selection synchronization
+
+---
+
+## Functional Editing
+
+- ✅ Editable properties
+- ✅ Direct RootDocument synchronization
+- ✅ Save modified CDB
+- ✅ Reload saved files
+- ✅ In-game verification
+
+---
+
+## Find Anything and Smart Editing
 
 - ✅ Global Find Anything
 - ✅ Localization-aware searching
 - ✅ Automatic navigation
-
----
-
-## Smart Editing
-
 - ✅ Type-aware editors
-- ✅ Validation framework
 - ✅ Reference-aware dropdowns
-- ✅ Smart editor selection
+- ✅ Validation framework foundation
 
 ---
 
 ## Safe Editing
 
-- ✅ Property tracking
-- ✅ Project tracking
+- ✅ Property modification tracking
+- ✅ Project modification tracking
 - ✅ Reset Property
-- ✅ Edit history
+- ✅ Modified indicators
 - ✅ Unlimited Undo / Redo
+- ✅ Reusable history infrastructure
+
+---
+
+## Change Summary
+
+- ✅ Live review of pending changes
+- ✅ Original and current value comparison
+- ✅ Category grouping
+- ✅ Localized Setting display
+- ✅ Navigation to modified properties
+- ✅ Reusable snapshot architecture
 
 ---
 
 # Current Roadmap
 
-## Active
+## Immediate Task
 
-### Change Summary – Pass 1
+Complete the Version 0.5.0 release process:
 
-- Review pending changes
-- Group changes
-- Navigate to modified properties
-- Foundation for future batch editing
+- Update remaining documentation
+- Confirm version consistency
+- Create Git commit
+- Push to GitHub
 
----
-
-## Planned
-
-### Workflow
-
-- QuickBMS integration
-- Recent Files
-- Save & Exit
-- Backup on Save
+No additional Version 0.5.0 code changes are planned unless a critical issue is discovered.
 
 ---
 
-### Advanced Editing
+## Priority 1 – Mod Profiles and Change Migration
+
+Primary goal:
+
+Preserve user modifications across future Wartales updates.
+
+Expected capabilities:
+
+- Save reusable mod profiles
+- Export modified values
+- Import edits into a newer `data.cdb`
+- Intelligent matching of Categories, Settings, and Properties
+- Merge preview
+- Conflict detection
+- Safe application of compatible changes
+
+---
+
+## Priority 2 – Robust Validation
+
+Primary goal:
+
+Detect invalid or unsafe modifications before saving or packaging.
+
+Expected capabilities:
+
+- Missing reference detection
+- Invalid reference detection
+- Required property validation
+- Duplicate detection
+- Invalid value detection
+- Validation summaries
+- Navigable validation results
+
+---
+
+## Priority 3 – Content Creation Tools
+
+Primary goal:
+
+Provide guided actions for adding game content without manually reproducing complex JSON structures.
+
+Initial targets:
+
+- Add camp structures
+- Add crafting stations
+- Add the anvil to the player camp
+- Future guided content-creation tools
+
+---
+
+## Priority 4 – UI Modernization
+
+Planned improvements:
+
+- Move editing actions into clearer button-based workflows
+- Simplify the top toolbar
+- Improve command organization
+- Improve spacing and resizing
+- Add visual polish
+- Prepare for future icon support
+
+---
+
+## Additional Planned Features
 
 - Batch Editing
 - Import / Merge
-- Property History
-- Change filtering
-
----
-
-### Gameplay Editors
-
-- Starting Party Editor
-- Camp Editor
-- Profession Editor
-- Skills
-- Recipes
-- Factions
-
----
-
-### Long-Term
-
-- Automatic migration
-- Mod comparison
-- Plugin system
-- Rule-based validation
+- Modified-only filtering
+- Change Summary filtering
+- Change Summary export
+- Recent Files
+- Backup on Save
+- QuickBMS workflow integration
+- Property descriptions
+- Additional specialized gameplay editors
 
 ---
 
@@ -398,31 +564,39 @@ This workflow has been verified through live gameplay testing.
 
 Always:
 
-- MVVM
-- ObservableObject
-- Small focused classes
-- Services own reusable logic
-- Models own editing behavior
-- ViewModels coordinate application state
+- Use MVVM.
+- Use `ObservableObject` for bindable ViewModels and models where appropriate.
+- Prefer small, focused classes.
+- Keep reusable logic in services.
+- Keep editing behavior in models.
+- Keep application coordination in ViewModels.
+- Keep code-behind limited to view-specific interaction.
+- Preserve the original JSON document.
+- Use the existing modification state as the single source of truth.
+- Build after every logical implementation step.
 
 Avoid:
 
-- Business logic in XAML
-- Business logic in code-behind
-- Duplicate editing infrastructure
-- Hardcoded gameplay values whenever possible
+- Business logic in XAML.
+- Business logic in code-behind.
+- Duplicate change-tracking systems.
+- Duplicate original-value storage.
+- Hardcoded gameplay values whenever data-driven discovery is practical.
+- Reconstructing current project files from memory.
 
 ---
 
 # Development Workflow
 
-1. Complete one milestone.
-2. Build after every implementation step.
-3. Test thoroughly.
-4. Update documentation.
-5. Commit.
-6. Push.
-7. Begin the next milestone.
+1. Complete one logical implementation stage.
+2. Build.
+3. Fix all errors before continuing.
+4. Runtime-test completed behavior.
+5. Perform regression testing.
+6. Update documentation.
+7. Commit.
+8. Push.
+9. Begin the next approved milestone.
 
 ---
 
@@ -434,19 +608,25 @@ Required practices:
 
 - Design complete implementations before generating code.
 - Prefer extensible architecture over shortcuts.
-- Keep every build compiling.
-- Work from the latest supplied files only.
-- Never assume file contents.
-- Return complete file replacements whenever practical.
-- Split only large files when required.
-- Update documentation before commits.
+- Keep the project compiling after every stage.
+- Complete one milestone at a time.
+- Stay focused on the active milestone.
+- Work only from the latest files supplied by the user.
+- Never reconstruct a current file from memory.
+- Ask for any current file needed before modifying it.
+- Return complete replacements for small and medium files.
+- Fully design large-file replacements before emitting them.
+- Split large replacements only when required by response length.
+- Update documentation before major commits.
 
 ---
 
 # Current Task
 
-Implement **Change Summary – Pass 1**.
+Complete the Version 0.5.0 documentation, commit, and push.
 
-The feature must build directly upon the existing modification tracking and edit history infrastructure without introducing duplicate change-tracking systems.
+After the release is complete, begin only the next approved milestone.
 
-The next milestone should extend the platform rather than redesign it.
+The highest-priority future milestone is:
+
+**Mod Profiles and Change Migration**

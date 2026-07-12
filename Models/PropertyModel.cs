@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Helpers;
 using WartalesEditor.Services;
@@ -100,6 +101,13 @@ public class PropertyModel : ObservableObject
     public bool CanReset =>
         IsModified && !IsReadOnly;
 
+    public string OriginalDisplayValue =>
+        GetTokenSummaryValue(originalValue);
+
+    public string CurrentDisplayValue =>
+        GetTokenSummaryValue(
+            SourceProperty?.Value);
+
     public object? Value
     {
         get => value;
@@ -116,6 +124,9 @@ public class PropertyModel : ObservableObject
     {
         originalValue =
             SourceProperty?.Value.DeepClone();
+
+        OnPropertyChanged(
+            nameof(OriginalDisplayValue));
 
         UpdateModifiedState();
     }
@@ -162,6 +173,9 @@ public class PropertyModel : ObservableObject
         JToken currentValue =
             SourceProperty.Value.DeepClone();
 
+        OnPropertyChanged(
+            nameof(CurrentDisplayValue));
+
         UpdateModifiedState();
 
         RaiseValueChanged(
@@ -186,6 +200,9 @@ public class PropertyModel : ObservableObject
                 SourceProperty.Value);
 
         OnPropertyChanged(nameof(Value));
+
+        OnPropertyChanged(
+            nameof(CurrentDisplayValue));
 
         UpdateModifiedState();
 
@@ -234,6 +251,51 @@ public class PropertyModel : ObservableObject
         {
             JTokenType.Boolean =>
                 token.Value<bool>(),
+
+            _ =>
+                token.ToString()
+        };
+    }
+
+    private static string GetTokenSummaryValue(
+        JToken? token)
+    {
+        if (token == null)
+            return string.Empty;
+
+        return token.Type switch
+        {
+            JTokenType.Null =>
+                "null",
+
+            JTokenType.String =>
+                token.Value<string>()
+                ?? string.Empty,
+
+            JTokenType.Array =>
+                token.ToString(
+                    Formatting.None),
+
+            JTokenType.Object =>
+                token.ToString(
+                    Formatting.None),
+
+            JTokenType.Integer =>
+                Convert.ToString(
+                    token.Value<long>(),
+                    CultureInfo.InvariantCulture)
+                ?? string.Empty,
+
+            JTokenType.Float =>
+                Convert.ToString(
+                    token.Value<double>(),
+                    CultureInfo.InvariantCulture)
+                ?? string.Empty,
+
+            JTokenType.Boolean =>
+                token.Value<bool>()
+                    ? "true"
+                    : "false",
 
             _ =>
                 token.ToString()

@@ -6,7 +6,72 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
-# Version 0.4.0 - Safe Editing Infrastructure
+# Version 0.5.0 - Change Summary
+
+**Released:** 2026-07-12
+
+## Added
+
+### Change Summary
+
+- Read-only Change Summary window
+- Live summary of all modified properties
+- Category grouping
+- Original value display
+- Current value display
+- Automatic refresh after edits
+- Automatic refresh after Undo
+- Automatic refresh after Redo
+- Automatic refresh after Reset Property
+- Automatic refresh after Save
+- Automatic refresh after opening another project
+- Navigation from Change Summary back to the editor
+- Double-click navigation
+- Change Summary toolbar command
+
+### Editing Infrastructure
+
+- ChangeSummaryItemModel
+- ChangeSummaryViewModel
+- Snapshot-based Change Summary architecture
+- Localized setting names within Change Summary
+- Navigation callback architecture for editor integration
+
+## Changed
+
+- Change Summary now uses the existing `PropertyModel` modification state as its single source of truth.
+- Eliminated duplicate change tracking.
+- Simplified Change Summary grouping to Category level.
+- Improved editor focus after navigation.
+- Improved Change Summary presentation using localized setting names.
+- Improved Change Summary window behavior and interaction.
+
+## Fixed
+
+- Corrected Change Summary window activation behavior.
+- Corrected Change Summary Close button behavior.
+- Corrected grouped header alignment.
+- Corrected display of internal IDs where localized names are available.
+
+## Verified
+
+Successfully verified:
+
+- Live Change Summary updates
+- Undo integration
+- Redo integration
+- Reset Property integration
+- Save baseline reset
+- Navigation to modified property
+- Double-click navigation
+- Localized display names
+- Category grouping
+- Modeless Change Summary window
+- Window reopening behavior
+
+---
+
+# Version 0.4.0 - Safe Editing & Undo/Redo
 
 **Released:** 2026-07-12
 
@@ -105,7 +170,7 @@ Successfully verified:
 
 ## Changed
 
-- Renamed Search Results → Find Anything
+- Renamed Search Results → Find Anything.
 - Simplified the search interface.
 - Combined localized names and internal IDs into a single Name column.
 - Improved search navigation.

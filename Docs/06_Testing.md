@@ -1,6 +1,6 @@
 ﻿# Testing Guide
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Last Updated:** 2026-07-12
 
 ---
@@ -18,15 +18,20 @@ Its goals are to:
 
 Testing is considered part of development.
 
-No milestone is complete until it has been successfully built, tested, documented, and committed.
+No milestone is complete until it has been successfully:
+
+- Built
+- Runtime tested
+- Documented
+- Committed
 
 ---
 
 # Testing Philosophy
 
-Every feature should pass four stages.
+Every feature follows the same development pipeline.
 
-```
+```text
 Implement
 
 ↓
@@ -35,7 +40,11 @@ Build
 
 ↓
 
-Manual Test
+Runtime Test
+
+↓
+
+Regression Test
 
 ↓
 
@@ -46,7 +55,7 @@ Document
 Commit
 ```
 
-Never skip testing because a feature "should work."
+Never assume a feature works simply because it compiles.
 
 ---
 
@@ -152,8 +161,8 @@ Verify each editor type.
 
 Verify:
 
-- Integer
-- Decimal
+- Integer values
+- Decimal values
 - Invalid input
 - Validation messages
 
@@ -248,12 +257,38 @@ Verify:
 
 Known Minor Issue
 
-- Toolbar Undo may reposition the text caret inside certain text editors.
+- Programmatic Undo/Redo may reposition the text caret within certain WPF text editors.
 - This does not affect data integrity.
 
 Expected Result
 
 ✅ Editing history behaves correctly.
+
+---
+
+# Change Summary
+
+Verify:
+
+- Change Summary opens.
+- Live modifications appear automatically.
+- Original Value is correct.
+- Current Value is correct.
+- Localized setting names display correctly.
+- Category grouping displays correctly.
+- Navigate button selects the correct property.
+- Double-click navigation selects the correct property.
+- Main editor receives focus after navigation.
+- Reset Property updates the summary.
+- Undo updates the summary.
+- Redo updates the summary.
+- Save clears the summary.
+- Opening another project refreshes the summary.
+- Closing and reopening the summary preserves correct state.
+
+Expected Result
+
+✅ Change Summary always reflects the current modification state.
 
 ---
 
@@ -266,6 +301,7 @@ Verify:
 - Changes persist
 - Modification indicators reset
 - New editing baseline established
+- Change Summary clears
 
 Expected Result
 
@@ -279,7 +315,7 @@ Whenever gameplay data changes:
 
 Verify:
 
-```
+```text
 Open
 
 ↓
@@ -311,7 +347,7 @@ Expected Result
 
 # Regression Testing
 
-Perform before major commits.
+Perform before every major commit.
 
 Verify:
 
@@ -324,6 +360,7 @@ Verify:
 - Modification tracking
 - Undo
 - Redo
+- Change Summary
 - Save
 
 Expected Result
@@ -337,7 +374,7 @@ Expected Result
 Before creating a release:
 
 - [ ] Project builds successfully.
-- [ ] Manual testing completed.
+- [ ] Runtime testing completed.
 - [ ] Regression checklist completed.
 - [ ] Documentation updated.
 - [ ] CHANGELOG updated.
@@ -347,12 +384,23 @@ Before creating a release:
 
 ---
 
-# Testing Status
+# Current Verification Status
 
-Current testing strategy:
+The following milestones have been fully verified:
 
-- Incremental milestone testing
-- Manual regression testing
+- ✅ Project Foundation
+- ✅ Functional Editing
+- ✅ Find Anything
+- ✅ Smart Property Editors
+- ✅ Safe Editing
+- ✅ Unlimited Undo / Redo
+- ✅ Change Summary
+
+Testing currently consists of:
+
+- Incremental build verification
+- Manual runtime testing
+- Regression testing
 - Live gameplay verification
 
 Automated testing may be introduced in a future version if practical.

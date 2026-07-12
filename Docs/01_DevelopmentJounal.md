@@ -1,6 +1,6 @@
 ﻿# Development Journal
 
-**Version:** 0.5
+**Version:** 0.6
 **Status:** Active
 **Last Updated:** 2026-07-12
 **Applies To:** Entire Project
@@ -14,6 +14,7 @@
 - Session 003
 - Session 004
 - Session 005
+- Session 006
 
 ---
 
@@ -318,3 +319,91 @@ Version 0.4.0 — Safe Editing Infrastructure
 ## Next Focus
 
 Implement Change Summary – Pass 1 using the new modification and history infrastructure.
+
+---
+
+# Session 006
+
+## Summary
+
+Completed Change Summary – Pass 1, providing users with a live review of every unsaved modification while preserving the existing editing architecture.
+
+This milestone focused on presenting the current modification state rather than recording editing history.
+
+## Completed
+
+### Change Summary
+
+- Added `ChangeSummaryItemModel`.
+- Added `ChangeSummaryViewModel`.
+- Added the Change Summary window.
+- Displayed:
+  - Category
+  - Setting
+  - Property
+  - Original Value
+  - Current Value
+- Added automatic refresh after:
+  - Property edits
+  - Undo
+  - Redo
+  - Reset Property
+  - Save
+  - Opening another project
+- Added modeless window behavior.
+- Added navigation back to modified properties.
+- Added double-click navigation.
+- Added localized setting names.
+
+### Architecture
+
+- Reused the existing PropertyModel modification state as the single source of truth.
+- Avoided introducing a second change-tracking system.
+- Switched from duplicated observable collections to snapshot generation with the ChangeSummaryViewModel owning the presentation collection.
+- Preserved clean MVVM separation between editing logic and presentation.
+
+### Runtime Testing
+
+Verified:
+
+- Live summary updates.
+- Undo integration.
+- Redo integration.
+- Reset Property integration.
+- Save baseline reset.
+- Navigation to modified properties.
+- Double-click navigation.
+- Localized display names.
+- Modeless window behavior.
+- Window reopening.
+- Category grouping.
+
+### UX Improvements
+
+Runtime testing resulted in several usability refinements:
+
+- Replaced internal IDs with localized display names where available.
+- Simplified grouping from Category + Setting to Category only.
+- Improved window activation after navigation.
+- Corrected Change Summary window interaction.
+- Corrected Close button behavior.
+- Improved overall presentation and readability.
+
+## Major Decisions
+
+- Treat Change Summary as a view of the current modification state, not an editing history.
+- Keep modification tracking centralized within PropertyModel.
+- Separate presentation concerns into ChangeSummaryViewModel.
+- Validate new functionality through live runtime testing before completing the milestone.
+
+## Current Status
+
+The editor now provides a complete workflow for editing, reviewing pending changes, navigating directly to modified properties, and saving with confidence.
+
+## Milestone Achieved
+
+Version 0.5.0 — Change Summary
+
+## Next Focus
+
+Implement Mod Profiles and Change Migration to preserve user modifications across future Wartales updates.

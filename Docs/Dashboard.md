@@ -1,7 +1,7 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 0.4.0
-**Document Version:** 1.3
+**Application Version:** 0.5.0  
+**Document Version:** 1.4  
 **Last Updated:** 2026-07-12
 
 ---
@@ -10,204 +10,161 @@
 
 **Current Phase:** Phase 5 – Editing Platform
 
-**Overall Progress:** Approximately 65%
+**Overall Progress:** Approximately 72%
 
-The project has evolved from a functional gameplay editor into a robust editing platform with intelligent editing, safe editing, and reusable editing infrastructure.
+Wartales Editor has evolved from a proof-of-concept editor into a stable editing platform.
 
-The editor now provides a reliable workflow for editing, tracking, reverting, and saving gameplay changes while maintaining a clean MVVM architecture.
+The application now supports a complete editing workflow including intelligent property editing, localization-aware searching, safe editing, unlimited undo/redo, and live Change Summary functionality while maintaining a clean MVVM architecture.
 
 ---
 
-# Current Milestone
+# Current Release
 
-## Milestone 0.5.0 – Change Summary (Pass 1)
+## Version 0.5.0 – Change Summary
 
-### Objective
+**Status:** ✅ Complete
 
-Provide users with a clear summary of every modification made during the current editing session before saving.
+### Major Features
 
-### Planned Features
-
-- [ ] Modified property collection
-- [ ] Change Summary window
-- [ ] Group changes by Category
-- [ ] Group changes by Setting
-- [ ] Display Original Value
-- [ ] Display Current Value
-- [ ] Navigate directly to changed properties
-- [ ] Foundation for future batch editing
+- Live Change Summary
+- Localized setting names
+- Category grouping
+- Original / Current value comparison
+- Navigation directly to modified properties
+- Automatic synchronization after:
+  - Edit
+  - Undo
+  - Redo
+  - Reset Property
+  - Save
+  - Opening another project
+- Modeless Change Summary window
 
 ---
 
 # Completed Milestones
 
-## Milestone 0.1.0 – Project Foundation
+## Version 0.1.0 – Project Foundation
 
 Completed
 
-### Features
+### Highlights
 
-- WPF application
+- WPF desktop application
 - MVVM architecture
-- Git repository
-- GitHub integration
+- Git & GitHub integration
 - Documentation system
 - JSON loading
 
 ---
 
-## Milestone 0.2.0 – Data Browser
+## Version 0.2.0 – Data Browser
 
 Completed
 
-### Features
+### Highlights
 
+- Three-pane editor
 - Categories
 - Settings
 - Properties
-- Three-pane interface
-- PropertyModel architecture
+- ProjectModel architecture
 
 ---
 
-## Milestone 0.3.0 – First Functional Editor
+## Version 0.3.0 – Functional Editing
 
 Completed
 
-### Features
+### Highlights
 
 - Editable properties
 - RootDocument synchronization
 - Save modified CDB
 - Reload edited files
-- In-game verification
-- Show Empty Categories
-- Search scopes
+- Gameplay verification
 
 ---
 
-## Milestone 0.3.1 – Find Anything & Smart Editors
+## Version 0.3.1 – Find Anything
 
 Completed
 
-### Features
+### Highlights
 
 - Global Find Anything
 - Localization-aware search
-- Search by:
-  - Internal IDs
-  - English names
-  - Property names
-  - Property values
-- Direct navigation
-- Type-aware property editors
-- Validation framework
-- Reference-aware dropdown editors
-- Smart property editor selection
+- Smart property editors
+- Reference-aware dropdowns
+- Validation framework foundation
 
 ---
 
-## Milestone 0.4.0 – Safe Editing
+## Version 0.4.0 – Safe Editing
 
 Completed
 
-### Features
+### Highlights
 
-- Property modification tracking
-- Project modification tracking
-- Original value capture
+- Property tracking
+- Project dirty-state tracking
 - Reset Property
-- Modified indicators
-- Modification status
-- Unlimited Undo
-- Unlimited Redo
-- Ctrl+Z / Ctrl+Y
+- Unlimited Undo / Redo
 - EditHistoryService
-- PropertyEditAction
-- Reusable editing history architecture
+- Editing history architecture
 
 ---
 
-# Upcoming Milestones
+## Version 0.5.0 – Change Summary
 
-## Milestone 0.5.0
+Completed
 
-Change Summary
+### Highlights
 
-- Review all pending edits
-- Group changes
-- Navigation to modified properties
-- Save review workflow
-
----
-
-## Milestone 0.6.0
-
-Workflow Improvements
-
-- QuickBMS integration
-- Recent Files
-- Save & Exit
-- Backup on Save
-- Remember preferences
-
----
-
-## Version 1.0
-
-Public Release
-
-- Complete editing workflow
-- Validation
-- Batch editing
-- Import / Merge
-- Mod Profiles
-- Localization support
-- Documentation complete
+- Change Summary window
+- Live modification review
+- Original / Current value comparison
+- Navigation back to modified properties
+- Snapshot-based summary architecture
+- Reuse of existing modification tracking
 
 ---
 
 # Current Workflow
 
 ```text
-Open
-
-↓
-
+Open Project
+        │
+        ▼
 Find Anything
-
-↓
-
-Edit
-
-↓
-
+        │
+        ▼
+Edit Properties
+        │
+        ▼
 Track Changes
-
-↓
-
+        │
+        ▼
 Undo / Redo
-
-↓
-
+        │
+        ▼
+Review Change Summary
+        │
+        ▼
 Save
-
-↓
-
+        │
+        ▼
 Package
-
-↓
-
+        │
+        ▼
 Play
 ```
 
-This workflow has been verified through live gameplay testing.
+This workflow has been verified through successful in-game testing.
 
 ---
 
 # Current Capabilities
-
-The editor currently supports:
 
 ## Navigation
 
@@ -221,10 +178,9 @@ The editor currently supports:
 
 ## Editing
 
-- Edit gameplay properties
-- Type-aware editors
+- Intelligent property editors
 - Reference-aware dropdowns
-- Validation
+- Validation framework
 - RootDocument synchronization
 - Save edited CDB files
 
@@ -233,15 +189,78 @@ The editor currently supports:
 - Property tracking
 - Project tracking
 - Reset Property
-- Modified indicators
-- Window title dirty indicator
-- Modification status
-- Unlimited Undo
-- Unlimited Redo
+- Dirty-state indicators
+- Unlimited Undo / Redo
+- Session editing history
+
+## Change Review
+
+- Live Change Summary
+- Original vs Current values
+- Category grouping
+- Navigation to modified properties
 
 ## Verification
 
-- Successful in-game gameplay verification
+Successfully verified inside Wartales.
+
+---
+
+# Roadmap
+
+## Next Milestone
+
+### Mod Profiles & Change Migration
+
+Primary goals
+
+- Save reusable modification profiles
+- Preserve edits across game updates
+- Import changes into newer game data
+- Merge preview
+- Intelligent change matching
+
+---
+
+## Following Milestone
+
+### Validation Framework
+
+Primary goals
+
+- Missing reference detection
+- Invalid reference detection
+- Duplicate detection
+- Required property validation
+- Validation reports
+
+---
+
+## Future Milestone
+
+### Content Creation Tools
+
+Primary goals
+
+- Camp structure creation
+- Camp anvil support
+- Additional game object creation
+- Expansion-friendly editing
+
+---
+
+## Future Milestone
+
+### UI Modernization
+
+Primary goals
+
+- Command area redesign
+- Improved workflow
+- Larger action buttons
+- Layout refinement
+- Visual polish
+- Future icon support
 
 ---
 
@@ -249,90 +268,57 @@ The editor currently supports:
 
 ## Priority 1
 
-Change Summary
-
-Focus:
-
-- Summarize edits
-- Review changes
-- Navigation from summary
+Mod Profiles & Change Migration
 
 ---
 
 ## Priority 2
 
-Workflow Improvements
-
-- QuickBMS integration
-- Recent Files
-- Save & Exit
-- Backup on Save
+Validation Framework
 
 ---
 
 ## Priority 3
 
-Advanced Editing
-
-- Batch editing
-- Import / Merge
-- Mod Profiles
+Content Creation Tools
 
 ---
 
 ## Priority 4
 
-Quality of Life
-
-- Property descriptions
-- Developer mode
-- Better diagnostics
-- Better navigation
+UI Modernization
 
 ---
 
-# Backlog Highlights
-
-High Priority
-
-- Change Summary
-- Batch Editing
-- Import / Merge
-
-Medium Priority
-
-- QuickBMS integration
-- Mod Profiles
-- Property descriptions
+# Known Minor Issues
 
 Low Priority
 
-- Preserve text caret position during Undo/Redo in text editors
-- Developer mode
-- Performance diagnostics
-
-Future Ideas
-
-- Compare CDB files
-- Plugin architecture
-- Rule-based validation
-- Advanced diagnostics
+- Programmatic Undo/Redo may reposition the caret within certain WPF text editors.
+- Does not affect data integrity.
+- Deferred until the UI Modernization milestone.
 
 ---
 
 # Most Recent Accomplishment
 
-Completed **Safe Editing**.
+Completed **Version 0.5.0 – Change Summary**.
 
-The editor now supports:
+The editor now provides a complete workflow for:
 
-- Property modification tracking
-- Project dirty-state tracking
-- Reset Property
-- Unlimited Undo/Redo
-- Reusable editing history infrastructure
+- Editing
+- Tracking changes
+- Reviewing modifications
+- Navigating directly to modified properties
+- Saving with confidence
 
-This establishes the foundation for all future editing workflows.
+The editing architecture now provides the foundation for future:
+
+- Batch Editing
+- Import / Merge
+- Validation
+- Mod Profiles
+- Content Creation Tools
 
 ---
 
@@ -340,13 +326,12 @@ This establishes the foundation for all future editing workflows.
 
 This document serves as the project's executive overview.
 
-Detailed implementation information belongs in:
+Implementation details belong in:
 
 - CurrentTask.md
 - DevelopmentJournal.md
 - Architecture.md
 - KnowledgeBase.md
-- Roadmap.md
 
 The Dashboard should always answer one question:
 

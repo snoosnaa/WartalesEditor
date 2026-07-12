@@ -1,6 +1,6 @@
 ﻿# Architecture
 
-**Version:** 0.5
+**Version:** 0.6
 **Status:** Active
 **Last Updated:** 2026-07-12
 **Applies To:** Entire Project
@@ -20,7 +20,7 @@ The primary architectural goals are:
 - Build reusable editing infrastructure before implementing advanced features.
 - Favor extensible services over feature-specific implementations.
 
-The editor has evolved beyond a simple property editor into a modular editing platform that supports intelligent editing, safe editing, and reusable editing history.
+The editor has evolved beyond a simple property editor into a modular editing platform supporting intelligent editing, safe editing, undo/redo, and live change review.
 
 ---
 
@@ -59,6 +59,8 @@ Supporting models:
 SearchResultModel
 ReferenceValueModel
 PropertyValueChangedEventArgs
+ChangeSummaryItemModel
+PropertyEditAction
 ```
 
 The internal model names intentionally mirror the Wartales data structure while the UI presents gameplay-oriented terminology.
@@ -109,7 +111,7 @@ SelectedEntry
 SelectedProperty
 ```
 
-Search is treated as a navigation system rather than a filtering system.
+Search is treated as navigation rather than filtering.
 
 ---
 
@@ -145,7 +147,7 @@ Modified CDB
 
 The JSON document is modified directly.
 
-No intermediate data model is reconstructed.
+No intermediate object graph is reconstructed.
 
 ---
 
@@ -173,11 +175,11 @@ MainViewModel
         └── ModifiedProperties
 ```
 
-Property models own modification detection.
+PropertyModel owns modification detection.
 
-The ViewModel owns application state.
+MainViewModel owns application state.
 
-This keeps editing logic independent from presentation.
+Presentation remains independent of modification logic.
 
 ---
 
@@ -208,11 +210,88 @@ PropertyEditAction
         └── Redo()
 ```
 
-The history service records every property edit while remaining independent from the user interface.
+History recording is intentionally independent of editing logic.
 
-History actions operate directly on PropertyModel rather than UI controls.
+Undo/Redo operates directly on PropertyModel rather than user interface controls.
 
-This architecture is reusable for future editing features.
+---
+
+# Change Summary Architecture
+
+The Change Summary does **not** maintain its own change-tracking system.
+
+Instead, it consumes the existing modification state.
+
+```
+PropertyModel
+
+        │
+
+IsModified
+
+        │
+
+        ▼
+
+MainViewModel
+
+        │
+
+Build Snapshot
+
+        │
+
+        ▼
+
+ChangeSummaryItemModel
+
+        │
+
+        ▼
+
+ChangeSummaryViewModel
+
+        │
+
+        ▼
+
+ChangeSummaryWindow
+```
+
+The summary is rebuilt from the current project state whenever modification state changes.
+
+This guarantees that the summary always reflects the current editor state rather than the editing history.
+
+---
+
+# Architectural Principle
+
+## Single Source of Truth
+
+Modification state exists in exactly one place:
+
+```
+PropertyModel.IsModified
+```
+
+Every feature that answers:
+
+> "What is currently different?"
+
+must consume the existing modification state.
+
+Future features should **not** introduce parallel change-tracking systems.
+
+Examples include:
+
+- Change Summary
+- Batch Editing
+- Import / Merge preview
+- Validation reports
+- Change Export
+- Modified-only filtering
+
+This keeps the architecture simple, consistent, and reliable.
 
 ---
 
@@ -258,12 +337,8 @@ Owns:
 Stores:
 
 - DisplayName
+- Name
 - Id
-
-Future responsibilities:
-
-- Validation summary
-- Change summary
 
 ---
 
@@ -281,8 +356,25 @@ Current responsibilities:
 - Validation
 - Raising modification events
 - Raising value-change events
+- Display-ready value formatting
 
 PropertyModel intentionally owns editing behavior rather than UI behavior.
+
+---
+
+## ChangeSummaryItemModel
+
+Represents one modified property.
+
+Contains:
+
+- Category
+- Setting
+- Property
+- Original Value
+- Current Value
+
+Instances are immutable snapshots created from the current project state.
 
 ---
 
@@ -309,7 +401,7 @@ Carries:
 - Previous value
 - New value
 
-Allows editing history to remain independent from PropertyModel.
+Allows EditHistoryService to remain independent from PropertyModel.
 
 ---
 
@@ -348,8 +440,6 @@ Responsible for:
 - Localized name lookup
 - Future language support
 
-Remains language independent.
-
 ---
 
 ## ReferenceDataService
@@ -372,32 +462,45 @@ Responsible for:
 - Session history
 - History notifications
 
-Contains no UI logic.
-
-Future features such as Batch Editing and Import/Merge will reuse this service.
+Future editing features will continue reusing this service.
 
 ---
 
 # ViewModels
 
-MainViewModel coordinates:
+## MainViewModel
+
+Coordinates:
 
 - Project state
 - Selection
 - Search
 - Navigation
 - Modification tracking
-- Undo/Redo
+- Undo / Redo
+- Change Summary snapshots
 - Commands
 - Status reporting
 
-Business logic remains inside Models and Services whenever practical.
+---
+
+## ChangeSummaryViewModel
+
+Responsible for:
+
+- Presenting Change Summary items
+- Category grouping
+- Selection
+- Navigation commands
+- Live refresh
+
+Contains presentation logic only.
 
 ---
 
 # User Interface
 
-Current layout:
+Current workflow:
 
 ```
 Toolbar
@@ -427,7 +530,7 @@ Properties
 Status Bar
 ```
 
-The interface intentionally exposes gameplay concepts while hiding implementation details.
+The Change Summary window is modeless and remains synchronized with the editor.
 
 ---
 
@@ -441,7 +544,7 @@ The editor exists to improve the gameplay modding workflow.
 
 ## Preserve Original Data
 
-Modify the existing JSON document whenever possible.
+Modify the existing JSON document whenever practical.
 
 Avoid rebuilding data structures.
 
@@ -458,15 +561,19 @@ Avoid rebuilding data structures.
 
 ## Infrastructure Before Features
 
-Whenever practical, reusable infrastructure should be implemented before feature-specific functionality.
+Reusable infrastructure should be implemented before feature-specific functionality whenever practical.
 
-This reduces future refactoring and keeps the architecture consistent.
+---
+
+## Single Source of Truth
+
+Every subsystem should consume existing application state rather than duplicate it.
 
 ---
 
 ## Documentation First
 
-Every completed milestone should include documentation updates before the associated Git commit.
+Every completed milestone includes documentation updates before the associated Git commit.
 
 ---
 
@@ -474,15 +581,16 @@ Every completed milestone should include documentation updates before the associ
 
 The core architecture is now considered stable.
 
-Current infrastructure already supports future implementation of:
+The existing infrastructure directly supports future implementation of:
 
-- Change Summary
 - Batch Editing
 - Import / Merge
+- Validation
 - Validation Summary
-- Property History
-- Modified-only filtering
-- Advanced Undo/Redo
 - Mod Profiles
+- Change Migration
+- Change Export
+- Modified-only filtering
+- Content Creation Tools
 
-Future milestones should primarily extend existing services rather than introducing parallel architectures.
+Future milestones should extend the existing architecture rather than introducing parallel systems.

@@ -139,46 +139,55 @@
         <ToolBar Grid.Row="0">
 
             <Button Name="OpenButton"
-                    Width="80"
-                    Margin="5"
-                    Command="{Binding OpenCommand}">
+            Width="80"
+            Margin="5"
+            Command="{Binding OpenCommand}">
                 Open
             </Button>
 
             <Button Name="SaveButton"
-                    Width="80"
-                    Margin="5"
-                    Command="{Binding SaveCommand}">
+            Width="80"
+            Margin="5"
+            Command="{Binding SaveCommand}">
                 Save
             </Button>
 
             <Separator/>
 
             <Button Name="UndoButton"
-                    Width="80"
-                    Margin="5"
-                    Focusable="False"
-                    Command="{Binding UndoCommand}"
-                    ToolTip="{Binding UndoDescription}">
+            Width="80"
+            Margin="5"
+            Focusable="False"
+            Command="{Binding UndoCommand}"
+            ToolTip="{Binding UndoDescription}">
                 Undo
             </Button>
 
             <Button Name="RedoButton"
-                    Width="80"
-                    Margin="5"
-                    Focusable="False"
-                    Command="{Binding RedoCommand}"
-                    ToolTip="{Binding RedoDescription}">
+            Width="80"
+            Margin="5"
+            Focusable="False"
+            Command="{Binding RedoCommand}"
+            ToolTip="{Binding RedoDescription}">
                 Redo
             </Button>
 
             <Separator/>
 
             <Button Name="ResetPropertyButton"
-                    Width="120"
-                    Margin="5"
-                    Command="{Binding ResetSelectedPropertyCommand}">
+            Width="120"
+            Margin="5"
+            Command="{Binding ResetSelectedPropertyCommand}">
                 Reset Property
+            </Button>
+
+            <Separator/>
+
+            <Button Name="ChangeSummaryButton"
+            Width="130"
+            Margin="5"
+            Command="{Binding ShowChangeSummaryCommand}">
+                Change Summary
             </Button>
 
         </ToolBar>

@@ -1,6 +1,6 @@
 ﻿# Lessons Learned
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Last Updated:** 2026-07-12
 
 ---
@@ -25,6 +25,7 @@ Examples include:
 - SearchService
 - ReferenceDataService
 - EditHistoryService
+- ChangeSummaryViewModel
 
 Although infrastructure often feels slower to develop, it dramatically reduces future complexity.
 
@@ -57,7 +58,7 @@ Never begin the next milestone until the current milestone is complete.
 
 # Lesson 3 — Models Should Own Editing Behavior
 
-Originally PropertyModel represented only data.
+Originally `PropertyModel` represented only data.
 
 As development progressed it became responsible for:
 
@@ -66,7 +67,7 @@ As development progressed it became responsible for:
 - Original value capture
 - Modification tracking
 - Reset functionality
-- Value change notifications
+- Value-change notifications
 
 This greatly simplified the ViewModel.
 
@@ -109,6 +110,7 @@ Examples include:
 - Dropdown editors
 - Modification tracking
 - Undo / Redo
+- Change Summary
 
 Good editor design should guide users toward valid edits.
 
@@ -188,15 +190,75 @@ Good architecture continues paying dividends long after it is written.
 
 ---
 
+# Lesson 11 — A Single Source of Truth Simplifies Everything
+
+The Change Summary milestone reinforced an important architectural principle.
+
+Instead of introducing another change-tracking system, the Change Summary was built entirely from the existing modification state stored in `PropertyModel`.
+
+This avoided duplicated state, synchronization bugs, and unnecessary complexity.
+
+**Guideline**
+
+Whenever a feature needs to answer:
+
+> **"What is currently different?"**
+
+it should consume the existing modification state rather than maintaining its own copy.
+
+---
+
+# Lesson 12 — Runtime Testing Improves User Experience
+
+The Change Summary feature compiled successfully on the first implementation, but runtime testing revealed several usability improvements that static code review did not.
+
+Examples included:
+
+- Replacing internal IDs with localized display names.
+- Simplifying grouping from Category + Setting to Category only.
+- Returning focus to the main editor after navigation.
+- Correcting Close button behavior.
+- Improving overall presentation.
+
+None of these affected the underlying architecture, but they significantly improved the user experience.
+
+**Guideline**
+
+Treat runtime testing as a design activity, not just a bug-finding exercise.
+
+---
+
+# Lesson 13 — Separate Current State from History
+
+Undo history and modification tracking answer different questions.
+
+Edit history answers:
+
+> **"What happened?"**
+
+Modification tracking answers:
+
+> **"What is currently different?"**
+
+Keeping these responsibilities separate produced a much simpler architecture and made the Change Summary implementation straightforward.
+
+**Guideline**
+
+Avoid combining history systems with current-state systems unless there is a compelling architectural reason.
+
+---
+
 # Current Philosophy
 
-The project now follows several guiding principles:
+The project now follows these guiding principles:
 
 - Build infrastructure before features.
+- Maintain a single source of truth.
 - Keep MVVM boundaries clean.
 - Prefer reusable Services.
+- Keep models responsible for editing behavior.
 - Prevent mistakes whenever possible.
-- Verify every milestone.
+- Verify every milestone through runtime testing.
 - Keep documentation synchronized.
 - Favor maintainability over shortcuts.
 

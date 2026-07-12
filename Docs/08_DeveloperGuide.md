@@ -1,6 +1,6 @@
 ﻿# Developer Guide
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Last Updated:** 2026-07-12
 
 ---
@@ -31,6 +31,33 @@ Avoid implementing one-off solutions that duplicate existing systems.
 
 ---
 
+## Single Source of Truth
+
+Whenever a feature needs to answer:
+
+> **"What is currently different?"**
+
+it should consume the existing modification state rather than creating another tracking system.
+
+The current modification state lives in:
+
+```text
+PropertyModel.IsModified
+```
+
+This principle now applies to:
+
+- Change Summary
+- Future Batch Editing
+- Validation reports
+- Import / Merge preview
+- Change Export
+- Modified-only filtering
+
+Future development should continue extending this architecture rather than introducing parallel systems.
+
+---
+
 ## MVVM First
 
 Responsibilities are divided as follows.
@@ -52,12 +79,13 @@ Models should never depend on the user interface.
 
 Services own reusable business logic.
 
-Examples:
+Current services include:
 
 - JsonDataService
 - SearchService
 - LocalizationService
 - ReferenceDataService
+- PropertyDefinitionService
 - EditHistoryService
 
 If logic could reasonably be reused elsewhere, it probably belongs in a Service.
@@ -76,6 +104,12 @@ Responsibilities include:
 - Navigation
 - Interaction between Models and Services
 
+Presentation-specific logic belongs in dedicated ViewModels whenever practical.
+
+Example:
+
+- ChangeSummaryViewModel owns presentation and grouping logic for the Change Summary window.
+
 Business logic should remain outside the ViewModel whenever practical.
 
 ---
@@ -90,7 +124,7 @@ Avoid:
 - Game logic
 - Editing logic
 
-Code-behind should remain minimal.
+Code-behind should remain minimal and limited to view-specific interaction.
 
 ---
 
@@ -101,10 +135,11 @@ Every milestone follows the same workflow.
 1. Design the feature.
 2. Implement one logical milestone at a time.
 3. Keep every build compiling.
-4. Test thoroughly.
-5. Update documentation.
-6. Commit.
-7. Push.
+4. Runtime test completed functionality.
+5. Perform regression testing when shared infrastructure changes.
+6. Update documentation.
+7. Commit.
+8. Push.
 
 Avoid partially implemented features.
 
@@ -112,15 +147,23 @@ Avoid partially implemented features.
 
 # Code Generation Guidelines
 
-Small and medium files:
+## Small and Medium Files
 
 - Replace the complete file.
 
-Large files:
+## Large Files
 
-- Fully design the replacement before writing code.
-- Split across multiple responses only when necessary.
-- Never redesign while generating.
+Examples:
+
+- MainViewModel.cs
+- MainWindow.xaml
+
+Requirements:
+
+- Fully design the replacement before generating code.
+- Split across multiple responses only when required by response length.
+- Never redesign while generating a split replacement.
+- Keep the project compiling after every implementation stage.
 
 ---
 
@@ -149,28 +192,73 @@ Edit History
 
 ↓
 
+Change Summary
+
+↓
+
 Save
 ```
 
-Future editing features should extend this pipeline instead of replacing it.
+Future editing features should extend this pipeline rather than replacing it.
 
 ---
 
 # Modification Tracking
 
-Modification tracking is owned by PropertyModel.
+Modification tracking is owned by `PropertyModel`.
 
-Project-level modification state is coordinated by MainViewModel.
+Project-level modification state is coordinated by `MainViewModel`.
 
-Do not introduce duplicate change-tracking systems.
+Do **not** introduce duplicate change-tracking systems.
+
+Current modification state should always be treated as the authoritative source for editor state.
 
 ---
 
 # Undo / Redo
 
-Undo and Redo are implemented through EditHistoryService.
+Undo and Redo are implemented through `EditHistoryService`.
 
-Future editing features should integrate with EditHistoryService rather than implementing separate history mechanisms.
+Future editing features should integrate with `EditHistoryService` rather than implementing separate history mechanisms.
+
+Remember:
+
+- Edit history answers **"What happened?"**
+- Modification tracking answers **"What is currently different?"**
+
+These are complementary systems with different responsibilities.
+
+---
+
+# Change Summary
+
+The Change Summary is intentionally built from temporary snapshots of the current project state.
+
+It should never maintain its own persistent modification tracking.
+
+Current architecture:
+
+```text
+PropertyModel.IsModified
+
+↓
+
+MainViewModel
+
+↓
+
+ChangeSummaryItemModel
+
+↓
+
+ChangeSummaryViewModel
+
+↓
+
+ChangeSummaryWindow
+```
+
+Future enhancements should continue using snapshot generation rather than synchronized collections whenever practical.
 
 ---
 
@@ -187,7 +275,7 @@ Current editor types include:
 - Read Only
 - Complex Placeholder
 
-Future editors should integrate through the existing editor selection framework.
+Future editors should integrate through the existing editor-selection framework.
 
 ---
 
@@ -204,7 +292,7 @@ Before completing a milestone:
 - Update CurrentTask
 - Update Project Snapshot
 
-Additional documents should be updated whenever they become outdated.
+Update additional documentation whenever implementation changes make it outdated.
 
 ---
 
@@ -212,17 +300,18 @@ Additional documents should be updated whenever they become outdated.
 
 Every completed feature should be verified.
 
-Typical workflow:
+Standard workflow:
 
+```text
 Build
 
 ↓
 
-Test
+Runtime Test
 
 ↓
 
-Verify
+Regression Test
 
 ↓
 
@@ -231,8 +320,11 @@ Document
 ↓
 
 Commit
+```
 
 Regression testing should be performed whenever shared infrastructure changes.
+
+Features are not considered complete until runtime verification succeeds.
 
 ---
 
@@ -241,17 +333,20 @@ Regression testing should be performed whenever shared infrastructure changes.
 Always:
 
 - Follow MVVM.
-- Prefer small focused classes.
+- Prefer small, focused classes.
 - Favor reusable Services.
-- Keep builds compiling.
+- Keep every build compiling.
 - Prefer extensible solutions.
-- Minimize code duplication.
+- Minimize duplication.
+- Reuse existing infrastructure whenever possible.
 
 Avoid:
 
 - Business logic in Views.
+- Duplicate change-tracking systems.
+- Duplicate editing infrastructure.
 - Hardcoded gameplay data whenever practical.
-- Duplicate infrastructure.
+- Reconstructing project files from memory.
 
 ---
 
@@ -265,7 +360,9 @@ When continuing development:
 - Implement one milestone at a time.
 - Prefer complete file replacements whenever practical.
 - Split only large files when required.
-- Maintain documentation before commits.
+- Update documentation before major commits.
+- Build after every logical implementation step.
+- Runtime test completed behavior before considering a milestone complete.
 
 ---
 
@@ -273,4 +370,4 @@ When continuing development:
 
 The objective is not simply to build an editor.
 
-The objective is to build a maintainable editing platform that can continue evolving without requiring major architectural redesign.
+The objective is to build a maintainable editing platform that can continue evolving without major architectural redesign while remaining safe, extensible, and pleasant to use.

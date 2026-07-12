@@ -3,10 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
 using WartalesEditor.Services;
+using WartalesEditor.Views;
 
 namespace WartalesEditor.ViewModels;
 
@@ -21,6 +24,10 @@ public class MainViewModel : ObservableObject
         ReferenceDataService.Instance;
 
     private readonly HashSet<PropertyModel> trackedProperties = new();
+
+    private ChangeSummaryWindow? changeSummaryWindow;
+
+    private ChangeSummaryViewModel? changeSummaryViewModel;
 
     private ProjectModel? project;
 
@@ -373,6 +380,8 @@ public class MainViewModel : ObservableObject
 
     public ICommand RedoCommand { get; }
 
+    public ICommand ShowChangeSummaryCommand { get; }
+
     public MainViewModel()
     {
         editHistoryService.HistoryChanged +=
@@ -419,6 +428,7 @@ public class MainViewModel : ObservableObject
             }
 
             RefreshSearchResults();
+            RefreshChangeSummaryViewModel();
 
             Status =
                 $"Loaded: " +
@@ -484,6 +494,10 @@ public class MainViewModel : ObservableObject
         RedoCommand = new RelayCommand(
             _ => Redo(),
             _ => CanRedo);
+
+        ShowChangeSummaryCommand = new RelayCommand(
+            _ => ShowChangeSummary(),
+            _ => Project != null);
     }
 
     private void StartTrackingProjectProperties()
@@ -538,6 +552,8 @@ public class MainViewModel : ObservableObject
             property,
             e.PreviousValue,
             e.NewValue);
+
+        RefreshChangeSummaryViewModel();
     }
 
     private void OnPropertyModifiedChanged(
@@ -598,6 +614,8 @@ public class MainViewModel : ObservableObject
             Project.IsModified = projectIsModified;
         }
 
+        RefreshChangeSummaryViewModel();
+
         OnPropertyChanged(nameof(HasModifications));
         OnPropertyChanged(nameof(ModificationStatus));
         OnPropertyChanged(nameof(WindowTitle));
@@ -605,6 +623,158 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(CanResetProperty));
 
         CommandManager.InvalidateRequerySuggested();
+    }
+
+    private IReadOnlyList<ChangeSummaryItemModel>
+        BuildChangeSummaryItems()
+    {
+        List<ChangeSummaryItemModel> items = new();
+
+        if (Project == null)
+            return items;
+
+        foreach (SheetModel category in Project.Sheets)
+        {
+            foreach (EntryModel setting in category.Entries)
+            {
+                string settingName =
+                    GetChangeSummarySettingName(setting);
+
+                foreach (PropertyModel property in setting.Properties)
+                {
+                    if (!property.IsModified)
+                        continue;
+
+                    items.Add(
+                        new ChangeSummaryItemModel(
+                            category,
+                            setting,
+                            property,
+                            settingName,
+                            property.OriginalDisplayValue,
+                            property.CurrentDisplayValue));
+                }
+            }
+        }
+
+        return items;
+    }
+
+    private string GetChangeSummarySettingName(
+        EntryModel setting)
+    {
+        string localizedName =
+            localizationService.GetLocalizedName(
+                setting.DisplayName)
+            ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(localizedName))
+            return localizedName;
+
+        if (!string.IsNullOrWhiteSpace(setting.DisplayName))
+            return setting.DisplayName;
+
+        if (!string.IsNullOrWhiteSpace(setting.Name))
+            return setting.Name;
+
+        return setting.Id;
+    }
+
+    private void RefreshChangeSummaryViewModel()
+    {
+        if (changeSummaryViewModel == null)
+            return;
+
+        changeSummaryViewModel.Refresh(
+            BuildChangeSummaryItems());
+    }
+
+    private void ShowChangeSummary()
+    {
+        if (Project == null)
+            return;
+
+        if (changeSummaryWindow != null)
+        {
+            if (changeSummaryWindow.WindowState ==
+                WindowState.Minimized)
+            {
+                changeSummaryWindow.WindowState =
+                    WindowState.Normal;
+            }
+
+            changeSummaryWindow.Activate();
+            changeSummaryWindow.Focus();
+            return;
+        }
+
+        changeSummaryViewModel =
+            new ChangeSummaryViewModel(
+                BuildChangeSummaryItems(),
+                NavigateToChangeSummaryItem);
+
+        changeSummaryWindow =
+            new ChangeSummaryWindow
+            {
+                DataContext = changeSummaryViewModel
+            };
+
+        changeSummaryWindow.Closed +=
+            OnChangeSummaryWindowClosed;
+
+        changeSummaryWindow.Show();
+        changeSummaryWindow.Activate();
+    }
+
+    private void OnChangeSummaryWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (changeSummaryWindow != null)
+        {
+            changeSummaryWindow.Closed -=
+                OnChangeSummaryWindowClosed;
+        }
+
+        changeSummaryWindow = null;
+        changeSummaryViewModel = null;
+    }
+
+    private void NavigateToChangeSummaryItem(
+        ChangeSummaryItemModel item)
+    {
+        SelectedSheet = item.Category;
+
+        OnPropertyChanged(nameof(Entries));
+
+        SelectedEntry = item.Setting;
+        SelectedProperty = item.Property;
+
+        Status =
+            $"Selected: {item.CategoryName} " +
+            $"→ {item.SettingName} " +
+            $"→ {item.PropertyName}";
+
+        Window? mainWindow =
+            Application.Current.MainWindow;
+
+        if (mainWindow == null)
+            return;
+
+        mainWindow.Dispatcher.BeginInvoke(
+            DispatcherPriority.ApplicationIdle,
+            new Action(() =>
+            {
+                if (mainWindow.WindowState ==
+                    WindowState.Minimized)
+                {
+                    mainWindow.WindowState =
+                        WindowState.Normal;
+                }
+
+                mainWindow.Activate();
+                mainWindow.Focus();
+            }));
     }
 
     private IReadOnlyList<PropertyModel>
