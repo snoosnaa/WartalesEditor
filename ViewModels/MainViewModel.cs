@@ -1,13 +1,12 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
+using WartalesEditor.Models.Snapshots;
 using WartalesEditor.Services;
 using WartalesEditor.Views;
 
@@ -15,15 +14,39 @@ namespace WartalesEditor.ViewModels;
 
 public class MainViewModel : ObservableObject
 {
-    private readonly JsonDataService jsonDataService = new();
-    private readonly SearchService searchService = new();
-    private readonly LocalizationService localizationService = new();
-    private readonly EditHistoryService editHistoryService = new();
+    private const string ProjectOpenFilter =
+        "CDB Files (*.cdb)|*.cdb|" +
+        "JSON Files (*.json)|*.json|" +
+        "All Files (*.*)|*.*";
 
-    private readonly ReferenceDataService referenceDataService =
-        ReferenceDataService.Instance;
+    private const string ProjectSaveFilter =
+        "CDB Files (*.cdb)|*.cdb|" +
+        "All Files (*.*)|*.*";
 
-    private readonly HashSet<PropertyModel> trackedProperties = new();
+    private readonly JsonDataService jsonDataService;
+
+    private readonly SearchService searchService;
+
+    private readonly LocalizationService localizationService;
+
+    private readonly EditHistoryService editHistoryService;
+
+    private readonly ModificationSnapshotService
+        modificationSnapshotService;
+
+    private readonly ModificationSnapshotWorkflowService
+        modificationSnapshotWorkflowService;
+
+    private readonly ChangeSummaryService changeSummaryService;
+
+    private readonly ReferenceDataService referenceDataService;
+
+    private readonly IFileDialogService fileDialogService;
+
+    private readonly IMessageDialogService messageDialogService;
+
+    private readonly HashSet<PropertyModel> trackedProperties =
+        new();
 
     private ChangeSummaryWindow? changeSummaryWindow;
 
@@ -36,33 +59,41 @@ public class MainViewModel : ObservableObject
         get => project;
         set
         {
-            if (ReferenceEquals(project, value))
+            if (ReferenceEquals(
+                    project,
+                    value))
+            {
                 return;
+            }
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
 
-            if (SetProperty(ref project, value))
+            if (!SetProperty(
+                    ref project,
+                    value))
             {
-                SelectedSheet = null;
-                SelectedEntry = null;
-                SelectedProperty = null;
-
-                SearchResults.Clear();
-
-                StartTrackingProjectProperties();
-
-                OnPropertyChanged(nameof(Sheets));
-                OnPropertyChanged(nameof(Entries));
-                OnPropertyChanged(nameof(Properties));
-                OnPropertyChanged(nameof(FindAnythingHeader));
-
-                RefreshModificationState();
-                RefreshSearchResults();
-                RefreshHistoryState();
-
-                CommandManager.InvalidateRequerySuggested();
+                return;
             }
+
+            SelectedSheet = null;
+            SelectedEntry = null;
+            SelectedProperty = null;
+
+            SearchResults.Clear();
+
+            StartTrackingProjectProperties();
+
+            OnPropertyChanged(nameof(Sheets));
+            OnPropertyChanged(nameof(Entries));
+            OnPropertyChanged(nameof(Properties));
+            OnPropertyChanged(
+                nameof(FindAnythingHeader));
+
+            RefreshModificationState();
+            RefreshSearchResults();
+            RefreshHistoryState();
+            RefreshCommandStates();
         }
     }
 
@@ -71,25 +102,31 @@ public class MainViewModel : ObservableObject
         get
         {
             if (Project == null)
+            {
                 return new ObservableCollection<SheetModel>();
+            }
 
-            IEnumerable<SheetModel> visibleSheets = Project.Sheets;
+            IEnumerable<SheetModel> visibleSheets =
+                Project.Sheets;
 
             if (!ShowEmptyCategories)
             {
                 visibleSheets =
                     visibleSheets.Where(
-                        sheet => sheet.Entries.Count > 0);
+                        sheet =>
+                            sheet.Entries.Count > 0);
             }
 
             if (SearchScope == "Categories" &&
-                !string.IsNullOrWhiteSpace(SearchText))
+                !string.IsNullOrWhiteSpace(
+                    SearchText))
             {
                 visibleSheets =
                     visibleSheets.Where(sheet =>
                         sheet.Name.Contains(
                             SearchText,
-                            StringComparison.OrdinalIgnoreCase));
+                            StringComparison
+                                .OrdinalIgnoreCase));
             }
 
             return new ObservableCollection<SheetModel>(
@@ -104,7 +141,9 @@ public class MainViewModel : ObservableObject
         get => showEmptyCategories;
         set
         {
-            if (SetProperty(ref showEmptyCategories, value))
+            if (SetProperty(
+                    ref showEmptyCategories,
+                    value))
             {
                 OnPropertyChanged(nameof(Sheets));
             }
@@ -118,12 +157,17 @@ public class MainViewModel : ObservableObject
         get => selectedSheet;
         set
         {
-            if (SetProperty(ref selectedSheet, value))
+            if (!SetProperty(
+                    ref selectedSheet,
+                    value))
             {
-                SelectedEntry = null;
-
-                OnPropertyChanged(nameof(Entries));
+                return;
             }
+
+            SelectedEntry = null;
+
+            OnPropertyChanged(nameof(Entries));
+            RefreshCommandStates();
         }
     }
 
@@ -132,10 +176,13 @@ public class MainViewModel : ObservableObject
         get
         {
             if (SelectedSheet == null)
+            {
                 return new ObservableCollection<EntryModel>();
+            }
 
             if (SearchScope != "Settings" ||
-                string.IsNullOrWhiteSpace(SearchText))
+                string.IsNullOrWhiteSpace(
+                    SearchText))
             {
                 return SelectedSheet.Entries;
             }
@@ -144,17 +191,20 @@ public class MainViewModel : ObservableObject
                 SelectedSheet.Entries.Where(entry =>
                 {
                     string localizedName =
-                        localizationService.GetLocalizedName(
-                            entry.DisplayName)
+                        localizationService
+                            .GetLocalizedName(
+                                entry.DisplayName)
                         ?? string.Empty;
 
                     return entry.DisplayName.Contains(
                                SearchText,
-                               StringComparison.OrdinalIgnoreCase)
+                               StringComparison
+                                   .OrdinalIgnoreCase)
                            ||
                            localizedName.Contains(
                                SearchText,
-                               StringComparison.OrdinalIgnoreCase);
+                               StringComparison
+                                   .OrdinalIgnoreCase);
                 }));
         }
     }
@@ -166,15 +216,20 @@ public class MainViewModel : ObservableObject
         get => selectedEntry;
         set
         {
-            if (SetProperty(ref selectedEntry, value))
+            if (!SetProperty(
+                    ref selectedEntry,
+                    value))
             {
-                SelectedProperty = null;
-
-                OnPropertyChanged(nameof(Properties));
-                OnPropertyChanged(nameof(CanResetProperty));
-
-                CommandManager.InvalidateRequerySuggested();
+                return;
             }
+
+            SelectedProperty = null;
+
+            OnPropertyChanged(nameof(Properties));
+            OnPropertyChanged(
+                nameof(CanResetProperty));
+
+            RefreshCommandStates();
         }
     }
 
@@ -189,23 +244,32 @@ public class MainViewModel : ObservableObject
         get => selectedProperty;
         set
         {
-            if (SetProperty(ref selectedProperty, value))
+            if (!SetProperty(
+                    ref selectedProperty,
+                    value))
             {
-                OnPropertyChanged(nameof(CanResetProperty));
-
-                CommandManager.InvalidateRequerySuggested();
+                return;
             }
+
+            OnPropertyChanged(
+                nameof(CanResetProperty));
+
+            RefreshCommandStates();
         }
     }
 
     public bool CanResetProperty =>
         GetResetTargetProperty() != null;
 
-    public ObservableCollection<SearchResultModel> SearchResults { get; }
-        = new();
+    public ObservableCollection<SearchResultModel>
+        SearchResults
+    {
+        get;
+    } = new();
 
     public bool HasSearchText =>
-        !string.IsNullOrWhiteSpace(SearchText);
+        !string.IsNullOrWhiteSpace(
+            SearchText);
 
     public string FindAnythingHeader =>
         $"Find Anything ({SearchResults.Count})";
@@ -216,7 +280,9 @@ public class MainViewModel : ObservableObject
     public string LocalizationStatus
     {
         get => localizationStatus;
-        set => SetProperty(ref localizationStatus, value);
+        set => SetProperty(
+            ref localizationStatus,
+            value);
     }
 
     private SearchResultModel? selectedSearchResult;
@@ -226,67 +292,93 @@ public class MainViewModel : ObservableObject
         get => selectedSearchResult;
         set
         {
-            if (SetProperty(ref selectedSearchResult, value) &&
-                value != null)
+            if (!SetProperty(
+                    ref selectedSearchResult,
+                    value))
+            {
+                return;
+            }
+
+            RefreshCommandStates();
+
+            if (value != null)
             {
                 NavigateToSearchResult(value);
             }
         }
     }
 
-    private string searchText = string.Empty;
+    private string searchText =
+        string.Empty;
 
     public string SearchText
     {
         get => searchText;
         set
         {
-            if (SetProperty(ref searchText, value))
+            if (!SetProperty(
+                    ref searchText,
+                    value))
             {
-                OnPropertyChanged(nameof(Sheets));
-                OnPropertyChanged(nameof(Entries));
-                OnPropertyChanged(nameof(HasSearchText));
-
-                RefreshSearchResults();
+                return;
             }
+
+            OnPropertyChanged(nameof(Sheets));
+            OnPropertyChanged(nameof(Entries));
+            OnPropertyChanged(
+                nameof(HasSearchText));
+
+            RefreshSearchResults();
         }
     }
 
-    private string searchScope = "Settings";
+    private string searchScope =
+        "Settings";
 
     public string SearchScope
     {
         get => searchScope;
         set
         {
-            if (SetProperty(ref searchScope, value))
+            if (!SetProperty(
+                    ref searchScope,
+                    value))
             {
-                OnPropertyChanged(nameof(Sheets));
-                OnPropertyChanged(nameof(Entries));
+                return;
             }
+
+            OnPropertyChanged(nameof(Sheets));
+            OnPropertyChanged(nameof(Entries));
         }
     }
 
-    private string currentFile = string.Empty;
+    private string currentFile =
+        string.Empty;
 
     public string CurrentFile
     {
         get => currentFile;
         set
         {
-            if (SetProperty(ref currentFile, value))
+            if (SetProperty(
+                    ref currentFile,
+                    value))
             {
-                OnPropertyChanged(nameof(WindowTitle));
+                OnPropertyChanged(
+                    nameof(WindowTitle));
             }
         }
     }
 
-    private string status = "Ready";
+    private string status =
+        "Ready";
 
     public string Status
     {
         get => status;
-        set => SetProperty(ref status, value);
+        set => SetProperty(
+            ref status,
+            value);
     }
 
     private int modifiedPropertyCount;
@@ -296,15 +388,24 @@ public class MainViewModel : ObservableObject
         get => modifiedPropertyCount;
         private set
         {
-            if (SetProperty(
+            if (!SetProperty(
                     ref modifiedPropertyCount,
                     value))
             {
-                OnPropertyChanged(nameof(HasModifications));
-                OnPropertyChanged(nameof(ModificationStatus));
-                OnPropertyChanged(nameof(WindowTitle));
-                OnPropertyChanged(nameof(CanResetProperty));
+                return;
             }
+
+            OnPropertyChanged(
+                nameof(HasModifications));
+
+            OnPropertyChanged(
+                nameof(ModificationStatus));
+
+            OnPropertyChanged(
+                nameof(WindowTitle));
+
+            OnPropertyChanged(
+                nameof(CanResetProperty));
         }
     }
 
@@ -324,7 +425,8 @@ public class MainViewModel : ObservableObject
                     : "properties";
 
             return
-                $"{ModifiedPropertyCount:N0} modified {propertyText}";
+                $"{ModifiedPropertyCount:N0} " +
+                $"modified {propertyText}";
         }
     }
 
@@ -333,9 +435,11 @@ public class MainViewModel : ObservableObject
         get
         {
             string fileName =
-                string.IsNullOrWhiteSpace(CurrentFile)
+                string.IsNullOrWhiteSpace(
+                    CurrentFile)
                     ? "No file loaded"
-                    : System.IO.Path.GetFileName(CurrentFile);
+                    : System.IO.Path.GetFileName(
+                        CurrentFile);
 
             string modifiedMarker =
                 HasModifications
@@ -343,14 +447,17 @@ public class MainViewModel : ObservableObject
                     : string.Empty;
 
             return
-                $"Wartales Editor - {fileName}{modifiedMarker}";
+                $"Wartales Editor - " +
+                $"{fileName}{modifiedMarker}";
         }
     }
 
-    public IReadOnlyList<PropertyModel> ModifiedProperties =>
-        trackedProperties
-            .Where(property => property.IsModified)
-            .ToList();
+    public IReadOnlyList<PropertyModel>
+        ModifiedProperties =>
+            trackedProperties
+                .Where(property =>
+                    property.IsModified)
+                .ToList();
 
     public bool CanUndo =>
         editHistoryService.CanUndo;
@@ -359,145 +466,243 @@ public class MainViewModel : ObservableObject
         editHistoryService.CanRedo;
 
     public string UndoDescription =>
-        editHistoryService.UndoDescription is string description
+        editHistoryService.UndoDescription
+            is string description
             ? $"Undo {description}"
             : "Nothing to undo";
 
     public string RedoDescription =>
-        editHistoryService.RedoDescription is string description
+        editHistoryService.RedoDescription
+            is string description
             ? $"Redo {description}"
             : "Nothing to redo";
 
-    public ICommand OpenCommand { get; }
+    public RelayCommand OpenCommand { get; }
 
-    public ICommand SaveCommand { get; }
+    public RelayCommand SaveCommand { get; }
 
-    public ICommand NavigateSearchResultCommand { get; }
-
-    public ICommand ResetSelectedPropertyCommand { get; }
-
-    public ICommand UndoCommand { get; }
-
-    public ICommand RedoCommand { get; }
-
-    public ICommand ShowChangeSummaryCommand { get; }
-
-    public MainViewModel()
+    public RelayCommand NavigateSearchResultCommand
     {
-        editHistoryService.HistoryChanged +=
+        get;
+    }
+
+    public RelayCommand ResetSelectedPropertyCommand
+    {
+        get;
+    }
+
+    public RelayCommand UndoCommand { get; }
+
+    public RelayCommand RedoCommand { get; }
+
+    public RelayCommand ShowChangeSummaryCommand
+    {
+        get;
+    }
+
+    public MainViewModel(
+        JsonDataService jsonDataService,
+        SearchService searchService,
+        LocalizationService localizationService,
+        EditHistoryService editHistoryService,
+        ModificationSnapshotService
+            modificationSnapshotService,
+        ModificationSnapshotWorkflowService
+            modificationSnapshotWorkflowService,
+        ChangeSummaryService changeSummaryService,
+        ReferenceDataService referenceDataService,
+        IFileDialogService fileDialogService,
+        IMessageDialogService messageDialogService)
+    {
+        this.jsonDataService =
+            jsonDataService
+            ?? throw new ArgumentNullException(
+                nameof(jsonDataService));
+
+        this.searchService =
+            searchService
+            ?? throw new ArgumentNullException(
+                nameof(searchService));
+
+        this.localizationService =
+            localizationService
+            ?? throw new ArgumentNullException(
+                nameof(localizationService));
+
+        this.editHistoryService =
+            editHistoryService
+            ?? throw new ArgumentNullException(
+                nameof(editHistoryService));
+
+        this.modificationSnapshotService =
+            modificationSnapshotService
+            ?? throw new ArgumentNullException(
+                nameof(modificationSnapshotService));
+
+        this.modificationSnapshotWorkflowService =
+            modificationSnapshotWorkflowService
+            ?? throw new ArgumentNullException(
+                nameof(
+                    modificationSnapshotWorkflowService));
+
+        this.changeSummaryService =
+            changeSummaryService
+            ?? throw new ArgumentNullException(
+                nameof(changeSummaryService));
+
+        this.referenceDataService =
+            referenceDataService
+            ?? throw new ArgumentNullException(
+                nameof(referenceDataService));
+
+        this.fileDialogService =
+            fileDialogService
+            ?? throw new ArgumentNullException(
+                nameof(fileDialogService));
+
+        this.messageDialogService =
+            messageDialogService
+            ?? throw new ArgumentNullException(
+                nameof(messageDialogService));
+
+        this.editHistoryService.HistoryChanged +=
             OnHistoryChanged;
 
-        OpenCommand = new RelayCommand(_ =>
-        {
-            OpenFileDialog dialog = new()
-            {
-                Filter =
-                    "CDB Files (*.cdb)|*.cdb|" +
-                    "JSON Files (*.json)|*.json|" +
-                    "All Files (*.*)|*.*"
-            };
+        OpenCommand =
+            new RelayCommand(
+                _ => OpenProject());
 
-            if (dialog.ShowDialog() != true)
-                return;
+        SaveCommand =
+            new RelayCommand(
+                _ => SaveProject(),
+                _ => Project != null);
 
-            ProjectModel loadedProject =
-                jsonDataService.LoadProject(dialog.FileName);
-
-            referenceDataService.Initialize(loadedProject);
-
-            CurrentFile = dialog.FileName;
-            Project = loadedProject;
-
-            string localizationFile =
-                System.IO.Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory,
-                    "export_en.xml");
-
-            if (System.IO.File.Exists(localizationFile))
-            {
-                localizationService.Load(localizationFile);
-
-                LocalizationStatus =
-                    $"Localization: English " +
-                    $"({localizationService.EntryCount:N0})";
-            }
-            else
-            {
-                LocalizationStatus =
-                    "Localization: English not found";
-            }
-
-            RefreshSearchResults();
-            RefreshChangeSummaryViewModel();
-
-            Status =
-                $"Loaded: " +
-                $"{System.IO.Path.GetFileName(CurrentFile)}";
-        });
-
-        SaveCommand = new RelayCommand(
-            _ =>
-            {
-                if (Project == null)
-                    return;
-
-                SaveFileDialog dialog = new()
+        NavigateSearchResultCommand =
+            new RelayCommand(
+                parameter =>
                 {
-                    Filter =
-                        "CDB Files (*.cdb)|*.cdb|" +
-                        "All Files (*.*)|*.*",
-                    FileName =
-                        string.IsNullOrWhiteSpace(CurrentFile)
-                            ? "data.cdb"
-                            : System.IO.Path.GetFileName(CurrentFile)
-                };
+                    SearchResultModel? result =
+                        parameter
+                            as SearchResultModel
+                        ?? SelectedSearchResult;
 
-                if (dialog.ShowDialog() != true)
-                    return;
+                    NavigateToSearchResult(result);
+                },
+                parameter =>
+                    parameter
+                        is SearchResultModel
+                    ||
+                    SelectedSearchResult != null);
 
-                jsonDataService.SaveProject(
-                    Project,
-                    dialog.FileName);
+        ResetSelectedPropertyCommand =
+            new RelayCommand(
+                _ => ResetSelectedProperty(),
+                _ => CanResetProperty);
 
-                Project.FileName = dialog.FileName;
-                CurrentFile = dialog.FileName;
+        UndoCommand =
+            new RelayCommand(
+                _ => Undo(),
+                _ => CanUndo);
 
-                RefreshModificationState();
+        RedoCommand =
+            new RelayCommand(
+                _ => Redo(),
+                _ => CanRedo);
 
-                Status =
-                    $"Saved: " +
-                    $"{System.IO.Path.GetFileName(dialog.FileName)}";
-            },
-            _ => Project != null);
+        ShowChangeSummaryCommand =
+            new RelayCommand(
+                _ => ShowChangeSummary(),
+                _ => Project != null);
+    }
 
-        NavigateSearchResultCommand = new RelayCommand(
-            parameter =>
-            {
-                SearchResultModel? result =
-                    parameter as SearchResultModel
-                    ?? SelectedSearchResult;
+    private void OpenProject()
+    {
+        string? fileName =
+            fileDialogService.ShowOpenFileDialog(
+                ProjectOpenFilter);
 
-                NavigateToSearchResult(result);
-            },
-            parameter =>
-                parameter is SearchResultModel ||
-                SelectedSearchResult != null);
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
 
-        ResetSelectedPropertyCommand = new RelayCommand(
-            _ => ResetSelectedProperty(),
-            _ => CanResetProperty);
+        ProjectModel loadedProject =
+            jsonDataService.LoadProject(
+                fileName);
 
-        UndoCommand = new RelayCommand(
-            _ => Undo(),
-            _ => CanUndo);
+        referenceDataService.Initialize(
+            loadedProject);
 
-        RedoCommand = new RelayCommand(
-            _ => Redo(),
-            _ => CanRedo);
+        CurrentFile =
+            fileName;
 
-        ShowChangeSummaryCommand = new RelayCommand(
-            _ => ShowChangeSummary(),
-            _ => Project != null);
+        Project =
+            loadedProject;
+
+        string localizationFile =
+            System.IO.Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "export_en.xml");
+
+        if (System.IO.File.Exists(
+                localizationFile))
+        {
+            localizationService.Load(
+                localizationFile);
+
+            LocalizationStatus =
+                $"Localization: English " +
+                $"({localizationService.EntryCount:N0})";
+        }
+        else
+        {
+            LocalizationStatus =
+                "Localization: English not found";
+        }
+
+        RefreshSearchResults();
+        RefreshChangeSummaryViewModel();
+        RefreshCommandStates();
+
+        Status =
+            $"Loaded: " +
+            $"{System.IO.Path.GetFileName(CurrentFile)}";
+    }
+
+    private void SaveProject()
+    {
+        if (Project == null)
+            return;
+
+        string initialFileName =
+            string.IsNullOrWhiteSpace(
+                CurrentFile)
+                ? "data.cdb"
+                : System.IO.Path.GetFileName(
+                    CurrentFile);
+
+        string? fileName =
+            fileDialogService.ShowSaveFileDialog(
+                ProjectSaveFilter,
+                initialFileName);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        jsonDataService.SaveProject(
+            Project,
+            fileName);
+
+        Project.FileName =
+            fileName;
+
+        CurrentFile =
+            fileName;
+
+        RefreshModificationState();
+        RefreshCommandStates();
+
+        Status =
+            $"Saved: " +
+            $"{System.IO.Path.GetFileName(fileName)}";
     }
 
     private void StartTrackingProjectProperties()
@@ -506,10 +711,14 @@ public class MainViewModel : ObservableObject
             return;
 
         foreach (PropertyModel property in
-                 EnumerateProjectProperties(Project))
+                 EnumerateProjectProperties(
+                     Project))
         {
-            if (!trackedProperties.Add(property))
+            if (!trackedProperties.Add(
+                    property))
+            {
                 continue;
+            }
 
             property.ModifiedChanged +=
                 OnPropertyModifiedChanged;
@@ -521,7 +730,8 @@ public class MainViewModel : ObservableObject
 
     private void StopTrackingProjectProperties()
     {
-        foreach (PropertyModel property in trackedProperties)
+        foreach (PropertyModel property in
+                 trackedProperties)
         {
             property.ModifiedChanged -=
                 OnPropertyModifiedChanged;
@@ -534,19 +744,25 @@ public class MainViewModel : ObservableObject
     }
 
     private static IEnumerable<PropertyModel>
-        EnumerateProjectProperties(ProjectModel project)
+        EnumerateProjectProperties(
+            ProjectModel project)
     {
         return project.Sheets
-            .SelectMany(sheet => sheet.Entries)
-            .SelectMany(entry => entry.Properties);
+            .SelectMany(sheet =>
+                sheet.Entries)
+            .SelectMany(entry =>
+                entry.Properties);
     }
 
     private void OnPropertyValueChanged(
         object? sender,
         PropertyValueChangedEventArgs e)
     {
-        if (sender is not PropertyModel property)
+        if (sender
+            is not PropertyModel property)
+        {
             return;
+        }
 
         editHistoryService.Record(
             property,
@@ -554,6 +770,7 @@ public class MainViewModel : ObservableObject
             e.NewValue);
 
         RefreshChangeSummaryViewModel();
+        RefreshCommandStates();
     }
 
     private void OnPropertyModifiedChanged(
@@ -562,22 +779,28 @@ public class MainViewModel : ObservableObject
     {
         RefreshModificationState();
 
-        if (sender is PropertyModel modifiedProperty &&
-            modifiedProperty.IsModified &&
+        if (sender
+                is PropertyModel modifiedProperty
+            &&
+            modifiedProperty.IsModified
+            &&
             SelectedProperty == null)
         {
-            IReadOnlyList<PropertyModel> modifiedProperties =
-                GetModifiedProperties();
+            IReadOnlyList<PropertyModel>
+                modifiedProperties =
+                    GetModifiedProperties();
 
             if (modifiedProperties.Count == 1)
             {
-                SelectedProperty = modifiedProperty;
+                SelectedProperty =
+                    modifiedProperty;
             }
         }
 
-        OnPropertyChanged(nameof(CanResetProperty));
+        OnPropertyChanged(
+            nameof(CanResetProperty));
 
-        CommandManager.InvalidateRequerySuggested();
+        RefreshCommandStates();
     }
 
     private void OnHistoryChanged(
@@ -591,93 +814,91 @@ public class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
-        OnPropertyChanged(nameof(UndoDescription));
-        OnPropertyChanged(nameof(RedoDescription));
 
-        CommandManager.InvalidateRequerySuggested();
+        OnPropertyChanged(
+            nameof(UndoDescription));
+
+        OnPropertyChanged(
+            nameof(RedoDescription));
+
+        RefreshCommandStates();
     }
 
     private void RefreshModificationState()
     {
         int modifiedCount =
             trackedProperties.Count(
-                property => property.IsModified);
+                property =>
+                    property.IsModified);
 
-        ModifiedPropertyCount = modifiedCount;
+        ModifiedPropertyCount =
+            modifiedCount;
 
         bool projectIsModified =
             modifiedCount > 0;
 
         if (Project != null &&
-            Project.IsModified != projectIsModified)
+            Project.IsModified
+                != projectIsModified)
         {
-            Project.IsModified = projectIsModified;
+            Project.IsModified =
+                projectIsModified;
         }
 
         RefreshChangeSummaryViewModel();
 
-        OnPropertyChanged(nameof(HasModifications));
-        OnPropertyChanged(nameof(ModificationStatus));
-        OnPropertyChanged(nameof(WindowTitle));
-        OnPropertyChanged(nameof(ModifiedProperties));
-        OnPropertyChanged(nameof(CanResetProperty));
+        OnPropertyChanged(
+            nameof(HasModifications));
 
-        CommandManager.InvalidateRequerySuggested();
+        OnPropertyChanged(
+            nameof(ModificationStatus));
+
+        OnPropertyChanged(
+            nameof(WindowTitle));
+
+        OnPropertyChanged(
+            nameof(ModifiedProperties));
+
+        OnPropertyChanged(
+            nameof(CanResetProperty));
+
+        RefreshCommandStates();
+    }
+
+    private void RefreshCommandStates()
+    {
+        SaveCommand?.NotifyCanExecuteChanged();
+
+        NavigateSearchResultCommand?
+            .NotifyCanExecuteChanged();
+
+        ResetSelectedPropertyCommand?
+            .NotifyCanExecuteChanged();
+
+        UndoCommand?.NotifyCanExecuteChanged();
+        RedoCommand?.NotifyCanExecuteChanged();
+
+        ShowChangeSummaryCommand?
+            .NotifyCanExecuteChanged();
     }
 
     private IReadOnlyList<ChangeSummaryItemModel>
         BuildChangeSummaryItems()
     {
-        List<ChangeSummaryItemModel> items = new();
-
         if (Project == null)
-            return items;
-
-        foreach (SheetModel category in Project.Sheets)
         {
-            foreach (EntryModel setting in category.Entries)
-            {
-                string settingName =
-                    GetChangeSummarySettingName(setting);
-
-                foreach (PropertyModel property in setting.Properties)
-                {
-                    if (!property.IsModified)
-                        continue;
-
-                    items.Add(
-                        new ChangeSummaryItemModel(
-                            category,
-                            setting,
-                            property,
-                            settingName,
-                            property.OriginalDisplayValue,
-                            property.CurrentDisplayValue));
-                }
-            }
+            return Array.Empty<
+                ChangeSummaryItemModel>();
         }
 
-        return items;
-    }
+        ModificationSnapshotModel snapshot =
+            modificationSnapshotService.CreateSnapshot(
+                Project);
 
-    private string GetChangeSummarySettingName(
-        EntryModel setting)
-    {
-        string localizedName =
-            localizationService.GetLocalizedName(
-                setting.DisplayName)
-            ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(localizedName))
-            return localizedName;
-
-        if (!string.IsNullOrWhiteSpace(setting.DisplayName))
-            return setting.DisplayName;
-
-        if (!string.IsNullOrWhiteSpace(setting.Name))
-            return setting.Name;
-
-        return setting.Id;
+        return changeSummaryService.BuildItems(
+            Project,
+            snapshot,
+            localizationService);
     }
 
     private void RefreshChangeSummaryViewModel()
@@ -696,8 +917,8 @@ public class MainViewModel : ObservableObject
 
         if (changeSummaryWindow != null)
         {
-            if (changeSummaryWindow.WindowState ==
-                WindowState.Minimized)
+            if (changeSummaryWindow.WindowState
+                == WindowState.Minimized)
             {
                 changeSummaryWindow.WindowState =
                     WindowState.Normal;
@@ -716,7 +937,8 @@ public class MainViewModel : ObservableObject
         changeSummaryWindow =
             new ChangeSummaryWindow
             {
-                DataContext = changeSummaryViewModel
+                DataContext =
+                    changeSummaryViewModel
             };
 
         changeSummaryWindow.Closed +=
@@ -743,12 +965,18 @@ public class MainViewModel : ObservableObject
     private void NavigateToChangeSummaryItem(
         ChangeSummaryItemModel item)
     {
-        SelectedSheet = item.Category;
+        SelectedSheet =
+            item.Category;
 
         OnPropertyChanged(nameof(Entries));
 
-        SelectedEntry = item.Setting;
-        SelectedProperty = item.Property;
+        SelectedEntry =
+            item.Setting;
+
+        SelectedProperty =
+            item.Property;
+
+        RefreshCommandStates();
 
         Status =
             $"Selected: {item.CategoryName} " +
@@ -765,8 +993,8 @@ public class MainViewModel : ObservableObject
             DispatcherPriority.ApplicationIdle,
             new Action(() =>
             {
-                if (mainWindow.WindowState ==
-                    WindowState.Minimized)
+                if (mainWindow.WindowState
+                    == WindowState.Minimized)
                 {
                     mainWindow.WindowState =
                         WindowState.Normal;
@@ -781,7 +1009,8 @@ public class MainViewModel : ObservableObject
         GetModifiedProperties()
     {
         return trackedProperties
-            .Where(property => property.IsModified)
+            .Where(property =>
+                property.IsModified)
             .ToList();
     }
 
@@ -792,8 +1021,9 @@ public class MainViewModel : ObservableObject
             return SelectedProperty;
         }
 
-        IReadOnlyList<PropertyModel> modifiedProperties =
-            GetModifiedProperties();
+        IReadOnlyList<PropertyModel>
+            modifiedProperties =
+                GetModifiedProperties();
 
         if (modifiedProperties.Count == 1)
         {
@@ -813,17 +1043,22 @@ public class MainViewModel : ObservableObject
             if (ModifiedPropertyCount > 1)
             {
                 Status =
-                    "Select a modified property before resetting.";
+                    "Select a modified property " +
+                    "before resetting.";
             }
 
             return;
         }
 
-        string propertyName = property.Name;
+        string propertyName =
+            property.Name;
 
         property.ResetToOriginal();
 
-        SelectedProperty = property;
+        SelectedProperty =
+            property;
+
+        RefreshCommandStates();
 
         Status =
             $"Reset property: {propertyName}";
@@ -838,6 +1073,8 @@ public class MainViewModel : ObservableObject
         if (!editHistoryService.Undo())
             return;
 
+        RefreshCommandStates();
+
         Status =
             $"Undid: {description}";
     }
@@ -850,6 +1087,8 @@ public class MainViewModel : ObservableObject
 
         if (!editHistoryService.Redo())
             return;
+
+        RefreshCommandStates();
 
         Status =
             $"Redid: {description}";
@@ -869,7 +1108,10 @@ public class MainViewModel : ObservableObject
             SearchResults.Add(result);
         }
 
-        OnPropertyChanged(nameof(FindAnythingHeader));
+        OnPropertyChanged(
+            nameof(FindAnythingHeader));
+
+        RefreshCommandStates();
     }
 
     private void NavigateToSearchResult(
@@ -881,11 +1123,13 @@ public class MainViewModel : ObservableObject
             return;
         }
 
-        SelectedSheet = result.Category;
+        SelectedSheet =
+            result.Category;
 
         OnPropertyChanged(nameof(Entries));
 
-        SelectedEntry = result.Setting;
+        SelectedEntry =
+            result.Setting;
 
         if (!string.IsNullOrWhiteSpace(
                 result.MatchedProperty))
@@ -896,8 +1140,11 @@ public class MainViewModel : ObservableObject
                         string.Equals(
                             property.Name,
                             result.MatchedProperty,
-                            StringComparison.OrdinalIgnoreCase));
+                            StringComparison
+                                .OrdinalIgnoreCase));
         }
+
+        RefreshCommandStates();
 
         Status =
             $"Selected: {result.CategoryName} " +

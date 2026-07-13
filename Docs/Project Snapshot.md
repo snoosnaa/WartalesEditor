@@ -1,7 +1,7 @@
 ﻿# Wartales Editor
 ## Project Snapshot
 
-**Application Version:** 0.5.0  
+**Application Version:** 0.5.1  
 **Documentation Version:** 0.6  
 **Last Updated:** 2026-07-12
 
@@ -21,9 +21,9 @@ The long-term goal is a professional-quality editor that supports both casual mo
 
 **Status:** Builds Successfully ✅
 
-**Current Release:** Version 0.5.0
+**Current Release:** Version 0.5.1
 
-**Current Milestone Status:** Change Summary – Pass 1 completed
+**Current Milestone Status:** Snapshot Workflow Foundation completed
 
 The project has transitioned from a functional editor into a reusable editing platform.
 
@@ -36,8 +36,11 @@ The current application supports:
 - Unlimited Undo / Redo
 - Live Change Summary
 - Direct navigation to modified properties
+- Snapshot workflow infrastructure
+- Constructor-injected services
+- Dialog abstraction
 
-The immediate focus is completing the Version 0.5.0 documentation, commit, and push before beginning the next milestone.
+The immediate focus is implementing Snapshot UI – Pass 1 using the completed workflow infrastructure.
 
 ---
 
@@ -112,6 +115,9 @@ Supporting models:
 - PropertyValueChangedEventArgs
 - PropertyEditAction
 - ChangeSummaryItemModel
+- ModificationSnapshotModel
+- ModificationSnapshotImportResultModel
+- ModificationSnapshotExportResultModel
 
 ---
 
@@ -128,9 +134,10 @@ Current responsibilities:
 - Reference lookup
 - Property modification notifications
 - Property value-change notifications
+- Snapshot support
 - Display-ready original and current values
 
-`PropertyModel.IsModified` is the single source of truth for determining whether a property currently differs from its saved baseline.
+`PropertyModel.IsModified` remains the single source of truth for determining whether a property currently differs from its saved baseline.
 
 ---
 
@@ -203,15 +210,44 @@ Responsible for:
 - Session history
 - History state notifications
 
-This service remains intentionally independent from the Change Summary.
-
 Edit history answers:
 
 > What happened?
 
-Change Summary answers:
+---
 
-> What is currently different?
+## ModificationSnapshotWorkflowService
+
+Responsible for:
+
+- Snapshot export orchestration
+- Snapshot preview orchestration
+- Snapshot import orchestration
+- Coordinating matching, preview, serialization, and application services
+
+The workflow service coordinates existing services rather than duplicating their responsibilities.
+
+---
+
+## Dialog Services
+
+### IFileDialogService
+
+Responsible for:
+
+- Opening files
+- Saving files
+
+### IMessageDialogService
+
+Responsible for:
+
+- Information dialogs
+- Warning dialogs
+- Error dialogs
+- Confirmation dialogs
+
+WPF-specific implementations remain isolated from the ViewModel.
 
 ---
 
@@ -227,9 +263,12 @@ Coordinates:
 - Navigation
 - Modification state
 - Undo / Redo
-- Change Summary snapshot generation
+- Change Summary
+- Snapshot orchestration
 - Window commands
 - Status reporting
+
+All required services are supplied through constructor injection.
 
 ---
 
@@ -262,12 +301,33 @@ Edit History
     ↓
 Change Summary
     ↓
+Snapshot Workflow
+    ↓
 Save
 ```
 
 Editing occurs directly against the original JSON document.
 
 No replacement JSON document is reconstructed for saving.
+
+---
+
+# Snapshot Workflow
+
+Implemented:
+
+- ✅ Snapshot capture
+- ✅ Snapshot serialization
+- ✅ Snapshot loading
+- ✅ Snapshot matching
+- ✅ Snapshot preview
+- ✅ Snapshot application
+- ✅ Workflow orchestration
+
+Current status:
+
+- Infrastructure complete
+- UI integration pending
 
 ---
 
@@ -285,9 +345,7 @@ Implemented:
 - ✅ Modification status reporting
 - ✅ New baseline after Save
 
-Current-state comparison is based on `JToken.DeepEquals`.
-
-A property is no longer considered modified when its current value again matches its saved baseline, regardless of how many edits occurred.
+The modification state remains the single source of truth for the entire editor.
 
 ---
 
@@ -301,16 +359,13 @@ Implemented:
 - ✅ Ctrl+Z
 - ✅ Ctrl+Y
 - ✅ History reset when opening another project
-- ✅ Undo and Redo integration with modification tracking
-- ✅ Undo permitted after saving
-
-Undo after saving intentionally creates a new unsaved change relative to the newly saved baseline.
+- ✅ Undo after Save
 
 Known minor issue:
 
 - Programmatic Undo / Redo may move the caret to the beginning of certain WPF text editors.
-- This does not affect data integrity.
-- Deferred to a future UI modernization milestone.
+- Does not affect data integrity.
+- Deferred until future UI modernization.
 
 ---
 
@@ -318,29 +373,20 @@ Known minor issue:
 
 Implemented:
 
-- ✅ Read-only Change Summary window
-- ✅ Live modified-property review
+- ✅ Live review of pending changes
 - ✅ Category grouping
-- ✅ Localized Setting names
-- ✅ Property names
 - ✅ Original values
 - ✅ Current values
 - ✅ Navigate button
 - ✅ Double-click navigation
-- ✅ Main editor focus after navigation
-- ✅ Working Close button
 - ✅ Automatic refresh after Edit
-- ✅ Automatic refresh after Undo
-- ✅ Automatic refresh after Redo
-- ✅ Automatic refresh after Reset Property
-- ✅ Automatic refresh after Save
-- ✅ Automatic refresh after opening another project
-- ✅ Correct empty state
-- ✅ Correct window reopening behavior
+- ✅ Undo
+- ✅ Redo
+- ✅ Reset Property
+- ✅ Save
+- ✅ Opening another project
 
-The Change Summary is built from temporary snapshots of the current project state.
-
-It does not maintain its own modification history or duplicate original-value storage.
+Built entirely from the existing modification state.
 
 ---
 
@@ -371,7 +417,7 @@ Find Anything supports:
 - Property names
 - Property values
 
-Selecting a result automatically navigates to the matching Category and Setting and selects the matching Property when applicable.
+Selecting a result automatically navigates to the matching Category, Setting, and Property.
 
 ---
 
@@ -390,6 +436,12 @@ Undo / Redo
     ↓
 Review Change Summary
     ↓
+Export Snapshot (next)
+    ↓
+Preview Snapshot (next)
+    ↓
+Import Snapshot (next)
+    ↓
 Save
     ↓
 Package
@@ -397,72 +449,20 @@ Package
 Play
 ```
 
-The editing and packaging workflow has been verified through live gameplay testing.
-
 ---
 
 # Completed Milestones
 
-## Project Foundation
-
-- ✅ WPF application
-- ✅ MVVM architecture
-- ✅ Git and GitHub integration
-- ✅ Documentation system
-- ✅ JSON loading
-
----
-
-## Data Browser
-
-- ✅ Three-pane editor
-- ✅ Categories
-- ✅ Settings
-- ✅ Properties
-- ✅ Selection synchronization
-
----
-
-## Functional Editing
-
-- ✅ Editable properties
-- ✅ Direct RootDocument synchronization
-- ✅ Save modified CDB
-- ✅ Reload saved files
-- ✅ In-game verification
-
----
-
-## Find Anything and Smart Editing
-
-- ✅ Global Find Anything
-- ✅ Localization-aware searching
-- ✅ Automatic navigation
-- ✅ Type-aware editors
-- ✅ Reference-aware dropdowns
-- ✅ Validation framework foundation
-
----
-
-## Safe Editing
-
-- ✅ Property modification tracking
-- ✅ Project modification tracking
-- ✅ Reset Property
-- ✅ Modified indicators
-- ✅ Unlimited Undo / Redo
-- ✅ Reusable history infrastructure
-
----
-
-## Change Summary
-
-- ✅ Live review of pending changes
-- ✅ Original and current value comparison
-- ✅ Category grouping
-- ✅ Localized Setting display
-- ✅ Navigation to modified properties
-- ✅ Reusable snapshot architecture
+- ✅ Project Foundation
+- ✅ Data Browser
+- ✅ Functional Editing
+- ✅ Find Anything
+- ✅ Smart Property Editors
+- ✅ Safe Editing
+- ✅ Change Summary
+- ✅ Snapshot Workflow Foundation
+- ✅ Constructor Injection
+- ✅ Dialog Service Abstraction
 
 ---
 
@@ -470,14 +470,13 @@ The editing and packaging workflow has been verified through live gameplay testi
 
 ## Immediate Task
 
-Complete the Version 0.5.0 release process:
+Implement **Snapshot UI – Pass 1**:
 
-- Update remaining documentation
-- Confirm version consistency
-- Create Git commit
-- Push to GitHub
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
 
-No additional Version 0.5.0 code changes are planned unless a critical issue is discovered.
+using the completed workflow infrastructure.
 
 ---
 
@@ -491,27 +490,20 @@ Expected capabilities:
 
 - Save reusable mod profiles
 - Export modified values
-- Import edits into a newer `data.cdb`
-- Intelligent matching of Categories, Settings, and Properties
+- Import edits into newer `data.cdb`
+- Intelligent matching
 - Merge preview
 - Conflict detection
-- Safe application of compatible changes
+- Safe application
 
 ---
 
 ## Priority 2 – Robust Validation
 
-Primary goal:
-
-Detect invalid or unsafe modifications before saving or packaging.
-
-Expected capabilities:
-
-- Missing reference detection
-- Invalid reference detection
-- Required property validation
+- Missing references
+- Invalid references
+- Required properties
 - Duplicate detection
-- Invalid value detection
 - Validation summaries
 - Navigable validation results
 
@@ -519,33 +511,25 @@ Expected capabilities:
 
 ## Priority 3 – Content Creation Tools
 
-Primary goal:
-
-Provide guided actions for adding game content without manually reproducing complex JSON structures.
-
 Initial targets:
 
-- Add camp structures
-- Add crafting stations
-- Add the anvil to the player camp
-- Future guided content-creation tools
+- Camp structures
+- Crafting stations
+- Camp anvil
+- Guided content creation
 
 ---
 
 ## Priority 4 – UI Modernization
 
-Planned improvements:
-
-- Move editing actions into clearer button-based workflows
-- Simplify the top toolbar
-- Improve command organization
-- Improve spacing and resizing
-- Add visual polish
-- Prepare for future icon support
+- Workflow-oriented toolbar
+- Improved command organization
+- Better layout
+- Icon support
 
 ---
 
-## Additional Planned Features
+# Additional Planned Features
 
 - Batch Editing
 - Import / Merge
@@ -556,7 +540,8 @@ Planned improvements:
 - Backup on Save
 - QuickBMS workflow integration
 - Property descriptions
-- Additional specialized gameplay editors
+- In-game mod/profile notification with creator credits
+- Specialized gameplay editors
 
 ---
 
@@ -565,13 +550,14 @@ Planned improvements:
 Always:
 
 - Use MVVM.
-- Use `ObservableObject` for bindable ViewModels and models where appropriate.
+- Use `ObservableObject` where appropriate.
 - Prefer small, focused classes.
 - Keep reusable logic in services.
 - Keep editing behavior in models.
-- Keep application coordination in ViewModels.
-- Keep code-behind limited to view-specific interaction.
+- Keep coordination in ViewModels.
+- Keep code-behind view-specific.
 - Preserve the original JSON document.
+- Preserve original formatting whenever practical.
 - Use the existing modification state as the single source of truth.
 - Build after every logical implementation step.
 
@@ -579,7 +565,7 @@ Avoid:
 
 - Business logic in XAML.
 - Business logic in code-behind.
-- Duplicate change-tracking systems.
+- Duplicate change tracking.
 - Duplicate original-value storage.
 - Hardcoded gameplay values whenever data-driven discovery is practical.
 - Reconstructing current project files from memory.
@@ -623,10 +609,10 @@ Required practices:
 
 # Current Task
 
-Complete the Version 0.5.0 documentation, commit, and push.
+Implement **Snapshot UI – Pass 1**:
 
-After the release is complete, begin only the next approved milestone.
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
 
-The highest-priority future milestone is:
-
-**Mod Profiles and Change Migration**
+using the completed Snapshot workflow infrastructure.

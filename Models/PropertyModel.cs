@@ -27,9 +27,11 @@ public class PropertyModel : ObservableObject
     public event EventHandler<PropertyValueChangedEventArgs>?
         ValueChanged;
 
-    public string SheetName { get; set; } = string.Empty;
+    public string SheetName { get; set; } =
+        string.Empty;
 
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } =
+        string.Empty;
 
     public JProperty? SourceProperty { get; set; }
 
@@ -64,19 +66,24 @@ public class PropertyModel : ObservableObject
     }
 
     public bool IsInteger =>
-        SourceProperty?.Value.Type == JTokenType.Integer;
+        SourceProperty?.Value.Type ==
+        JTokenType.Integer;
 
     public bool IsDecimal =>
-        SourceProperty?.Value.Type == JTokenType.Float;
+        SourceProperty?.Value.Type ==
+        JTokenType.Float;
 
-    public IReadOnlyList<ReferenceValueModel> AvailableValues =>
-        referenceDataService.GetValues(
-            SheetName,
-            Name);
+    public IReadOnlyList<ReferenceValueModel>
+        AvailableValues =>
+            referenceDataService.GetValues(
+                SheetName,
+                Name);
 
     public bool IsEditable =>
-        Kind != PropertyKind.Internal &&
-        EditorType != PropertyEditorType.ReadOnly &&
+        Kind != PropertyKind.Internal
+        &&
+        EditorType != PropertyEditorType.ReadOnly
+        &&
         EditorType != PropertyEditorType.Complex;
 
     public bool IsReadOnly =>
@@ -87,9 +94,12 @@ public class PropertyModel : ObservableObject
         get => isModified;
         private set
         {
-            if (SetProperty(ref isModified, value))
+            if (SetProperty(
+                    ref isModified,
+                    value))
             {
-                OnPropertyChanged(nameof(CanReset));
+                OnPropertyChanged(
+                    nameof(CanReset));
 
                 ModifiedChanged?.Invoke(
                     this,
@@ -102,7 +112,8 @@ public class PropertyModel : ObservableObject
         IsModified && !IsReadOnly;
 
     public string OriginalDisplayValue =>
-        GetTokenSummaryValue(originalValue);
+        GetTokenSummaryValue(
+            originalValue);
 
     public string CurrentDisplayValue =>
         GetTokenSummaryValue(
@@ -113,8 +124,12 @@ public class PropertyModel : ObservableObject
         get => value;
         set
         {
-            if (!SetProperty(ref this.value, value))
+            if (!SetProperty(
+                    ref this.value,
+                    value))
+            {
                 return;
+            }
 
             ApplyDisplayValue(value);
         }
@@ -145,6 +160,34 @@ public class PropertyModel : ObservableObject
         }
 
         ApplyTokenValue(originalValue);
+    }
+
+    public JToken GetOriginalValueSnapshot()
+    {
+        return originalValue?.DeepClone()
+            ?? JValue.CreateNull();
+    }
+
+    public JToken GetCurrentValueSnapshot()
+    {
+        return SourceProperty?.Value.DeepClone()
+            ?? JValue.CreateNull();
+    }
+
+    public void ApplySnapshotValue(
+        JToken snapshotValue)
+    {
+        ArgumentNullException.ThrowIfNull(
+            snapshotValue);
+
+        if (SourceProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Property '{Name}' is not connected " +
+                "to a source JSON property.");
+        }
+
+        ApplyTokenValue(snapshotValue);
     }
 
     internal void ApplyHistoryValue(
@@ -244,8 +287,9 @@ public class PropertyModel : ObservableObject
                 SourceProperty.Value);
     }
 
-    private static object? GetTokenDisplayValue(
-        JToken token)
+    private static object?
+        GetTokenDisplayValue(
+            JToken token)
     {
         return token.Type switch
         {
@@ -257,8 +301,9 @@ public class PropertyModel : ObservableObject
         };
     }
 
-    private static string GetTokenSummaryValue(
-        JToken? token)
+    private static string
+        GetTokenSummaryValue(
+            JToken? token)
     {
         if (token == null)
             return string.Empty;
@@ -302,7 +347,8 @@ public class PropertyModel : ObservableObject
         };
     }
 
-    private PropertyEditorType GetInferredEditorType()
+    private PropertyEditorType
+        GetInferredEditorType()
     {
         if (SourceProperty == null)
             return PropertyEditorType.Text;

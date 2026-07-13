@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
-using System.Windows.Input;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
 
@@ -32,20 +31,25 @@ public sealed class ChangeSummaryViewModel :
             new ObservableCollection<ChangeSummaryItemModel>();
 
         GroupedItems =
-            CollectionViewSource.GetDefaultView(Items);
+            CollectionViewSource.GetDefaultView(
+                Items);
 
         GroupedItems.GroupDescriptions.Add(
             new PropertyGroupDescription(
-                nameof(ChangeSummaryItemModel.CategoryName)));
+                nameof(
+                    ChangeSummaryItemModel
+                        .CategoryName)));
 
-        NavigateCommand = new RelayCommand(
-            _ => NavigateToSelectedItem(),
-            _ => SelectedItem != null);
+        NavigateCommand =
+            new RelayCommand(
+                _ => NavigateToSelectedItem(),
+                _ => SelectedItem != null);
 
         Refresh(items);
     }
 
-    public ObservableCollection<ChangeSummaryItemModel> Items
+    public ObservableCollection<ChangeSummaryItemModel>
+        Items
     {
         get;
     }
@@ -60,10 +64,15 @@ public sealed class ChangeSummaryViewModel :
         get => selectedItem;
         set
         {
-            if (SetProperty(ref selectedItem, value))
+            if (!SetProperty(
+                    ref selectedItem,
+                    value))
             {
-                CommandManager.InvalidateRequerySuggested();
+                return;
             }
+
+            NavigateCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -75,7 +84,7 @@ public sealed class ChangeSummaryViewModel :
     public bool HasChanges =>
         Items.Count > 0;
 
-    public ICommand NavigateCommand
+    public RelayCommand NavigateCommand
     {
         get;
     }
@@ -95,16 +104,17 @@ public sealed class ChangeSummaryViewModel :
             Items.Add(item);
         }
 
-        if (previousSelection != null)
-        {
-            SelectedItem =
-                FindMatchingItem(previousSelection);
-        }
+        SelectedItem =
+            previousSelection == null
+                ? null
+                : FindMatchingItem(
+                    previousSelection);
 
         OnPropertyChanged(nameof(Header));
         OnPropertyChanged(nameof(HasChanges));
 
-        CommandManager.InvalidateRequerySuggested();
+        NavigateCommand
+            .NotifyCanExecuteChanged();
     }
 
     private void NavigateToSelectedItem()
@@ -112,7 +122,8 @@ public sealed class ChangeSummaryViewModel :
         if (SelectedItem == null)
             return;
 
-        navigateToChange(SelectedItem);
+        navigateToChange(
+            SelectedItem);
     }
 
     private ChangeSummaryItemModel? FindMatchingItem(

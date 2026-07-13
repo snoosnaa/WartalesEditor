@@ -20,27 +20,32 @@
 
         <!-- Standard text property -->
         <DataTemplate x:Key="TextEditorTemplate">
+
             <TextBox Width="330"
                      IsReadOnly="{Binding IsReadOnly}"
                      Background="{x:Null}"
                      Text="{Binding Value,
                                     Mode=TwoWay,
                                     UpdateSourceTrigger=PropertyChanged}"/>
+
         </DataTemplate>
 
         <!-- Integer or decimal property -->
         <DataTemplate x:Key="NumberEditorTemplate">
+
             <TextBox Width="330"
                      IsReadOnly="{Binding IsReadOnly}"
                      Background="{x:Null}">
 
                 <TextBox.Style>
+
                     <Style TargetType="TextBox">
 
                         <Setter Property="ToolTip"
                                 Value="{x:Null}"/>
 
                         <Style.Triggers>
+
                             <Trigger Property="Validation.HasError"
                                      Value="True">
 
@@ -49,12 +54,15 @@
                                                         Path=(Validation.Errors)[0].ErrorContent}"/>
 
                             </Trigger>
+
                         </Style.Triggers>
 
                     </Style>
+
                 </TextBox.Style>
 
                 <TextBox.Text>
+
                     <Binding Path="Value"
                              Mode="TwoWay"
                              UpdateSourceTrigger="PropertyChanged"
@@ -62,28 +70,35 @@
                              NotifyOnValidationError="True">
 
                         <Binding.ValidationRules>
+
                             <validation:PropertyValidationRule
                                 ValidationStep="UpdatedValue"/>
+
                         </Binding.ValidationRules>
 
                     </Binding>
+
                 </TextBox.Text>
 
             </TextBox>
+
         </DataTemplate>
 
         <!-- Boolean property -->
         <DataTemplate x:Key="BooleanEditorTemplate">
+
             <CheckBox IsChecked="{Binding Value,
                                           Mode=TwoWay,
                                           UpdateSourceTrigger=PropertyChanged}"
                       IsEnabled="{Binding IsEditable}"
                       VerticalAlignment="Center"
                       Margin="5,0"/>
+
         </DataTemplate>
 
         <!-- Property with a known list of valid choices -->
         <DataTemplate x:Key="DropdownEditorTemplate">
+
             <ComboBox Width="330"
                       ItemsSource="{Binding AvailableValues}"
                       DisplayMemberPath="Display"
@@ -92,10 +107,12 @@
                                               Mode=TwoWay,
                                               UpdateSourceTrigger=PropertyChanged}"
                       IsEnabled="{Binding IsEditable}"/>
+
         </DataTemplate>
 
         <!-- Array or object awaiting a dedicated editor -->
         <DataTemplate x:Key="ComplexEditorTemplate">
+
             <TextBox Width="330"
                      MinHeight="55"
                      MaxHeight="180"
@@ -105,14 +122,17 @@
                      VerticalScrollBarVisibility="Auto"
                      Background="Gainsboro"
                      Text="{Binding Value}"/>
+
         </DataTemplate>
 
         <!-- Internal or otherwise protected property -->
         <DataTemplate x:Key="ReadOnlyEditorTemplate">
+
             <TextBox Width="330"
                      IsReadOnly="True"
                      Background="Gainsboro"
                      Text="{Binding Value}"/>
+
         </DataTemplate>
 
         <selectors:PropertyEditorTemplateSelector
@@ -127,73 +147,162 @@
     </Window.Resources>
 
     <Grid>
+
         <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+
         </Grid.RowDefinitions>
 
+        <!-- Application Menu -->
+        <Menu Grid.Row="0">
+
+            <MenuItem Header="_File">
+
+                <MenuItem Header="_Open..."
+                          Command="{Binding OpenCommand}"
+                          InputGestureText="Ctrl+O"/>
+
+                <MenuItem Header="_Save As..."
+                          Command="{Binding SaveCommand}"
+                          InputGestureText="Ctrl+S"/>
+
+                <Separator/>
+
+                <MenuItem Header="E_xit"
+                          Click="ExitMenuItem_Click"/>
+
+            </MenuItem>
+
+            <MenuItem Header="_Edit">
+
+                <MenuItem Header="_Undo"
+                          Command="{Binding UndoCommand}"
+                          InputGestureText="Ctrl+Z"
+                          ToolTip="{Binding UndoDescription}"/>
+
+                <MenuItem Header="_Redo"
+                          Command="{Binding RedoCommand}"
+                          InputGestureText="Ctrl+Y"
+                          ToolTip="{Binding RedoDescription}"/>
+
+                <Separator/>
+
+                <MenuItem Header="_Reset Selected Property"
+                          Command="{Binding ResetSelectedPropertyCommand}"/>
+
+            </MenuItem>
+
+            <MenuItem Header="_View">
+
+                <MenuItem Header="_Change Summary"
+                          Command="{Binding ShowChangeSummaryCommand}"/>
+
+            </MenuItem>
+
+            <MenuItem Header="_Tools">
+
+                <MenuItem Header="_Snapshots">
+
+                    <MenuItem Header="_Export Snapshot..."
+                              IsEnabled="False"
+                              ToolTip="Snapshot export will be enabled after the snapshot workflow is connected."/>
+
+                    <MenuItem Header="_Import Snapshot..."
+                              IsEnabled="False"
+                              ToolTip="Snapshot import will be enabled after the snapshot workflow is connected."/>
+
+                    <MenuItem Header="_Preview Snapshot..."
+                              IsEnabled="False"
+                              ToolTip="Snapshot preview will be enabled after the snapshot workflow is connected."/>
+
+                </MenuItem>
+
+                <Separator/>
+
+                <MenuItem Header="_Validation"
+                          IsEnabled="False"
+                          ToolTip="Validation tools are planned for a future milestone."/>
+
+                <MenuItem Header="_Developer Tools"
+                          IsEnabled="False"
+                          ToolTip="Developer diagnostics will be added when needed."/>
+
+            </MenuItem>
+
+            <MenuItem Header="_Help">
+
+                <MenuItem Header="_About Wartales Editor"
+                          IsEnabled="False"/>
+
+            </MenuItem>
+
+        </Menu>
+
         <!-- Toolbar -->
-        <ToolBar Grid.Row="0">
+        <ToolBar Grid.Row="1">
 
             <Button Name="OpenButton"
-            Width="80"
-            Margin="5"
-            Command="{Binding OpenCommand}">
+                    Width="80"
+                    Margin="5"
+                    Command="{Binding OpenCommand}">
                 Open
             </Button>
 
             <Button Name="SaveButton"
-            Width="80"
-            Margin="5"
-            Command="{Binding SaveCommand}">
+                    Width="80"
+                    Margin="5"
+                    Command="{Binding SaveCommand}">
                 Save
             </Button>
 
             <Separator/>
 
             <Button Name="UndoButton"
-            Width="80"
-            Margin="5"
-            Focusable="False"
-            Command="{Binding UndoCommand}"
-            ToolTip="{Binding UndoDescription}">
+                    Width="80"
+                    Margin="5"
+                    Focusable="False"
+                    Command="{Binding UndoCommand}"
+                    ToolTip="{Binding UndoDescription}">
                 Undo
             </Button>
 
             <Button Name="RedoButton"
-            Width="80"
-            Margin="5"
-            Focusable="False"
-            Command="{Binding RedoCommand}"
-            ToolTip="{Binding RedoDescription}">
+                    Width="80"
+                    Margin="5"
+                    Focusable="False"
+                    Command="{Binding RedoCommand}"
+                    ToolTip="{Binding RedoDescription}">
                 Redo
             </Button>
 
             <Separator/>
 
             <Button Name="ResetPropertyButton"
-            Width="120"
-            Margin="5"
-            Command="{Binding ResetSelectedPropertyCommand}">
+                    Width="120"
+                    Margin="5"
+                    Command="{Binding ResetSelectedPropertyCommand}">
                 Reset Property
             </Button>
 
             <Separator/>
 
             <Button Name="ChangeSummaryButton"
-            Width="130"
-            Margin="5"
-            Command="{Binding ShowChangeSummaryCommand}">
+                    Width="130"
+                    Margin="5"
+                    Command="{Binding ShowChangeSummaryCommand}">
                 Change Summary
             </Button>
 
         </ToolBar>
 
         <!-- Search -->
-        <DockPanel Grid.Row="1"
+        <DockPanel Grid.Row="2"
                    Margin="5">
 
             <TextBlock Text="Search:"
@@ -236,15 +345,17 @@
         </DockPanel>
 
         <!-- Find Anything -->
-        <Grid Grid.Row="2"
+        <Grid Grid.Row="3"
               Margin="5,0,5,5"
               MaxHeight="160"
               Visibility="{Binding HasSearchText,
                                    Converter={StaticResource BooleanToVisibilityConverter}}">
 
             <Grid.RowDefinitions>
+
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0"
@@ -258,6 +369,7 @@
                                              Mode=TwoWay}">
 
                 <ListView.View>
+
                     <GridView>
 
                         <GridViewColumn Header="Category"
@@ -269,6 +381,7 @@
                                         DisplayMemberBinding="{Binding DisplayName}"/>
 
                     </GridView>
+
                 </ListView.View>
 
             </ListView>
@@ -276,28 +389,34 @@
         </Grid>
 
         <!-- Main Area -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
 
             <Grid.ColumnDefinitions>
+
                 <ColumnDefinition Width="370"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
+
             </Grid.ColumnDefinitions>
 
             <!-- Categories and Settings -->
             <Grid Grid.Column="0">
 
                 <Grid.RowDefinitions>
+
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0"
                       Margin="5,5,5,0">
 
                     <Grid.ColumnDefinitions>
+
                         <ColumnDefinition Width="180"/>
                         <ColumnDefinition Width="180"/>
+
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
@@ -315,8 +434,10 @@
                 <Grid Grid.Row="1">
 
                     <Grid.ColumnDefinitions>
+
                         <ColumnDefinition Width="180"/>
                         <ColumnDefinition Width="180"/>
+
                     </Grid.ColumnDefinitions>
 
                     <ListBox Grid.Column="0"
@@ -343,16 +464,20 @@
             <Grid Grid.Column="2">
 
                 <Grid.RowDefinitions>
+
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0"
                       Margin="10,5,5,0">
 
                     <Grid.ColumnDefinitions>
+
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
@@ -366,6 +491,7 @@
                                VerticalAlignment="Center">
 
                         <TextBlock.Style>
+
                             <Style TargetType="TextBlock">
 
                                 <Setter Property="FontWeight"
@@ -375,6 +501,7 @@
                                         Value="Gray"/>
 
                                 <Style.Triggers>
+
                                     <DataTrigger Binding="{Binding HasModifications}"
                                                  Value="True">
 
@@ -385,9 +512,11 @@
                                                 Value="DarkOrange"/>
 
                                     </DataTrigger>
+
                                 </Style.Triggers>
 
                             </Style>
+
                         </TextBlock.Style>
 
                     </TextBlock>
@@ -401,12 +530,14 @@
                                                  Mode=TwoWay}">
 
                     <ListView.ItemContainerStyle>
+
                         <Style TargetType="ListViewItem">
 
                             <Setter Property="HorizontalContentAlignment"
                                     Value="Stretch"/>
 
                             <Style.Triggers>
+
                                 <DataTrigger Binding="{Binding IsModified}"
                                              Value="True">
 
@@ -417,18 +548,22 @@
                                             Value="SemiBold"/>
 
                                 </DataTrigger>
+
                             </Style.Triggers>
 
                         </Style>
+
                     </ListView.ItemContainerStyle>
 
                     <ListView.View>
+
                         <GridView>
 
                             <GridViewColumn Header=""
                                             Width="28">
 
                                 <GridViewColumn.CellTemplate>
+
                                     <DataTemplate>
 
                                         <TextBlock Text="●"
@@ -441,6 +576,7 @@
                                                                         Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                                     </DataTemplate>
+
                                 </GridViewColumn.CellTemplate>
 
                             </GridViewColumn>
@@ -449,12 +585,14 @@
                                             Width="200">
 
                                 <GridViewColumn.CellTemplate>
+
                                     <DataTemplate>
 
                                         <TextBlock Text="{Binding Name}"
                                                    VerticalAlignment="Center"/>
 
                                     </DataTemplate>
+
                                 </GridViewColumn.CellTemplate>
 
                             </GridViewColumn>
@@ -463,6 +601,7 @@
                                             Width="350">
 
                                 <GridViewColumn.CellTemplate>
+
                                     <DataTemplate>
 
                                         <ContentControl
@@ -470,11 +609,13 @@
                                             ContentTemplateSelector="{StaticResource PropertyEditorSelector}"/>
 
                                     </DataTemplate>
+
                                 </GridViewColumn.CellTemplate>
 
                             </GridViewColumn>
 
                         </GridView>
+
                     </ListView.View>
 
                 </ListView>
@@ -484,14 +625,16 @@
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="4">
+        <StatusBar Grid.Row="5">
 
             <Grid Width="{Binding RelativeSource={RelativeSource AncestorType=StatusBar},
                                   Path=ActualWidth}">
 
                 <Grid.ColumnDefinitions>
+
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
@@ -513,12 +656,14 @@
                     <TextBlock Text="{Binding ModificationStatus}">
 
                         <TextBlock.Style>
+
                             <Style TargetType="TextBlock">
 
                                 <Setter Property="Foreground"
                                         Value="Gray"/>
 
                                 <Style.Triggers>
+
                                     <DataTrigger Binding="{Binding HasModifications}"
                                                  Value="True">
 
@@ -529,9 +674,11 @@
                                                 Value="SemiBold"/>
 
                                     </DataTrigger>
+
                                 </Style.Triggers>
 
                             </Style>
+
                         </TextBlock.Style>
 
                     </TextBlock>
@@ -544,4 +691,4 @@
 
     </Grid>
 
-</Window>                    
+</Window>

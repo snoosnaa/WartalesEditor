@@ -6,6 +6,86 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.5.1 - Snapshot Workflow Foundation
+
+**Released:** 2026-07-12
+
+## Added
+
+### Snapshot Architecture
+
+- ModificationSnapshotWorkflowService
+- Snapshot workflow orchestration
+- Snapshot export workflow
+- Snapshot preview workflow
+- Snapshot import workflow
+- Snapshot workflow result models
+- Snapshot import result model
+- Snapshot export result model
+
+### Dialog Infrastructure
+
+- IFileDialogService
+- IMessageDialogService
+- WpfFileDialogService
+- WpfMessageDialogService
+
+### User Interface
+
+- Standard application menu bar
+- File menu
+- Edit menu
+- View menu
+- Tools menu
+- Help menu
+- Snapshot menu foundation
+- Validation menu placeholder
+- Developer Tools placeholder
+
+### Architecture
+
+- Constructor injection for MainViewModel services
+- Separation of workflow orchestration from UI
+- Separation of file dialogs from ViewModel logic
+- Separation of message dialogs from ViewModel logic
+
+## Changed
+
+- MainViewModel no longer creates WPF file dialogs directly.
+- MainViewModel now receives required services through constructor injection.
+- MainWindow now composes application services during ViewModel construction.
+- Open and Save operations now use the dialog abstraction layer.
+- Editor architecture is prepared for Snapshot UI integration.
+
+## Fixed
+
+- Corrected Change Summary Navigate button command-state updates after introducing explicit command notifications.
+- Preserved existing editor behavior after constructor injection refactor.
+- Preserved Undo/Redo, Reset Property, Change Summary, and search functionality following dialog abstraction.
+
+## Verified
+
+Successfully verified:
+
+- Constructor injection
+- File dialog abstraction
+- Message dialog abstraction
+- Menu bar integration
+- File menu commands
+- Edit menu commands
+- View menu commands
+- Ctrl+O
+- Ctrl+S
+- Undo
+- Redo
+- Reset Property
+- Change Summary
+- Navigate button
+- Double-click navigation
+- Successful build after refactoring
+
+---
+
 # Version 0.5.0 - Change Summary
 
 **Released:** 2026-07-12

@@ -15,6 +15,7 @@
 - Session 004
 - Session 005
 - Session 006
+- Session 007
 
 ---
 
@@ -407,3 +408,84 @@ Version 0.5.0 — Change Summary
 ## Next Focus
 
 Implement Mod Profiles and Change Migration to preserve user modifications across future Wartales updates.
+
+---
+
+# Session 007
+
+## Summary
+
+Completed the architectural foundation for the Snapshot workflow while preparing the editor for Mod Profiles, Change Migration, and future workflow-driven features.
+
+This session focused on strengthening the application's architecture before exposing snapshot functionality through the user interface.
+
+## Completed
+
+### Snapshot Workflow
+
+- Introduced `ModificationSnapshotWorkflowService`.
+- Implemented snapshot workflow orchestration.
+- Added export workflow.
+- Added preview workflow.
+- Added import workflow.
+- Added snapshot import and export result models.
+- Completed the infrastructure for end-to-end snapshot processing.
+
+### User Interface Foundation
+
+- Added a standard application menu.
+- Introduced File, Edit, View, Tools, and Help menus.
+- Added the Snapshot menu structure.
+- Added placeholders for Validation and Developer Tools.
+
+### Dialog Architecture
+
+- Introduced `IFileDialogService`.
+- Introduced `IMessageDialogService`.
+- Implemented WPF dialog services.
+- Removed direct file dialog ownership from `MainViewModel`.
+
+### Dependency Management
+
+- Converted `MainViewModel` to constructor injection.
+- Moved service creation responsibility to `MainWindow`.
+- Reduced ViewModel coupling to concrete implementations.
+- Prepared the application for future dependency injection if desired.
+
+### Runtime Testing
+
+Successfully verified:
+
+- Constructor injection.
+- File dialog abstraction.
+- Menu integration.
+- Open and Save workflows.
+- Ctrl+O.
+- Ctrl+S.
+- Undo.
+- Redo.
+- Reset Property.
+- Change Summary.
+- Navigate button.
+- Double-click navigation.
+- Successful builds after each architectural stage.
+
+## Major Decisions
+
+- Build the Snapshot engine before implementing Mod Profiles.
+- Treat snapshot workflows as reusable application services.
+- Separate workflow orchestration from presentation.
+- Separate dialog services from application logic.
+- Continue investing in long-term maintainability before expanding user-facing functionality.
+
+## Current Status
+
+The editor now has a reusable workflow layer capable of supporting snapshot export, preview, import, future Mod Profiles, validation workflows, and additional editing tools.
+
+## Milestone Achieved
+
+Version 0.5.1 — Snapshot Workflow Foundation
+
+## Next Focus
+
+Implement Snapshot UI – Pass 1 by connecting Export Snapshot, Preview Snapshot, and Import Snapshot to the completed workflow infrastructure.

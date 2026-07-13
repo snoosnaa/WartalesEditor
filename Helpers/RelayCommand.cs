@@ -6,27 +6,40 @@ namespace WartalesEditor.Helpers;
 public class RelayCommand : ICommand
 {
     private readonly Action<object?> execute;
+
     private readonly Func<object?, bool>? canExecute;
 
-    public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
+    public RelayCommand(
+        Action<object?> execute,
+        Func<object?, bool>? canExecute = null)
     {
-        this.execute = execute;
+        this.execute =
+            execute
+            ?? throw new ArgumentNullException(
+                nameof(execute));
+
         this.canExecute = canExecute;
     }
 
-    public bool CanExecute(object? parameter)
+    public bool CanExecute(
+        object? parameter)
     {
-        return canExecute?.Invoke(parameter) ?? true;
+        return canExecute?.Invoke(parameter)
+            ?? true;
     }
 
-    public void Execute(object? parameter)
+    public void Execute(
+        object? parameter)
     {
         execute(parameter);
     }
 
-    public event EventHandler? CanExecuteChanged
+    public event EventHandler? CanExecuteChanged;
+
+    public void NotifyCanExecuteChanged()
     {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
+        CanExecuteChanged?.Invoke(
+            this,
+            EventArgs.Empty);
     }
 }
