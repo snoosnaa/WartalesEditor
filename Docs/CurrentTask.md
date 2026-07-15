@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Snapshot UI – Pass 1**
+**Documentation Update & Release Preparation**
 
 ---
 
@@ -10,99 +10,89 @@
 
 The project builds successfully.
 
-The Snapshot Workflow Foundation milestone has been completed and verified.
+Snapshot UI – Pass 1 has been completed, runtime tested, and verified.
 
 Current build status:
 
 ✅ Build succeeds.
 
+Git commit has **not** yet been created.
+
+The project documentation is currently being updated before creating the next release commit.
+
 ---
 
 ## Recently Completed
 
+### Snapshot UI – Pass 1
+
+Implemented:
+
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
+- End-to-end snapshot workflow
+- Workflow integration with the existing editor
+- Automatic Change Summary refresh
+- Automatic modification tracking refresh
+- Undo / Redo compatibility
+- Save compatibility
+
 ### Snapshot Workflow Foundation
 
-- Snapshot capture engine
+Completed reusable workflow infrastructure including:
+
+- Snapshot capture
 - Snapshot serialization
 - Snapshot loading
 - Snapshot matching
 - Snapshot preview
 - Snapshot application
-- ModificationSnapshotWorkflowService
+- `ModificationSnapshotWorkflowService`
 - Snapshot import/export result models
 
 ### Architecture Improvements
 
-- Constructor injection for MainViewModel
-- IFileDialogService
-- IMessageDialogService
-- WpfFileDialogService
-- WpfMessageDialogService
+- Constructor injection for `MainViewModel`
+- `IFileDialogService`
+- `IMessageDialogService`
+- `WpfFileDialogService`
+- `WpfMessageDialogService`
 - Dialog abstraction
 - Workflow orchestration layer
-
-### User Interface Foundation
-
-- Standard application menu
-- File menu
-- Edit menu
-- View menu
-- Tools menu
-- Help menu
-- Snapshot menu foundation
-- Validation menu placeholder
-- Developer Tools placeholder
 
 ### Runtime Verification
 
 Successfully verified:
 
-- Constructor injection
-- File dialog abstraction
-- Message dialog abstraction
-- Menu integration
-- Open and Save workflows
-- Ctrl+O
-- Ctrl+S
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
+- Modification tracking refresh
+- Change Summary refresh
 - Undo
 - Redo
-- Reset Property
-- Change Summary
-- Navigate button
-- Double-click navigation
+- Save
+- Live Wartales testing
 - Successful builds after every implementation stage
 
 ---
 
 ## Current Objective
 
-Implement the first complete Snapshot user workflow.
+Complete the remaining project documentation.
 
-The initial goal is to connect the existing workflow infrastructure to the user interface.
+Remaining documents:
 
-### Export Snapshot
+- Changelog.md
+- ProjectSnapshot.md
 
-- SaveFileDialog
-- Workflow.Export()
-- Success summary
+After documentation is complete:
 
-### Preview Snapshot
+- Create the Version 0.6.0 Git commit.
+- Push to GitHub.
 
-- OpenFileDialog
-- Workflow.Load()
-- Workflow.Preview()
-- Summary dialog
-- No project modifications
-
-### Import Snapshot
-
-- OpenFileDialog
-- Workflow.ImportAndApplySafely()
-- Summary dialog
-- Project modification refresh
-- Undo / Redo compatibility
-
-The objective is to complete the first end-to-end snapshot workflow using live Wartales data.
+No additional code changes are planned before this release commit.
 
 ---
 
@@ -110,24 +100,25 @@ The objective is to complete the first end-to-end snapshot workflow using live W
 
 Priority order:
 
-### 1. Mod Profiles / Change Migration
+### 1. Mod Profiles & Change Migration
 
 Primary objective:
 
 Allow users to preserve their edits across future Wartales updates.
 
-Expected capabilities:
+Planned capabilities:
 
-- Save reusable mod profiles
-- Export only modified values
-- Import changes into newer game data
-- Intelligent matching
-- Merge preview
+- Save reusable Mod Profiles
+- Load existing Mod Profiles
+- Preserve modifications across Wartales updates
+- Intelligent snapshot matching
+- Migration reporting
+- Merge Preview (future)
 - Conflict detection
 
 ---
 
-### 2. Validation Framework
+### 2. Robust Validation
 
 Primary objective:
 
@@ -136,8 +127,8 @@ Prevent invalid edits before export.
 Expected capabilities:
 
 - Missing reference detection
-- Invalid reference detection
-- Invalid value detection
+- Invalid references
+- Invalid values
 - Required property validation
 - Duplicate detection
 - Validation reports
@@ -152,9 +143,9 @@ Allow creation of additional game content.
 
 Initial focus:
 
-- Add Camp Structures
-- Add Crafting Stations
-- Add Camp Anvil
+- Camp Structures
+- Crafting Stations
+- Camp Anvil
 - Guided gameplay content creation
 
 ---
@@ -167,7 +158,8 @@ Planned improvements:
 - Larger action buttons
 - Improved command organization
 - Layout polish
-- Future icon support
+- Icon support
+- Additional usability improvements
 
 ---
 
@@ -212,16 +204,16 @@ Project
 Snapshot
     │
     ▼
-Workflow Service
+ModificationSnapshotWorkflowService
     │
  ┌──┼───────────────┐
  ▼  ▼               ▼
 Export Preview Import
 ```
 
-The modification state remains the single source of truth for editing.
+The modification state remains the single source of truth throughout the application.
 
-Snapshot workflows build on the existing editing architecture rather than introducing duplicate tracking systems.
+Snapshot functionality builds on the existing editing architecture rather than introducing duplicate tracking systems.
 
 ---
 
@@ -232,7 +224,7 @@ Low Priority
 - Programmatic Undo/Redo may reposition the text caret within certain WPF text editors.
 - This does not affect data integrity.
 
-Deferred until the future UI Modernization milestone.
+Deferred until the UI Modernization milestone.
 
 ---
 
@@ -244,10 +236,10 @@ Deferred until the future UI Modernization milestone.
 
 ## Next Session
 
-Implement:
+Finish release documentation.
 
-- Export Snapshot
-- Preview Snapshot
-- Import Snapshot
+Create the Version 0.6.0 Git commit.
 
-Then perform complete end-to-end testing using live Wartales data before beginning Mod Profiles.
+Push to GitHub.
+
+Begin implementation of **Mod Profiles & Change Migration**.

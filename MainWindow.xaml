@@ -210,16 +210,16 @@
                 <MenuItem Header="_Snapshots">
 
                     <MenuItem Header="_Export Snapshot..."
-                              IsEnabled="False"
-                              ToolTip="Snapshot export will be enabled after the snapshot workflow is connected."/>
-
-                    <MenuItem Header="_Import Snapshot..."
-                              IsEnabled="False"
-                              ToolTip="Snapshot import will be enabled after the snapshot workflow is connected."/>
+                              Command="{Binding ExportSnapshotCommand}"
+                              ToolTip="Export the current project modifications to a snapshot file."/>
 
                     <MenuItem Header="_Preview Snapshot..."
-                              IsEnabled="False"
-                              ToolTip="Snapshot preview will be enabled after the snapshot workflow is connected."/>
+                              Command="{Binding PreviewSnapshotCommand}"
+                              ToolTip="Preview how a snapshot would apply without modifying the project."/>
+
+                    <MenuItem Header="_Import Snapshot..."
+                              Command="{Binding ImportSnapshotCommand}"
+                              ToolTip="Safely import and apply compatible changes from a snapshot file."/>
 
                 </MenuItem>
 

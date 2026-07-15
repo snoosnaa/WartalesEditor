@@ -1,9 +1,9 @@
 ﻿# Wartales Editor
 ## Project Snapshot
 
-**Application Version:** 0.5.1  
-**Documentation Version:** 0.6  
-**Last Updated:** 2026-07-12
+**Application Version:** 0.6.0  
+**Documentation Version:** 0.7  
+**Last Updated:** 2026-07-13
 
 ---
 
@@ -11,9 +11,9 @@
 
 Wartales Editor is a desktop WPF application for editing Wartales game data safely, intelligently, and efficiently.
 
-The editor is intended to understand the structure of the game's data rather than simply exposing JSON. Whenever possible, it should guide users toward valid edits, prevent accidental mistakes, and provide workflows tailored to gameplay concepts instead of raw data structures.
+The editor is designed to understand the structure of the game's data rather than simply exposing JSON. Whenever practical, it should guide users toward valid edits, prevent accidental mistakes, and provide workflows centered around gameplay concepts instead of raw data structures.
 
-The long-term goal is a professional-quality editor that supports both casual modders and advanced creators.
+The long-term goal is to become a professional-quality editor capable of supporting both casual modders and advanced content creators while remaining maintainable, extensible, and reliable across future Wartales updates.
 
 ---
 
@@ -21,26 +21,27 @@ The long-term goal is a professional-quality editor that supports both casual mo
 
 **Status:** Builds Successfully ✅
 
-**Current Release:** Version 0.5.1
+**Current Release:** Version 0.6.0
 
-**Current Milestone Status:** Snapshot Workflow Foundation completed
+**Current Milestone Status:** Snapshot UI – Pass 1 completed
 
-The project has transitioned from a functional editor into a reusable editing platform.
+The application has evolved beyond a functional editor into a reusable editing platform with a growing collection of shared infrastructure.
 
-The current application supports:
+The editor currently provides:
 
 - Intelligent navigation
 - Localization-aware searching
-- Type-aware editing
+- Type-aware property editors
 - Safe modification tracking
 - Unlimited Undo / Redo
 - Live Change Summary
 - Direct navigation to modified properties
-- Snapshot workflow infrastructure
+- Complete Snapshot workflow
 - Constructor-injected services
 - Dialog abstraction
+- Workflow-based architecture
 
-The immediate focus is implementing Snapshot UI – Pass 1 using the completed workflow infrastructure.
+The next development milestone is **Mod Profiles & Change Migration**.
 
 ---
 
@@ -67,7 +68,7 @@ Whenever practical:
 
 ## Framework
 
-- .NET
+- .NET 10
 - WPF
 - MVVM
 
@@ -108,7 +109,7 @@ User interface terminology:
 | EntryModel | Setting |
 | PropertyModel | Property |
 
-Supporting models:
+Supporting models include:
 
 - SearchResultModel
 - ReferenceValueModel
@@ -129,19 +130,19 @@ Current responsibilities:
 - Automatic editor selection
 - Original value capture
 - Modification detection
-- Reset to original
+- Reset support
 - Validation support
 - Reference lookup
-- Property modification notifications
-- Property value-change notifications
-- Snapshot support
+- Modification notifications
+- Value-change notifications
+- Snapshot participation
 - Display-ready original and current values
 
-`PropertyModel.IsModified` remains the single source of truth for determining whether a property currently differs from its saved baseline.
+`PropertyModel.IsModified` remains the application's single source of truth for determining whether a property differs from its saved baseline.
 
 ---
 
-# Services
+# Core Services
 
 ## JsonDataService
 
@@ -151,8 +152,8 @@ Responsible for:
 - Saving projects
 - Parsing JSON
 - Building ProjectModel
-- Capturing original property values
-- Establishing a new baseline after saving
+- Capturing original values
+- Establishing a new baseline after Save
 
 ---
 
@@ -160,8 +161,7 @@ Responsible for:
 
 Responsible for:
 
-- Global Find Anything searching
-- Property searching
+- Find Anything searching
 - Search result generation
 - Navigation metadata
 
@@ -173,7 +173,7 @@ Responsible for:
 
 - English localization
 - Localized searching
-- Localized display names
+- Display names
 - Future language support
 
 ---
@@ -195,8 +195,7 @@ Responsible for:
 
 - Reference discovery
 - Dropdown population
-- Reference lookup
-- Shared reference data through a singleton instance
+- Shared lookup data
 
 ---
 
@@ -210,9 +209,9 @@ Responsible for:
 - Session history
 - History state notifications
 
-Edit history answers:
+This service answers the question:
 
-> What happened?
+> "What happened?"
 
 ---
 
@@ -220,12 +219,14 @@ Edit history answers:
 
 Responsible for:
 
-- Snapshot export orchestration
-- Snapshot preview orchestration
-- Snapshot import orchestration
-- Coordinating matching, preview, serialization, and application services
+- Snapshot export
+- Snapshot preview
+- Snapshot import
+- Workflow orchestration
+- Matching coordination
+- Snapshot application
 
-The workflow service coordinates existing services rather than duplicating their responsibilities.
+The workflow service coordinates existing systems rather than replacing them.
 
 ---
 
@@ -247,7 +248,7 @@ Responsible for:
 - Error dialogs
 - Confirmation dialogs
 
-WPF-specific implementations remain isolated from the ViewModel.
+Concrete WPF implementations remain isolated from ViewModels.
 
 ---
 
@@ -258,17 +259,19 @@ WPF-specific implementations remain isolated from the ViewModel.
 Coordinates:
 
 - Project state
-- Category, Setting, and Property selection
+- Category selection
+- Setting selection
+- Property selection
 - Find Anything
 - Navigation
-- Modification state
+- Modification tracking
 - Undo / Redo
 - Change Summary
-- Snapshot orchestration
+- Snapshot workflow
 - Window commands
 - Status reporting
 
-All required services are supplied through constructor injection.
+All dependencies are supplied through constructor injection.
 
 ---
 
@@ -278,9 +281,9 @@ Responsible for:
 
 - Presenting modified-property snapshots
 - Category grouping
-- Selection
-- Navigation commands
-- Live refresh while the window remains open
+- Navigation
+- Live updates
+- Selection management
 
 ---
 
@@ -306,9 +309,9 @@ Snapshot Workflow
 Save
 ```
 
-Editing occurs directly against the original JSON document.
+Editing always occurs directly against the loaded JSON document.
 
-No replacement JSON document is reconstructed for saving.
+No replacement document is reconstructed during Save.
 
 ---
 
@@ -316,18 +319,17 @@ No replacement JSON document is reconstructed for saving.
 
 Implemented:
 
+- ✅ Export Snapshot
+- ✅ Preview Snapshot
+- ✅ Import Snapshot
 - ✅ Snapshot capture
 - ✅ Snapshot serialization
 - ✅ Snapshot loading
 - ✅ Snapshot matching
-- ✅ Snapshot preview
 - ✅ Snapshot application
 - ✅ Workflow orchestration
 
-Current status:
-
-- Infrastructure complete
-- UI integration pending
+The complete end-to-end snapshot workflow is now operational and fully integrated with the editor.
 
 ---
 
@@ -345,7 +347,7 @@ Implemented:
 - ✅ Modification status reporting
 - ✅ New baseline after Save
 
-The modification state remains the single source of truth for the entire editor.
+The modification state remains the single source of truth throughout the editor.
 
 ---
 
@@ -363,9 +365,9 @@ Implemented:
 
 Known minor issue:
 
-- Programmatic Undo / Redo may move the caret to the beginning of certain WPF text editors.
-- Does not affect data integrity.
-- Deferred until future UI modernization.
+- Programmatic Undo / Redo may reposition the caret within certain WPF text editors.
+- This does not affect data integrity.
+- Deferred until the UI Modernization milestone.
 
 ---
 
@@ -386,7 +388,7 @@ Implemented:
 - ✅ Save
 - ✅ Opening another project
 
-Built entirely from the existing modification state.
+The Change Summary is generated entirely from the existing modification state rather than maintaining a second change-tracking system.
 
 ---
 
@@ -436,11 +438,11 @@ Undo / Redo
     ↓
 Review Change Summary
     ↓
-Export Snapshot (next)
+Export Snapshot
     ↓
-Preview Snapshot (next)
+Preview Snapshot
     ↓
-Import Snapshot (next)
+Import Snapshot
     ↓
 Save
     ↓
@@ -455,7 +457,7 @@ Play
 
 - ✅ Project Foundation
 - ✅ Data Browser
-- ✅ Functional Editing
+- ✅ First Functional Editor
 - ✅ Find Anything
 - ✅ Smart Property Editors
 - ✅ Safe Editing
@@ -463,69 +465,67 @@ Play
 - ✅ Snapshot Workflow Foundation
 - ✅ Constructor Injection
 - ✅ Dialog Service Abstraction
+- ✅ Snapshot UI – Pass 1
 
 ---
 
 # Current Roadmap
 
-## Immediate Task
+## Active Milestone
 
-Implement **Snapshot UI – Pass 1**:
+### Mod Profiles & Change Migration
 
-- Export Snapshot
-- Preview Snapshot
-- Import Snapshot
+Primary objective:
 
-using the completed workflow infrastructure.
+Allow users to preserve their modifications across future Wartales updates.
 
----
+Planned capabilities:
 
-## Priority 1 – Mod Profiles and Change Migration
-
-Primary goal:
-
-Preserve user modifications across future Wartales updates.
-
-Expected capabilities:
-
-- Save reusable mod profiles
-- Export modified values
-- Import edits into newer `data.cdb`
-- Intelligent matching
-- Merge preview
-- Conflict detection
+- Save reusable Mod Profiles
+- Load existing Mod Profiles
+- Intelligent snapshot matching
+- Migration to newer game versions
+- Conflict reporting
 - Safe application
+- Merge Preview (future)
 
 ---
 
 ## Priority 2 – Robust Validation
 
-- Missing references
+Planned capabilities:
+
+- Missing reference detection
 - Invalid references
-- Required properties
+- Invalid values
+- Required property validation
 - Duplicate detection
-- Validation summaries
+- Validation reports
 - Navigable validation results
 
 ---
 
 ## Priority 3 – Content Creation Tools
 
-Initial targets:
+Initial focus:
 
 - Camp structures
 - Crafting stations
 - Camp anvil
-- Guided content creation
+- Guided gameplay content creation
 
 ---
 
 ## Priority 4 – UI Modernization
 
+Planned improvements:
+
 - Workflow-oriented toolbar
+- Larger action buttons
 - Improved command organization
-- Better layout
+- Layout polish
 - Icon support
+- Additional usability improvements
 
 ---
 
@@ -540,7 +540,7 @@ Initial targets:
 - Backup on Save
 - QuickBMS workflow integration
 - Property descriptions
-- In-game mod/profile notification with creator credits
+- In-game mod/profile notification with optional creator credits
 - Specialized gameplay editors
 
 ---
@@ -552,13 +552,13 @@ Always:
 - Use MVVM.
 - Use `ObservableObject` where appropriate.
 - Prefer small, focused classes.
-- Keep reusable logic in services.
-- Keep editing behavior in models.
-- Keep coordination in ViewModels.
+- Keep reusable logic inside services.
+- Keep editing behavior inside models.
+- Keep coordination inside ViewModels.
 - Keep code-behind view-specific.
 - Preserve the original JSON document.
 - Preserve original formatting whenever practical.
-- Use the existing modification state as the single source of truth.
+- Use the existing modification state as the application's single source of truth.
 - Build after every logical implementation step.
 
 Avoid:
@@ -594,12 +594,12 @@ Required practices:
 
 - Design complete implementations before generating code.
 - Prefer extensible architecture over shortcuts.
-- Keep the project compiling after every stage.
+- Keep the project compiling after every implementation stage.
 - Complete one milestone at a time.
 - Stay focused on the active milestone.
 - Work only from the latest files supplied by the user.
-- Never reconstruct a current file from memory.
-- Ask for any current file needed before modifying it.
+- Never reconstruct a current project file from memory.
+- Ask for any current file before modifying it.
 - Return complete replacements for small and medium files.
 - Fully design large-file replacements before emitting them.
 - Split large replacements only when required by response length.
@@ -609,10 +609,12 @@ Required practices:
 
 # Current Task
 
-Implement **Snapshot UI – Pass 1**:
+Current documentation updates are complete.
 
-- Export Snapshot
-- Preview Snapshot
-- Import Snapshot
+Next actions:
 
-using the completed Snapshot workflow infrastructure.
+1. Create the Version **0.6.0** Git commit.
+2. Push the changes to GitHub.
+3. Begin the **Mod Profiles & Change Migration** milestone.
+
+The Snapshot workflow is now complete and provides the reusable foundation for future profile management, migration, validation, merge preview, and advanced editing workflows.

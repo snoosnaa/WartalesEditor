@@ -6,6 +6,54 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.6.0 - Snapshot UI – Pass 1
+
+**Released:** 2026-07-13
+
+## Added
+
+### Snapshot User Interface
+
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
+- Complete end-to-end snapshot workflow
+- Snapshot workflow success summaries
+- Snapshot preview dialog
+- Snapshot import dialog
+- Snapshot export dialog
+
+### Workflow Integration
+
+- Snapshot UI connected to `ModificationSnapshotWorkflowService`
+- Automatic modification tracking refresh after snapshot import
+- Automatic Change Summary refresh after snapshot import
+- Seamless integration with the existing editing workflow
+
+## Changed
+
+- Completed the first fully functional snapshot user workflow.
+- Snapshot functionality now operates entirely through the reusable workflow infrastructure.
+- Snapshot import behaves identically to manual editing, preserving existing application behavior.
+- Existing editing architecture reused without introducing duplicate modification tracking.
+
+## Verified
+
+Successfully verified:
+
+- Export Snapshot
+- Preview Snapshot
+- Import Snapshot
+- Modification tracking refresh
+- Change Summary refresh
+- Undo compatibility
+- Redo compatibility
+- Save compatibility
+- Live Wartales testing
+- Successful builds throughout implementation
+
+---
+
 # Version 0.5.1 - Snapshot Workflow Foundation
 
 **Released:** 2026-07-12

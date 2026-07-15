@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using WartalesEditor.Helpers;
@@ -14,6 +16,9 @@ namespace WartalesEditor.ViewModels;
 
 public class MainViewModel : ObservableObject
 {
+    private const string ApplicationVersion =
+        "0.5.1";
+
     private const string ProjectOpenFilter =
         "CDB Files (*.cdb)|*.cdb|" +
         "JSON Files (*.json)|*.json|" +
@@ -21,6 +26,10 @@ public class MainViewModel : ObservableObject
 
     private const string ProjectSaveFilter =
         "CDB Files (*.cdb)|*.cdb|" +
+        "All Files (*.*)|*.*";
+
+    private const string SnapshotFileFilter =
+        "Wartales Snapshot Files (*.json)|*.json|" +
         "All Files (*.*)|*.*";
 
     private readonly JsonDataService jsonDataService;
@@ -438,7 +447,7 @@ public class MainViewModel : ObservableObject
                 string.IsNullOrWhiteSpace(
                     CurrentFile)
                     ? "No file loaded"
-                    : System.IO.Path.GetFileName(
+                    : Path.GetFileName(
                         CurrentFile);
 
             string modifiedMarker =
@@ -496,6 +505,21 @@ public class MainViewModel : ObservableObject
     public RelayCommand RedoCommand { get; }
 
     public RelayCommand ShowChangeSummaryCommand
+    {
+        get;
+    }
+
+    public RelayCommand ExportSnapshotCommand
+    {
+        get;
+    }
+
+    public RelayCommand PreviewSnapshotCommand
+    {
+        get;
+    }
+
+    public RelayCommand ImportSnapshotCommand
     {
         get;
     }
@@ -613,6 +637,21 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => ShowChangeSummary(),
                 _ => Project != null);
+
+        ExportSnapshotCommand =
+            new RelayCommand(
+                _ => ExportSnapshot(),
+                _ => Project != null);
+
+        PreviewSnapshotCommand =
+            new RelayCommand(
+                _ => PreviewSnapshot(),
+                _ => Project != null);
+
+        ImportSnapshotCommand =
+            new RelayCommand(
+                _ => ImportSnapshot(),
+                _ => Project != null);
     }
 
     private void OpenProject()
@@ -624,47 +663,61 @@ public class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(fileName))
             return;
 
-        ProjectModel loadedProject =
-            jsonDataService.LoadProject(
-                fileName);
-
-        referenceDataService.Initialize(
-            loadedProject);
-
-        CurrentFile =
-            fileName;
-
-        Project =
-            loadedProject;
-
-        string localizationFile =
-            System.IO.Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "export_en.xml");
-
-        if (System.IO.File.Exists(
-                localizationFile))
+        try
         {
-            localizationService.Load(
-                localizationFile);
+            ProjectModel loadedProject =
+                jsonDataService.LoadProject(
+                    fileName);
 
-            LocalizationStatus =
-                $"Localization: English " +
-                $"({localizationService.EntryCount:N0})";
+            referenceDataService.Initialize(
+                loadedProject);
+
+            CurrentFile =
+                fileName;
+
+            Project =
+                loadedProject;
+
+            string localizationFile =
+                Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "export_en.xml");
+
+            if (File.Exists(
+                    localizationFile))
+            {
+                localizationService.Load(
+                    localizationFile);
+
+                LocalizationStatus =
+                    $"Localization: English " +
+                    $"({localizationService.EntryCount:N0})";
+            }
+            else
+            {
+                LocalizationStatus =
+                    "Localization: English not found";
+            }
+
+            RefreshSearchResults();
+            RefreshChangeSummaryViewModel();
+            RefreshCommandStates();
+
+            Status =
+                $"Loaded: " +
+                $"{Path.GetFileName(CurrentFile)}";
         }
-        else
+        catch (Exception exception)
         {
-            LocalizationStatus =
-                "Localization: English not found";
+            messageDialogService.ShowError(
+                $"The project could not be opened." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Open Project");
+
+            Status =
+                "Project open failed.";
         }
-
-        RefreshSearchResults();
-        RefreshChangeSummaryViewModel();
-        RefreshCommandStates();
-
-        Status =
-            $"Loaded: " +
-            $"{System.IO.Path.GetFileName(CurrentFile)}";
     }
 
     private void SaveProject()
@@ -676,7 +729,7 @@ public class MainViewModel : ObservableObject
             string.IsNullOrWhiteSpace(
                 CurrentFile)
                 ? "data.cdb"
-                : System.IO.Path.GetFileName(
+                : Path.GetFileName(
                     CurrentFile);
 
         string? fileName =
@@ -687,22 +740,394 @@ public class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(fileName))
             return;
 
-        jsonDataService.SaveProject(
-            Project,
-            fileName);
+        try
+        {
+            jsonDataService.SaveProject(
+                Project,
+                fileName);
 
-        Project.FileName =
-            fileName;
+            Project.FileName =
+                fileName;
 
-        CurrentFile =
-            fileName;
+            CurrentFile =
+                fileName;
 
-        RefreshModificationState();
-        RefreshCommandStates();
+            RefreshModificationState();
+            RefreshCommandStates();
 
-        Status =
-            $"Saved: " +
-            $"{System.IO.Path.GetFileName(fileName)}";
+            Status =
+                $"Saved: " +
+                $"{Path.GetFileName(fileName)}";
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                $"The project could not be saved." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Save Project");
+
+            Status =
+                "Project save failed.";
+        }
+    }
+
+    private void ExportSnapshot()
+    {
+        if (Project == null)
+            return;
+
+        string initialFileName =
+            BuildDefaultSnapshotFileName();
+
+        string? fileName =
+            fileDialogService.ShowSaveFileDialog(
+                SnapshotFileFilter,
+                initialFileName);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        try
+        {
+            ModificationSnapshotExportResultModel result =
+                modificationSnapshotWorkflowService.Export(
+                    Project,
+                    fileName,
+                    ApplicationVersion);
+
+            string message =
+                BuildExportSnapshotSummary(
+                    result);
+
+            messageDialogService.ShowInformation(
+                message,
+                "Snapshot Exported");
+
+            Status =
+                $"Snapshot exported: " +
+                $"{Path.GetFileName(result.FileName)}";
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                $"The snapshot could not be exported." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Export Snapshot");
+
+            Status =
+                "Snapshot export failed.";
+        }
+    }
+
+    private void PreviewSnapshot()
+    {
+        if (Project == null)
+            return;
+
+        string? fileName =
+            fileDialogService.ShowOpenFileDialog(
+                SnapshotFileFilter);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        try
+        {
+            ModificationSnapshotModel snapshot =
+                modificationSnapshotWorkflowService.Load(
+                    fileName);
+
+            ModificationPreviewResultModel result =
+                modificationSnapshotWorkflowService.Preview(
+                    Project,
+                    snapshot);
+
+            string message =
+                BuildPreviewSnapshotSummary(
+                    result,
+                    fileName);
+
+            if (result.HasConflicts ||
+                result.HasUnmatchedItems ||
+                result.HasInvalidSnapshotChanges)
+            {
+                messageDialogService.ShowWarning(
+                    message,
+                    "Snapshot Preview");
+            }
+            else
+            {
+                messageDialogService.ShowInformation(
+                    message,
+                    "Snapshot Preview");
+            }
+
+            Status =
+                $"Snapshot previewed: " +
+                $"{Path.GetFileName(fileName)}";
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                $"The snapshot could not be previewed." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Preview Snapshot");
+
+            Status =
+                "Snapshot preview failed.";
+        }
+    }
+
+    private void ImportSnapshot()
+    {
+        if (Project == null)
+            return;
+
+        string? fileName =
+            fileDialogService.ShowOpenFileDialog(
+                SnapshotFileFilter);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        try
+        {
+            ModificationSnapshotImportResultModel result =
+                modificationSnapshotWorkflowService
+                    .ImportAndApplySafely(
+                        Project,
+                        fileName);
+
+            RefreshModificationState();
+            RefreshChangeSummaryViewModel();
+            RefreshSearchResults();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            string message =
+                BuildImportSnapshotSummary(
+                    result);
+
+            if (result.HasConflicts ||
+                result.HasUnmatchedItems ||
+                result.HasFailures)
+            {
+                messageDialogService.ShowWarning(
+                    message,
+                    "Snapshot Import Complete");
+            }
+            else
+            {
+                messageDialogService.ShowInformation(
+                    message,
+                    "Snapshot Import Complete");
+            }
+
+            Status =
+                result.HasAppliedChanges
+                    ? $"Snapshot imported: " +
+                      $"{result.AppliedCount:N0} " +
+                      $"{GetSingularOrPlural(
+                          result.AppliedCount,
+                          "change",
+                          "changes")} applied"
+                    : "Snapshot imported: " +
+                      "no changes were required.";
+        }
+        catch (Exception exception)
+        {
+            RefreshModificationState();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            messageDialogService.ShowError(
+                $"The snapshot could not be imported." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Import Snapshot");
+
+            Status =
+                "Snapshot import failed.";
+        }
+    }
+
+    private string BuildDefaultSnapshotFileName()
+    {
+        string projectName =
+            string.IsNullOrWhiteSpace(
+                CurrentFile)
+                ? "wartales"
+                : Path.GetFileNameWithoutExtension(
+                    CurrentFile);
+
+        return
+            $"{projectName}.snapshot.json";
+    }
+
+    private static string BuildExportSnapshotSummary(
+        ModificationSnapshotExportResultModel result)
+    {
+        StringBuilder message =
+            new();
+
+        message.AppendLine(
+            "The modification snapshot was exported successfully.");
+
+        message.AppendLine();
+        message.AppendLine(
+            $"File: {Path.GetFileName(result.FileName)}");
+
+        message.AppendLine(
+            $"Categories: {result.CategoryCount:N0}");
+
+        message.AppendLine(
+            $"Settings: {result.SettingCount:N0}");
+
+        message.AppendLine(
+            $"Properties: {result.PropertyCount:N0}");
+
+        if (!result.HasChanges)
+        {
+            message.AppendLine();
+            message.Append(
+                "The snapshot does not contain any " +
+                "modified properties.");
+        }
+
+        return message.ToString();
+    }
+
+    private static string BuildPreviewSnapshotSummary(
+        ModificationPreviewResultModel result,
+        string fileName)
+    {
+        StringBuilder message =
+            new();
+
+        message.AppendLine(
+            $"Snapshot: {Path.GetFileName(fileName)}");
+
+        message.AppendLine();
+        message.AppendLine(
+            $"Total changes: {result.TotalCount:N0}");
+
+        message.AppendLine(
+            $"Safe to apply: " +
+            $"{result.SafeToApplyCount:N0}");
+
+        message.AppendLine(
+            $"Already applied: " +
+            $"{result.AlreadyAppliedCount:N0}");
+
+        message.AppendLine(
+            $"Conflicts: {result.ConflictCount:N0}");
+
+        message.AppendLine(
+            $"Not matched: " +
+            $"{result.NotMatchedCount:N0}");
+
+        message.AppendLine(
+            $"Invalid snapshot changes: " +
+            $"{result.InvalidSnapshotChangeCount:N0}");
+
+        message.AppendLine();
+
+        if (result.TotalCount == 0)
+        {
+            message.Append(
+                "The snapshot does not contain any changes.");
+        }
+        else if (result.CanApplyWithoutConflicts)
+        {
+            message.Append(
+                "This preview did not modify the project. " +
+                "The snapshot can be imported without " +
+                "unresolved conflicts.");
+        }
+        else
+        {
+            message.Append(
+                "This preview did not modify the project. " +
+                "Only changes considered safe by the " +
+                "snapshot workflow will be applied during import.");
+        }
+
+        return message.ToString();
+    }
+
+    private static string BuildImportSnapshotSummary(
+        ModificationSnapshotImportResultModel result)
+    {
+        StringBuilder message =
+            new();
+
+        message.AppendLine(
+            $"Snapshot: {Path.GetFileName(result.FileName)}");
+
+        message.AppendLine();
+        message.AppendLine(
+            $"Total changes: {result.TotalCount:N0}");
+
+        message.AppendLine(
+            $"Matched: {result.MatchedCount:N0}");
+
+        message.AppendLine(
+            $"Unmatched: {result.UnmatchedCount:N0}");
+
+        message.AppendLine();
+        message.AppendLine(
+            $"Applied: {result.AppliedCount:N0}");
+
+        message.AppendLine(
+            $"No change required: " +
+            $"{result.NoChangeRequiredCount:N0}");
+
+        message.AppendLine(
+            $"Conflicts: {result.ConflictCount:N0}");
+
+        message.AppendLine(
+            $"Invalid snapshot changes: " +
+            $"{result.InvalidSnapshotChangeCount:N0}");
+
+        message.AppendLine(
+            $"Failed: {result.FailedCount:N0}");
+
+        message.AppendLine();
+
+        if (result.IsCompleteSuccess)
+        {
+            message.Append(
+                "Every snapshot change was applied " +
+                "or was already present.");
+        }
+        else if (result.HasAppliedChanges)
+        {
+            message.Append(
+                "Safe changes were applied. Review the " +
+                "conflict, unmatched, invalid, and failed " +
+                "counts before saving the project.");
+        }
+        else
+        {
+            message.Append(
+                "No new changes were applied. Review the " +
+                "summary above for unresolved items.");
+        }
+
+        return message.ToString();
+    }
+
+    private static string GetSingularOrPlural(
+        int count,
+        string singular,
+        string plural)
+    {
+        return count == 1
+            ? singular
+            : plural;
     }
 
     private void StartTrackingProjectProperties()
@@ -867,6 +1292,7 @@ public class MainViewModel : ObservableObject
 
     private void RefreshCommandStates()
     {
+        OpenCommand?.NotifyCanExecuteChanged();
         SaveCommand?.NotifyCanExecuteChanged();
 
         NavigateSearchResultCommand?
@@ -879,6 +1305,15 @@ public class MainViewModel : ObservableObject
         RedoCommand?.NotifyCanExecuteChanged();
 
         ShowChangeSummaryCommand?
+            .NotifyCanExecuteChanged();
+
+        ExportSnapshotCommand?
+            .NotifyCanExecuteChanged();
+
+        PreviewSnapshotCommand?
+            .NotifyCanExecuteChanged();
+
+        ImportSnapshotCommand?
             .NotifyCanExecuteChanged();
     }
 

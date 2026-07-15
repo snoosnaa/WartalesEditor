@@ -1,8 +1,8 @@
 ﻿# Development Journal
 
-**Version:** 0.6
+**Version:** 0.7
 **Status:** Active
-**Last Updated:** 2026-07-12
+**Last Updated:** 2026-07-13
 **Applies To:** Entire Project
 
 ---
@@ -16,6 +16,7 @@
 - Session 005
 - Session 006
 - Session 007
+- Session 008
 
 ---
 
@@ -54,7 +55,7 @@ The application successfully opens and parses the original `data.cdb` and displa
 
 ## Milestone Achieved
 
-Project foundation completed.
+Project Foundation
 
 ## Next Focus
 
@@ -74,7 +75,7 @@ Completed the transition from a category browser into a functional three-pane da
 - Completed the MVVM selection pipeline.
 - Displayed Settings for the selected Category.
 - Added the third Properties pane.
-- Displayed editable PropertyModel objects.
+- Displayed editable `PropertyModel` objects.
 - Replaced `KeyValuePair<string, object?>` with `PropertyModel`.
 - Updated `JsonDataService`.
 - Updated UI bindings.
@@ -100,7 +101,7 @@ Users can:
 
 ## Milestone Achieved
 
-Data Browser completed.
+Data Browser
 
 ## Next Focus
 
@@ -127,8 +128,8 @@ Completed the first fully functional editing workflow from loading the game's CD
 ### Editing
 
 - Replaced read-only properties with editable controls.
-- Connected PropertyModel directly to SourceProperty.
-- Updated RootDocument automatically.
+- Connected `PropertyModel` directly to `SourceProperty`.
+- Updated `RootDocument` automatically.
 - Added Save support.
 - Reloaded saved files successfully.
 
@@ -180,7 +181,7 @@ Version 0.1.0 — First Functional Editor
 
 ## Next Focus
 
-Improve search, navigation and localization.
+Improve search, navigation, and localization.
 
 ---
 
@@ -188,7 +189,7 @@ Improve search, navigation and localization.
 
 ## Summary
 
-Completed Find Anything v1 while laying the foundation for intelligent editing.
+Completed Find Anything while laying the foundation for intelligent editing.
 
 ## Completed
 
@@ -237,7 +238,7 @@ The editor now supports intelligent navigation together with context-aware prope
 
 ## Milestone Achieved
 
-Find Anything v1 and Smart Property Editors completed.
+Find Anything & Smart Property Editors
 
 ## Next Focus
 
@@ -249,7 +250,7 @@ Implement safe editing infrastructure.
 
 ## Summary
 
-Completed the editing safety infrastructure that transforms the editor from a simple property editor into a reliable editing application.
+Completed the editing safety infrastructure that transformed the editor from a simple property editor into a reliable editing application.
 
 ## Completed
 
@@ -319,7 +320,7 @@ Version 0.4.0 — Safe Editing Infrastructure
 
 ## Next Focus
 
-Implement Change Summary – Pass 1 using the new modification and history infrastructure.
+Implement Change Summary.
 
 ---
 
@@ -327,7 +328,7 @@ Implement Change Summary – Pass 1 using the new modification and history infra
 
 ## Summary
 
-Completed Change Summary – Pass 1, providing users with a live review of every unsaved modification while preserving the existing editing architecture.
+Completed Change Summary, providing users with a live review of every unsaved modification while preserving the existing editing architecture.
 
 This milestone focused on presenting the current modification state rather than recording editing history.
 
@@ -358,9 +359,9 @@ This milestone focused on presenting the current modification state rather than 
 
 ### Architecture
 
-- Reused the existing PropertyModel modification state as the single source of truth.
+- Reused the existing `PropertyModel` modification state as the single source of truth.
 - Avoided introducing a second change-tracking system.
-- Switched from duplicated observable collections to snapshot generation with the ChangeSummaryViewModel owning the presentation collection.
+- Switched from duplicated observable collections to snapshot generation with the `ChangeSummaryViewModel` owning the presentation collection.
 - Preserved clean MVVM separation between editing logic and presentation.
 
 ### Runtime Testing
@@ -392,9 +393,9 @@ Runtime testing resulted in several usability refinements:
 
 ## Major Decisions
 
-- Treat Change Summary as a view of the current modification state, not an editing history.
-- Keep modification tracking centralized within PropertyModel.
-- Separate presentation concerns into ChangeSummaryViewModel.
+- Treat Change Summary as a view of the current modification state rather than an editing history.
+- Keep modification tracking centralized within `PropertyModel`.
+- Separate presentation concerns into `ChangeSummaryViewModel`.
 - Validate new functionality through live runtime testing before completing the milestone.
 
 ## Current Status
@@ -407,7 +408,7 @@ Version 0.5.0 — Change Summary
 
 ## Next Focus
 
-Implement Mod Profiles and Change Migration to preserve user modifications across future Wartales updates.
+Begin the Snapshot workflow foundation to support Mod Profiles and Change Migration.
 
 ---
 
@@ -415,72 +416,71 @@ Implement Mod Profiles and Change Migration to preserve user modifications acros
 
 ## Summary
 
-Completed the architectural foundation for the Snapshot workflow while preparing the editor for Mod Profiles, Change Migration, and future workflow-driven features.
+Completed the architectural foundation required for the Snapshot workflow while strengthening the application's long-term maintainability.
 
-This session focused on strengthening the application's architecture before exposing snapshot functionality through the user interface.
+Rather than immediately exposing snapshot functionality through the user interface, this milestone focused on building reusable infrastructure that future features could share.
 
 ## Completed
 
-### Snapshot Workflow
+### Snapshot Workflow Foundation
 
 - Introduced `ModificationSnapshotWorkflowService`.
 - Implemented snapshot workflow orchestration.
-- Added export workflow.
-- Added preview workflow.
-- Added import workflow.
+- Added snapshot export processing.
+- Added snapshot preview processing.
+- Added snapshot import processing.
 - Added snapshot import and export result models.
-- Completed the infrastructure for end-to-end snapshot processing.
-
-### User Interface Foundation
-
-- Added a standard application menu.
-- Introduced File, Edit, View, Tools, and Help menus.
-- Added the Snapshot menu structure.
-- Added placeholders for Validation and Developer Tools.
-
-### Dialog Architecture
-
-- Introduced `IFileDialogService`.
-- Introduced `IMessageDialogService`.
-- Implemented WPF dialog services.
-- Removed direct file dialog ownership from `MainViewModel`.
+- Established a reusable workflow layer for future snapshot features.
 
 ### Dependency Management
 
 - Converted `MainViewModel` to constructor injection.
-- Moved service creation responsibility to `MainWindow`.
-- Reduced ViewModel coupling to concrete implementations.
-- Prepared the application for future dependency injection if desired.
+- Moved service creation responsibilities out of the ViewModel.
+- Reduced coupling between presentation and infrastructure.
+- Prepared the application for future dependency injection expansion.
+
+### Dialog Service Abstraction
+
+- Introduced `IFileDialogService`.
+- Introduced `IMessageDialogService`.
+- Implemented WPF dialog service implementations.
+- Removed direct dialog ownership from `MainViewModel`.
+- Improved separation between UI and business logic.
+
+### Application Menus
+
+- Added a standard application menu.
+- Introduced File, Edit, View, Tools, and Help menus.
+- Added Snapshot menu placeholders.
+- Added Validation and Developer Tools placeholders for future milestones.
 
 ### Runtime Testing
 
 Successfully verified:
 
 - Constructor injection.
-- File dialog abstraction.
+- Dialog service abstraction.
 - Menu integration.
-- Open and Save workflows.
+- Open workflow.
+- Save workflow.
 - Ctrl+O.
 - Ctrl+S.
 - Undo.
 - Redo.
 - Reset Property.
 - Change Summary.
-- Navigate button.
-- Double-click navigation.
-- Successful builds after each architectural stage.
+- Successful builds throughout the refactoring process.
 
 ## Major Decisions
 
-- Build the Snapshot engine before implementing Mod Profiles.
-- Treat snapshot workflows as reusable application services.
+- Build workflow infrastructure before user-facing features.
+- Treat snapshot processing as reusable application services.
 - Separate workflow orchestration from presentation.
-- Separate dialog services from application logic.
-- Continue investing in long-term maintainability before expanding user-facing functionality.
+- Continue investing in architecture before expanding functionality.
 
 ## Current Status
 
-The editor now has a reusable workflow layer capable of supporting snapshot export, preview, import, future Mod Profiles, validation workflows, and additional editing tools.
+The editor now contains the reusable infrastructure necessary to support snapshot-based workflows, Mod Profiles, Change Migration, and future validation tools.
 
 ## Milestone Achieved
 
@@ -488,4 +488,124 @@ Version 0.5.1 — Snapshot Workflow Foundation
 
 ## Next Focus
 
-Implement Snapshot UI – Pass 1 by connecting Export Snapshot, Preview Snapshot, and Import Snapshot to the completed workflow infrastructure.
+Implement Snapshot UI – Pass 1.
+
+---
+
+# Session 008
+
+## Summary
+
+Completed Snapshot UI – Pass 1, transforming the previously completed snapshot infrastructure into a complete user-facing workflow for exporting, previewing, and importing modification snapshots.
+
+This milestone focused on exposing the snapshot system through the application interface while preserving the architectural separation established during the previous session.
+
+## Completed
+
+### Snapshot User Interface
+
+- Added Export Snapshot.
+- Added Preview Snapshot.
+- Added Import Snapshot.
+- Connected all snapshot commands to the existing `ModificationSnapshotWorkflowService`.
+- Completed the first end-to-end snapshot workflow.
+
+### Workflow Integration
+
+- Integrated snapshot operations with the existing editing workflow.
+- Ensured imported changes immediately update the editor.
+- Refreshed modification tracking after snapshot import.
+- Refreshed Change Summary automatically after snapshot operations.
+- Preserved compatibility with existing editing commands.
+
+### Architecture Improvements
+
+- Continued using constructor injection throughout the application.
+- Preserved dialog abstraction through the existing dialog services.
+- Kept snapshot orchestration isolated from presentation logic.
+- Reused existing modification tracking rather than introducing duplicate state.
+- Maintained clean MVVM separation throughout the implementation.
+
+### Runtime Testing
+
+Successfully verified:
+
+- Snapshot export.
+- Snapshot preview.
+- Snapshot import.
+- Modification tracking refresh.
+- Change Summary refresh.
+- Undo compatibility.
+- Redo compatibility.
+- Save workflow.
+- Live editing after snapshot import.
+- Successful runtime testing within Wartales.
+
+### Stability
+
+The application remained stable throughout implementation.
+
+Every major implementation stage was followed by a successful build before continuing development.
+
+Live gameplay verification confirmed that imported snapshot changes behaved identically to manually edited changes.
+
+## Major Decisions
+
+- Complete the entire snapshot workflow before beginning Mod Profiles.
+- Keep workflow orchestration centralized within `ModificationSnapshotWorkflowService`.
+- Reuse existing editing infrastructure whenever possible instead of introducing parallel systems.
+- Continue prioritizing maintainability and extensibility over short-term implementation speed.
+
+## Current Status
+
+The editor now provides a complete snapshot workflow capable of exporting, previewing, and importing modification snapshots while integrating seamlessly with the existing editing, undo/redo, modification tracking, and Change Summary systems.
+
+The architectural foundation for Mod Profiles and Change Migration is now complete.
+
+## Milestone Achieved
+
+Version 0.6.0 — Snapshot UI – Pass 1
+
+## Next Focus
+
+Begin implementing **Mod Profiles & Change Migration**, the highest-priority roadmap item.
+
+The snapshot workflow completed in this milestone provides the foundation for:
+
+- Persistent Mod Profiles.
+- Applying saved modifications to newer Wartales versions.
+- Future Merge Preview.
+- Validation workflows.
+- Batch editing support.
+- Additional advanced editing tools.
+
+---
+
+# Overall Project Progress
+
+The Wartales Editor has evolved from a proof-of-concept editor into a robust editing platform.
+
+Major completed milestones include:
+
+- Project Foundation
+- Data Browser
+- First Functional Editor
+- Find Anything
+- Smart Property Editors
+- Safe Editing
+- Undo / Redo
+- Change Summary
+- Snapshot Workflow Foundation
+- Constructor Injection
+- Dialog Service Abstraction
+- Snapshot UI – Pass 1
+
+The project now possesses a clean, extensible architecture capable of supporting future features without requiring significant redesign.
+
+Future development will focus on Mod Profiles and Change Migration while preserving the stability and maintainability established throughout the current architecture.
+
+---
+
+# Continuation
+
+Development continues in **DevelopmentJournal-02.md**, beginning with Session 009.
