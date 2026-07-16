@@ -207,6 +207,12 @@
 
             <MenuItem Header="_Tools">
 
+                <MenuItem Header="_Profile Manager"
+                          Command="{Binding ShowProfileManagerCommand}"
+                          ToolTip="Browse mod profiles stored in the Wartales Editor profile library."/>
+
+                <Separator/>
+
                 <MenuItem Header="_Snapshots">
 
                     <MenuItem Header="_Export Snapshot..."
@@ -297,6 +303,13 @@
                     Margin="5"
                     Command="{Binding ShowChangeSummaryCommand}">
                 Change Summary
+            </Button>
+
+            <Button Name="ProfileManagerButton"
+                    Width="130"
+                    Margin="5"
+                    Command="{Binding ShowProfileManagerCommand}">
+                Profile Manager
             </Button>
 
         </ToolBar>

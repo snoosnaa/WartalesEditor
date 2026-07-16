@@ -20,6 +20,7 @@ public partial class MainWindow : Window
                 new ModificationSnapshotService(),
                 new ModificationSnapshotWorkflowService(),
                 new ChangeSummaryService(),
+                new ModProfileLibraryService(),
                 ReferenceDataService.Instance,
                 new WpfFileDialogService(),
                 new WpfMessageDialogService());

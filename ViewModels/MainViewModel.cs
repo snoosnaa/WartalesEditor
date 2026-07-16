@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Threading;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
+using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
 using WartalesEditor.Services;
 using WartalesEditor.Views;
@@ -17,7 +18,7 @@ namespace WartalesEditor.ViewModels;
 public class MainViewModel : ObservableObject
 {
     private const string ApplicationVersion =
-        "0.5.1";
+        "0.6.0";
 
     private const string ProjectOpenFilter =
         "CDB Files (*.cdb)|*.cdb|" +
@@ -48,6 +49,9 @@ public class MainViewModel : ObservableObject
 
     private readonly ChangeSummaryService changeSummaryService;
 
+    private readonly ModProfileLibraryService
+        modProfileLibraryService;
+
     private readonly ReferenceDataService referenceDataService;
 
     private readonly IFileDialogService fileDialogService;
@@ -60,6 +64,10 @@ public class MainViewModel : ObservableObject
     private ChangeSummaryWindow? changeSummaryWindow;
 
     private ChangeSummaryViewModel? changeSummaryViewModel;
+
+    private ProfileManagerWindow? profileManagerWindow;
+
+    private ProfileManagerViewModel? profileManagerViewModel;
 
     private ProjectModel? project;
 
@@ -509,6 +517,11 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ShowProfileManagerCommand
+    {
+        get;
+    }
+
     public RelayCommand ExportSnapshotCommand
     {
         get;
@@ -534,6 +547,8 @@ public class MainViewModel : ObservableObject
         ModificationSnapshotWorkflowService
             modificationSnapshotWorkflowService,
         ChangeSummaryService changeSummaryService,
+        ModProfileLibraryService
+            modProfileLibraryService,
         ReferenceDataService referenceDataService,
         IFileDialogService fileDialogService,
         IMessageDialogService messageDialogService)
@@ -573,6 +588,11 @@ public class MainViewModel : ObservableObject
             changeSummaryService
             ?? throw new ArgumentNullException(
                 nameof(changeSummaryService));
+
+        this.modProfileLibraryService =
+            modProfileLibraryService
+            ?? throw new ArgumentNullException(
+                nameof(modProfileLibraryService));
 
         this.referenceDataService =
             referenceDataService
@@ -637,6 +657,10 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => ShowChangeSummary(),
                 _ => Project != null);
+
+        ShowProfileManagerCommand =
+            new RelayCommand(
+                _ => ShowProfileManager());
 
         ExportSnapshotCommand =
             new RelayCommand(
@@ -1307,6 +1331,9 @@ public class MainViewModel : ObservableObject
         ShowChangeSummaryCommand?
             .NotifyCanExecuteChanged();
 
+        ShowProfileManagerCommand?
+            .NotifyCanExecuteChanged();
+
         ExportSnapshotCommand?
             .NotifyCanExecuteChanged();
 
@@ -1318,7 +1345,7 @@ public class MainViewModel : ObservableObject
     }
 
     private IReadOnlyList<ChangeSummaryItemModel>
-        BuildChangeSummaryItems()
+    BuildChangeSummaryItems()
     {
         if (Project == null)
         {
@@ -1373,7 +1400,10 @@ public class MainViewModel : ObservableObject
             new ChangeSummaryWindow
             {
                 DataContext =
-                    changeSummaryViewModel
+                    changeSummaryViewModel,
+
+                Owner =
+                    Application.Current.MainWindow
             };
 
         changeSummaryWindow.Closed +=
@@ -1395,6 +1425,63 @@ public class MainViewModel : ObservableObject
 
         changeSummaryWindow = null;
         changeSummaryViewModel = null;
+    }
+
+    private void ShowProfileManager()
+    {
+        if (profileManagerWindow != null)
+        {
+            profileManagerViewModel?.Refresh();
+
+            if (profileManagerWindow.WindowState
+                == WindowState.Minimized)
+            {
+                profileManagerWindow.WindowState =
+                    WindowState.Normal;
+            }
+
+            profileManagerWindow.Activate();
+            profileManagerWindow.Focus();
+            return;
+        }
+
+        profileManagerViewModel =
+            new ProfileManagerViewModel(
+                modProfileLibraryService,
+                messageDialogService);
+
+        profileManagerWindow =
+            new ProfileManagerWindow
+            {
+                DataContext =
+                    profileManagerViewModel,
+
+                Owner =
+                    Application.Current.MainWindow
+            };
+
+        profileManagerWindow.Closed +=
+            OnProfileManagerWindowClosed;
+
+        profileManagerWindow.Show();
+        profileManagerWindow.Activate();
+
+        Status =
+            "Profile Manager opened.";
+    }
+
+    private void OnProfileManagerWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (profileManagerWindow != null)
+        {
+            profileManagerWindow.Closed -=
+                OnProfileManagerWindowClosed;
+        }
+
+        profileManagerWindow = null;
+        profileManagerViewModel = null;
     }
 
     private void NavigateToChangeSummaryItem(

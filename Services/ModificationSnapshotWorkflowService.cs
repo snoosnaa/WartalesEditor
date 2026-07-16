@@ -143,23 +143,16 @@ public sealed class ModificationSnapshotWorkflowService
     }
 
     public ModificationSnapshotImportResultModel
-        ImportAndApplySafely(
+        ApplySafely(
             ProjectModel targetProject,
-            string fileName)
+            ModificationSnapshotModel snapshot,
+            string sourceName = "")
     {
         ArgumentNullException.ThrowIfNull(
             targetProject);
 
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            throw new ArgumentException(
-                "A snapshot file name is required.",
-                nameof(fileName));
-        }
-
-        ModificationSnapshotModel snapshot =
-            serializationService.Load(
-                fileName);
+        ArgumentNullException.ThrowIfNull(
+            snapshot);
 
         ModificationMatchResultModel matchResult =
             matcher.Match(
@@ -179,6 +172,31 @@ public sealed class ModificationSnapshotWorkflowService
             matchResult,
             previewResult,
             applyResult,
+            sourceName);
+    }
+
+    public ModificationSnapshotImportResultModel
+        ImportAndApplySafely(
+            ProjectModel targetProject,
+            string fileName)
+    {
+        ArgumentNullException.ThrowIfNull(
+            targetProject);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException(
+                "A snapshot file name is required.",
+                nameof(fileName));
+        }
+
+        ModificationSnapshotModel snapshot =
+            serializationService.Load(
+                fileName);
+
+        return ApplySafely(
+            targetProject,
+            snapshot,
             fileName);
     }
 }
