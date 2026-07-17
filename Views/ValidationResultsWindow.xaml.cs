@@ -1,63 +1,69 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WartalesEditor.Models;
+using WartalesEditor.Models.Validation;
 using WartalesEditor.ViewModels;
 
 namespace WartalesEditor.Views;
 
-public partial class ChangeSummaryWindow : Window
+public partial class ValidationResultsWindow : Window
 {
-    public ChangeSummaryWindow()
+    public ValidationResultsWindow()
     {
         InitializeComponent();
 
-        ChangeSummaryDataGrid.MouseDoubleClick +=
-            OnChangeSummaryDataGridMouseDoubleClick;
+        ValidationResultsDataGrid.MouseDoubleClick +=
+            OnValidationResultsDataGridMouseDoubleClick;
     }
 
     protected override void OnClosed(
-        System.EventArgs e)
+        EventArgs e)
     {
-        ChangeSummaryDataGrid.MouseDoubleClick -=
-            OnChangeSummaryDataGridMouseDoubleClick;
+        ValidationResultsDataGrid.MouseDoubleClick -=
+            OnValidationResultsDataGridMouseDoubleClick;
 
         base.OnClosed(e);
     }
 
-    private void OnChangeSummaryDataGridMouseDoubleClick(
+    private void OnValidationResultsDataGridMouseDoubleClick(
         object sender,
         MouseButtonEventArgs e)
     {
         if (e.ChangedButton != MouseButton.Left)
+        {
             return;
+        }
 
         DependencyObject? source =
-            e.OriginalSource as DependencyObject;
+            e.OriginalSource
+                as DependencyObject;
 
         if (source == null)
+        {
             return;
+        }
 
         DataGridRow? clickedRow =
             ItemsControl.ContainerFromElement(
-                ChangeSummaryDataGrid,
+                ValidationResultsDataGrid,
                 source)
             as DataGridRow;
 
-        if (clickedRow?.Item is not
-            ChangeSummaryItemModel clickedItem)
+        if (clickedRow?.Item
+            is not ValidationIssueModel clickedIssue)
         {
             return;
         }
 
-        if (DataContext is not
-            ChangeSummaryViewModel viewModel)
+        if (DataContext
+            is not ValidationResultsViewModel viewModel)
         {
             return;
         }
 
-        viewModel.SelectedItem =
-            clickedItem;
+        viewModel.SelectedIssue =
+            clickedIssue;
 
         if (!viewModel.NavigateCommand
                 .CanExecute(null))

@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 using WartalesEditor.Services;
+using WartalesEditor.Services.Validation;
 using WartalesEditor.ViewModels;
 
 namespace WartalesEditor;
@@ -11,13 +13,27 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        JsonDataService jsonDataService =
+            new();
+
         ModificationSnapshotWorkflowService
             snapshotWorkflowService =
                 new();
 
+        ValidationService validationService =
+            new(jsonDataService);
+
+        ValidationWorkflowService
+            validationWorkflowService =
+                new(validationService);
+
+        ValidationPresentationService
+            validationPresentationService =
+                new();
+
         ViewModel =
             new MainViewModel(
-                new JsonDataService(),
+                jsonDataService,
                 new SearchService(),
                 new LocalizationService(),
                 new EditHistoryService(),
@@ -30,6 +46,8 @@ public partial class MainWindow : Window
                     new ModProfileSerializationService(),
                     snapshotWorkflowService),
                 ReferenceDataService.Instance,
+                validationWorkflowService,
+                validationPresentationService,
                 new WpfFileDialogService(),
                 new WpfMessageDialogService());
 

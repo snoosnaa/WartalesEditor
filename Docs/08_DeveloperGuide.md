@@ -1,7 +1,7 @@
 ﻿# Developer Guide
 
-**Document Version:** 1.1  
-**Last Updated:** 2026-07-12
+**Document Version:** 1.2  
+**Last Updated:** 2026-07-17
 
 ---
 
@@ -31,6 +31,21 @@ Avoid implementing one-off solutions that duplicate existing systems.
 
 ---
 
+## Compose Existing Systems
+
+New features should extend the existing architecture rather than introducing parallel implementations.
+
+Examples include:
+
+- Profiles compose the Snapshot workflow.
+- Save validation composes the Validation pipeline.
+- Validation Results reuse editor navigation.
+- Future Content Creation Tools will reuse the existing editing pipeline.
+
+Whenever possible, compose rather than duplicate.
+
+---
+
 ## Single Source of Truth
 
 Whenever a feature needs to answer:
@@ -45,37 +60,40 @@ The current modification state lives in:
 PropertyModel.IsModified
 ```
 
-This principle now applies to:
+This principle currently applies to:
 
 - Change Summary
+- Snapshots
+- Profiles
+- Save validation
 - Future Batch Editing
+- Merge Preview
 - Validation reports
-- Import / Merge preview
-- Change Export
 - Modified-only filtering
 
 Future development should continue extending this architecture rather than introducing parallel systems.
 
 ---
 
-## MVVM First
+# MVVM First
 
 Responsibilities are divided as follows.
 
-### Models
+## Models
 
 Models own:
 
 - Data
 - Editing behavior
-- Validation
-- Change detection
+- Modification detection
+- Original values
+- Value change notifications
 
 Models should never depend on the user interface.
 
 ---
 
-### Services
+## Services
 
 Services own reusable business logic.
 
@@ -87,12 +105,18 @@ Current services include:
 - ReferenceDataService
 - PropertyDefinitionService
 - EditHistoryService
+- ChangeSummaryService
+- ModificationSnapshotService
+- ModificationSnapshotWorkflowService
+- ModProfileWorkflowService
+- ValidationService
+- ValidationWorkflowService
 
 If logic could reasonably be reused elsewhere, it probably belongs in a Service.
 
 ---
 
-### ViewModels
+## ViewModels
 
 ViewModels coordinate application state.
 
@@ -100,21 +124,24 @@ Responsibilities include:
 
 - Selection
 - Commands
-- Status reporting
 - Navigation
+- Status reporting
+- Window lifecycle
 - Interaction between Models and Services
 
-Presentation-specific logic belongs in dedicated ViewModels whenever practical.
+Business logic should remain outside ViewModels whenever practical.
 
-Example:
+Dedicated ViewModels should own presentation logic for reusable windows.
 
-- ChangeSummaryViewModel owns presentation and grouping logic for the Change Summary window.
+Examples include:
 
-Business logic should remain outside the ViewModel whenever practical.
+- ChangeSummaryViewModel
+- ProfileManagerViewModel
+- ValidationResultsViewModel
 
 ---
 
-### Views
+## Views
 
 Views present information.
 
@@ -133,13 +160,14 @@ Code-behind should remain minimal and limited to view-specific interaction.
 Every milestone follows the same workflow.
 
 1. Design the feature.
-2. Implement one logical milestone at a time.
+2. Implement one logical milestone.
 3. Keep every build compiling.
 4. Runtime test completed functionality.
 5. Perform regression testing when shared infrastructure changes.
-6. Update documentation.
-7. Commit.
-8. Push.
+6. Perform UI polish.
+7. Update documentation.
+8. Commit.
+9. Push.
 
 Avoid partially implemented features.
 
@@ -149,53 +177,59 @@ Avoid partially implemented features.
 
 ## Small and Medium Files
 
-- Replace the complete file.
+Prefer replacing the complete file.
 
 ## Large Files
 
-Examples:
+Examples include:
 
 - MainViewModel.cs
 - MainWindow.xaml
 
 Requirements:
 
-- Fully design the replacement before generating code.
-- Split across multiple responses only when required by response length.
-- Never redesign while generating a split replacement.
-- Keep the project compiling after every implementation stage.
+- Design the complete solution before generating code.
+- Provide exact locations for partial replacements.
+- Include approximate line numbers.
+- Include enough surrounding code to verify placement.
+- Keep the project compiling after every implementation step.
 
 ---
 
-# Current Editing Architecture
+# Core Architecture
 
-The editing pipeline is:
+The editor currently consists of four reusable subsystems:
+
+- Editing
+- Snapshots
+- Profiles
+- Validation
+
+Every future feature should integrate with these systems whenever practical.
+
+---
+
+# Editing Pipeline
 
 ```text
 User Edit
-
-↓
-
+        ↓
 PropertyModel
-
-↓
-
+        ↓
 RootDocument
-
-↓
-
+        ↓
 Modification Tracking
-
-↓
-
-Edit History
-
-↓
-
+        ↓
+Undo / Redo
+        ↓
 Change Summary
-
-↓
-
+        ↓
+Snapshots
+        ↓
+Profiles
+        ↓
+Validation
+        ↓
 Save
 ```
 
@@ -209,9 +243,9 @@ Modification tracking is owned by `PropertyModel`.
 
 Project-level modification state is coordinated by `MainViewModel`.
 
-Do **not** introduce duplicate change-tracking systems.
+Do not introduce duplicate modification tracking.
 
-Current modification state should always be treated as the authoritative source for editor state.
+Current modification state is always authoritative.
 
 ---
 
@@ -219,46 +253,72 @@ Current modification state should always be treated as the authoritative source 
 
 Undo and Redo are implemented through `EditHistoryService`.
 
-Future editing features should integrate with `EditHistoryService` rather than implementing separate history mechanisms.
+Future editing features should integrate with EditHistoryService rather than implementing separate history mechanisms.
 
 Remember:
 
 - Edit history answers **"What happened?"**
 - Modification tracking answers **"What is currently different?"**
 
-These are complementary systems with different responsibilities.
+These responsibilities should remain separate.
 
 ---
 
-# Change Summary
+# Snapshot Workflow
 
-The Change Summary is intentionally built from temporary snapshots of the current project state.
+Snapshots provide reusable representations of project modifications.
 
-It should never maintain its own persistent modification tracking.
+There must remain exactly one implementation of:
 
-Current architecture:
+- Snapshot Matching
+- Snapshot Preview
+- Snapshot Application
 
-```text
-PropertyModel.IsModified
+Higher-level systems should compose this workflow rather than replacing it.
 
-↓
+---
 
-MainViewModel
+# Profile Workflow
 
-↓
+Profiles extend the Snapshot workflow.
 
-ChangeSummaryItemModel
+Do not introduce separate profile matching or application logic.
 
-↓
+Profile creation should continue capturing the existing modification state.
 
-ChangeSummaryViewModel
+---
 
-↓
+# Validation Framework
 
-ChangeSummaryWindow
-```
+Validation is now a reusable subsystem.
 
-Future enhancements should continue using snapshot generation rather than synchronized collections whenever practical.
+Future validation rules should:
+
+- Validate only information that can be verified accurately.
+- Avoid changing project state.
+- Return structured validation issues.
+- Reuse existing services whenever practical.
+
+Future validation improvements should expand the rule library rather than replacing the framework.
+
+---
+
+# Utility Windows
+
+Current reusable utility windows include:
+
+- Change Summary
+- Profile Manager
+- Validation Results
+
+These windows should:
+
+- Remain single-instance.
+- Be modeless.
+- Support independent focus.
+- Share consistent lifecycle behavior.
+
+Future UI modernization will standardize sizing, placement, taskbar behavior, and keyboard shortcuts.
 
 ---
 
@@ -283,16 +343,17 @@ Future editors should integrate through the existing editor-selection framework.
 
 Documentation is considered part of development.
 
-Before completing a milestone:
+Before completing a milestone update:
 
-- Update Development Journal
-- Update CHANGELOG
-- Update Architecture
-- Update Dashboard
-- Update CurrentTask
-- Update Project Snapshot
+- Development Journal
+- Changelog
+- Dashboard
+- Current Task
+- Architecture
+- Roadmap
+- Project Snapshot
 
-Update additional documentation whenever implementation changes make it outdated.
+Documentation should remain synchronized with the codebase.
 
 ---
 
@@ -304,27 +365,21 @@ Standard workflow:
 
 ```text
 Build
-
-↓
-
+        ↓
 Runtime Test
-
-↓
-
+        ↓
 Regression Test
-
-↓
-
-Document
-
-↓
-
+        ↓
+UI Polish
+        ↓
+Documentation
+        ↓
 Commit
 ```
 
-Regression testing should be performed whenever shared infrastructure changes.
+Shared infrastructure changes require regression testing.
 
-Features are not considered complete until runtime verification succeeds.
+Features are not complete until runtime verification succeeds.
 
 ---
 
@@ -335,16 +390,19 @@ Always:
 - Follow MVVM.
 - Prefer small, focused classes.
 - Favor reusable Services.
+- Compose existing systems.
 - Keep every build compiling.
 - Prefer extensible solutions.
 - Minimize duplication.
-- Reuse existing infrastructure whenever possible.
+- Runtime test completed work.
+- Document completed milestones.
 
 Avoid:
 
 - Business logic in Views.
-- Duplicate change-tracking systems.
-- Duplicate editing infrastructure.
+- Duplicate modification tracking.
+- Duplicate snapshot implementations.
+- Duplicate validation systems.
 - Hardcoded gameplay data whenever practical.
 - Reconstructing project files from memory.
 
@@ -359,10 +417,10 @@ When continuing development:
 - Preserve completed architecture.
 - Implement one milestone at a time.
 - Prefer complete file replacements whenever practical.
-- Split only large files when required.
-- Update documentation before major commits.
-- Build after every logical implementation step.
-- Runtime test completed behavior before considering a milestone complete.
+- For large files, provide exact replacement locations with approximate line numbers.
+- Keep the project compiling after every implementation step.
+- Runtime test completed behavior.
+- Complete documentation before release commits.
 
 ---
 
@@ -370,4 +428,6 @@ When continuing development:
 
 The objective is not simply to build an editor.
 
-The objective is to build a maintainable editing platform that can continue evolving without major architectural redesign while remaining safe, extensible, and pleasant to use.
+The objective is to build a maintainable editing platform that can continue evolving without major architectural redesign while remaining safe, extensible, and enjoyable to use.
+
+Every future feature should strengthen the existing architecture rather than increasing technical debt.

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
 
@@ -14,20 +15,69 @@ public class JsonDataService
         return File.ReadAllText(fileName);
     }
 
+    public string SerializeProject(
+        ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (project.RootDocument == null)
+        {
+            throw new InvalidOperationException(
+                "The project does not contain a root JSON document.");
+        }
+
+        return project.RootDocument.ToString(
+            Formatting.Indented);
+    }
+
+    public bool TrySerializeProject(
+        ProjectModel project,
+        out string serializedProject,
+        out string errorMessage)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        try
+        {
+            serializedProject =
+                SerializeProject(project);
+
+            errorMessage =
+                string.Empty;
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            serializedProject =
+                string.Empty;
+
+            errorMessage =
+                exception.Message;
+
+            return false;
+        }
+    }
+
     public void SaveProject(
         ProjectModel project,
         string fileName)
     {
+        ArgumentNullException.ThrowIfNull(project);
+
+        string serializedProject =
+            SerializeProject(project);
+
         File.WriteAllText(
             fileName,
-            project.RootDocument.ToString(
-                Newtonsoft.Json.Formatting.Indented));
+            serializedProject);
 
         foreach (SheetModel sheet in project.Sheets)
         {
             foreach (EntryModel entry in sheet.Entries)
             {
-                foreach (PropertyModel property in entry.Properties)
+                foreach (PropertyModel property
+                         in entry.Properties)
                 {
                     property.AcceptCurrentValue();
                 }
@@ -82,36 +132,47 @@ public class JsonDataService
         if (firstPartyMember == null)
             return false;
 
-        firstPartyMember["unitClass"] = "Rogue";
+        firstPartyMember["unitClass"] =
+            "Rogue";
 
-        project.IsModified = true;
+        project.IsModified =
+            true;
 
         return true;
     }
 
-    public int GetSheetCount(string json)
+    public int GetSheetCount(
+        string json)
     {
-        JObject root = JObject.Parse(json);
+        JObject root =
+            JObject.Parse(json);
 
-        JArray? sheets = (JArray?)root["sheets"];
+        JArray? sheets =
+            (JArray?)root["sheets"];
 
-        return sheets?.Count ?? 0;
+        return sheets?.Count
+            ?? 0;
     }
 
-    public List<string> GetSheetNames(string json)
+    public List<string> GetSheetNames(
+        string json)
     {
-        List<string> names = new();
+        List<string> names =
+            new();
 
-        JObject root = JObject.Parse(json);
+        JObject root =
+            JObject.Parse(json);
 
-        JArray? sheets = (JArray?)root["sheets"];
+        JArray? sheets =
+            (JArray?)root["sheets"];
 
         if (sheets == null)
             return names;
 
         foreach (JObject sheet in sheets)
         {
-            string? name = (string?)sheet["name"];
+            string? name =
+                (string?)sheet["name"];
 
             if (!string.IsNullOrWhiteSpace(name))
             {
@@ -122,18 +183,27 @@ public class JsonDataService
         return names;
     }
 
-    public ProjectModel LoadProject(string fileName)
+    public ProjectModel LoadProject(
+        string fileName)
     {
-        string json = Load(fileName);
+        string json =
+            Load(fileName);
 
-        JObject root = JObject.Parse(json);
+        JObject root =
+            JObject.Parse(json);
 
-        ProjectModel project = new()
-        {
-            FileName = fileName,
-            OriginalJson = json,
-            RootDocument = root
-        };
+        ProjectModel project =
+            new()
+            {
+                FileName =
+                    fileName,
+
+                OriginalJson =
+                    json,
+
+                RootDocument =
+                    root
+            };
 
         JArray? sheets =
             (JArray?)root["sheets"];
@@ -143,22 +213,26 @@ public class JsonDataService
 
         foreach (JObject sheet in sheets)
         {
-            string? name = (string?)sheet["name"];
+            string? name =
+                (string?)sheet["name"];
 
             if (string.IsNullOrWhiteSpace(name))
                 continue;
 
-            SheetModel sheetModel = new()
-            {
-                Name = name
-            };
+            SheetModel sheetModel =
+                new()
+                {
+                    Name =
+                        name
+                };
 
             JArray? entries =
                 (JArray?)sheet["lines"];
 
             if (entries != null)
             {
-                int entryNumber = 1;
+                int entryNumber =
+                    1;
 
                 foreach (JObject entry in entries)
                 {
@@ -166,11 +240,15 @@ public class JsonDataService
                         entry["id"]?.ToString()
                         ?? entryNumber.ToString();
 
-                    EntryModel entryModel = new()
-                    {
-                        Id = entryNumber.ToString(),
-                        DisplayName = displayName
-                    };
+                    EntryModel entryModel =
+                        new()
+                        {
+                            Id =
+                                entryNumber.ToString(),
+
+                            DisplayName =
+                                displayName
+                        };
 
                     foreach (JProperty property
                              in entry.Properties())
@@ -178,27 +256,39 @@ public class JsonDataService
                         PropertyModel propertyModel =
                             new()
                             {
-                                SheetName = name,
-                                Name = property.Name,
-                                Value = property.Value.ToString(),
-                                SourceProperty = property
+                                SheetName =
+                                    name,
+
+                                Name =
+                                    property.Name,
+
+                                Value =
+                                    property.Value.ToString(),
+
+                                SourceProperty =
+                                    property
                             };
 
-                        propertyModel.CaptureOriginalValue();
+                        propertyModel
+                            .CaptureOriginalValue();
 
-                        entryModel.Properties.Add(propertyModel);
+                        entryModel.Properties.Add(
+                            propertyModel);
                     }
 
-                    sheetModel.Entries.Add(entryModel);
+                    sheetModel.Entries.Add(
+                        entryModel);
 
                     entryNumber++;
                 }
             }
 
-            project.Sheets.Add(sheetModel);
+            project.Sheets.Add(
+                sheetModel);
         }
 
-        project.IsModified = false;
+        project.IsModified =
+            false;
 
         return project;
     }

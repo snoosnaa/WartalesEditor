@@ -22,6 +22,9 @@
         <converters:BooleanToVisibilityConverter
             x:Key="BooleanToVisibilityConverter"/>
 
+        <converters:FirstValidationErrorConverter
+            x:Key="FirstValidationErrorConverter"/>
+
         <!-- Standard text property -->
         <DataTemplate x:Key="TextEditorTemplate">
 
@@ -55,7 +58,8 @@
 
                                 <Setter Property="ToolTip"
                                         Value="{Binding RelativeSource={RelativeSource Self},
-                                                        Path=(Validation.Errors)[0].ErrorContent}"/>
+                                                        Path=(Validation.Errors),
+                                                        Converter={StaticResource FirstValidationErrorConverter}}"/>
 
                             </Trigger>
 
@@ -235,9 +239,9 @@
 
                 <Separator/>
 
-                <MenuItem Header="_Validation"
-                          IsEnabled="False"
-                          ToolTip="Validation tools are planned for a future milestone."/>
+                <MenuItem Header="_Validate Project"
+                          Command="{Binding ValidateProjectCommand}"
+                          ToolTip="Run the validation framework against the current project."/>
 
                 <MenuItem Header="_Developer Tools"
                           IsEnabled="False"

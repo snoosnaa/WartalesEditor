@@ -10,7 +10,9 @@ using WartalesEditor.Helpers;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
+using WartalesEditor.Models.Validation;
 using WartalesEditor.Services;
+using WartalesEditor.Services.Validation;
 using WartalesEditor.Views;
 
 namespace WartalesEditor.ViewModels;
@@ -57,6 +59,12 @@ public class MainViewModel : ObservableObject
 
     private readonly ReferenceDataService referenceDataService;
 
+    private readonly ValidationWorkflowService
+        validationWorkflowService;
+
+    private readonly ValidationPresentationService
+        validationPresentationService;
+
     private readonly IFileDialogService fileDialogService;
 
     private readonly IMessageDialogService messageDialogService;
@@ -71,6 +79,12 @@ public class MainViewModel : ObservableObject
     private ProfileManagerWindow? profileManagerWindow;
 
     private ProfileManagerViewModel? profileManagerViewModel;
+
+    private ValidationResultsWindow?
+        validationResultsWindow;
+
+    private ValidationResultsViewModel?
+        validationResultsViewModel;
 
     private ProjectModel? project;
 
@@ -541,23 +555,32 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ValidateProjectCommand
+    {
+        get;
+    }
+
     public MainViewModel(
-        JsonDataService jsonDataService,
-        SearchService searchService,
-        LocalizationService localizationService,
-        EditHistoryService editHistoryService,
-        ModificationSnapshotService
-            modificationSnapshotService,
-        ModificationSnapshotWorkflowService
-            modificationSnapshotWorkflowService,
-        ChangeSummaryService changeSummaryService,
-        ModProfileLibraryService
-            modProfileLibraryService,
-        ModProfileWorkflowService
-            modProfileWorkflowService,
-        ReferenceDataService referenceDataService,
-        IFileDialogService fileDialogService,
-        IMessageDialogService messageDialogService)
+    JsonDataService jsonDataService,
+    SearchService searchService,
+    LocalizationService localizationService,
+    EditHistoryService editHistoryService,
+    ModificationSnapshotService
+        modificationSnapshotService,
+    ModificationSnapshotWorkflowService
+        modificationSnapshotWorkflowService,
+    ChangeSummaryService changeSummaryService,
+    ModProfileLibraryService
+        modProfileLibraryService,
+    ModProfileWorkflowService
+        modProfileWorkflowService,
+    ReferenceDataService referenceDataService,
+    ValidationWorkflowService
+        validationWorkflowService,
+    ValidationPresentationService
+        validationPresentationService,
+    IFileDialogService fileDialogService,
+    IMessageDialogService messageDialogService)
     {
         this.jsonDataService =
             jsonDataService
@@ -609,6 +632,16 @@ public class MainViewModel : ObservableObject
             referenceDataService
             ?? throw new ArgumentNullException(
                 nameof(referenceDataService));
+
+        this.validationWorkflowService =
+            validationWorkflowService
+            ?? throw new ArgumentNullException(
+                nameof(validationWorkflowService));
+
+        this.validationPresentationService =
+            validationPresentationService
+            ?? throw new ArgumentNullException(
+                nameof(validationPresentationService));
 
         this.fileDialogService =
             fileDialogService
@@ -687,6 +720,11 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => ImportSnapshot(),
                 _ => Project != null);
+
+        ValidateProjectCommand =
+            new RelayCommand(
+                _ => ValidateProject(),
+                _ => Project != null);
     }
 
     private void OpenProject()
@@ -760,23 +798,53 @@ public class MainViewModel : ObservableObject
         if (Project == null)
             return;
 
-        string initialFileName =
-            string.IsNullOrWhiteSpace(
-                CurrentFile)
-                ? "data.cdb"
-                : Path.GetFileName(
-                    CurrentFile);
-
-        string? fileName =
-            fileDialogService.ShowSaveFileDialog(
-                ProjectSaveFilter,
-                initialFileName);
-
-        if (string.IsNullOrWhiteSpace(fileName))
-            return;
-
         try
         {
+            ValidationResultModel validationResult =
+                validationWorkflowService
+                    .ValidateForSave(Project);
+
+            ValidationPresentationModel
+                validationPresentation =
+                    validationPresentationService
+                        .BuildPresentation(
+                            validationResult,
+                            "Save");
+
+            if (validationResult.HasErrors)
+            {
+                messageDialogService.ShowError(
+                    validationPresentation.Summary,
+                    validationPresentation.Title);
+
+                Status =
+                    "Save blocked by validation errors.";
+
+                return;
+            }
+
+            if (validationResult.HasWarnings)
+            {
+                messageDialogService.ShowWarning(
+                    validationPresentation.Summary,
+                    validationPresentation.Title);
+            }
+
+            string initialFileName =
+                string.IsNullOrWhiteSpace(
+                    CurrentFile)
+                    ? "data.cdb"
+                    : Path.GetFileName(
+                        CurrentFile);
+
+            string? fileName =
+                fileDialogService.ShowSaveFileDialog(
+                    ProjectSaveFilter,
+                    initialFileName);
+
+            if (string.IsNullOrWhiteSpace(fileName))
+                return;
+
             jsonDataService.SaveProject(
                 Project,
                 fileName);
@@ -791,8 +859,11 @@ public class MainViewModel : ObservableObject
             RefreshCommandStates();
 
             Status =
-                $"Saved: " +
-                $"{Path.GetFileName(fileName)}";
+                validationResult.HasWarnings
+                    ? $"Saved with validation warnings: " +
+                      $"{Path.GetFileName(fileName)}"
+                    : $"Saved: " +
+                      $"{Path.GetFileName(fileName)}";
         }
         catch (Exception exception)
         {
@@ -987,6 +1058,125 @@ public class MainViewModel : ObservableObject
             Status =
                 "Snapshot import failed.";
         }
+    }
+
+    private void ValidateProject()
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        ValidationResultModel validationResult =
+            validationWorkflowService
+                .ValidateProject(Project);
+
+        ShowValidationResults(
+            validationResult);
+
+        Status =
+            validationResult.HasErrors
+                ? "Validation completed with errors."
+                : validationResult.HasWarnings
+                    ? "Validation completed with warnings."
+                    : "Validation completed successfully.";
+    }
+
+    private void ShowValidationResults(
+    ValidationResultModel validationResult)
+    {
+        ArgumentNullException.ThrowIfNull(
+            validationResult);
+
+        if (validationResultsWindow != null)
+        {
+            validationResultsViewModel?.Refresh(
+                validationResult);
+
+            if (validationResultsWindow.WindowState
+                == WindowState.Minimized)
+            {
+                validationResultsWindow.WindowState =
+                    WindowState.Normal;
+            }
+
+            validationResultsWindow.Activate();
+            validationResultsWindow.Focus();
+
+            return;
+        }
+
+        validationResultsViewModel =
+            new ValidationResultsViewModel(
+                validationResult,
+                RerunProjectValidation,
+                NavigateToValidationIssue,
+                CopyValidationResults);
+
+        validationResultsWindow =
+            new ValidationResultsWindow
+            {
+                DataContext =
+                    validationResultsViewModel
+            };
+
+        validationResultsWindow.Closed +=
+            OnValidationResultsWindowClosed;
+
+        validationResultsWindow.Show();
+        validationResultsWindow.Activate();
+    }
+
+    private ValidationResultModel
+        RerunProjectValidation()
+    {
+        if (Project == null)
+        {
+            return ValidationResultModel.Empty;
+        }
+
+        ValidationResultModel validationResult =
+            validationWorkflowService
+                .ValidateProject(Project);
+
+        Status =
+            validationResult.HasErrors
+                ? "Validation completed with errors."
+                : validationResult.HasWarnings
+                    ? "Validation completed with warnings."
+                    : "Validation completed successfully.";
+
+        return validationResult;
+    }
+
+    private void CopyValidationResults(
+        string resultsText)
+    {
+        if (string.IsNullOrWhiteSpace(
+                resultsText))
+        {
+            return;
+        }
+
+        Clipboard.SetText(
+            resultsText);
+
+        Status =
+            "Validation results copied to the clipboard.";
+    }
+
+    private void OnValidationResultsWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (validationResultsWindow != null)
+        {
+            validationResultsWindow.Closed -=
+                OnValidationResultsWindowClosed;
+        }
+
+        validationResultsWindow = null;
+        validationResultsViewModel = null;
     }
 
     private string BuildDefaultSnapshotFileName()
@@ -1353,6 +1543,9 @@ public class MainViewModel : ObservableObject
 
         ImportSnapshotCommand?
             .NotifyCanExecuteChanged();
+
+        ValidateProjectCommand?
+            .NotifyCanExecuteChanged();
     }
 
     private IReadOnlyList<ChangeSummaryItemModel>
@@ -1411,10 +1604,7 @@ public class MainViewModel : ObservableObject
             new ChangeSummaryWindow
             {
                 DataContext =
-                    changeSummaryViewModel,
-
-                Owner =
-                    Application.Current.MainWindow
+                    changeSummaryViewModel
             };
 
         changeSummaryWindow.Closed +=
@@ -1814,7 +2004,7 @@ public class MainViewModel : ObservableObject
     }
 
     private void NavigateToChangeSummaryItem(
-        ChangeSummaryItemModel item)
+    ChangeSummaryItemModel item)
     {
         SelectedSheet =
             item.Category;
@@ -1854,6 +2044,124 @@ public class MainViewModel : ObservableObject
                 mainWindow.Activate();
                 mainWindow.Focus();
             }));
+    }
+
+    private void NavigateToValidationIssue(
+        ValidationIssueModel issue)
+    {
+        ArgumentNullException.ThrowIfNull(
+            issue);
+
+        if (Project == null ||
+            string.IsNullOrWhiteSpace(
+                issue.SheetName))
+        {
+            return;
+        }
+
+        SheetModel? sheet =
+            Project.Sheets.FirstOrDefault(
+                candidate =>
+                    string.Equals(
+                        candidate.Name,
+                        issue.SheetName,
+                        StringComparison.Ordinal));
+
+        if (sheet == null)
+        {
+            Status =
+                "The validation issue location could not be found.";
+
+            return;
+        }
+
+        EntryModel? entry =
+            sheet.Entries.FirstOrDefault(
+                candidate =>
+                    string.Equals(
+                        candidate.Id,
+                        issue.EntryId,
+                        StringComparison.Ordinal)
+                    ||
+                    string.Equals(
+                        candidate.DisplayName,
+                        issue.EntryName,
+                        StringComparison.Ordinal));
+
+        SelectedSheet =
+            sheet;
+
+        OnPropertyChanged(
+            nameof(Entries));
+
+        SelectedEntry =
+            entry;
+
+        if (entry != null &&
+            !string.IsNullOrWhiteSpace(
+                issue.PropertyName))
+        {
+            SelectedProperty =
+                entry.Properties.FirstOrDefault(
+                    property =>
+                        string.Equals(
+                            property.Name,
+                            issue.PropertyName,
+                            StringComparison.Ordinal));
+        }
+
+        RefreshCommandStates();
+
+        Status =
+            BuildValidationNavigationStatus(
+                issue);
+
+        Window? mainWindow =
+            Application.Current.MainWindow;
+
+        if (mainWindow == null)
+        {
+            return;
+        }
+
+        mainWindow.Dispatcher.BeginInvoke(
+            DispatcherPriority.ApplicationIdle,
+            new Action(() =>
+            {
+                if (mainWindow.WindowState
+                    == WindowState.Minimized)
+                {
+                    mainWindow.WindowState =
+                        WindowState.Normal;
+                }
+
+                mainWindow.Activate();
+                mainWindow.Focus();
+            }));
+    }
+
+    private static string
+        BuildValidationNavigationStatus(
+            ValidationIssueModel issue)
+    {
+        string location =
+            string.Join(
+                " → ",
+                new[]
+                {
+                    issue.SheetName,
+                    issue.EntryName
+                    ?? issue.EntryId,
+                    issue.PropertyName
+                }
+                .Where(value =>
+                    !string.IsNullOrWhiteSpace(
+                        value)));
+
+        return string.IsNullOrWhiteSpace(
+                location)
+            ? "Validation issue selected."
+            : $"Selected validation issue: {location}";
     }
 
     private IReadOnlyList<PropertyModel>

@@ -248,6 +248,78 @@ Avoid combining history systems with current-state systems unless there is a com
 
 ---
 
+# Lesson 14 — Composition Is Better Than Duplication
+
+Two major milestones reinforced the value of composing existing systems rather than introducing parallel implementations.
+
+Examples include:
+
+- Mod Profiles composing the Snapshot workflow.
+- Save validation composing the Validation pipeline.
+- Validation Results reusing existing editor navigation.
+- Future Content Creation Tools reusing the editing pipeline.
+
+Each new feature became significantly smaller because it built upon infrastructure that already existed.
+
+**Guideline**
+
+Whenever possible, extend existing workflows rather than creating new implementations that solve the same problem.
+
+---
+
+# Lesson 15 — Validate Only What Can Be Verified
+
+The Validation Framework intentionally avoids making assumptions about Wartales data.
+
+Instead, validation is limited to rules that can be verified accurately using the currently loaded project and known editor metadata.
+
+This minimizes false positives while ensuring users can trust every reported issue.
+
+**Guideline**
+
+Prefer fewer highly reliable validation rules over many uncertain ones.
+
+---
+
+# Lesson 16 — Modeless Utility Windows Should Behave Consistently
+
+As the number of utility windows increased, consistency became more important than individual window behavior.
+
+Profile Manager, Change Summary, and Validation Results all benefit from:
+
+- Single-instance behavior.
+- Independent focus.
+- Shared navigation patterns.
+- Consistent lifecycle management.
+
+Future UI improvements will continue building on this shared model.
+
+**Guideline**
+
+Treat reusable utility windows as a unified subsystem rather than individual dialogs.
+
+---
+
+# Lesson 17 — Runtime Polish Should Immediately Follow Feature Completion
+
+The Validation milestone demonstrated that the majority of remaining work after implementation often involves usability rather than functionality.
+
+Examples included:
+
+- Window focus behavior.
+- Validation Results presentation.
+- Window lifecycle improvements.
+- Validation tooltip handling.
+- Independent utility window focus.
+
+Addressing these refinements before the release commit produced a significantly more polished editor without requiring architectural changes.
+
+**Guideline**
+
+Reserve time after functional completion for runtime polish before finalizing a milestone.
+
+---
+
 # Current Philosophy
 
 The project now follows these guiding principles:
@@ -258,7 +330,7 @@ The project now follows these guiding principles:
 - Prefer reusable Services.
 - Keep models responsible for editing behavior.
 - Prevent mistakes whenever possible.
-- Verify every milestone through runtime testing.
+- Verify every milestone through runtime testing and UI polish.
 - Keep documentation synchronized.
 - Favor maintainability over shortcuts.
 

@@ -6,6 +6,83 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.8.0 - Validation Framework (Pass 1)
+
+**Released:** 2026-07-17
+
+## Added
+
+### Validation Architecture
+
+- Validation service layer
+- Validation workflow orchestration
+- Validation pipeline
+- Validation rule infrastructure
+- Validation issue model
+- Validation result model
+- Validation severity model
+- Validation category model
+- Extensible validation rule architecture
+
+### Validation Rules
+
+- Read-only property validation
+- Property definition validation
+- Numeric range validation
+- Reference value validation
+- Safe gameplay validation
+- Validation based on the currently loaded project
+
+### User Interface
+
+- Validate Project command
+- Validation Results window
+- Validation summary header
+- Severity counters
+- Severity filtering
+- Empty validation success view
+- Validation navigation
+- Copy Results
+- Re-run Validation
+
+## Changed
+
+- Validation now executes through a reusable workflow architecture rather than being embedded in save operations.
+- Save validation now reuses the same validation pipeline used by manual validation.
+- Validation Results operates as a single-instance modeless utility window.
+- Validation navigation integrates directly with the existing editor selection workflow.
+- Validation windows now behave consistently with the Profile Manager and Change Summary architecture.
+
+## Fixed
+
+- Corrected validation window lifecycle management.
+- Corrected validation window refresh behavior.
+- Corrected duplicate validation window creation.
+- Improved independent focus behavior for modeless utility windows.
+- Corrected a WPF validation tooltip binding warning that could appear during application shutdown.
+- Added a reusable converter for safely displaying the first property validation error.
+
+## Verified
+
+Successfully verified:
+
+- Manual validation
+- Save validation
+- Validation rule execution
+- Validation severity reporting
+- Validation filtering
+- Validation navigation
+- Validation refresh
+- Validation clipboard export
+- Single-instance window behavior
+- Independent modeless window focus
+- Undo compatibility
+- Redo compatibility
+- Profile compatibility
+- Snapshot compatibility
+- Change Summary compatibility
+- Successful builds throughout implementation
+
 # Version 0.7.0 - Complete Profile Manager
 
 **Released:** 2026-07-16

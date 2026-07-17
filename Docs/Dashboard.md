@@ -1,8 +1,8 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 0.6.0
-**Document Version:** 1.5
-**Last Updated:** 2026-07-15
+**Application Version:** 0.8.0  
+**Document Version:** 1.6  
+**Last Updated:** 2026-07-17
 
 ---
 
@@ -10,31 +10,35 @@
 
 **Current Phase:** Phase 5 – Editing Platform
 
-**Overall Progress:** Approximately 76%
+Wartales Editor has evolved into a stable editing platform built around reusable infrastructure.
 
-Wartales Editor has evolved from a proof-of-concept editor into a stable editing platform.
+The application now supports intelligent editing, unlimited undo/redo, live change tracking, reusable modification profiles, snapshot migration, and a complete validation framework while maintaining a clean MVVM architecture.
 
-The application now supports a complete editing workflow including intelligent property editing, localization-aware searching, safe editing, unlimited undo/redo, live Change Summary functionality, and snapshot export/import capabilities while maintaining a clean MVVM architecture.
+The project's architecture continues to prioritize reusable subsystems over feature-specific implementations.
 
 ---
 
 # Current Release
 
-## Version 0.6.0 – Snapshot UI Pass 1
+## Version 0.8.0 – Validation Framework (Pass 1)
 
 **Status:** ✅ Complete
 
 ### Major Features
 
-* Snapshot Export
-* Snapshot Preview
-* Snapshot Import
-* Workflow integration through `ModificationSnapshotWorkflowService`
-* Safe preview without modifying the project
-* Snapshot application summaries
-* Automatic modification state refresh
-* Change Summary synchronization after snapshot import
-* Dialog abstraction reused throughout the snapshot workflow
+- Reusable validation framework
+- Validation workflow orchestration
+- Extensible validation rule pipeline
+- Validation issue and result models
+- Validation severity and categories
+- Save validation
+- Manual project validation
+- Validation Results window
+- Validation filtering
+- Validation navigation
+- Copy Results
+- Re-run validation
+- Single-instance modeless validation workflow
 
 ---
 
@@ -46,11 +50,11 @@ Completed
 
 ### Highlights
 
-* WPF desktop application
-* MVVM architecture
-* Git & GitHub integration
-* Documentation system
-* JSON loading
+- WPF desktop application
+- MVVM architecture
+- Git & GitHub integration
+- Documentation system
+- JSON loading
 
 ---
 
@@ -60,11 +64,11 @@ Completed
 
 ### Highlights
 
-* Three-pane editor
-* Categories
-* Settings
-* Properties
-* ProjectModel architecture
+- Three-pane editor
+- Categories
+- Settings
+- Properties
+- ProjectModel architecture
 
 ---
 
@@ -74,11 +78,11 @@ Completed
 
 ### Highlights
 
-* Editable properties
-* RootDocument synchronization
-* Save modified CDB
-* Reload edited files
-* Gameplay verification
+- Editable properties
+- RootDocument synchronization
+- Save modified CDB
+- Reload edited files
+- Gameplay verification
 
 ---
 
@@ -88,11 +92,10 @@ Completed
 
 ### Highlights
 
-* Global Find Anything
-* Localization-aware search
-* Smart property editors
-* Reference-aware dropdowns
-* Validation framework foundation
+- Global Find Anything
+- Localization-aware search
+- Intelligent property editors
+- Reference-aware dropdowns
 
 ---
 
@@ -102,12 +105,11 @@ Completed
 
 ### Highlights
 
-* Property tracking
-* Project dirty-state tracking
-* Reset Property
-* Unlimited Undo / Redo
-* EditHistoryService
-* Editing history architecture
+- Property modification tracking
+- Project dirty-state tracking
+- Reset Property
+- Unlimited Undo / Redo
+- Edit history architecture
 
 ---
 
@@ -117,28 +119,61 @@ Completed
 
 ### Highlights
 
-* Change Summary window
-* Live modification review
-* Original / Current value comparison
-* Navigation back to modified properties
-* Snapshot-based summary architecture
-* Reuse of existing modification tracking
+- Live Change Summary
+- Original / Current comparison
+- Navigation to modified properties
+- Automatic synchronization
+- Reusable summary architecture
 
 ---
 
-## Version 0.6.0 – Snapshot UI Pass 1
+## Version 0.6.0 – Snapshot Workflow
 
 Completed
 
 ### Highlights
 
-* Export modification snapshots
-* Preview snapshots without changing the project
-* Import snapshots safely
-* Snapshot workflow integration
-* Summary dialogs for export, preview, and import
-* Automatic refresh of modification tracking and Change Summary
-* End-to-end workflow successfully tested with live Wartales data
+- Snapshot export
+- Snapshot preview
+- Snapshot import
+- Snapshot matching
+- Snapshot application
+- Workflow orchestration
+- Migration-ready architecture
+
+---
+
+## Version 0.7.0 – Complete Profile Manager
+
+Completed
+
+### Highlights
+
+- Complete profile management
+- Profile library
+- Create, Rename, Duplicate
+- Apply, Import, Export
+- Delete Profile
+- Profile Details dialog
+- Shared snapshot integration
+- Complete reusable profile architecture
+
+---
+
+## Version 0.8.0 – Validation Framework
+
+Completed
+
+### Highlights
+
+- Reusable validation architecture
+- Validation pipeline
+- Validation rules
+- Validation Results window
+- Validation navigation
+- Save validation
+- Manual validation
+- Single-instance modeless validation UI
 
 ---
 
@@ -163,10 +198,10 @@ Undo / Redo
 Review Change Summary
         │
         ▼
-Export Snapshot
+Create / Apply Profiles
         │
         ▼
-Preview / Import Snapshot
+Validate Project
         │
         ▼
 Save
@@ -178,7 +213,7 @@ Package
 Play
 ```
 
-This workflow has been verified through successful in-game testing.
+This workflow has been verified through live Wartales testing.
 
 ---
 
@@ -186,110 +221,109 @@ This workflow has been verified through successful in-game testing.
 
 ## Navigation
 
-* Open CDB files
-* Browse Categories
-* Browse Settings
-* Browse Properties
-* Global Find Anything
-* Localization-aware searching
-* Direct navigation
+- Open CDB files
+- Browse Categories
+- Browse Settings
+- Browse Properties
+- Global Find Anything
+- Localization-aware search
+- Direct navigation
+
+---
 
 ## Editing
 
-* Intelligent property editors
-* Reference-aware dropdowns
-* Validation framework
-* RootDocument synchronization
-* Save edited CDB files
+- Intelligent property editors
+- Reference-aware dropdowns
+- RootDocument synchronization
+- Safe save workflow
+
+---
 
 ## Safe Editing
 
-* Property tracking
-* Project tracking
-* Reset Property
-* Dirty-state indicators
-* Unlimited Undo / Redo
-* Session editing history
+- Property modification tracking
+- Project dirty-state tracking
+- Reset Property
+- Unlimited Undo / Redo
+- Session edit history
+
+---
 
 ## Change Review
 
-* Live Change Summary
-* Original vs Current values
-* Category grouping
-* Navigation to modified properties
+- Live Change Summary
+- Original vs Current comparison
+- Navigation to modified properties
 
-## Snapshot Workflow
+---
 
-* Export modification snapshots
-* Preview snapshots safely
-* Import snapshots
-* Snapshot matching
-* Snapshot application summaries
-* Migration-ready workflow foundation
+## Snapshot & Profiles
 
-## Verification
+- Export snapshots
+- Import snapshots
+- Snapshot matching
+- Snapshot preview
+- Snapshot application
+- Complete profile management
+- Reusable modification profiles
+- Profile library
 
-Successfully verified inside Wartales.
+---
 
-Snapshot export, preview, and import have all been validated using live Wartales project data.
+## Validation
+
+- Validation framework
+- Validation pipeline
+- Save validation
+- Manual validation
+- Validation Results window
+- Navigation to issues
+- Severity filtering
+- Validation summary
 
 ---
 
 # Roadmap
 
-## Next Milestone
-
-### Mod Profiles & Change Migration
-
-Primary goals
-
-* Save reusable modification profiles
-* Preserve edits across game updates
-* Manage multiple snapshot profiles
-* Merge preview
-* Intelligent change matching
-
----
-
-## Following Milestone
-
-### Validation Framework
-
-Primary goals
-
-* Missing reference detection
-* Invalid reference detection
-* Duplicate detection
-* Required property validation
-* Validation reports
-
----
-
-## Future Milestone
+## Current Milestone
 
 ### Content Creation Tools
 
 Primary goals
 
-* Camp structure creation
-* Camp anvil support
-* Additional game object creation
-* Expansion-friendly editing
+- Camp structure creation
+- Camp anvil support
+- Additional game object creation
+- Expansion-friendly editing
 
 ---
 
-## Future Milestone
+## Following Milestone
 
 ### UI Modernization
 
 Primary goals
 
-* Command area redesign
-* Improved workflow
-* Larger action buttons
-* Layout refinement
-* Visual polish
-* Future icon support
+- Improved utility window management
+- Consistent window sizing
+- Same-monitor utility window placement
+- Taskbar support for utility windows
+- Keyboard shortcuts for utility windows
+- Improved command area
+- Larger action buttons
+- Visual polish
+
+---
+
+## Future Milestones
+
+- Merge Preview
+- Batch Editing
+- Validation reports
+- Community profile sharing
+- In-game profile credits
+- Byte-for-byte CDB formatting preservation
 
 ---
 
@@ -297,23 +331,11 @@ Primary goals
 
 ## Priority 1
 
-Mod Profiles & Change Migration
-
----
-
-## Priority 2
-
-Validation Framework
-
----
-
-## Priority 3
-
 Content Creation Tools
 
 ---
 
-## Priority 4
+## Priority 2
 
 UI Modernization
 
@@ -323,34 +345,29 @@ UI Modernization
 
 Low Priority
 
-* Programmatic Undo/Redo may reposition the caret within certain WPF text editors.
-* Does not affect data integrity.
-* Deferred until the UI Modernization milestone.
+- Programmatic Undo/Redo may reposition the caret within certain WPF text editors.
+- Utility window positioning and sizing will be standardized during UI Modernization.
 
 ---
 
 # Most Recent Accomplishment
 
-Completed **Version 0.6.0 – Snapshot UI Pass 1**.
+Completed **Version 0.8.0 – Validation Framework (Pass 1).**
 
-The editor now provides a complete workflow for:
+The editor now provides a complete editing platform built around four reusable subsystems:
 
-* Editing
-* Tracking changes
-* Reviewing modifications
-* Exporting reusable snapshots
-* Previewing snapshot compatibility
-* Importing snapshots safely
-* Saving with confidence
+- Editing
+- Snapshots
+- Profiles
+- Validation
 
-The editing architecture now provides the foundation for future:
+This architecture provides the foundation for future Content Creation Tools while ensuring every new feature automatically benefits from:
 
-* Mod Profiles
-* Change Migration
-* Merge Preview
-* Batch Editing
-* Validation
-* Content Creation Tools
+- Undo / Redo
+- Change Summary
+- Profiles
+- Validation
+- Migration
 
 ---
 
@@ -360,10 +377,10 @@ This document serves as the project's executive overview.
 
 Implementation details belong in:
 
-* CurrentTask.md
-* DevelopmentJournal.md
-* Architecture.md
-* KnowledgeBase.md
+- CurrentTask.md
+- DevelopmentJournal.md
+- Architecture.md
+- KnowledgeBase.md
 
 The Dashboard should always answer one question:
 

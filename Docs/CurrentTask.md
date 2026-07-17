@@ -2,15 +2,15 @@
 
 ## Current Milestone
 
-**Version 0.7.0 Complete — Release Preparation**
+**Version 0.8.0 Complete — Release Preparation**
 
 ---
 
-## Current Status
+# Current Status
 
 The project builds successfully.
 
-Version 0.7.0 — Complete Profile Manager has been implemented, runtime tested, verified, and polished.
+Version **0.8.0 — Validation Framework** has been fully implemented, runtime tested, verified, and polished.
 
 Current build status:
 
@@ -18,174 +18,190 @@ Current build status:
 
 Git commit has **not** yet been created.
 
-The project documentation is currently being updated before creating the Version 0.7.0 release commit.
+The project documentation is currently being updated before creating the Version 0.8.0 release commit.
 
 ---
 
-## Recently Completed
+# Recently Completed
 
-### Complete Profile Manager
+## Validation Framework
 
 Implemented:
 
-- Create Profile
-- Rename Profile
-- Duplicate Profile
-- Apply Profile
-- Import Profile
-- Export Profile
-- Delete Profile
-- Profile Browser
-- Profile Library
-- Profile Details dialog
-- Profile metadata editing
-- Unified profile request pipeline
-- Complete Profile Manager workflow
-
-### Mod Profile Architecture
-
-Completed reusable profile infrastructure including:
-
-- ModProfileModel
-- ModProfileMetadataModel
-- ModProfileFormat
-- ModProfileService
-- ModProfileSerializationService
-- ModProfileWorkflowService
-- ModProfileLibraryService
-- ModProfileLibraryPathService
-- ModProfileSummaryModel
-
-Profiles compose the existing Snapshot workflow rather than duplicating it.
-
-### Architecture Improvements
-
-- Single profile operation request model
-- Shared Snapshot workflow integration
-- Reusable Profile Details dialog
-- Improved Profile Manager workflow
-- Preserved constructor injection
-- Preserved dialog abstraction
-- Preserved Snapshot workflow architecture
-
-### Runtime Verification
-
-Successfully verified:
-
-- Create Profile
-- Rename Profile
-- Duplicate Profile
-- Export Profile
-- Delete Profile
-- Import Profile
-- Apply Profile
-- Undo
-- Redo
-- Change Summary
-- Modification tracking
-- Snapshot application
-- Successful builds after every implementation stage
-
-### UI Polish
-
-Completed:
-
-- Improved main window startup sizing
-- Improved Profile Details dialog layout
-- Improved profile selection behavior
-- Improved Profile Manager usability
-- Renamed **Profile Contents** to **Profile Change Count**
-- Simplified profile statistics to display **Modified Properties**
+- Validation pipeline
+- Validation workflow orchestration
+- Validation rule architecture
+- Validation service layer
+- Validation issue model
+- Validation result model
+- Validation severity model
+- Validation category model
+- Extensible validator architecture
 
 ---
 
-## Current Objective
+## Validation Rules
+
+Implemented:
+
+- Read-only property validation
+- Property definition validation
+- Numeric range validation
+- Reference value validation
+- Safe gameplay validation
+
+Validation is intentionally limited to rules that can be verified with confidence.
+
+---
+
+## Validation User Interface
+
+Completed:
+
+- Validate Project command
+- Validation Results window
+- Validation summary header
+- Severity counters
+- Severity filtering
+- Empty validation success view
+- Validation navigation
+- Copy Results
+- Re-run Validation
+
+The Validation Results window now operates as a reusable, single-instance modeless utility window.
+
+---
+
+## Architecture Improvements
+
+Completed:
+
+- Validation integrated through a reusable workflow
+- Save validation now reuses the validation pipeline
+- Validation Results lifecycle management
+- Shared navigation workflow
+- Shared modeless utility window architecture
+- Independent utility window focus behavior
+
+No duplicate validation implementations were introduced.
+
+---
+
+## Runtime Verification
+
+Successfully verified:
+
+- Manual validation
+- Save validation
+- Validation navigation
+- Validation filtering
+- Validation refresh
+- Validation clipboard export
+- Single-instance window behavior
+- Independent modeless window focus
+- Undo compatibility
+- Redo compatibility
+- Profile compatibility
+- Snapshot compatibility
+- Change Summary compatibility
+- Successful builds after every implementation stage
+
+---
+
+# Current Objective
 
 Complete the remaining release documentation.
 
 Remaining documents:
 
-- Changelog.md
+- DevelopmentJournal.md
+- Architecture.md
 - ProjectSnapshot.md
+- LessonsLearned.md
+- DeveloperGuide.md
 
 After documentation is complete:
 
-- Create the Version 0.7.0 Git commit.
+- Create the Version 0.8.0 Git commit.
 - Push to GitHub.
 
 No additional code changes are planned before this release commit.
 
 ---
 
-## Next Planned Milestones
+# Next Planned Milestones
 
 Priority order:
 
-### 1. Validation Framework
+## 1. Version 0.9.0 — Content Creation Tools (Pass 1)
 
 Primary objective:
 
-Build the reusable validation infrastructure that future editor features can share.
+Begin building powerful gameplay editing tools using the completed editor infrastructure.
 
-Expected capabilities:
+Initial tools:
 
-- Save validation
-- Profile validation
-- Missing reference detection
-- Invalid reference detection
-- Invalid value detection
-- Required property validation
-- Validation reports
-- Extensible validation rule architecture
+- Add Camp Anvil
+- Make All Equipment Upgradeable
 
----
+All tools must automatically integrate with:
 
-### 2. Content Creation Tools
+- Property modification tracking
+- Undo / Redo
+- Change Summary
+- Snapshots
+- Profiles
+- Validation
 
-Primary objective:
-
-Allow guided creation of additional Wartales content.
-
-Initial focus:
-
-- Camp Structures
-- Camp Anvil
-- Equipment upgrades
-- Guided gameplay content creation
-
-All generated edits will continue using the existing PropertyModel modification pipeline.
+No separate editing systems will be introduced.
 
 ---
 
-### 3. UI Modernization
+## 2. UI Modernization
 
-Planned improvements:
+Primary objectives:
 
-- Workflow-oriented toolbar
+- Improved utility window sizing
+- Consistent utility window placement
+- Open utility windows on the same monitor as the main editor
+- Independent taskbar buttons for utility windows
+- Keyboard shortcuts for utility windows
 - Larger action buttons
-- Improved command organization
-- Layout polish
-- Icon support
-- Additional usability improvements
+- Visual polish
 
 ---
 
-### 4. Future Features
+## 3. Validation Expansion
+
+Future enhancements:
+
+- Additional validation rules
+- Cross-sheet validation
+- Duplicate detection
+- Advanced gameplay validation
+- Exportable validation reports
+
+The existing validation framework will be expanded rather than replaced.
+
+---
+
+## 4. Future Features
 
 Post Version 1.0:
 
-- Optional community profile sharing
+- Community profile sharing
 - Merge Preview
 - Batch Editing
-- Validation reports
-- In-game profile credits
+- In-game profile credits popup
 - Byte-for-byte CDB formatting preservation improvements
+
+Steam Workshop support is intentionally excluded because Wartales does not support Steam Workshop.
 
 ---
 
-## Architecture Notes
+# Architecture Notes
 
-The editing architecture remains stable.
+The editor architecture remains stable.
 
 Property editing flow:
 
@@ -235,40 +251,64 @@ Preview
 Apply
 ```
 
-The modification state remains the single source of truth throughout the application.
+Validation workflow:
 
-`PropertyModel.IsModified` continues to drive:
+```text
+Validate Project
+        │
+        ▼
+ValidationWorkflowService
+        │
+        ▼
+Validation Pipeline
+        │
+        ▼
+Validation Rules
+        │
+        ▼
+Validation Results
+        │
+        ▼
+Validation Results Window
+```
 
-- Undo / Redo
-- Change Summary
-- Snapshot creation
-- Profile creation
-- Profile application
+The following remain single implementations throughout the application:
 
-No duplicate modification tracking exists.
+- Property modification tracking
+- Snapshot matching
+- Snapshot preview
+- Snapshot application
+- Validation pipeline
+
+`PropertyModel.IsModified` remains the single source of truth for modification state.
 
 ---
 
-## Known Minor Issues
+# Known Minor Issues
 
 No known functional issues.
 
-Minor UI refinements will continue as part of future modernization work.
+Future UI modernization will address:
+
+- Consistent utility window sizing
+- Consistent utility window placement
+- Utility window taskbar behavior
+- Utility window keyboard shortcuts
 
 ---
 
-## Build Status
+# Build Status
 
 ✅ Last build successful
 
 ---
 
-## Next Session
+# Next Session
 
 Finish release documentation.
 
-Create the Version 0.7.0 Git commit.
+Create the Version 0.8.0 Git commit.
 
 Push to GitHub.
 
-Begin implementation of **Version 0.8.0 — Validation Framework (Pass 1)**.
+Begin implementation of **Version 0.9.0 — Content Creation Tools (Pass 1)**.

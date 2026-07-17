@@ -1,0 +1,325 @@
+﻿<Window x:Class="WartalesEditor.Views.ValidationResultsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Validation Results"
+        Width="1180"
+        Height="700"
+        MinWidth="900"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Grid Margin="16">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+
+            <TextBlock Text="{Binding Header}"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+
+            <TextBlock Margin="0,4,0,0"
+                       Foreground="DimGray"
+                       Text="{Binding StatusText}"/>
+
+        </StackPanel>
+
+        <!-- Severity counts -->
+        <UniformGrid Grid.Row="2"
+                     Columns="3">
+
+            <Border Margin="0,0,8,0"
+                    Padding="12,9"
+                    Background="#FFFFE8E8"
+                    BorderBrush="#FFE0B8B8"
+                    BorderThickness="1"
+                    CornerRadius="3">
+
+                <StackPanel Orientation="Horizontal">
+
+                    <TextBlock Text="Errors"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Margin="8,0,0,0"
+                               Text="{Binding ErrorCount}"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+            </Border>
+
+            <Border Margin="4,0"
+                    Padding="12,9"
+                    Background="#FFFFF4D6"
+                    BorderBrush="#FFE2D09A"
+                    BorderThickness="1"
+                    CornerRadius="3">
+
+                <StackPanel Orientation="Horizontal">
+
+                    <TextBlock Text="Warnings"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Margin="8,0,0,0"
+                               Text="{Binding WarningCount}"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+            </Border>
+
+            <Border Margin="8,0,0,0"
+                    Padding="12,9"
+                    Background="#FFE8F1FA"
+                    BorderBrush="#FFB8CDE0"
+                    BorderThickness="1"
+                    CornerRadius="3">
+
+                <StackPanel Orientation="Horizontal">
+
+                    <TextBlock Text="Information"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Margin="8,0,0,0"
+                               Text="{Binding InformationCount}"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+            </Border>
+
+        </UniformGrid>
+
+        <!-- Filters -->
+        <DockPanel Grid.Row="4"
+                   LastChildFill="False">
+
+            <TextBlock VerticalAlignment="Center"
+                       Margin="0,0,10,0"
+                       FontWeight="SemiBold"
+                       Text="Show:"/>
+
+            <StackPanel Orientation="Horizontal">
+
+                <RadioButton GroupName="ValidationFilters"
+                             Margin="0,0,12,0"
+                             VerticalAlignment="Center"
+                             Content="All"
+                             IsChecked="{Binding IsShowingAll,
+                                                 Mode=OneWay}"
+                             Command="{Binding ShowAllCommand}"/>
+
+                <RadioButton GroupName="ValidationFilters"
+                             Margin="0,0,12,0"
+                             VerticalAlignment="Center"
+                             Content="Errors"
+                             IsChecked="{Binding IsShowingErrors,
+                                                 Mode=OneWay}"
+                             Command="{Binding ShowErrorsCommand}"/>
+
+                <RadioButton GroupName="ValidationFilters"
+                             Margin="0,0,12,0"
+                             VerticalAlignment="Center"
+                             Content="Warnings"
+                             IsChecked="{Binding IsShowingWarnings,
+                                                 Mode=OneWay}"
+                             Command="{Binding ShowWarningsCommand}"/>
+
+                <RadioButton GroupName="ValidationFilters"
+                             VerticalAlignment="Center"
+                             Content="Information"
+                             IsChecked="{Binding IsShowingInformation,
+                                                 Mode=OneWay}"
+                             Command="{Binding ShowInformationCommand}"/>
+
+            </StackPanel>
+
+        </DockPanel>
+
+        <!-- Results -->
+        <Grid Grid.Row="6">
+
+            <DataGrid x:Name="ValidationResultsDataGrid"
+                      ItemsSource="{Binding FilteredIssues}"
+                      SelectedItem="{Binding SelectedIssue,
+                                             Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserReorderColumns="True"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      AlternatingRowBackground="#FFF7F7F7">
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Severity"
+                                        Binding="{Binding Severity,
+                                                          Mode=OneWay}"
+                                        Width="95"/>
+
+                    <DataGridTextColumn Header="Category"
+                                        Binding="{Binding Category,
+                                                          Mode=OneWay}"
+                                        Width="145"/>
+
+                    <DataGridTextColumn Header="Sheet"
+                                        Binding="{Binding SheetName,
+                                                          Mode=OneWay}"
+                                        Width="150"/>
+
+                    <DataGridTextColumn Header="Entry"
+                                        Binding="{Binding EntryName,
+                                                          Mode=OneWay,
+                                                          TargetNullValue=''}"
+                                        Width="190"/>
+
+                    <DataGridTextColumn Header="Property"
+                                        Binding="{Binding PropertyName,
+                                                          Mode=OneWay}"
+                                        Width="150"/>
+
+                    <DataGridTemplateColumn Header="Message"
+                                            Width="*"
+                                            MinWidth="280">
+
+                        <DataGridTemplateColumn.CellTemplate>
+
+                            <DataTemplate>
+
+                                <TextBlock Margin="6,4"
+                                           Text="{Binding Message,
+                                                          Mode=OneWay}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Top"/>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellTemplate>
+
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+            <!-- Empty state -->
+            <Border Padding="24"
+                    Background="White">
+
+                <Border.Style>
+
+                    <Style TargetType="Border">
+
+                        <Setter Property="Visibility"
+                                Value="Collapsed"/>
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding HasIssues}"
+                                         Value="False">
+
+                                <Setter Property="Visibility"
+                                        Value="Visible"/>
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+
+                </Border.Style>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+
+                    <TextBlock HorizontalAlignment="Center"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Foreground="DarkGreen"
+                               Text="Validation passed"/>
+
+                    <TextBlock Margin="0,8,0,0"
+                               HorizontalAlignment="Center"
+                               FontSize="16"
+                               Text="No validation issues were found."/>
+
+                    <TextBlock Margin="0,5,0,0"
+                               HorizontalAlignment="Center"
+                               Foreground="DimGray"
+                               Text="The current project passed all registered validation rules."/>
+
+                </StackPanel>
+
+            </Border>
+
+        </Grid>
+
+        <!-- Actions -->
+        <DockPanel Grid.Row="8"
+                   LastChildFill="False">
+
+            <TextBlock VerticalAlignment="Center"
+                       Foreground="DimGray"
+                       Text="Double-click an issue or choose Navigate to locate it in the editor."/>
+
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal">
+
+                <Button Width="100"
+                        Margin="0,0,8,0"
+                        Padding="10,5"
+                        Command="{Binding NavigateCommand}"
+                        Content="Navigate"/>
+
+                <Button Width="110"
+                        Margin="0,0,8,0"
+                        Padding="10,5"
+                        Command="{Binding RerunValidationCommand}"
+                        Content="Re-run"/>
+
+                <Button Width="110"
+                        Margin="0,0,8,0"
+                        Padding="10,5"
+                        Command="{Binding CopyResultsCommand}"
+                        Content="Copy Results"/>
+
+                <Button Width="100"
+                        Padding="10,5"
+                        Content="Close"
+                        IsCancel="True"
+                        Click="OnCloseButtonClick"/>
+
+            </StackPanel>
+
+        </DockPanel>
+
+    </Grid>
+
+</Window>

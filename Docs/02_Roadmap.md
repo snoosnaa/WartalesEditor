@@ -1,265 +1,331 @@
-﻿# Roadmap
+﻿# Wartales Editor Roadmap
 
-**Document Version:** 1.1
-**Status:** Active
-**Last Updated:** 2026-07-11
-**Applies To:** Entire Project
+**Application Roadmap**
 
----
-
-# Project Roadmap
-
-The roadmap is a living document and will evolve as the project grows. Priorities may change based on development experience, user feedback, and discoveries about Wartales' data structures.
+Last Updated: 2026-07-17
 
 ---
 
-# Mission
+# Vision
 
-> **Empower players to easily customize Wartales to match the way they want to play, without requiring them to understand the game's internal data files.**
+The long-term goal of Wartales Editor is to become the definitive editor for Wartales game data.
 
-The editor should make creating, maintaining, **sharing** gameplay modifications simple, safe, approachable, and sustainable across future game updates.
+The project emphasizes:
+
+- Safe editing
+- Reusable architecture
+- Intelligent workflows
+- Extensibility
+- Long-term maintainability
+
+Every major feature should build upon the existing architecture rather than introducing parallel implementations.
 
 ---
 
-# Current Status
+# Guiding Principles
 
-**Application Version:** 0.2.0 — Find Anything
+## Infrastructure Before Features
 
-The editor currently supports:
+Reusable systems are built first.
 
-- Opening the game's CDB.
-- Browsing Categories, Settings, and Properties.
-- Editing gameplay values.
-- Saving modified CDB files.
-- Reloading edited files.
-- Searching every Category.
-- Searching English display names.
-- Searching internal IDs.
-- Searching property names.
-- Searching property values.
-- Localization-aware searching.
-- Direct navigation to search results.
-- Successfully verifying gameplay changes inside Wartales.
+User-facing features are then implemented using those systems.
 
-The project has now transitioned from a functional editor into a powerful gameplay editing tool.
+This approach minimizes duplicated logic and makes future development significantly easier.
+
+---
+
+## Single Source of Truth
+
+Where practical, each major responsibility should have exactly one implementation.
+
+Examples include:
+
+- Property modification tracking
+- Snapshot matching
+- Snapshot preview
+- Snapshot application
+- Validation pipeline
+
+Future features should compose these systems rather than replace them.
 
 ---
 
 # Completed Milestones
 
-## Foundation
+---
+
+## Version 0.1.0 — Project Foundation ✅
 
 Completed
 
-- WPF application
+Major accomplishments:
+
+- WPF desktop application
 - MVVM architecture
-- Git repository
-- GitHub integration
-- Documentation framework
-- JSON parsing
+- Git integration
+- Documentation system
+- JSON loading
+- Project infrastructure
 
 ---
 
-## Data Browser
+## Version 0.2.0 — Data Browser ✅
 
 Completed
 
-- Three-pane interface
-- Categories
-- Settings
-- Properties
-- Search scopes
-- Internal ID display
+Major accomplishments:
+
+- Three-pane editor
+- Category browsing
+- Entry browsing
+- Property browsing
+- Project model architecture
 
 ---
 
-## Functional Editor
+## Version 0.3.0 — Functional Editing ✅
 
 Completed
+
+Major accomplishments:
 
 - Editable properties
 - RootDocument synchronization
 - Save support
-- Reload verification
-- First successful gameplay modification
-- Pane headers
-- Show Empty Categories
+- Live game verification
 
 ---
 
-## Find Anything v1
+## Version 0.3.1 — Find Anything ✅
 
 Completed
 
-- Global search across all Categories
-- Search internal IDs
-- Search English display names
-- Search property names
-- Search property values
-- Search all fields simultaneously
-- Find Anything panel
-- Direct navigation to matching Categories and Settings
-- Automatic property selection
+Major accomplishments:
+
+- Global search
 - Localization-aware searching
+- Intelligent property editors
+- Reference-aware dropdowns
 
 ---
 
-# Current Priorities
+## Version 0.4.0 — Safe Editing Infrastructure ✅
 
-## Goal 2 — Edit Safely
+Completed
 
-### Objective
+Major accomplishments:
 
-Allow users to confidently modify game data while minimizing mistakes.
+- Property modification tracking
+- Project dirty-state tracking
+- Undo / Redo
+- Reset Property
+- Edit history architecture
 
-### Property Editing
-
-- Type-aware editors.
-- Numeric controls.
-- Boolean checkboxes.
-- Drop-down editors.
-- Enum support.
-- Property descriptions.
-- Tooltips.
-- Default values.
-- Known value ranges.
-- Reset property to original value.
-- Read-only handling for unsupported complex objects.
-
-### Validation
-
-- Syntax validation.
-- Save validation.
-- Type validation.
-- Schema validation.
-- Missing-field detection.
-
-### Visual Feedback
-
-- Highlight modified values.
-- Modified indicator.
-- Change summaries.
+PropertyModel.IsModified remains the single source of truth.
 
 ---
 
-## Goal 3 — Build Mods
+## Version 0.5.0 — Change Summary ✅
 
-### Objective
+Completed
 
-Allow users to create reusable collections of gameplay modifications.
+Major accomplishments:
 
-### Mod Profiles
-
-- Save Mod Profiles.
-- Load Mod Profiles.
-- Apply Mod Profiles.
-- Rename Mod Profiles.
-- Delete Mod Profiles.
-- Organize Mod Profiles.
-- Compare Mod Profiles.
-- Preview Mod Profile contents.
-- Share Mod Profiles.
-- Apply Mod Profiles to updated game versions.
+- Live Change Summary
+- Original vs Current comparison
+- Navigation
+- Automatic refresh
+- Category grouping
 
 ---
 
-## Goal 4 — Streamline the Workflow
+## Version 0.6.0 — Snapshot Workflow ✅
 
-### Objective
+Completed
 
-Reduce repetitive work between editing and playing.
+Major accomplishments:
 
-### File Workflow
+- Snapshot capture
+- Snapshot serialization
+- Snapshot matching
+- Snapshot preview
+- Snapshot application
+- Workflow orchestration
 
-- Save As.
-- Save & Exit.
-- Exit confirmation.
-- Unsaved changes prompt.
-- Backup on Save.
-- Recent Files.
-- Remember last opened project.
-- Remember user preferences.
+There remains exactly one implementation of:
 
-### Packaging
-
-- QuickBMS extraction.
-- QuickBMS packaging.
-- Configure QuickBMS location.
-- Verify required files exist.
-- One-click Package.
-- Long-term Package & Launch Wartales.
+- Snapshot matching
+- Snapshot preview
+- Snapshot application
 
 ---
 
-## Goal 5 — Advanced Editing
+## Version 0.7.0 — Complete Profile Manager ✅
 
-### Objective
+Completed
 
-Allow efficient modification and long-term maintenance of gameplay modifications.
+Major accomplishments:
 
-### Batch Editing
+- Complete Profile Manager
+- Profile library
+- Create
+- Rename
+- Duplicate
+- Apply
+- Import
+- Export
+- Delete
+- Profile Details dialog
 
-- Set values.
-- Add values.
-- Multiply values.
-- Divide values.
-- Find & Replace.
-- Preview batch operations.
-- Apply changes to selected Categories.
-- Apply changes to matching property types.
+Profiles compose the existing Snapshot workflow.
 
-### Migration
-
-- Compare CDB versions.
-- Import previous edits.
-- Conflict detection.
-- Preview migration.
-- Merge changes.
+No duplicate snapshot implementations exist.
 
 ---
 
-# Research
+## Version 0.8.0 — Validation Framework ✅
 
-Topics requiring continued investigation.
+Completed
 
-- Unknown CDB structures.
-- Property meanings.
-- Hidden gameplay mechanics.
-- Relationships between game systems.
-- Localization mappings.
-- Undocumented data structures.
+Major accomplishments:
 
----
+- Validation pipeline
+- Validation workflow
+- Validation rule architecture
+- Validation models
+- Validation Results window
+- Manual validation
+- Save validation
+- Validation navigation
+- Severity filtering
+- Copy Results
+- Re-run validation
 
-# Future Ideas
-
-Ideas intentionally postponed until the core editor reaches Version 1.0.
-
-- Undo / Redo.
-- Raw JSON viewer.
-- Developer Mode.
-- Performance diagnostics.
-- Compare projects.
-- Plugin architecture.
-- Scriptable actions.
-- Theme support.
-- Dark mode.
-- Dockable panes.
-- Adjustable fonts.
-- Favorites.
-- Bookmarks.
+Validation is now a reusable subsystem available to every future editor feature.
 
 ---
 
-# Design Philosophy
+# Current Development
 
-Every decision should support one or more of the following principles:
+## Version 0.9.0 — Content Creation Tools (Pass 1)
 
-- Focus on gameplay rather than JSON.
-- Preserve original game data whenever possible.
-- Prefer discoverability over exposing raw structures.
-- Keep the editor approachable for users with little or no programming experience.
-- Build incrementally using small, testable improvements.
-- Validate major features through in-game testing.
-- Documentation is part of the project.
-- Solve real modding problems before adding complexity.
+This milestone marks the transition from building editor infrastructure to building powerful editor capabilities.
+
+All content creation tools must automatically integrate with:
+
+- Property modification tracking
+- Undo / Redo
+- Change Summary
+- Snapshot workflow
+- Profiles
+- Validation
+
+No separate editing systems will be introduced.
+
+### Initial tools
+
+- Add Camp Anvil
+- Make All Equipment Upgradeable
+
+Additional content creation tools will be added over time as reusable editor commands.
+
+---
+
+# Following Milestone
+
+## UI Modernization
+
+Primary goals:
+
+- Improved toolbar layout
+- Larger action buttons
+- Improved workflow
+- Visual polish
+- Future icon support
+
+### Utility Window Improvements
+
+- Consistent default window sizing
+- Consistent initial window placement
+- Open utility windows on the same monitor as the main editor
+- Independent taskbar buttons for utility windows
+- Keyboard shortcuts to open or focus:
+  - Change Summary
+  - Profile Manager
+  - Validation Results
+
+These improvements are intended to make the editor feel more like a modern desktop application while preserving the existing architecture.
+
+---
+
+# Future Milestones
+
+## Validation Expansion
+
+The validation framework is complete.
+
+Future work expands the existing framework with additional rules rather than creating another validation system.
+
+Potential additions include:
+
+- Cross-sheet validation
+- Duplicate detection
+- Missing required properties
+- Advanced gameplay validation
+- Exportable validation reports
+- Richer validation summaries
+
+---
+
+## Advanced Editing
+
+Potential future features:
+
+- Merge Preview
+- Batch Editing
+- Intelligent bulk operations
+- Advanced migration assistance
+
+These features will reuse the existing editing, snapshot, profile, and validation infrastructure.
+
+---
+
+## Community Features
+
+Post-1.0 possibilities include:
+
+- Community profile sharing
+- In-game profile credits popup
+
+Steam Workshop support is intentionally excluded because Wartales does not support Steam Workshop.
+
+---
+
+# Long-Term Technical Goals
+
+Future engineering improvements include:
+
+- Byte-for-byte CDB formatting preservation wherever practical
+- Continued performance optimization
+- Expanded automated testing
+- Continued architectural refinement
+
+---
+
+# Development Philosophy
+
+Every milestone should satisfy the following goals:
+
+- Keep the project compiling after every implementation step.
+- Prefer long-term architecture over short-term solutions.
+- Build reusable infrastructure before user-facing features.
+- Avoid duplicate implementations.
+- Preserve the existing architecture unless the current milestone requires otherwise.
+- Ensure new features automatically benefit from:
+  - Undo / Redo
+  - Change Summary
+  - Profiles
+  - Validation
+  - Snapshot migration
+
+The objective is not simply to add features, but to build a stable, extensible editor that can continue growing for years without accumulating unnecessary technical debt.
