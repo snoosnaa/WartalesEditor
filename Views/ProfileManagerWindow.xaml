@@ -7,11 +7,13 @@
         MinWidth="800"
         MinHeight="500"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False">
+        ShowInTaskbar="True">
 
     <Grid Margin="16">
 
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="12"/>
             <RowDefinition Height="*"/>
@@ -19,9 +21,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <DockPanel Grid.Row="0"
-                   LastChildFill="True">
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="{Binding Header}"/>
+            <TextBlock Margin="0,4,0,0"
+                       Foreground="DimGray"
+                       Text="Browse and manage profiles stored in the Wartales Editor profile library."/>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2"
+                   LastChildFill="False">
 
             <Button DockPanel.Dock="Right"
                     Width="100"
@@ -29,22 +39,60 @@
                     Command="{Binding RefreshCommand}"
                     Content="Refresh"/>
 
-            <StackPanel>
+            <StackPanel DockPanel.Dock="Left"
+                        Orientation="Horizontal">
 
-                <TextBlock FontSize="20"
-                           FontWeight="SemiBold"
-                           Text="{Binding Header}"/>
+                <Button Width="100"
+                        Padding="10,5"
+                        Command="{Binding CreateCommand}"
+                        Content="New"/>
 
-                <TextBlock Margin="0,4,0,0"
-                           Foreground="DimGray"
-                           Text="Browse profiles stored in the Wartales Editor profile library."/>
+                <Button Width="100"
+                        Margin="8,0,0,0"
+                        Padding="10,5"
+                        Command="{Binding RenameCommand}"
+                        Content="Rename"/>
+
+                <Button Width="100"
+                        Margin="8,0,0,0"
+                        Padding="10,5"
+                        Command="{Binding DuplicateCommand}"
+                        Content="Duplicate"/>
+
+                <Separator Margin="10,0"
+                           Width="1"/>
+
+                <Button Width="110"
+                        Padding="12,6"
+                        FontWeight="SemiBold"
+                        Command="{Binding ApplyCommand}"
+                        Content="Apply"/>
+
+                <Button Width="100"
+                        Margin="8,0,0,0"
+                        Padding="10,5"
+                        Command="{Binding ImportCommand}"
+                        Content="Import"/>
+
+                <Button Width="100"
+                        Margin="8,0,0,0"
+                        Padding="10,5"
+                        Command="{Binding ExportCommand}"
+                        Content="Export"/>
+
+                <Separator Margin="10,0"
+                           Width="1"/>
+
+                <Button Width="100"
+                        Padding="10,5"
+                        Command="{Binding DeleteCommand}"
+                        Content="Delete"/>
 
             </StackPanel>
 
         </DockPanel>
 
-        <!-- Browser -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="4">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"
@@ -54,8 +102,8 @@
                                   MinWidth="380"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Profile list -->
-            <DataGrid Grid.Column="0"
+            <DataGrid x:Name="ProfileGrid"
+                      Grid.Column="0"
                       ItemsSource="{Binding Profiles}"
                       SelectedItem="{Binding SelectedProfile,
                                              Mode=TwoWay}"
@@ -70,33 +118,58 @@
                       SelectionUnit="FullRow"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      AlternatingRowBackground="#FFF7F7F7">
+                      AlternatingRowBackground="#FFF7F7F7"
+                      MouseDoubleClick="OnProfileGridMouseDoubleClick"
+                      PreviewKeyDown="OnProfileGridPreviewKeyDown">
+
+
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background"
+                                Value="Transparent"/>
+                    </Style>
+                </DataGrid.RowStyle>
+
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background"
+                                Value="Transparent"/>
+                        <Setter Property="Foreground"
+                                Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected"
+                                     Value="True">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
 
                 <DataGrid.Columns>
-
                     <DataGridTextColumn Header="Name"
                                         Binding="{Binding Name}"
                                         Width="*"
                                         MinWidth="170"/>
-
                     <DataGridTextColumn Header="Author"
                                         Binding="{Binding Author}"
                                         Width="130"/>
-
                     <DataGridTextColumn Header="Version"
                                         Binding="{Binding ProfileVersion}"
                                         Width="85"/>
-
                     <DataGridTextColumn Header="Changes"
                                         Binding="{Binding PropertyCount,
                                                           StringFormat={}{0:N0}}"
                                         Width="80"/>
-
                 </DataGrid.Columns>
 
             </DataGrid>
 
-            <!-- Details -->
             <Border Grid.Column="2"
                     Padding="18"
                     BorderBrush="#FFD0D0D0"
@@ -149,35 +222,28 @@
                                    Grid.Column="0"
                                    FontWeight="SemiBold"
                                    Text="Author"/>
-
                         <TextBlock Grid.Row="0"
                                    Grid.Column="1"
                                    Text="{Binding SelectedProfileAuthor}"
                                    TextWrapping="Wrap"/>
-
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
                                    FontWeight="SemiBold"
                                    Text="Version"/>
-
                         <TextBlock Grid.Row="2"
                                    Grid.Column="1"
                                    Text="{Binding SelectedProfileVersion}"/>
-
                         <TextBlock Grid.Row="4"
                                    Grid.Column="0"
                                    FontWeight="SemiBold"
                                    Text="Created"/>
-
                         <TextBlock Grid.Row="4"
                                    Grid.Column="1"
                                    Text="{Binding SelectedProfileCreatedAt}"/>
-
                         <TextBlock Grid.Row="6"
                                    Grid.Column="0"
                                    FontWeight="SemiBold"
                                    Text="Modified"/>
-
                         <TextBlock Grid.Row="6"
                                    Grid.Column="1"
                                    Text="{Binding SelectedProfileModifiedAt}"/>
@@ -187,45 +253,35 @@
                     <Separator Grid.Row="4"/>
 
                     <StackPanel Grid.Row="6">
-
                         <TextBlock FontWeight="SemiBold"
                                    Text="Description"/>
-
                         <TextBlock Margin="0,5,0,0"
                                    Foreground="DimGray"
                                    Text="{Binding SelectedProfileDescription}"
                                    TextWrapping="Wrap"/>
-
                     </StackPanel>
 
                     <Separator Grid.Row="8"/>
 
                     <StackPanel Grid.Row="10">
-
                         <TextBlock FontWeight="SemiBold"
-                                   Text="Profile Contents"/>
-
+                                   Text="Profile Change Count"/>
                         <TextBlock Margin="0,5,0,0"
                                    Text="{Binding SelectedProfileChangeSummary}"
                                    TextWrapping="Wrap"/>
-
                     </StackPanel>
 
                     <Separator Grid.Row="12"/>
 
-                    <StackPanel Grid.Row="13"
-                                Margin="0,0,0,0">
-
+                    <StackPanel Grid.Row="13">
                         <TextBlock FontWeight="SemiBold"
                                    Text="Additional Information"/>
 
                         <Grid Margin="0,6,0,0">
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="90"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="6"/>
@@ -236,95 +292,83 @@
                                        Grid.Column="0"
                                        FontWeight="SemiBold"
                                        Text="Tags"/>
-
                             <TextBlock Grid.Row="0"
                                        Grid.Column="1"
                                        Text="{Binding SelectedProfileTags}"
                                        TextWrapping="Wrap"/>
-
                             <TextBlock Grid.Row="2"
                                        Grid.Column="0"
                                        FontWeight="SemiBold"
                                        Text="File"/>
-
                             <TextBlock Grid.Row="2"
                                        Grid.Column="1"
                                        Text="{Binding SelectedProfileFileName}"
                                        TextWrapping="Wrap"/>
-
                         </Grid>
-
                     </StackPanel>
 
                 </Grid>
 
             </Border>
 
-            <!-- Empty state -->
             <Border Grid.ColumnSpan="3"
                     Padding="24"
                     Background="White">
 
                 <Border.Style>
                     <Style TargetType="Border">
-
                         <Setter Property="Visibility"
                                 Value="Collapsed"/>
-
                         <Style.Triggers>
-
                             <DataTrigger Binding="{Binding HasProfiles}"
                                          Value="False">
-
                                 <Setter Property="Visibility"
                                         Value="Visible"/>
-
                             </DataTrigger>
-
                         </Style.Triggers>
-
                     </Style>
                 </Border.Style>
 
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-
                     <TextBlock HorizontalAlignment="Center"
                                FontSize="18"
                                FontWeight="SemiBold"
                                Text="No mod profiles found"/>
-
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
                                Foreground="DimGray"
-                               Text="Profiles saved to the Wartales Editor profile library will appear here."/>
+                               Text="Import a profile or save one to the Wartales Editor profile library."/>
 
-                    <Button Width="110"
-                            Margin="0,16,0,0"
-                            Padding="10,5"
-                            Command="{Binding RefreshCommand}"
-                            Content="Refresh"/>
-
+                    <StackPanel Margin="0,16,0,0"
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal">
+                        <Button Width="110"
+                                Padding="10,5"
+                                Command="{Binding ImportCommand}"
+                                Content="Import"/>
+                        <Button Width="110"
+                                Margin="8,0,0,0"
+                                Padding="10,5"
+                                Command="{Binding RefreshCommand}"
+                                Content="Refresh"/>
+                    </StackPanel>
                 </StackPanel>
 
             </Border>
 
         </Grid>
 
-        <!-- Footer -->
-        <DockPanel Grid.Row="4"
+        <DockPanel Grid.Row="6"
                    LastChildFill="True">
-
             <Button DockPanel.Dock="Right"
                     Width="100"
                     Padding="10,5"
                     Content="Close"
                     Click="OnCloseButtonClick"/>
-
             <TextBlock VerticalAlignment="Center"
                        Foreground="DimGray"
                        Text="{Binding Status}"/>
-
         </DockPanel>
 
     </Grid>

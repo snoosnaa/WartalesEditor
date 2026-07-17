@@ -77,6 +77,516 @@ public sealed class ModProfileLibraryService
             .ToList();
     }
 
+    public ModProfileSummaryModel AddProfile(
+        ModProfileModel profile)
+    {
+        ArgumentNullException.ThrowIfNull(
+            profile);
+
+        string profileName =
+            ValidateProfileName(
+                profile.Metadata.Name,
+                nameof(profile));
+
+        string destinationFile =
+            GetUniqueProfileFilePath(
+                profileName);
+
+        serializationService.Save(
+            profile,
+            destinationFile);
+
+        return CreateSummary(
+            profile,
+            destinationFile);
+    }
+
+    public ModProfileSummaryModel RenameProfile(
+        ModProfileSummaryModel profile,
+        string newName,
+        string description,
+        string author,
+        string profileVersion)
+    {
+        ArgumentNullException.ThrowIfNull(
+            profile);
+
+        string normalizedName =
+            ValidateProfileName(
+                newName,
+                nameof(newName));
+
+        string sourceFile =
+            GetValidatedLibraryProfilePath(
+                profile);
+
+        if (!File.Exists(sourceFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                sourceFile);
+        }
+
+        ModProfileModel sourceProfile =
+            serializationService.Load(
+                sourceFile);
+
+        ModProfileModel renamedProfile =
+            CreateProfileCopy(
+                sourceProfile,
+                normalizedName,
+                description,
+                author,
+                profileVersion,
+                preserveCreationDate: true);
+
+        string destinationFile =
+            GetUniqueProfileFilePath(
+                normalizedName,
+                sourceFile);
+
+        serializationService.Save(
+            renamedProfile,
+            destinationFile);
+
+        if (!string.Equals(
+                sourceFile,
+                destinationFile,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            File.Delete(
+                sourceFile);
+        }
+
+        return CreateSummary(
+            renamedProfile,
+            destinationFile);
+    }
+
+    public ModProfileSummaryModel DuplicateProfile(
+        ModProfileSummaryModel profile,
+        string newName,
+        string description,
+        string author,
+        string profileVersion)
+    {
+        ArgumentNullException.ThrowIfNull(
+            profile);
+
+        string normalizedName =
+            ValidateProfileName(
+                newName,
+                nameof(newName));
+
+        string sourceFile =
+            GetValidatedLibraryProfilePath(
+                profile);
+
+        if (!File.Exists(sourceFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                sourceFile);
+        }
+
+        ModProfileModel sourceProfile =
+            serializationService.Load(
+                sourceFile);
+
+        ModProfileModel duplicatedProfile =
+            CreateProfileCopy(
+                sourceProfile,
+                normalizedName,
+                description,
+                author,
+                profileVersion,
+                preserveCreationDate: false);
+
+        string destinationFile =
+            GetUniqueProfileFilePath(
+                normalizedName);
+
+        serializationService.Save(
+            duplicatedProfile,
+            destinationFile);
+
+        return CreateSummary(
+            duplicatedProfile,
+            destinationFile);
+    }
+
+    public ModProfileSummaryModel ImportProfile(
+        string sourceFile)
+    {
+        if (string.IsNullOrWhiteSpace(
+                sourceFile))
+        {
+            throw new ArgumentException(
+                "A source profile file is required.",
+                nameof(sourceFile));
+        }
+
+        string fullSourcePath =
+            Path.GetFullPath(sourceFile);
+
+        if (!File.Exists(fullSourcePath))
+        {
+            throw new FileNotFoundException(
+                "The profile file could not be found.",
+                fullSourcePath);
+        }
+
+        ValidateProfileFileExtension(
+            fullSourcePath);
+
+        ModProfileModel profile =
+            serializationService.Load(
+                fullSourcePath);
+
+        string libraryDirectory =
+            pathService.EnsureLibraryDirectory();
+
+        string destinationFile =
+            Path.Combine(
+                libraryDirectory,
+                Path.GetFileName(
+                    fullSourcePath));
+
+        string fullDestinationPath =
+            Path.GetFullPath(
+                destinationFile);
+
+        if (!string.Equals(
+                fullSourcePath,
+                fullDestinationPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            File.Copy(
+                fullSourcePath,
+                fullDestinationPath,
+                overwrite: true);
+        }
+
+        return CreateSummary(
+            profile,
+            fullDestinationPath);
+    }
+
+    public void ExportProfile(
+        ModProfileSummaryModel profile,
+        string destinationFile)
+    {
+        ArgumentNullException.ThrowIfNull(
+            profile);
+
+        if (string.IsNullOrWhiteSpace(
+                destinationFile))
+        {
+            throw new ArgumentException(
+                "A destination profile file is required.",
+                nameof(destinationFile));
+        }
+
+        string sourceFile =
+            GetValidatedLibraryProfilePath(
+                profile);
+
+        if (!File.Exists(sourceFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                sourceFile);
+        }
+
+        string fullDestinationPath =
+            Path.GetFullPath(
+                destinationFile);
+
+        ValidateProfileFileExtension(
+            fullDestinationPath);
+
+        string? destinationDirectory =
+            Path.GetDirectoryName(
+                fullDestinationPath);
+
+        if (!string.IsNullOrWhiteSpace(
+                destinationDirectory))
+        {
+            Directory.CreateDirectory(
+                destinationDirectory);
+        }
+
+        if (string.Equals(
+                sourceFile,
+                fullDestinationPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        File.Copy(
+            sourceFile,
+            fullDestinationPath,
+            overwrite: true);
+    }
+
+    public void DeleteProfile(
+        ModProfileSummaryModel profile)
+    {
+        ArgumentNullException.ThrowIfNull(
+            profile);
+
+        string profileFile =
+            GetValidatedLibraryProfilePath(
+                profile);
+
+        if (!File.Exists(profileFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                profileFile);
+        }
+
+        File.Delete(
+            profileFile);
+    }
+
+    private string GetUniqueProfileFilePath(
+        string profileName,
+        string? allowedExistingFile = null)
+    {
+        string libraryDirectory =
+            Path.GetFullPath(
+                pathService.EnsureLibraryDirectory());
+
+        string safeFileName =
+            CreateSafeFileName(
+                profileName);
+
+        string candidate =
+            Path.Combine(
+                libraryDirectory,
+                safeFileName +
+                ModProfileFormat.DefaultFileExtension);
+
+        string fullAllowedExistingFile =
+            string.IsNullOrWhiteSpace(
+                allowedExistingFile)
+                ? string.Empty
+                : Path.GetFullPath(
+                    allowedExistingFile);
+
+        if (!File.Exists(candidate)
+            ||
+            string.Equals(
+                Path.GetFullPath(candidate),
+                fullAllowedExistingFile,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return candidate;
+        }
+
+        int suffix = 2;
+
+        while (true)
+        {
+            candidate =
+                Path.Combine(
+                    libraryDirectory,
+                    $"{safeFileName} ({suffix})" +
+                    ModProfileFormat.DefaultFileExtension);
+
+            if (!File.Exists(candidate)
+                ||
+                string.Equals(
+                    Path.GetFullPath(candidate),
+                    fullAllowedExistingFile,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return candidate;
+            }
+
+            suffix++;
+        }
+    }
+
+    private string GetValidatedLibraryProfilePath(
+        ModProfileSummaryModel profile)
+    {
+        if (string.IsNullOrWhiteSpace(
+                profile.FilePath))
+        {
+            throw new InvalidOperationException(
+                "The selected profile does not have " +
+                "a valid library file path.");
+        }
+
+        string libraryDirectory =
+            Path.GetFullPath(
+                pathService.EnsureLibraryDirectory());
+
+        string profileFile =
+            Path.GetFullPath(
+                profile.FilePath);
+
+        string relativePath =
+            Path.GetRelativePath(
+                libraryDirectory,
+                profileFile);
+
+        bool isOutsideLibrary =
+            Path.IsPathRooted(relativePath)
+            ||
+            string.Equals(
+                relativePath,
+                "..",
+                StringComparison.Ordinal)
+            ||
+            relativePath.StartsWith(
+                ".." +
+                Path.DirectorySeparatorChar,
+                StringComparison.Ordinal)
+            ||
+            relativePath.StartsWith(
+                ".." +
+                Path.AltDirectorySeparatorChar,
+                StringComparison.Ordinal);
+
+        if (isOutsideLibrary)
+        {
+            throw new InvalidOperationException(
+                "The selected profile is not located " +
+                "inside the profile library.");
+        }
+
+        ValidateProfileFileExtension(
+            profileFile);
+
+        return profileFile;
+    }
+
+    private static string ValidateProfileName(
+        string profileName,
+        string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(
+                profileName))
+        {
+            throw new ArgumentException(
+                "A profile name is required.",
+                parameterName);
+        }
+
+        return profileName.Trim();
+    }
+
+    private static string CreateSafeFileName(
+        string profileName)
+    {
+        char[] invalidCharacters =
+            Path.GetInvalidFileNameChars();
+
+        string safeFileName =
+            new(
+                profileName
+                    .Select(character =>
+                        invalidCharacters.Contains(character)
+                            ? '_'
+                            : character)
+                    .ToArray());
+
+        safeFileName =
+            safeFileName
+                .Trim()
+                .TrimEnd(
+                    '.');
+
+        if (string.IsNullOrWhiteSpace(
+                safeFileName))
+        {
+            safeFileName =
+                "Profile";
+        }
+
+        return safeFileName;
+    }
+
+    private static ModProfileModel CreateProfileCopy(
+        ModProfileModel sourceProfile,
+        string profileName,
+        string description,
+        string author,
+        string profileVersion,
+        bool preserveCreationDate)
+    {
+        ArgumentNullException.ThrowIfNull(
+            sourceProfile);
+
+        DateTimeOffset now =
+            DateTimeOffset.UtcNow;
+
+        return new ModProfileModel
+        {
+            FormatVersion =
+                sourceProfile.FormatVersion,
+
+            Metadata =
+                new ModProfileMetadataModel
+                {
+                    Name =
+                        profileName,
+
+                    Description =
+                        description?.Trim()
+                        ?? string.Empty,
+
+                    Author =
+                        author?.Trim()
+                        ?? string.Empty,
+
+                    ProfileVersion =
+                        string.IsNullOrWhiteSpace(
+                            profileVersion)
+                            ? sourceProfile.Metadata.ProfileVersion
+                            : profileVersion.Trim(),
+
+                    CreatedAtUtc =
+                        preserveCreationDate
+                            ? sourceProfile.Metadata.CreatedAtUtc
+                            : now,
+
+                    ModifiedAtUtc =
+                        now,
+
+                    Tags =
+                        sourceProfile.Metadata.Tags
+                            .ToList()
+                },
+
+            Snapshot =
+                sourceProfile.Snapshot
+        };
+    }
+
+    private static void ValidateProfileFileExtension(
+        string fileName)
+    {
+        string extension =
+            Path.GetExtension(
+                fileName);
+
+        if (!string.Equals(
+                extension,
+                ModProfileFormat.DefaultFileExtension,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                $"Profile files must use the " +
+                $"'{ModProfileFormat.DefaultFileExtension}' " +
+                "file extension.");
+        }
+    }
+
     private static ModProfileSummaryModel
         CreateSummary(
             ModProfileModel profile,

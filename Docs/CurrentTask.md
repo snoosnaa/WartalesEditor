@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-**Documentation Update & Release Preparation**
+**Version 0.7.0 Complete — Release Preparation**
 
 ---
 
@@ -10,7 +10,7 @@
 
 The project builds successfully.
 
-Snapshot UI – Pass 1 has been completed, runtime tested, and verified.
+Version 0.7.0 — Complete Profile Manager has been implemented, runtime tested, verified, and polished.
 
 Current build status:
 
@@ -18,69 +18,90 @@ Current build status:
 
 Git commit has **not** yet been created.
 
-The project documentation is currently being updated before creating the next release commit.
+The project documentation is currently being updated before creating the Version 0.7.0 release commit.
 
 ---
 
 ## Recently Completed
 
-### Snapshot UI – Pass 1
+### Complete Profile Manager
 
 Implemented:
 
-- Export Snapshot
-- Preview Snapshot
-- Import Snapshot
-- End-to-end snapshot workflow
-- Workflow integration with the existing editor
-- Automatic Change Summary refresh
-- Automatic modification tracking refresh
-- Undo / Redo compatibility
-- Save compatibility
+- Create Profile
+- Rename Profile
+- Duplicate Profile
+- Apply Profile
+- Import Profile
+- Export Profile
+- Delete Profile
+- Profile Browser
+- Profile Library
+- Profile Details dialog
+- Profile metadata editing
+- Unified profile request pipeline
+- Complete Profile Manager workflow
 
-### Snapshot Workflow Foundation
+### Mod Profile Architecture
 
-Completed reusable workflow infrastructure including:
+Completed reusable profile infrastructure including:
 
-- Snapshot capture
-- Snapshot serialization
-- Snapshot loading
-- Snapshot matching
-- Snapshot preview
-- Snapshot application
-- `ModificationSnapshotWorkflowService`
-- Snapshot import/export result models
+- ModProfileModel
+- ModProfileMetadataModel
+- ModProfileFormat
+- ModProfileService
+- ModProfileSerializationService
+- ModProfileWorkflowService
+- ModProfileLibraryService
+- ModProfileLibraryPathService
+- ModProfileSummaryModel
+
+Profiles compose the existing Snapshot workflow rather than duplicating it.
 
 ### Architecture Improvements
 
-- Constructor injection for `MainViewModel`
-- `IFileDialogService`
-- `IMessageDialogService`
-- `WpfFileDialogService`
-- `WpfMessageDialogService`
-- Dialog abstraction
-- Workflow orchestration layer
+- Single profile operation request model
+- Shared Snapshot workflow integration
+- Reusable Profile Details dialog
+- Improved Profile Manager workflow
+- Preserved constructor injection
+- Preserved dialog abstraction
+- Preserved Snapshot workflow architecture
 
 ### Runtime Verification
 
 Successfully verified:
 
-- Export Snapshot
-- Preview Snapshot
-- Import Snapshot
-- Modification tracking refresh
-- Change Summary refresh
+- Create Profile
+- Rename Profile
+- Duplicate Profile
+- Export Profile
+- Delete Profile
+- Import Profile
+- Apply Profile
 - Undo
 - Redo
-- Save
-- Live Wartales testing
+- Change Summary
+- Modification tracking
+- Snapshot application
 - Successful builds after every implementation stage
+
+### UI Polish
+
+Completed:
+
+- Improved main window startup sizing
+- Improved Profile Details dialog layout
+- Improved profile selection behavior
+- Improved Profile Manager usability
+- Renamed **Profile Contents** to **Profile Change Count**
+- Simplified profile statistics to display **Modified Properties**
 
 ---
 
 ## Current Objective
 
-Complete the remaining project documentation.
+Complete the remaining release documentation.
 
 Remaining documents:
 
@@ -89,7 +110,7 @@ Remaining documents:
 
 After documentation is complete:
 
-- Create the Version 0.6.0 Git commit.
+- Create the Version 0.7.0 Git commit.
 - Push to GitHub.
 
 No additional code changes are planned before this release commit.
@@ -100,57 +121,43 @@ No additional code changes are planned before this release commit.
 
 Priority order:
 
-### 1. Mod Profiles & Change Migration
+### 1. Validation Framework
 
 Primary objective:
 
-Allow users to preserve their edits across future Wartales updates.
-
-Planned capabilities:
-
-- Save reusable Mod Profiles
-- Load existing Mod Profiles
-- Preserve modifications across Wartales updates
-- Intelligent snapshot matching
-- Migration reporting
-- Merge Preview (future)
-- Conflict detection
-
----
-
-### 2. Robust Validation
-
-Primary objective:
-
-Prevent invalid edits before export.
+Build the reusable validation infrastructure that future editor features can share.
 
 Expected capabilities:
 
+- Save validation
+- Profile validation
 - Missing reference detection
-- Invalid references
-- Invalid values
+- Invalid reference detection
+- Invalid value detection
 - Required property validation
-- Duplicate detection
 - Validation reports
+- Extensible validation rule architecture
 
 ---
 
-### 3. Content Creation Tools
+### 2. Content Creation Tools
 
 Primary objective:
 
-Allow creation of additional game content.
+Allow guided creation of additional Wartales content.
 
 Initial focus:
 
 - Camp Structures
-- Crafting Stations
 - Camp Anvil
+- Equipment upgrades
 - Guided gameplay content creation
+
+All generated edits will continue using the existing PropertyModel modification pipeline.
 
 ---
 
-### 4. UI Modernization
+### 3. UI Modernization
 
 Planned improvements:
 
@@ -163,11 +170,24 @@ Planned improvements:
 
 ---
 
+### 4. Future Features
+
+Post Version 1.0:
+
+- Optional community profile sharing
+- Merge Preview
+- Batch Editing
+- Validation reports
+- In-game profile credits
+- Byte-for-byte CDB formatting preservation improvements
+
+---
+
 ## Architecture Notes
 
 The editing architecture remains stable.
 
-Current editing flow:
+Property editing flow:
 
 ```text
 PropertyModel
@@ -195,36 +215,45 @@ EditHistoryService
 Undo / Redo
 ```
 
-Snapshot workflow:
+Profile workflow:
 
 ```text
-Project
-    │
-    ▼
-Snapshot
-    │
-    ▼
+Profile Manager UI
+        │
+        ▼
+ProfileManagerViewModel
+        │
+        ▼
+ModProfileWorkflowService
+        │
+        ▼
 ModificationSnapshotWorkflowService
-    │
- ┌──┼───────────────┐
- ▼  ▼               ▼
-Export Preview Import
+        │
+        ▼
+Match
+Preview
+Apply
 ```
 
 The modification state remains the single source of truth throughout the application.
 
-Snapshot functionality builds on the existing editing architecture rather than introducing duplicate tracking systems.
+`PropertyModel.IsModified` continues to drive:
+
+- Undo / Redo
+- Change Summary
+- Snapshot creation
+- Profile creation
+- Profile application
+
+No duplicate modification tracking exists.
 
 ---
 
 ## Known Minor Issues
 
-Low Priority
+No known functional issues.
 
-- Programmatic Undo/Redo may reposition the text caret within certain WPF text editors.
-- This does not affect data integrity.
-
-Deferred until the UI Modernization milestone.
+Minor UI refinements will continue as part of future modernization work.
 
 ---
 
@@ -238,8 +267,8 @@ Deferred until the UI Modernization milestone.
 
 Finish release documentation.
 
-Create the Version 0.6.0 Git commit.
+Create the Version 0.7.0 Git commit.
 
 Push to GitHub.
 
-Begin implementation of **Mod Profiles & Change Migration**.
+Begin implementation of **Version 0.8.0 — Validation Framework (Pass 1)**.

@@ -8,9 +8,13 @@
         xmlns:validation="clr-namespace:WartalesEditor.Validation"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
-        Height="750"
         Width="1200"
+        Height="700"
+        MinWidth="800"
+        MinHeight="550"
+        SizeToContent="Manual"
         WindowStartupLocation="CenterScreen"
+        SourceInitialized="Window_SourceInitialized"
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>

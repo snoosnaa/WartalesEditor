@@ -18,7 +18,7 @@ namespace WartalesEditor.ViewModels;
 public class MainViewModel : ObservableObject
 {
     private const string ApplicationVersion =
-        "0.6.0";
+        "0.7.0";
 
     private const string ProjectOpenFilter =
         "CDB Files (*.cdb)|*.cdb|" +
@@ -51,6 +51,9 @@ public class MainViewModel : ObservableObject
 
     private readonly ModProfileLibraryService
         modProfileLibraryService;
+
+    private readonly ModProfileWorkflowService
+        modProfileWorkflowService;
 
     private readonly ReferenceDataService referenceDataService;
 
@@ -111,6 +114,7 @@ public class MainViewModel : ObservableObject
             RefreshSearchResults();
             RefreshHistoryState();
             RefreshCommandStates();
+            RefreshProfileManagerProjectState();
         }
     }
 
@@ -549,6 +553,8 @@ public class MainViewModel : ObservableObject
         ChangeSummaryService changeSummaryService,
         ModProfileLibraryService
             modProfileLibraryService,
+        ModProfileWorkflowService
+            modProfileWorkflowService,
         ReferenceDataService referenceDataService,
         IFileDialogService fileDialogService,
         IMessageDialogService messageDialogService)
@@ -593,6 +599,11 @@ public class MainViewModel : ObservableObject
             modProfileLibraryService
             ?? throw new ArgumentNullException(
                 nameof(modProfileLibraryService));
+
+        this.modProfileWorkflowService =
+            modProfileWorkflowService
+            ?? throw new ArgumentNullException(
+                nameof(modProfileWorkflowService));
 
         this.referenceDataService =
             referenceDataService
@@ -1432,6 +1443,7 @@ public class MainViewModel : ObservableObject
         if (profileManagerWindow != null)
         {
             profileManagerViewModel?.Refresh();
+            RefreshProfileManagerProjectState();
 
             if (profileManagerWindow.WindowState
                 == WindowState.Minimized)
@@ -1448,16 +1460,20 @@ public class MainViewModel : ObservableObject
         profileManagerViewModel =
             new ProfileManagerViewModel(
                 modProfileLibraryService,
-                messageDialogService);
+                fileDialogService,
+                messageDialogService,
+                ShowProfileDetailsDialog);
+
+        profileManagerViewModel.OperationRequested +=
+            OnProfileOperationRequested;
+
+        RefreshProfileManagerProjectState();
 
         profileManagerWindow =
             new ProfileManagerWindow
             {
                 DataContext =
-                    profileManagerViewModel,
-
-                Owner =
-                    Application.Current.MainWindow
+                    profileManagerViewModel
             };
 
         profileManagerWindow.Closed +=
@@ -1470,10 +1486,323 @@ public class MainViewModel : ObservableObject
             "Profile Manager opened.";
     }
 
+    private bool? ShowProfileDetailsDialog(
+        ProfileDetailsViewModel viewModel)
+    {
+        ProfileDetailsWindow window =
+            new(viewModel);
+
+        if (profileManagerWindow != null)
+        {
+            window.Owner =
+                profileManagerWindow;
+        }
+        else
+        {
+            window.Owner =
+                Application.Current.MainWindow;
+        }
+
+        return window.ShowDialog();
+    }
+
+    private void OnProfileOperationRequested(
+        object? sender,
+        ProfileManagerRequestModel request)
+    {
+        switch (request.Operation)
+        {
+            case ProfileManagerOperation.Create:
+                CreateProfile(request);
+                break;
+
+            case ProfileManagerOperation.Apply:
+                ApplyProfile(request);
+                break;
+
+            case ProfileManagerOperation.Rename:
+                RenameProfile(request);
+                break;
+
+            case ProfileManagerOperation.Duplicate:
+                DuplicateProfile(request);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(request.Operation),
+                    request.Operation,
+                    "The profile manager operation is not supported.");
+        }
+    }
+
+    private void CreateProfile(
+        ProfileManagerRequestModel request)
+    {
+        if (Project == null)
+        {
+            messageDialogService.ShowWarning(
+                "Open a project before creating a mod profile.",
+                "Create Profile");
+
+            Status =
+                "Profile creation requires an open project.";
+
+            return;
+        }
+
+        try
+        {
+            ModProfileModel profile =
+                modProfileWorkflowService.CreateProfile(
+                    Project,
+                    request.ProfileName,
+                    request.Description,
+                    request.Author,
+                    request.ProfileVersion,
+                    ApplicationVersion);
+
+            ModProfileSummaryModel createdProfile =
+                modProfileLibraryService.AddProfile(
+                    profile);
+
+            profileManagerViewModel?.RefreshAndSelect(
+                createdProfile.FilePath);
+
+            Status =
+                $"Created profile: {createdProfile.Name}";
+
+            messageDialogService.ShowInformation(
+                $"The profile was created successfully." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Profile: {createdProfile.Name}" +
+                $"{Environment.NewLine}" +
+                $"File: {createdProfile.FileName}",
+                "Create Profile");
+        }
+        catch (Exception exception)
+        {
+            Status =
+                "Profile creation failed.";
+
+            messageDialogService.ShowError(
+                $"The profile could not be created." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Create Profile");
+        }
+    }
+
+    private void RenameProfile(
+        ProfileManagerRequestModel request)
+    {
+        ModProfileSummaryModel? profile =
+            request.Profile;
+
+        if (profile == null)
+        {
+            return;
+        }
+
+        try
+        {
+            ModProfileSummaryModel renamedProfile =
+                modProfileLibraryService.RenameProfile(
+                    profile,
+                    request.ProfileName,
+                    request.Description,
+                    request.Author,
+                    request.ProfileVersion);
+
+            profileManagerViewModel?.RefreshAndSelect(
+                renamedProfile.FilePath);
+
+            Status =
+                $"Renamed profile: {renamedProfile.Name}";
+
+            messageDialogService.ShowInformation(
+                $"The profile was renamed successfully." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Profile: {renamedProfile.Name}" +
+                $"{Environment.NewLine}" +
+                $"File: {renamedProfile.FileName}",
+                "Rename Profile");
+        }
+        catch (Exception exception)
+        {
+            Status =
+                "Profile rename failed.";
+
+            messageDialogService.ShowError(
+                $"The profile could not be renamed." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Rename Profile");
+        }
+    }
+
+    private void DuplicateProfile(
+        ProfileManagerRequestModel request)
+    {
+        ModProfileSummaryModel? profile =
+            request.Profile;
+
+        if (profile == null)
+        {
+            return;
+        }
+
+        try
+        {
+            ModProfileSummaryModel duplicatedProfile =
+                modProfileLibraryService.DuplicateProfile(
+                    profile,
+                    request.ProfileName,
+                    request.Description,
+                    request.Author,
+                    request.ProfileVersion);
+
+            profileManagerViewModel?.RefreshAndSelect(
+                duplicatedProfile.FilePath);
+
+            Status =
+                $"Duplicated profile: {duplicatedProfile.Name}";
+
+            messageDialogService.ShowInformation(
+                $"The profile was duplicated successfully." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Profile: {duplicatedProfile.Name}" +
+                $"{Environment.NewLine}" +
+                $"File: {duplicatedProfile.FileName}",
+                "Duplicate Profile");
+        }
+        catch (Exception exception)
+        {
+            Status =
+                "Profile duplication failed.";
+
+            messageDialogService.ShowError(
+                $"The profile could not be duplicated." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Duplicate Profile");
+        }
+    }
+
+    private void ApplyProfile(
+        ProfileManagerRequestModel request)
+    {
+        ModProfileSummaryModel? profile =
+            request.Profile;
+
+        if (profile == null)
+        {
+            return;
+        }
+
+        OnProfileApplyRequested(
+            this,
+            profile);
+    }
+
+    private void RefreshProfileManagerProjectState()
+    {
+        if (profileManagerViewModel == null)
+        {
+            return;
+        }
+
+        profileManagerViewModel.CanApplyToCurrentProject =
+            Project != null;
+    }
+
+    private void OnProfileApplyRequested(
+        object? sender,
+        ModProfileSummaryModel profile)
+    {
+        if (Project == null)
+        {
+            messageDialogService.ShowWarning(
+                "Open a project before applying a mod profile.",
+                "Apply Profile");
+
+            Status =
+                "Profile apply requires an open project.";
+
+            return;
+        }
+
+        try
+        {
+            ModificationSnapshotImportResultModel result =
+                modProfileWorkflowService
+                    .LoadAndApplyProfile(
+                        Project,
+                        profile.FilePath);
+
+            RefreshModificationState();
+            RefreshChangeSummaryViewModel();
+            RefreshSearchResults();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            string message =
+                BuildImportSnapshotSummary(
+                    result);
+
+            if (result.HasConflicts ||
+                result.HasUnmatchedItems ||
+                result.HasFailures)
+            {
+                messageDialogService.ShowWarning(
+                    message,
+                    "Profile Apply Complete");
+            }
+            else
+            {
+                messageDialogService.ShowInformation(
+                    message,
+                    "Profile Apply Complete");
+            }
+
+            Status =
+                result.HasAppliedChanges
+                    ? $"Profile applied: " +
+                      $"{result.AppliedCount:N0} " +
+                      $"{GetSingularOrPlural(
+                          result.AppliedCount,
+                          "change",
+                          "changes")} applied"
+                    : "Profile applied: " +
+                      "no changes were required.";
+        }
+        catch (Exception exception)
+        {
+            RefreshModificationState();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            messageDialogService.ShowError(
+                $"The profile could not be applied." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                exception.Message,
+                "Apply Profile");
+
+            Status =
+                "Profile apply failed.";
+        }
+    }
+
     private void OnProfileManagerWindowClosed(
         object? sender,
         EventArgs e)
     {
+        if (profileManagerViewModel != null)
+        {
+            profileManagerViewModel.OperationRequested -=
+                OnProfileOperationRequested;
+        }
+
         if (profileManagerWindow != null)
         {
             profileManagerWindow.Closed -=

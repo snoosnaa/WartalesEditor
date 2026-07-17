@@ -11,6 +11,10 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        ModificationSnapshotWorkflowService
+            snapshotWorkflowService =
+                new();
+
         ViewModel =
             new MainViewModel(
                 new JsonDataService(),
@@ -18,9 +22,13 @@ public partial class MainWindow : Window
                 new LocalizationService(),
                 new EditHistoryService(),
                 new ModificationSnapshotService(),
-                new ModificationSnapshotWorkflowService(),
+                snapshotWorkflowService,
                 new ChangeSummaryService(),
                 new ModProfileLibraryService(),
+                new ModProfileWorkflowService(
+                    new ModProfileService(),
+                    new ModProfileSerializationService(),
+                    snapshotWorkflowService),
                 ReferenceDataService.Instance,
                 new WpfFileDialogService(),
                 new WpfMessageDialogService());
@@ -29,6 +37,42 @@ public partial class MainWindow : Window
 
         DataContext =
             ViewModel;
+    }
+
+    private void Window_SourceInitialized(
+        object? sender,
+        EventArgs e)
+    {
+        Rect workArea =
+            SystemParameters.WorkArea;
+
+        MaxWidth =
+            workArea.Width;
+
+        MaxHeight =
+            workArea.Height;
+
+        Width =
+            Math.Min(
+                Width,
+                workArea.Width);
+
+        Height =
+            Math.Min(
+                Height,
+                workArea.Height);
+
+        Left =
+            workArea.Left +
+            Math.Max(
+                0,
+                (workArea.Width - Width) / 2);
+
+        Top =
+            workArea.Top +
+            Math.Max(
+                0,
+                (workArea.Height - Height) / 2);
     }
 
     private void Window_PreviewKeyDown(
