@@ -6,6 +6,7 @@
         xmlns:selectors="clr-namespace:WartalesEditor.Selectors"
         xmlns:converters="clr-namespace:WartalesEditor.Converters"
         xmlns:validation="clr-namespace:WartalesEditor.Validation"
+        xmlns:services="clr-namespace:WartalesEditor.Services"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         Width="1200"
@@ -242,6 +243,17 @@
                 <MenuItem Header="_Validate Project"
                           Command="{Binding ValidateProjectCommand}"
                           ToolTip="Run the validation framework against the current project."/>
+
+                <Separator/>
+
+                <MenuItem Header="_Content Creation">
+
+                    <MenuItem Header="Add Camp Facilities"
+                              Command="{Binding ContentCreationCommand}"
+                              CommandParameter="{x:Static services:ContentCreationOperation.AddCampFacilities}"
+                              ToolTip="Enable the Anvil and Apothecary Table and add their Workshop recipes."/>
+
+                </MenuItem>
 
                 <MenuItem Header="_Developer Tools"
                           IsEnabled="False"

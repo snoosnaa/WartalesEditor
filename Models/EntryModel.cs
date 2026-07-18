@@ -1,15 +1,23 @@
 ﻿using System.Collections.ObjectModel;
+using Newtonsoft.Json.Linq;
 
 namespace WartalesEditor.Models;
 
 public class EntryModel
 {
-    public string Id { get; set; } = "";
+    public string Id { get; set; } =
+        string.Empty;
 
-    public string DisplayName { get; set; } = "";
+    public string DisplayName { get; set; } =
+        string.Empty;
 
-    public string Name { get; set; } = "";
+    public string Name { get; set; } =
+        string.Empty;
 
-    public ObservableCollection<PropertyModel> Properties { get; }
-        = new();
+    public JObject? SourceEntry { get; set; }
+
+    public ObservableCollection<PropertyModel> Properties
+    {
+        get;
+    } = new();
 }

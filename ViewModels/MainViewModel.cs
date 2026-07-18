@@ -8,10 +8,12 @@ using System.Windows;
 using System.Windows.Threading;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
+using WartalesEditor.Models.Operations;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
 using WartalesEditor.Models.Validation;
 using WartalesEditor.Services;
+using WartalesEditor.Services.Operations;
 using WartalesEditor.Services.Validation;
 using WartalesEditor.Views;
 
@@ -64,6 +66,12 @@ public class MainViewModel : ObservableObject
 
     private readonly ValidationPresentationService
         validationPresentationService;
+
+    private readonly ProjectOperationService
+        projectOperationService;
+
+    private readonly AddCampFacilitiesOperation
+        addCampFacilitiesOperation;
 
     private readonly IFileDialogService fileDialogService;
 
@@ -560,6 +568,11 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ContentCreationCommand
+    {
+        get;
+    }
+
     public MainViewModel(
     JsonDataService jsonDataService,
     SearchService searchService,
@@ -579,6 +592,8 @@ public class MainViewModel : ObservableObject
         validationWorkflowService,
     ValidationPresentationService
         validationPresentationService,
+    ProjectOperationService projectOperationService,
+    AddCampFacilitiesOperation addCampFacilitiesOperation,
     IFileDialogService fileDialogService,
     IMessageDialogService messageDialogService)
     {
@@ -642,6 +657,16 @@ public class MainViewModel : ObservableObject
             validationPresentationService
             ?? throw new ArgumentNullException(
                 nameof(validationPresentationService));
+
+        this.projectOperationService =
+            projectOperationService
+            ?? throw new ArgumentNullException(
+                nameof(projectOperationService));
+
+        this.addCampFacilitiesOperation =
+            addCampFacilitiesOperation
+            ?? throw new ArgumentNullException(
+                nameof(addCampFacilitiesOperation));
 
         this.fileDialogService =
             fileDialogService
@@ -724,6 +749,11 @@ public class MainViewModel : ObservableObject
         ValidateProjectCommand =
             new RelayCommand(
                 _ => ValidateProject(),
+                _ => Project != null);
+
+        ContentCreationCommand =
+            new RelayCommand(
+                ExecuteContentCreation,
                 _ => Project != null);
     }
 
@@ -1057,6 +1087,172 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Snapshot import failed.";
+        }
+    }
+
+    private void ExecuteContentCreation(
+    object? parameter)
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        if (parameter is not ContentCreationOperation
+            operation)
+        {
+            messageDialogService.ShowError(
+                "The requested content creation operation " +
+                "was not recognized.",
+                "Content Creation");
+
+            Status =
+                "Content creation operation was not recognized.";
+
+            return;
+        }
+
+        switch (operation)
+        {
+            case ContentCreationOperation.AddCampFacilities:
+                ExecuteAddCampFacilities();
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(parameter),
+                    operation,
+                    "The content creation operation is not supported.");
+        }
+    }
+
+    private void ExecuteAddCampFacilities()
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        bool confirmed =
+            messageDialogService.ShowConfirmation(
+                "Add and enable the Anvil and Apothecary Table?" +
+                Environment.NewLine +
+                Environment.NewLine +
+                "This will configure both camp facilities and add " +
+                "their Workshop crafting recipes.",
+                "Add Camp Facilities");
+
+        if (!confirmed)
+        {
+            Status =
+                "Add Camp Facilities cancelled.";
+
+            return;
+        }
+
+        try
+        {
+            ProjectOperationResult operationResult =
+                projectOperationService.Execute(
+                    addCampFacilitiesOperation,
+                    Project);
+
+            if (!operationResult.Succeeded)
+            {
+                StartTrackingProjectProperties();
+
+                OnPropertyChanged(nameof(Sheets));
+                OnPropertyChanged(nameof(Entries));
+                OnPropertyChanged(nameof(Properties));
+
+                RefreshModificationState();
+                RefreshChangeSummaryViewModel();
+                RefreshSearchResults();
+                RefreshHistoryState();
+                RefreshCommandStates();
+
+                messageDialogService.ShowError(
+                    operationResult.Message
+                    ?? "The operation failed validation.",
+                    "Add Camp Facilities");
+
+                Status =
+                    "Add Camp Facilities failed validation.";
+
+                return;
+            }
+
+            ProjectMutationResult result =
+                operationResult.MutationResult;
+
+            StartTrackingProjectProperties();
+
+            OnPropertyChanged(nameof(Sheets));
+            OnPropertyChanged(nameof(Entries));
+            OnPropertyChanged(nameof(Properties));
+
+            RefreshModificationState();
+            RefreshChangeSummaryViewModel();
+            RefreshSearchResults();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            int createdEntryCount =
+                result.CreatedEntries.Count;
+
+            int createdPropertyCount =
+                result.CreatedProperties.Count;
+
+            int updatedPropertyCount =
+                result.UpdatedProperties.Count;
+
+            if (!result.WasModified)
+            {
+                messageDialogService.ShowInformation(
+                    "The Anvil and Apothecary Table are already " +
+                    "configured. No changes were required.",
+                    "Add Camp Facilities");
+
+                Status =
+                    "Camp facilities already configured.";
+
+                return;
+            }
+
+            messageDialogService.ShowInformation(
+                "Camp facilities were added successfully." +
+                Environment.NewLine +
+                Environment.NewLine +
+                $"Created entries: {createdEntryCount:N0}" +
+                Environment.NewLine +
+                $"Created properties: {createdPropertyCount:N0}" +
+                Environment.NewLine +
+                $"Updated properties: {updatedPropertyCount:N0}" +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Save the project to write these changes to a CDB file.",
+                "Add Camp Facilities");
+
+            Status =
+                "Camp facilities added successfully.";
+        }
+        catch (Exception exception)
+        {
+            RefreshModificationState();
+            RefreshChangeSummaryViewModel();
+            RefreshSearchResults();
+            RefreshHistoryState();
+            RefreshCommandStates();
+
+            messageDialogService.ShowError(
+                "The camp facilities could not be added." +
+                Environment.NewLine +
+                Environment.NewLine +
+                exception.Message,
+                "Add Camp Facilities");
+
+            Status =
+                "Add Camp Facilities failed.";
         }
     }
 
@@ -1545,6 +1741,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         ValidateProjectCommand?
+            .NotifyCanExecuteChanged();
+
+        ContentCreationCommand?
             .NotifyCanExecuteChanged();
     }
 

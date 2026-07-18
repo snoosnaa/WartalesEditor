@@ -28,7 +28,8 @@ public sealed class ModifiedPropertyTokenTypeValidationRule
         foreach (PropertyModel property in
                  context.ModifiedProperties)
         {
-            if (property.SourceProperty == null)
+            if (property.SourceProperty == null ||
+                property.IsStructurallyAdded)
             {
                 continue;
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Snapshots;
@@ -109,13 +110,25 @@ public sealed class ModificationSnapshotMatcher
         }
 
         List<EntryModel> settingMatches =
-            targetCategory.Entries
-                .Where(setting =>
-                    string.Equals(
-                        setting.Id,
-                        snapshotSetting.Id,
-                        StringComparison.Ordinal))
-                .ToList();
+            FindStableSettingMatches(
+                targetCategory,
+                snapshotSetting);
+
+        bool usedLegacyMatching =
+            false;
+
+        if (settingMatches.Count == 0 &&
+            CanUseLegacySettingMatch(
+                snapshotSetting))
+        {
+            settingMatches =
+                FindLegacySettingMatches(
+                    targetCategory,
+                    snapshotSetting);
+
+            usedLegacyMatching =
+                settingMatches.Count > 0;
+        }
 
         if (settingMatches.Count == 0)
         {
@@ -134,12 +147,17 @@ public sealed class ModificationSnapshotMatcher
 
         if (settingMatches.Count > 1)
         {
+            string matchingMethod =
+                usedLegacyMatching
+                    ? "legacy display identifier"
+                    : "setting identifier";
+
             AddSettingFailureResults(
                 snapshotCategory,
                 snapshotSetting,
                 targetCategory,
                 ModificationMatchStatus.SettingAmbiguous,
-                $"Setting ID '{snapshotSetting.Id}' matched " +
+                $"Snapshot {matchingMethod} matched " +
                 $"{settingMatches.Count} settings in category " +
                 $"'{snapshotCategory.Name}'.",
                 results);
@@ -159,8 +177,63 @@ public sealed class ModificationSnapshotMatcher
                 snapshotCategory,
                 snapshotSetting,
                 snapshotProperty,
-                results);
+                results,
+                usedLegacyMatching);
         }
+    }
+
+    private static List<EntryModel>
+        FindStableSettingMatches(
+            SheetModel targetCategory,
+            ModificationSnapshotSettingModel snapshotSetting)
+    {
+        return targetCategory.Entries
+            .Where(setting =>
+                string.Equals(
+                    setting.Id,
+                    snapshotSetting.Id,
+                    StringComparison.Ordinal))
+            .ToList();
+    }
+
+    private static List<EntryModel>
+        FindLegacySettingMatches(
+            SheetModel targetCategory,
+            ModificationSnapshotSettingModel snapshotSetting)
+    {
+        return targetCategory.Entries
+            .Where(setting =>
+                string.Equals(
+                    setting.DisplayName,
+                    snapshotSetting.DisplayName,
+                    StringComparison.Ordinal))
+            .ToList();
+    }
+
+    private static bool CanUseLegacySettingMatch(
+        ModificationSnapshotSettingModel snapshotSetting)
+    {
+        if (string.IsNullOrWhiteSpace(
+                snapshotSetting.DisplayName))
+        {
+            return false;
+        }
+
+        if (string.Equals(
+                snapshotSetting.Id,
+                snapshotSetting.DisplayName,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return int.TryParse(
+                   snapshotSetting.Id,
+                   NumberStyles.None,
+                   CultureInfo.InvariantCulture,
+                   out int legacyEntryNumber)
+               &&
+               legacyEntryNumber > 0;
     }
 
     private static void MatchProperty(
@@ -169,7 +242,8 @@ public sealed class ModificationSnapshotMatcher
         ModificationSnapshotCategoryModel snapshotCategory,
         ModificationSnapshotSettingModel snapshotSetting,
         ModificationSnapshotPropertyModel snapshotProperty,
-        ICollection<ModificationMatchItemModel> results)
+        ICollection<ModificationMatchItemModel> results,
+        bool usedLegacyMatching)
     {
         List<PropertyModel> propertyMatches =
             targetSetting.Properties
@@ -190,7 +264,7 @@ public sealed class ModificationSnapshotMatcher
                     ModificationMatchStatus.PropertyNotFound,
                     $"Property '{snapshotProperty.Name}' was not " +
                     $"found in setting ID " +
-                    $"'{snapshotSetting.Id}'.",
+                    $"'{targetSetting.Id}'.",
                     targetCategory,
                     targetSetting));
 
@@ -207,12 +281,18 @@ public sealed class ModificationSnapshotMatcher
                     ModificationMatchStatus.PropertyAmbiguous,
                     $"Property '{snapshotProperty.Name}' matched " +
                     $"{propertyMatches.Count} properties in " +
-                    $"setting ID '{snapshotSetting.Id}'.",
+                    $"setting ID '{targetSetting.Id}'.",
                     targetCategory,
                     targetSetting));
 
             return;
         }
+
+        string reason =
+            usedLegacyMatching
+                ? "Exact property match found using the " +
+                  "legacy snapshot setting identifier."
+                : "Exact match found.";
 
         results.Add(
             new ModificationMatchItemModel(
@@ -220,7 +300,7 @@ public sealed class ModificationSnapshotMatcher
                 snapshotSetting,
                 snapshotProperty,
                 ModificationMatchStatus.Matched,
-                "Exact match found.",
+                reason,
                 targetCategory,
                 targetSetting,
                 propertyMatches[0]));

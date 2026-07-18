@@ -1,18 +1,19 @@
 ﻿# Development Journal – Part 2
 
-**Version:** 0.8
-**Status:** Active
-**Last Updated:** 2026-07-17
+**Version:** 0.9\
+**Status:** Active\
+**Last Updated:** 2026-07-18\
 **Applies To:** Entire Project
 
----
+------------------------------------------------------------------------
 
 # Table of Contents
 
-- Session 009
-- Session 010
+-   Session 009
+-   Session 010
+-   Session 011
 
----
+------------------------------------------------------------------------
 
 This document continues the project history from **DevelopmentJournal.md**, which contains Sessions 001–008.
 
@@ -371,3 +372,99 @@ Every new tool will automatically benefit from:
 - Snapshot migration
 
 without requiring additional editing systems.
+
+--------------------------------------------------
+
+# Session 011
+
+## Summary
+
+Completed the Operation Validation & Transaction Framework milestone.
+
+This milestone transformed Wartales Editor from a safe editing platform
+into a transactional content creation platform capable of introducing
+new gameplay content while preserving project integrity.
+
+Rather than continuing to build individual content creation features
+directly, development paused to establish reusable architecture that
+every future operation can share.
+
+## Completed
+
+### Project Operation Architecture
+
+-   Introduced ProjectOperationService.
+-   Established IProjectOperation as the common operation contract.
+-   Added ProjectOperationResult.
+-   Unified operation execution.
+
+### Transaction Framework
+
+-   Implemented transaction orchestration.
+-   Added mutation journaling.
+-   Added rollback for:
+    -   created entries
+    -   created properties
+    -   modified properties
+-   Eliminated project reconstruction in favor of mutation-based
+    rollback.
+
+### Validation
+
+-   Introduced operation-specific validators.
+-   Separated generic validation from operation validation.
+-   Refined structural property validation so newly created properties
+    are validated appropriately without weakening generic token-type
+    validation.
+
+### Content Creation
+
+-   Completed AddCampFacilitiesOperation.
+-   Integrated it into the Project Operation pipeline.
+-   Removed remaining parallel execution paths.
+
+## Runtime Testing
+
+Verified:
+
+-   Forced validation failure correctly triggered rollback.
+-   Rollback restored project cleanliness.
+-   Save validation succeeded.
+-   Modified CDB loaded successfully in Wartales.
+-   Camp recipes unlocked through normal gameplay.
+-   Anvil could be constructed and used.
+-   Blacksmith profession unlocked correctly.
+-   Apothecary functionality verified.
+-   Successful builds after every implementation stage.
+
+## Major Decisions
+
+-   Build reusable operation infrastructure before additional content
+    creation features.
+-   Keep generic validation generic.
+-   Validate operation-specific requirements within operation
+    validators.
+-   Roll back mutations rather than rebuilding ProjectModel.
+-   Distinguish structural property creation from property modification.
+-   Complete in-game verification before closing the milestone.
+
+## Milestone Achieved
+
+**Operation Validation & Transaction Framework**
+
+The editor now supports safe, reusable, transactional content creation
+with automatic rollback and verified in-game operation.
+
+## Next Focus
+
+Begin implementing **Upgrade All Equipment** using the completed
+operation framework.
+
+Future operations will reuse:
+
+-   ProjectOperationService
+-   ProjectMutationService
+-   Transaction rollback
+-   Operation validation
+-   Generic validation
+-   Existing editing infrastructure

@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using WartalesEditor.Services;
+using WartalesEditor.Services.Operations;
 using WartalesEditor.Services.Validation;
 using WartalesEditor.ViewModels;
 
@@ -31,6 +32,21 @@ public partial class MainWindow : Window
             validationPresentationService =
                 new();
 
+        ProjectMutationService projectMutationService =
+            new();
+
+        ContentCreationService contentCreationService =
+            new(
+                projectMutationService);
+
+        AddCampFacilitiesOperation
+            addCampFacilitiesOperation =
+                new(
+                    contentCreationService);
+
+        ProjectOperationService projectOperationService =
+            new();
+
         ViewModel =
             new MainViewModel(
                 jsonDataService,
@@ -48,6 +64,8 @@ public partial class MainWindow : Window
                 ReferenceDataService.Instance,
                 validationWorkflowService,
                 validationPresentationService,
+                projectOperationService,
+                addCampFacilitiesOperation,
                 new WpfFileDialogService(),
                 new WpfMessageDialogService());
 

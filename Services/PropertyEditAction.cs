@@ -3,7 +3,7 @@ using WartalesEditor.Models;
 
 namespace WartalesEditor.Services;
 
-public sealed class PropertyEditAction
+public sealed class PropertyEditAction : IEditAction
 {
     private readonly JToken previousValue;
     private readonly JToken newValue;
@@ -13,7 +13,8 @@ public sealed class PropertyEditAction
         JToken previousValue,
         JToken newValue)
     {
-        Property = property;
+        Property =
+            property;
 
         this.previousValue =
             previousValue.DeepClone();
@@ -29,11 +30,13 @@ public sealed class PropertyEditAction
 
     public void Undo()
     {
-        Property.ApplyHistoryValue(previousValue);
+        Property.ApplyHistoryValue(
+            previousValue);
     }
 
     public void Redo()
     {
-        Property.ApplyHistoryValue(newValue);
+        Property.ApplyHistoryValue(
+            newValue);
     }
 }

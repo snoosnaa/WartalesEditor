@@ -22,6 +22,8 @@ public class PropertyModel : ObservableObject
 
     private bool isModified;
 
+    private bool isStructurallyAdded;
+
     public event EventHandler? ModifiedChanged;
 
     public event EventHandler<PropertyValueChangedEventArgs>?
@@ -108,8 +110,29 @@ public class PropertyModel : ObservableObject
         }
     }
 
+    public bool IsStructurallyAdded
+    {
+        get => isStructurallyAdded;
+        private set
+        {
+            if (!SetProperty(
+                    ref isStructurallyAdded,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(CanReset));
+        }
+    }
+
     public bool CanReset =>
-        IsModified && !IsReadOnly;
+        IsModified
+        &&
+        !IsReadOnly
+        &&
+        !IsStructurallyAdded;
 
     public string OriginalDisplayValue =>
         GetTokenSummaryValue(
@@ -137,6 +160,9 @@ public class PropertyModel : ObservableObject
 
     public void CaptureOriginalValue()
     {
+        IsStructurallyAdded =
+            false;
+
         originalValue =
             SourceProperty?.Value.DeepClone();
 
@@ -146,8 +172,32 @@ public class PropertyModel : ObservableObject
         UpdateModifiedState();
     }
 
+    public void CaptureNewPropertyBaseline()
+    {
+        if (SourceProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Property '{Name}' is not connected " +
+                "to a source JSON property.");
+        }
+
+        IsStructurallyAdded =
+            true;
+
+        originalValue =
+            JValue.CreateNull();
+
+        OnPropertyChanged(
+            nameof(OriginalDisplayValue));
+
+        UpdateModifiedState();
+    }
+
     public void AcceptCurrentValue()
     {
+        IsStructurallyAdded =
+            false;
+
         CaptureOriginalValue();
     }
 

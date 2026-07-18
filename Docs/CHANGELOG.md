@@ -6,6 +6,95 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.8.1 - Operation Framework & Verified Content Creation
+
+**Released:** 2026-07-18
+
+## Added
+
+### Project Operation Architecture
+
+-   ProjectOperationService
+-   IProjectOperation abstraction
+-   ProjectOperationResult
+-   Operation execution pipeline
+-   UI-facing operation orchestration
+
+### Project Mutation Layer
+
+-   ProjectMutationService enhancements
+-   Mutation journaling
+-   Rollback record models
+-   ProjectMutationResult enhancements
+-   Structural creation tracking
+
+### Transaction Framework
+
+-   ProjectOperationTransactionService
+-   Automatic rollback on failed operation validation
+-   Mutation-based rollback
+-   Entry rollback
+-   Property rollback
+-   Updated-property rollback
+
+### Operation Validation
+
+-   Operation validator provider
+-   Operation-specific validation architecture
+-   AddCampFacilitiesOperationValidator
+-   Separation of generic validation from operation validation
+
+### Content Creation
+
+-   AddCampFacilitiesOperation
+-   Integration of ProjectOperationService into the application workflow
+-   First reusable content creation operation
+
+## Changed
+
+-   Content creation now executes exclusively through the Project
+    Operation pipeline.
+-   Rollback no longer depends on rebuilding the project model.
+-   Generic token-type validation now distinguishes structurally created
+    properties from modified existing properties.
+-   Validation architecture remains generic while operation-specific
+    rules verify newly created content.
+-   MainViewModel now executes operations through
+    ProjectOperationService instead of directly invoking content
+    creation services.
+
+## Fixed
+
+-   Corrected rollback behavior for created entries, created properties,
+    and modified properties.
+-   Corrected validation handling for structurally added properties.
+-   Eliminated the remaining parallel execution path for Add Camp
+    Facilities.
+
+## Verified
+
+Successfully verified:
+
+-   Transaction rollback after forced validation failure.
+-   Successful operation commit.
+-   Save validation after structural content creation.
+-   Successful serialization.
+-   Successful loading of modified data by Wartales.
+-   In-game unlocking of camp recipes.
+-   Successful construction and use of the Anvil.
+-   Correct unlocking of the Blacksmith profession.
+-   End-to-end operation pipeline from editor to gameplay.
+-   Successful builds throughout implementation.
+
+## Notes
+
+This milestone marks the transition from a safe data editor to a
+transactional content creation platform. The first complete content
+creation feature was implemented, validated, exercised through rollback
+testing, and verified in-game using normal gameplay progression.
+
+------------------------------------------------------------------------
+
 # Version 0.8.0 - Validation Framework (Pass 1)
 
 **Released:** 2026-07-17

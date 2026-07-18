@@ -1,331 +1,226 @@
 ﻿# Wartales Editor Roadmap
 
-**Application Roadmap**
+**Application Roadmap**\
+**Last Updated:** 2026-07-18
 
-Last Updated: 2026-07-17
-
----
+------------------------------------------------------------------------
 
 # Vision
 
-The long-term goal of Wartales Editor is to become the definitive editor for Wartales game data.
+The long-term goal of Wartales Editor is to become the definitive editor
+for Wartales game data while also supporting a highly customizable
+personal gameplay experience through safe, reusable editing tools.
 
-The project emphasizes:
-
-- Safe editing
-- Reusable architecture
-- Intelligent workflows
-- Extensibility
-- Long-term maintainability
-
-Every major feature should build upon the existing architecture rather than introducing parallel implementations.
-
----
+------------------------------------------------------------------------
 
 # Guiding Principles
 
-## Infrastructure Before Features
+-   Infrastructure before features.
+-   Single source of truth.
+-   Reusable systems over one-off implementations.
+-   Keep the project compiling after every implementation step.
+-   Automatically integrate new features with Modification Tracking,
+    Undo/Redo, Change Summary, Snapshot Workflow, Profiles, and
+    Validation whenever applicable.
 
-Reusable systems are built first.
-
-User-facing features are then implemented using those systems.
-
-This approach minimizes duplicated logic and makes future development significantly easier.
-
----
-
-## Single Source of Truth
-
-Where practical, each major responsibility should have exactly one implementation.
-
-Examples include:
-
-- Property modification tracking
-- Snapshot matching
-- Snapshot preview
-- Snapshot application
-- Validation pipeline
-
-Future features should compose these systems rather than replace them.
-
----
+------------------------------------------------------------------------
 
 # Completed Milestones
 
----
+-   0.1.0 Project Foundation ✅
+-   0.2.0 Data Browser ✅
+-   0.3.0 Functional Editing ✅
+-   0.3.1 Find Anything ✅
+-   0.4.0 Safe Editing Infrastructure ✅
+-   0.5.0 Change Summary ✅
+-   0.6.0 Snapshot Workflow ✅
+-   0.7.0 Profile Manager ✅
+-   0.8.0 Validation Framework ✅
 
-## Version 0.1.0 — Project Foundation ✅
+------------------------------------------------------------------------
 
-Completed
+# Priority 1 -- Personal Gameplay Tools
 
-Major accomplishments:
+## Character Progression
 
-- WPF desktop application
-- MVVM architecture
-- Git integration
-- Documentation system
-- JSON loading
-- Project infrastructure
+-   Character XP requirement slider
+-   Profession XP requirement slider
 
----
+## Equipment
 
-## Version 0.2.0 — Data Browser ✅
+-   Make All Equipment Upgradeable
 
-Completed
+## Economy & Bonuses
 
-Major accomplishments:
+-   Volunteer wages reduced to 0%
+-   Adjustable Valour Point bonuses
+-   Adjustable Carrying Capacity bonuses
+-   Adjustable Food Consumption reduction
 
-- Three-pane editor
-- Category browsing
-- Entry browsing
-- Property browsing
-- Project model architecture
+## World
 
----
+-   Increase overworld movement speed
+-   Faster vendor refresh
+-   Faster resource respawns
+-   Reduce rain frequency (investigate)
+-   Increase camera zoom distance (investigate)
 
-## Version 0.3.0 — Functional Editing ✅
+## Camp
 
-Completed
+-   Increase campfire size
+-   Increase campfire seating capacity
 
-Major accomplishments:
+## Crafting & Professions
 
-- Editable properties
-- RootDocument synchronization
-- Save support
-- Live game verification
+-   Easier forging
+-   Easier mining
+-   Easier woodcutting
+-   Increased Delicious cooking chance
 
----
+## Recruitment
 
-## Version 0.3.1 — Find Anything ✅
+-   Positive traits on random recruits
+-   Recruits start at highest party member level
 
-Completed
+## Gameplay
 
-Major accomplishments:
+-   Easier tombs
+-   Easier lockpicking
+-   Allow boss capture
+-   Investigate special boss capture item
 
-- Global search
-- Localization-aware searching
-- Intelligent property editors
-- Reference-aware dropdowns
+## Investigation
 
----
+-   Weather system
+-   Camera limits
+-   Camp interaction limits
+-   Recruit level calculations
+-   Hidden gameplay systems
 
-## Version 0.4.0 — Safe Editing Infrastructure ✅
+------------------------------------------------------------------------
 
-Completed
+# Priority 2 -- Content Creation Framework
 
-Major accomplishments:
+## Initial Tools
 
-- Property modification tracking
-- Project dirty-state tracking
-- Undo / Redo
-- Reset Property
-- Edit history architecture
+-   Add Camp Anvil
+-   Make All Equipment Upgradeable
 
-PropertyModel.IsModified remains the single source of truth.
+## Framework
 
----
+-   Reusable content creation command architecture
+-   No duplicate editing implementations
+-   Automatic integration with existing editor infrastructure
 
-## Version 0.5.0 — Change Summary ✅
+------------------------------------------------------------------------
 
-Completed
+# Priority 3 -- Editor Experience
 
-Major accomplishments:
+-   UI modernization
+-   Improved toolbar
+-   Modern icons
+-   Better utility windows
+-   Window state persistence
+-   Better navigation
+-   Better search and filtering
+-   Favorites
+-   Recent items
 
-- Live Change Summary
-- Original vs Current comparison
-- Navigation
-- Automatic refresh
-- Category grouping
+------------------------------------------------------------------------
 
----
+# Priority 4 -- Advanced Editing
 
-## Version 0.6.0 — Snapshot Workflow ✅
+-   Batch editing
+-   Merge preview
+-   Profile migration improvements
+-   Conflict resolution
+-   Side-by-side comparison
+-   Better dropdowns
+-   Reference browsing
+-   Cross-reference navigation
 
-Completed
+------------------------------------------------------------------------
 
-Major accomplishments:
+# Priority 5 -- Validation Expansion
 
-- Snapshot capture
-- Snapshot serialization
-- Snapshot matching
-- Snapshot preview
-- Snapshot application
-- Workflow orchestration
+-   Cross-sheet validation
+-   Duplicate detection
+-   Missing/invalid references
+-   Gameplay validation
+-   Validation presets
+-   Exportable reports
 
-There remains exactly one implementation of:
+------------------------------------------------------------------------
 
-- Snapshot matching
-- Snapshot preview
-- Snapshot application
+# Priority 6 -- Additional Content Creation
 
----
+-   Additional camp objects
+-   Additional buildable objects
+-   Additional upgrade paths
+-   Additional recipes
+-   Additional craftable items
+-   Configurable content creation tools
 
-## Version 0.7.0 — Complete Profile Manager ✅
+### Future Expansion
 
-Completed
+-   NPC creation
+-   Encounter editing
+-   New professions
+-   New items
+-   New traits
+-   New status effects
 
-Major accomplishments:
+------------------------------------------------------------------------
 
-- Complete Profile Manager
-- Profile library
-- Create
-- Rename
-- Duplicate
-- Apply
-- Import
-- Export
-- Delete
-- Profile Details dialog
+# Priority 7 -- Data Preservation & Compatibility
 
-Profiles compose the existing Snapshot workflow.
+-   Preserve original CDB formatting
+-   Byte-for-byte preservation where practical
+-   Preserve unknown data
+-   Maximize compatibility with future updates
 
-No duplicate snapshot implementations exist.
+------------------------------------------------------------------------
 
----
+# Priority 8 -- Performance
 
-## Version 0.8.0 — Validation Framework ✅
+-   Optimize loading
+-   Optimize searching
+-   Optimize saving
+-   Background processing
+-   Memory optimization
 
-Completed
+------------------------------------------------------------------------
 
-Major accomplishments:
+# Priority 9 -- Community Features (Post-1.0)
 
-- Validation pipeline
-- Validation workflow
-- Validation rule architecture
-- Validation models
-- Validation Results window
-- Manual validation
-- Save validation
-- Validation navigation
-- Severity filtering
-- Copy Results
-- Re-run validation
+-   Community profile sharing
+-   Community content sharing
+-   Creator metadata
+-   In-game credits popup
+-   Package manifests
+-   Version compatibility
 
-Validation is now a reusable subsystem available to every future editor feature.
+Steam Workshop support is intentionally excluded.
 
----
+------------------------------------------------------------------------
 
-# Current Development
+# Priority 10 -- Testing & Reliability
 
-## Version 0.9.0 — Content Creation Tools (Pass 1)
+-   Regression testing
+-   Snapshot migration tests
+-   Validation tests
+-   Content creation tests
+-   Large project testing
+-   Automated testing where practical
 
-This milestone marks the transition from building editor infrastructure to building powerful editor capabilities.
+------------------------------------------------------------------------
 
-All content creation tools must automatically integrate with:
+# Priority 11 -- Long-Term Architecture
 
-- Property modification tracking
-- Undo / Redo
-- Change Summary
-- Snapshot workflow
-- Profiles
-- Validation
-
-No separate editing systems will be introduced.
-
-### Initial tools
-
-- Add Camp Anvil
-- Make All Equipment Upgradeable
-
-Additional content creation tools will be added over time as reusable editor commands.
-
----
-
-# Following Milestone
-
-## UI Modernization
-
-Primary goals:
-
-- Improved toolbar layout
-- Larger action buttons
-- Improved workflow
-- Visual polish
-- Future icon support
-
-### Utility Window Improvements
-
-- Consistent default window sizing
-- Consistent initial window placement
-- Open utility windows on the same monitor as the main editor
-- Independent taskbar buttons for utility windows
-- Keyboard shortcuts to open or focus:
-  - Change Summary
-  - Profile Manager
-  - Validation Results
-
-These improvements are intended to make the editor feel more like a modern desktop application while preserving the existing architecture.
-
----
-
-# Future Milestones
-
-## Validation Expansion
-
-The validation framework is complete.
-
-Future work expands the existing framework with additional rules rather than creating another validation system.
-
-Potential additions include:
-
-- Cross-sheet validation
-- Duplicate detection
-- Missing required properties
-- Advanced gameplay validation
-- Exportable validation reports
-- Richer validation summaries
-
----
-
-## Advanced Editing
-
-Potential future features:
-
-- Merge Preview
-- Batch Editing
-- Intelligent bulk operations
-- Advanced migration assistance
-
-These features will reuse the existing editing, snapshot, profile, and validation infrastructure.
-
----
-
-## Community Features
-
-Post-1.0 possibilities include:
-
-- Community profile sharing
-- In-game profile credits popup
-
-Steam Workshop support is intentionally excluded because Wartales does not support Steam Workshop.
-
----
-
-# Long-Term Technical Goals
-
-Future engineering improvements include:
-
-- Byte-for-byte CDB formatting preservation wherever practical
-- Continued performance optimization
-- Expanded automated testing
-- Continued architectural refinement
-
----
-
-# Development Philosophy
-
-Every milestone should satisfy the following goals:
-
-- Keep the project compiling after every implementation step.
-- Prefer long-term architecture over short-term solutions.
-- Build reusable infrastructure before user-facing features.
-- Avoid duplicate implementations.
-- Preserve the existing architecture unless the current milestone requires otherwise.
-- Ensure new features automatically benefit from:
-  - Undo / Redo
-  - Change Summary
-  - Profiles
-  - Validation
-  - Snapshot migration
-
-The objective is not simply to add features, but to build a stable, extensible editor that can continue growing for years without accumulating unnecessary technical debt.
+-   Infrastructure before features
+-   Single source of truth
+-   Clean MVVM architecture
+-   Reusable services
+-   Dependency injection
+-   Continued documentation
+-   Minimize technical debt

@@ -7,10 +7,10 @@ namespace WartalesEditor.Services;
 
 public sealed class EditHistoryService
 {
-    private readonly Stack<PropertyEditAction> undoStack =
+    private readonly Stack<IEditAction> undoStack =
         new();
 
-    private readonly Stack<PropertyEditAction> redoStack =
+    private readonly Stack<IEditAction> redoStack =
         new();
 
     public event EventHandler? HistoryChanged;
@@ -38,17 +38,43 @@ public sealed class EditHistoryService
         JToken previousValue,
         JToken newValue)
     {
+        ArgumentNullException.ThrowIfNull(
+            property);
+
+        ArgumentNullException.ThrowIfNull(
+            previousValue);
+
+        ArgumentNullException.ThrowIfNull(
+            newValue);
+
         if (IsApplyingHistory ||
-            JToken.DeepEquals(previousValue, newValue))
+            JToken.DeepEquals(
+                previousValue,
+                newValue))
+        {
+            return;
+        }
+
+        Record(
+            new PropertyEditAction(
+                property,
+                previousValue,
+                newValue));
+    }
+
+    public void Record(
+        IEditAction action)
+    {
+        ArgumentNullException.ThrowIfNull(
+            action);
+
+        if (IsApplyingHistory)
         {
             return;
         }
 
         undoStack.Push(
-            new PropertyEditAction(
-                property,
-                previousValue,
-                newValue));
+            action);
 
         redoStack.Clear();
 
@@ -60,12 +86,14 @@ public sealed class EditHistoryService
         if (!CanUndo)
             return false;
 
-        PropertyEditAction action =
+        IEditAction action =
             undoStack.Pop();
 
-        ExecuteHistoryAction(action.Undo);
+        ExecuteHistoryAction(
+            action.Undo);
 
-        redoStack.Push(action);
+        redoStack.Push(
+            action);
 
         OnHistoryChanged();
 
@@ -77,12 +105,14 @@ public sealed class EditHistoryService
         if (!CanRedo)
             return false;
 
-        PropertyEditAction action =
+        IEditAction action =
             redoStack.Pop();
 
-        ExecuteHistoryAction(action.Redo);
+        ExecuteHistoryAction(
+            action.Redo);
 
-        undoStack.Push(action);
+        undoStack.Push(
+            action);
 
         OnHistoryChanged();
 
@@ -91,8 +121,11 @@ public sealed class EditHistoryService
 
     public void Clear()
     {
-        if (!CanUndo && !CanRedo)
+        if (!CanUndo &&
+            !CanRedo)
+        {
             return;
+        }
 
         undoStack.Clear();
         redoStack.Clear();
@@ -103,7 +136,8 @@ public sealed class EditHistoryService
     private void ExecuteHistoryAction(
         Action action)
     {
-        IsApplyingHistory = true;
+        IsApplyingHistory =
+            true;
 
         try
         {
@@ -111,7 +145,8 @@ public sealed class EditHistoryService
         }
         finally
         {
-            IsApplyingHistory = false;
+            IsApplyingHistory =
+                false;
         }
     }
 
