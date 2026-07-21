@@ -17,4 +17,8 @@ public interface IMessageDialogService
     bool ShowConfirmation(
         string message,
         string title);
+
+    UnsavedChangesResult ShowUnsavedChanges(
+        string message,
+        string title);
 }

@@ -25,6 +25,10 @@ public sealed class ProjectMutationResult
         createdPropertyRollbackRecords =
             new();
 
+    private readonly List<CreatedJsonPropertyRollbackRecord>
+        createdJsonPropertyRollbackRecords =
+            new();
+
     private readonly List<PropertyRollbackRecord>
         propertyRollbackRecords =
             new();
@@ -45,6 +49,10 @@ public sealed class ProjectMutationResult
     public IReadOnlyList<CreatedPropertyRollbackRecord>
         CreatedPropertyRollbackRecords =>
             createdPropertyRollbackRecords;
+
+    public IReadOnlyList<CreatedJsonPropertyRollbackRecord>
+        CreatedJsonPropertyRollbackRecords =>
+            createdJsonPropertyRollbackRecords;
 
     public IReadOnlyList<PropertyRollbackRecord>
         PropertyRollbackRecords =>
@@ -93,6 +101,22 @@ public sealed class ProjectMutationResult
                 property));
     }
 
+    public void AddJsonProperty(
+        JObject parentObject,
+        JProperty property)
+    {
+        ArgumentNullException.ThrowIfNull(
+            parentObject);
+
+        ArgumentNullException.ThrowIfNull(
+            property);
+
+        createdJsonPropertyRollbackRecords.Add(
+            new CreatedJsonPropertyRollbackRecord(
+                parentObject,
+                property));
+    }
+
     public void AddUpdatedProperty(
         PropertyModel property,
         JToken previousValue)
@@ -132,6 +156,9 @@ public sealed class ProjectMutationResult
 
         createdPropertyRollbackRecords.AddRange(
             other.createdPropertyRollbackRecords);
+
+        createdJsonPropertyRollbackRecords.AddRange(
+            other.createdJsonPropertyRollbackRecords);
 
         propertyRollbackRecords.AddRange(
             other.propertyRollbackRecords);

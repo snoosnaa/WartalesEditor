@@ -11,6 +11,10 @@ public sealed class OperationValidatorProvider
         addCampFacilitiesValidator =
             new();
 
+    private readonly UpgradeAllEquipmentOperationValidator
+        upgradeAllEquipmentValidator =
+            new();
+
     public OperationValidationResult Validate(
         IProjectOperation operation,
         ProjectModel project,
@@ -30,6 +34,9 @@ public sealed class OperationValidatorProvider
             {
                 AddCampFacilitiesOperation =>
                     addCampFacilitiesValidator,
+
+                UpgradeAllEquipmentOperation =>
+                    upgradeAllEquipmentValidator,
 
                 _ => null
             };

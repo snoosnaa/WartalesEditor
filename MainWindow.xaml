@@ -253,6 +253,13 @@
                               CommandParameter="{x:Static services:ContentCreationOperation.AddCampFacilities}"
                               ToolTip="Enable the Anvil and Apothecary Table and add their Workshop recipes."/>
 
+                    <Separator/>
+
+                    <MenuItem Header="Upgrade All Equipment"
+                              Command="{Binding ContentCreationCommand}"
+                              CommandParameter="{x:Static services:ContentCreationOperation.UpgradeAllEquipment}"
+                              ToolTip="Allow normal obtainable equipment to be upgraded at the Brotherhood Training Grounds."/>
+
                 </MenuItem>
 
                 <MenuItem Header="_Developer Tools"
@@ -363,6 +370,7 @@
                 <ComboBoxItem>Settings</ComboBoxItem>
                 <ComboBoxItem>Categories</ComboBoxItem>
                 <ComboBoxItem>Properties</ComboBoxItem>
+                <ComboBoxItem>Item Names</ComboBoxItem>
 
             </ComboBox>
 

@@ -49,71 +49,135 @@
                       GridLinesVisibility="Horizontal"
                       AlternatingRowBackground="#FFF7F7F7">
 
-                <!-- Group only by Category -->
+                <!-- Category and Setting groups -->
                 <DataGrid.GroupStyle>
+
+                    <!-- Category level -->
                     <GroupStyle>
                         <GroupStyle.ContainerStyle>
                             <Style TargetType="GroupItem">
 
                                 <Setter Property="Margin"
-                                        Value="0,4,0,4"/>
+                        Value="0,4,0,4"/>
 
                                 <Setter Property="Template">
                                     <Setter.Value>
+
                                         <ControlTemplate TargetType="GroupItem">
 
                                             <Expander IsExpanded="True">
+
                                                 <Expander.Header>
 
                                                     <Border Padding="8,6"
-                                                            Background="#FFE8E8E8"
-                                                            BorderBrush="#FFD0D0D0"
-                                                            BorderThickness="0,0,0,1">
+                                            Background="#FFE8E8E8"
+                                            BorderBrush="#FFD0D0D0"
+                                            BorderThickness="0,0,0,1">
 
                                                         <DockPanel LastChildFill="True">
 
                                                             <TextBlock DockPanel.Dock="Left"
-                                                                       FontWeight="SemiBold"
-                                                                       Text="{Binding Name,
-                                                                                      Mode=OneWay}"/>
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding Name,
+                                                                      Mode=OneWay}"/>
 
                                                             <TextBlock Margin="8,0,0,0"
-                                                                       Foreground="DimGray">
+                                                       Foreground="DimGray">
 
-                                                                <Run Text="("/>
+                                                <Run Text="("/>
 
-                                                                <Run Text="{Binding ItemCount,
-                                                                                    Mode=OneWay}"/>
+                                                <Run Text="{Binding ItemCount,
+                                                                    Mode=OneWay}"/>
 
-                                                                <Run Text=")"/>
+                                                <Run Text=" changes)"/>
 
                                                             </TextBlock>
 
                                                         </DockPanel>
+
                                                     </Border>
 
                                                 </Expander.Header>
 
                                                 <ItemsPresenter/>
+
                                             </Expander>
 
                                         </ControlTemplate>
+
                                     </Setter.Value>
                                 </Setter>
 
                             </Style>
                         </GroupStyle.ContainerStyle>
                     </GroupStyle>
+
+                    <!-- Setting level -->
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="GroupItem">
+
+                                <Setter Property="Margin"
+                        Value="18,2,0,2"/>
+
+                                <Setter Property="Template">
+                                    <Setter.Value>
+
+                                        <ControlTemplate TargetType="GroupItem">
+
+                                            <Expander IsExpanded="False">
+
+                                                <Expander.Header>
+
+                                                    <Border Padding="8,5"
+                                            Background="#FFF5F5F5"
+                                            BorderBrush="#FFDDDDDD"
+                                            BorderThickness="0,0,0,1">
+
+                                                        <DockPanel LastChildFill="True">
+
+                                                            <TextBlock DockPanel.Dock="Left"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding Name,
+                                                                      Mode=OneWay}"/>
+
+                                                            <TextBlock Margin="8,0,0,0"
+                                                       Foreground="DimGray">
+
+                                                <Run Text="("/>
+
+                                                <Run Text="{Binding ItemCount,
+                                                                    Mode=OneWay}"/>
+
+                                                <Run Text=" properties)"/>
+
+                                                            </TextBlock>
+
+                                                        </DockPanel>
+
+                                                    </Border>
+
+                                                </Expander.Header>
+
+                                                <ItemsPresenter/>
+
+                                            </Expander>
+
+                                        </ControlTemplate>
+
+                                    </Setter.Value>
+                                </Setter>
+
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+
                 </DataGrid.GroupStyle>
 
                 <DataGrid.Columns>
 
-                    <!-- Category is shown by the group header -->
-                    <DataGridTextColumn Header="Setting"
-                                        Binding="{Binding SettingName,
-                                                          Mode=OneWay}"
-                                        Width="260"/>
-
+                    
+                    
                     <DataGridTextColumn Header="Property"
                                         Binding="{Binding PropertyName,
                                                           Mode=OneWay}"

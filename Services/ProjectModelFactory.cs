@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json.Linq;
@@ -112,26 +113,83 @@ public sealed class ProjectModelFactory
         foreach (JProperty sourceProperty in
                  sourceEntry.Properties())
         {
-            PropertyModel propertyModel =
-                CreatePropertyModel(
-                    sheetName,
-                    sourceProperty,
-                    PropertyModelCreationMode.Existing);
-
-            entryModel.Properties.Add(
-                propertyModel);
+            foreach (PropertyModel propertyModel in
+                     CreatePropertyModels(
+                         sheetName,
+                         sourceProperty,
+                         string.Empty,
+                         PropertyModelCreationMode.Existing))
+            {
+                entryModel.Properties.Add(
+                    propertyModel);
+            }
         }
 
         return entryModel;
+    }
+
+    private IEnumerable<PropertyModel> CreatePropertyModels(
+        string sheetName,
+        JProperty sourceProperty,
+        string parentPath,
+        PropertyModelCreationMode creationMode)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            sheetName);
+
+        ArgumentNullException.ThrowIfNull(
+            sourceProperty);
+
+        string propertyPath =
+            string.IsNullOrWhiteSpace(
+                parentPath)
+                ? sourceProperty.Name
+                : $"{parentPath}.{sourceProperty.Name}";
+
+        switch (sourceProperty.Value.Type)
+        {
+            case JTokenType.Object:
+                foreach (JProperty nestedProperty in
+                         ((JObject)sourceProperty.Value)
+                         .Properties())
+                {
+                    foreach (PropertyModel propertyModel in
+                             CreatePropertyModels(
+                                 sheetName,
+                                 nestedProperty,
+                                 propertyPath,
+                                 creationMode))
+                    {
+                        yield return propertyModel;
+                    }
+                }
+
+                yield break;
+
+            case JTokenType.Array:
+                yield break;
+
+            default:
+                yield return CreatePropertyModel(
+                    sheetName,
+                    sourceProperty,
+                    propertyPath,
+                    creationMode);
+                yield break;
+        }
     }
 
     public PropertyModel CreatePropertyModel(
         string sheetName,
         JProperty sourceProperty)
     {
+        ArgumentNullException.ThrowIfNull(
+            sourceProperty);
+
         return CreatePropertyModel(
             sheetName,
             sourceProperty,
+            sourceProperty.Name,
             PropertyModelCreationMode.Existing);
     }
 
@@ -140,11 +198,30 @@ public sealed class ProjectModelFactory
         JProperty sourceProperty,
         PropertyModelCreationMode creationMode)
     {
+        ArgumentNullException.ThrowIfNull(
+            sourceProperty);
+
+        return CreatePropertyModel(
+            sheetName,
+            sourceProperty,
+            sourceProperty.Name,
+            creationMode);
+    }
+
+    public PropertyModel CreatePropertyModel(
+        string sheetName,
+        JProperty sourceProperty,
+        string propertyPath,
+        PropertyModelCreationMode creationMode)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(
             sheetName);
 
         ArgumentNullException.ThrowIfNull(
             sourceProperty);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyPath);
 
         PropertyModel propertyModel =
             new()
@@ -154,6 +231,9 @@ public sealed class ProjectModelFactory
 
                 Name =
                     sourceProperty.Name,
+
+                PropertyPath =
+                    propertyPath,
 
                 SourceProperty =
                     sourceProperty,

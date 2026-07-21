@@ -70,8 +70,14 @@ public class MainViewModel : ObservableObject
     private readonly ProjectOperationService
         projectOperationService;
 
+    private readonly ProjectOperationTransactionService
+        projectOperationTransactionService;
+
     private readonly AddCampFacilitiesOperation
         addCampFacilitiesOperation;
+
+    private readonly UpgradeAllEquipmentOperation
+        upgradeAllEquipmentOperation;
 
     private readonly IFileDialogService fileDialogService;
 
@@ -392,6 +398,8 @@ public class MainViewModel : ObservableObject
 
             OnPropertyChanged(nameof(Sheets));
             OnPropertyChanged(nameof(Entries));
+
+            RefreshSearchResults();
         }
     }
 
@@ -593,7 +601,10 @@ public class MainViewModel : ObservableObject
     ValidationPresentationService
         validationPresentationService,
     ProjectOperationService projectOperationService,
+    ProjectOperationTransactionService
+        projectOperationTransactionService,
     AddCampFacilitiesOperation addCampFacilitiesOperation,
+    UpgradeAllEquipmentOperation upgradeAllEquipmentOperation,
     IFileDialogService fileDialogService,
     IMessageDialogService messageDialogService)
     {
@@ -663,10 +674,21 @@ public class MainViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(projectOperationService));
 
+        this.projectOperationTransactionService =
+            projectOperationTransactionService
+            ?? throw new ArgumentNullException(
+                nameof(
+                    projectOperationTransactionService));
+
         this.addCampFacilitiesOperation =
             addCampFacilitiesOperation
             ?? throw new ArgumentNullException(
                 nameof(addCampFacilitiesOperation));
+
+        this.upgradeAllEquipmentOperation =
+            upgradeAllEquipmentOperation
+            ?? throw new ArgumentNullException(
+                nameof(upgradeAllEquipmentOperation));
 
         this.fileDialogService =
             fileDialogService
@@ -763,8 +785,16 @@ public class MainViewModel : ObservableObject
             fileDialogService.ShowOpenFileDialog(
                 ProjectOpenFilter);
 
-        if (string.IsNullOrWhiteSpace(fileName))
+        if (string.IsNullOrWhiteSpace(
+                fileName))
+        {
             return;
+        }
+
+        if (!ConfirmAbandonUnsavedChanges())
+        {
+            return;
+        }
 
         try
         {
@@ -823,10 +853,12 @@ public class MainViewModel : ObservableObject
         }
     }
 
-    private void SaveProject()
+    private bool SaveProject()
     {
         if (Project == null)
-            return;
+        {
+            return false;
+        }
 
         try
         {
@@ -850,7 +882,7 @@ public class MainViewModel : ObservableObject
                 Status =
                     "Save blocked by validation errors.";
 
-                return;
+                return false;
             }
 
             if (validationResult.HasWarnings)
@@ -872,8 +904,14 @@ public class MainViewModel : ObservableObject
                     ProjectSaveFilter,
                     initialFileName);
 
-            if (string.IsNullOrWhiteSpace(fileName))
-                return;
+            if (string.IsNullOrWhiteSpace(
+                    fileName))
+            {
+                Status =
+                    "Save cancelled.";
+
+                return false;
+            }
 
             jsonDataService.SaveProject(
                 Project,
@@ -894,6 +932,8 @@ public class MainViewModel : ObservableObject
                       $"{Path.GetFileName(fileName)}"
                     : $"Saved: " +
                       $"{Path.GetFileName(fileName)}";
+
+            return true;
         }
         catch (Exception exception)
         {
@@ -905,7 +945,46 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Project save failed.";
+
+            return false;
         }
+    }
+
+    public bool ConfirmAbandonUnsavedChanges()
+    {
+        if (!HasModifications)
+        {
+            return true;
+        }
+
+        string fileName =
+            string.IsNullOrWhiteSpace(
+                CurrentFile)
+                ? "the current project"
+                : Path.GetFileName(
+                    CurrentFile);
+
+        UnsavedChangesResult result =
+            messageDialogService.ShowUnsavedChanges(
+                $"There are unsaved changes in {fileName}." +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Choose Yes to save before continuing, " +
+                "No to discard the changes, or Cancel " +
+                "to return to the editor.",
+                "Unsaved Changes");
+
+        return result switch
+        {
+            UnsavedChangesResult.Save =>
+                SaveProject(),
+
+            UnsavedChangesResult.Discard =>
+                true,
+
+            _ =>
+                false
+        };
     }
 
     private void ExportSnapshot()
@@ -1118,6 +1197,10 @@ public class MainViewModel : ObservableObject
                 ExecuteAddCampFacilities();
                 break;
 
+            case ContentCreationOperation.UpgradeAllEquipment:
+                ExecuteUpgradeAllEquipment();
+                break;
+
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(parameter),
@@ -1152,24 +1235,19 @@ public class MainViewModel : ObservableObject
 
         try
         {
-            ProjectOperationResult operationResult =
-                projectOperationService.Execute(
-                    addCampFacilitiesOperation,
-                    Project);
+            ProjectOperationResult operationResult;
+
+            using (editHistoryService.SuppressRecording())
+            {
+                operationResult =
+                    projectOperationService.Execute(
+                        addCampFacilitiesOperation,
+                        Project);
+            }
 
             if (!operationResult.Succeeded)
             {
-                StartTrackingProjectProperties();
-
-                OnPropertyChanged(nameof(Sheets));
-                OnPropertyChanged(nameof(Entries));
-                OnPropertyChanged(nameof(Properties));
-
-                RefreshModificationState();
-                RefreshChangeSummaryViewModel();
-                RefreshSearchResults();
-                RefreshHistoryState();
-                RefreshCommandStates();
+                RefreshAfterProjectOperation();
 
                 messageDialogService.ShowError(
                     operationResult.Message
@@ -1185,17 +1263,16 @@ public class MainViewModel : ObservableObject
             ProjectMutationResult result =
                 operationResult.MutationResult;
 
-            StartTrackingProjectProperties();
+            if (result.WasModified)
+            {
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        addCampFacilitiesOperation.Name,
+                        result,
+                        projectOperationTransactionService));
+            }
 
-            OnPropertyChanged(nameof(Sheets));
-            OnPropertyChanged(nameof(Entries));
-            OnPropertyChanged(nameof(Properties));
-
-            RefreshModificationState();
-            RefreshChangeSummaryViewModel();
-            RefreshSearchResults();
-            RefreshHistoryState();
-            RefreshCommandStates();
+            RefreshAfterProjectOperation();
 
             int createdEntryCount =
                 result.CreatedEntries.Count;
@@ -1238,11 +1315,7 @@ public class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            RefreshModificationState();
-            RefreshChangeSummaryViewModel();
-            RefreshSearchResults();
-            RefreshHistoryState();
-            RefreshCommandStates();
+            RefreshAfterProjectOperation();
 
             messageDialogService.ShowError(
                 "The camp facilities could not be added." +
@@ -1253,6 +1326,123 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Add Camp Facilities failed.";
+        }
+    }
+
+    private void ExecuteUpgradeAllEquipment()
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        bool confirmed =
+            messageDialogService.ShowConfirmation(
+                "Make normal obtainable equipment upgradeable " +
+                "at the Brotherhood Training Grounds?" +
+                Environment.NewLine +
+                Environment.NewLine +
+                "This modifies only the upgradeable flag. " +
+                "Item stats, levels, prices, rarity, and all " +
+                "other values will remain unchanged.",
+                "Upgrade All Equipment");
+
+        if (!confirmed)
+        {
+            Status =
+                "Upgrade All Equipment cancelled.";
+
+            return;
+        }
+
+        try
+        {
+            ProjectOperationResult operationResult;
+
+            using (editHistoryService.SuppressRecording())
+            {
+                operationResult =
+                    projectOperationService.Execute(
+                        upgradeAllEquipmentOperation,
+                        Project);
+            }
+
+            if (!operationResult.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+
+                messageDialogService.ShowError(
+                    operationResult.Message
+                    ?? "The operation failed validation.",
+                    "Upgrade All Equipment");
+
+                Status =
+                    "Upgrade All Equipment failed validation.";
+
+                return;
+            }
+
+            ProjectMutationResult result =
+                operationResult.MutationResult;
+
+            if (result.WasModified)
+            {
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        upgradeAllEquipmentOperation.Name,
+                        result,
+                        projectOperationTransactionService));
+            }
+
+            RefreshAfterProjectOperation();
+
+            int affectedEquipmentCount =
+                result.UpdatedProperties.Count +
+                result.CreatedProperties.Count;
+
+            if (!result.WasModified)
+            {
+                messageDialogService.ShowInformation(
+                    "All eligible equipment is already upgradeable. " +
+                    "No changes were required.",
+                    "Upgrade All Equipment");
+
+                Status =
+                    "All eligible equipment already upgradeable.";
+
+                return;
+            }
+
+            messageDialogService.ShowInformation(
+                "Eligible equipment was made upgradeable " +
+                "successfully." +
+                Environment.NewLine +
+                Environment.NewLine +
+                $"Updated equipment entries: " +
+                $"{affectedEquipmentCount:N0}" +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Only the upgradeable flag was changed. " +
+                "Save the project to write these changes " +
+                "to a CDB file.",
+                "Upgrade All Equipment");
+
+            Status =
+                "Eligible equipment made upgradeable.";
+        }
+        catch (Exception exception)
+        {
+            RefreshAfterProjectOperation();
+
+            messageDialogService.ShowError(
+                "Equipment could not be made upgradeable." +
+                Environment.NewLine +
+                Environment.NewLine +
+                exception.Message,
+                "Upgrade All Equipment");
+
+            Status =
+                "Upgrade All Equipment failed.";
         }
     }
 
@@ -1276,6 +1466,22 @@ public class MainViewModel : ObservableObject
                 : validationResult.HasWarnings
                     ? "Validation completed with warnings."
                     : "Validation completed successfully.";
+    }
+
+    private void RefreshAfterProjectOperation()
+    {
+        StopTrackingProjectProperties();
+        StartTrackingProjectProperties();
+
+        OnPropertyChanged(nameof(Sheets));
+        OnPropertyChanged(nameof(Entries));
+        OnPropertyChanged(nameof(Properties));
+
+        RefreshModificationState();
+        RefreshChangeSummaryViewModel();
+        RefreshSearchResults();
+        RefreshHistoryState();
+        RefreshCommandStates();
     }
 
     private void ShowValidationResults(
@@ -2429,9 +2635,11 @@ public class MainViewModel : ObservableObject
             ?? "property change";
 
         if (!editHistoryService.Undo())
+        {
             return;
+        }
 
-        RefreshCommandStates();
+        RefreshAfterProjectOperation();
 
         Status =
             $"Undid: {description}";
@@ -2444,9 +2652,11 @@ public class MainViewModel : ObservableObject
             ?? "property change";
 
         if (!editHistoryService.Redo())
+        {
             return;
+        }
 
-        RefreshCommandStates();
+        RefreshAfterProjectOperation();
 
         Status =
             $"Redid: {description}";
@@ -2461,7 +2671,8 @@ public class MainViewModel : ObservableObject
                  searchService.Search(
                      Project,
                      SearchText,
-                     localizationService))
+                     localizationService,
+                     SearchScope))
         {
             SearchResults.Add(result);
         }

@@ -52,4 +52,28 @@ public sealed class WpfMessageDialogService :
         return result ==
             MessageBoxResult.Yes;
     }
+
+    public UnsavedChangesResult ShowUnsavedChanges(
+        string message,
+        string title)
+    {
+        MessageBoxResult result =
+            MessageBox.Show(
+                message,
+                title,
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Warning);
+
+        return result switch
+        {
+            MessageBoxResult.Yes =>
+                UnsavedChangesResult.Save,
+
+            MessageBoxResult.No =>
+                UnsavedChangesResult.Discard,
+
+            _ =>
+                UnsavedChangesResult.Cancel
+        };
+    }
 }

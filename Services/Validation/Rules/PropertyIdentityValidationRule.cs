@@ -69,6 +69,20 @@ public sealed class PropertyIdentityValidationRule
                             entry.Id,
                             entry.DisplayName);
                     }
+
+                    if (string.IsNullOrWhiteSpace(
+                            property.EffectivePropertyPath))
+                    {
+                        yield return new ValidationIssueModel(
+                            RuleId,
+                            ValidationSeverity.Warning,
+                            ValidationCategory.ProjectStructure,
+                            "A property does not have a usable identity path.",
+                            sheet.Name,
+                            entry.Id,
+                            entry.DisplayName,
+                            property.Name);
+                    }
                 }
 
                 IEnumerable<IGrouping<string, PropertyModel>>
@@ -78,9 +92,10 @@ public sealed class PropertyIdentityValidationRule
                                 property != null
                                 &&
                                 !string.IsNullOrWhiteSpace(
-                                    property.Name))
+                                    property.EffectivePropertyPath))
                             .GroupBy(
-                                property => property.Name,
+                                property =>
+                                    property.EffectivePropertyPath,
                                 StringComparer.OrdinalIgnoreCase)
                             .Where(group =>
                                 group.Count() > 1);
@@ -95,12 +110,13 @@ public sealed class PropertyIdentityValidationRule
                             RuleId,
                             ValidationSeverity.Warning,
                             ValidationCategory.InternalConsistency,
-                            $"The property '{duplicateGroup.Key}' " +
+                            $"The property path " +
+                            $"'{duplicateGroup.Key}' " +
                             "appears more than once in this entry.",
                             sheet.Name,
                             entry.Id,
                             entry.DisplayName,
-                            property.Name);
+                            property.EffectivePropertyPath);
                     }
                 }
             }

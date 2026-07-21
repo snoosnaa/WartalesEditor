@@ -21,6 +21,12 @@ public sealed class ContentCreationService
     private const string PropsPropertyName =
         "props";
 
+    private const string FlagsPropertyName =
+        "flags";
+
+    private const int UpgradeableEquipmentFlag =
+        128;
+
     private const string ToolPropertyName =
         "tool";
 
@@ -70,12 +76,14 @@ public sealed class ContentCreationService
         SheetModel itemSheet =
             FindRequiredSheet(
                 project,
-                ItemSheetName);
+                ItemSheetName,
+                "Add Camp Facilities");
 
         SheetModel craftSheet =
             FindRequiredSheet(
                 project,
-                CraftSheetName);
+                CraftSheetName,
+                "Add Camp Facilities");
 
         EntryModel anvilEntry =
             FindRequiredEntry(
@@ -88,58 +96,60 @@ public sealed class ContentCreationService
                 ApothecaryTableEntryId);
 
         JObject existingAnvilProps =
-            GetExistingObjectPropertyClone(
+            RequireObjectProperty(
                 anvilEntry,
-                PropsPropertyName);
+                PropsPropertyName,
+                "Add Camp Facilities");
 
         JObject existingApothecaryProps =
-            GetExistingObjectPropertyClone(
+            RequireObjectProperty(
                 apothecaryEntry,
-                PropsPropertyName);
+                PropsPropertyName,
+                "Add Camp Facilities");
 
         ProjectMutationResult result =
             new();
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 anvilEntry,
                 PropsPropertyName,
                 campFacilityJsonBuilder.BuildAnvilProps(
                     existingAnvilProps)));
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 anvilEntry,
                 ToolPropertyName,
                 campFacilityJsonBuilder.BuildAnvilTool()));
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 anvilEntry,
                 IconPropertyName,
                 campFacilityJsonBuilder.BuildAnvilIcon()));
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 apothecaryEntry,
                 PropsPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryProps(
                     existingApothecaryProps)));
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 apothecaryEntry,
                 ToolPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryTool()));
 
         result.Merge(
-            projectMutationService.EnsureProperty(
-                ItemSheetName,
+            EnsureObjectProperty(
+                itemSheet,
                 apothecaryEntry,
                 IconPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryIcon()));
@@ -154,10 +164,128 @@ public sealed class ContentCreationService
             EnsureCraftEntry(
                 craftSheet,
                 ApothecaryTableEntryId,
-                campFacilityJsonBuilder
-                    .BuildApothecaryCraftEntry()));
+                campFacilityJsonBuilder.BuildApothecaryCraftEntry()));
 
         return result;
+    }
+
+    public ProjectMutationResult UpgradeAllEquipment(
+        ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(
+            project);
+
+        SheetModel itemSheet =
+            FindRequiredSheet(
+                project,
+                ItemSheetName,
+                "Upgrade All Equipment");
+
+        ProjectMutationResult result =
+            new();
+
+        const string flagsPropertyPath =
+            "props.flags";
+
+        foreach (EntryModel entry in itemSheet.Entries)
+        {
+            if (!UpgradeAllEquipmentTargetCatalog.Contains(
+                    entry.Id))
+            {
+                continue;
+            }
+
+            JObject? props =
+                entry.SourceEntry?[PropsPropertyName]
+                    as JObject;
+
+            if (props == null)
+            {
+                throw new InvalidOperationException(
+                    $"Upgrade All Equipment cannot continue because " +
+                    $"item '{entry.Id}' does not contain a valid " +
+                    $"'{PropsPropertyName}' object.");
+            }
+
+            JToken? flagsToken =
+                props[FlagsPropertyName];
+
+            if (flagsToken != null &&
+                flagsToken.Type != JTokenType.Integer)
+            {
+                throw new InvalidOperationException(
+                    $"Upgrade All Equipment cannot continue because " +
+                    $"'{flagsPropertyPath}' on item '{entry.Id}' is not " +
+                    "an integer. The loaded CDB may be incompatible " +
+                    "with this tool.");
+            }
+
+            int existingFlags =
+                flagsToken?.Value<int>()
+                ?? 0;
+
+            int updatedFlags =
+                existingFlags |
+                UpgradeableEquipmentFlag;
+
+            if (updatedFlags == existingFlags)
+            {
+                continue;
+            }
+
+            result.Merge(
+                projectMutationService.EnsurePropertyByPath(
+                    entry,
+                    flagsPropertyPath,
+                    new JValue(
+                        updatedFlags)));
+        }
+
+        return result;
+    }
+
+    private ProjectMutationResult EnsureObjectProperty(
+        SheetModel sheet,
+        EntryModel entry,
+        string propertyName,
+        JObject propertyValue)
+    {
+        ArgumentNullException.ThrowIfNull(
+            sheet);
+
+        ArgumentNullException.ThrowIfNull(
+            entry);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyName);
+
+        ArgumentNullException.ThrowIfNull(
+            propertyValue);
+
+        if (entry.SourceEntry == null)
+        {
+            throw new InvalidOperationException(
+                $"Entry '{entry.Id}' is not connected " +
+                "to a source JSON object.");
+        }
+
+        JToken? existingToken =
+            entry.SourceEntry[propertyName];
+
+        if (existingToken != null &&
+            existingToken.Type != JTokenType.Object)
+        {
+            throw new InvalidOperationException(
+                $"Add Camp Facilities cannot continue because " +
+                $"'{propertyName}' on entry '{entry.Id}' is not " +
+                "a JSON object.");
+        }
+
+        return projectMutationService.EnsureProperty(
+            sheet.Name,
+            entry,
+            propertyName,
+            propertyValue);
     }
 
     private ProjectMutationResult EnsureCraftEntry(
@@ -191,46 +319,52 @@ public sealed class ContentCreationService
             craftEntry);
     }
 
-    private JObject GetExistingObjectPropertyClone(
+    private static JObject RequireObjectProperty(
         EntryModel entry,
-        string propertyName)
+        string propertyName,
+        string operationName)
     {
-        PropertyModel? property =
-            projectMutationService.FindProperty(
-                entry,
-                propertyName);
+        ArgumentNullException.ThrowIfNull(
+            entry);
 
-        if (property == null)
-        {
-            return new JObject();
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyName);
 
-        if (property.SourceProperty == null)
-        {
-            throw new InvalidOperationException(
-                $"Add Camp Facilities cannot continue because " +
-                $"property '{propertyName}' on entry " +
-                $"'{entry.Id}' is not connected to its " +
-                "source JSON property.");
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            operationName);
 
-        if (property.SourceProperty.Value is not JObject
-            sourceObject)
+        if (entry.SourceEntry == null)
         {
             throw new InvalidOperationException(
-                $"Add Camp Facilities cannot continue because " +
-                $"property '{propertyName}' on entry " +
-                $"'{entry.Id}' is not a JSON object. " +
-                "The loaded CDB may be incompatible with this tool.");
+                $"{operationName} cannot continue because entry " +
+                $"'{entry.Id}' is not connected to source JSON.");
         }
 
-        return (JObject)sourceObject.DeepClone();
+        if (entry.SourceEntry[propertyName] is not JObject objectProperty)
+        {
+            throw new InvalidOperationException(
+                $"{operationName} cannot continue because required " +
+                $"object '{propertyName}' was not found on entry " +
+                $"'{entry.Id}'.");
+        }
+
+        return objectProperty;
     }
 
     private SheetModel FindRequiredSheet(
         ProjectModel project,
-        string sheetName)
+        string sheetName,
+        string operationName)
     {
+        ArgumentNullException.ThrowIfNull(
+            project);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            sheetName);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            operationName);
+
         try
         {
             return projectMutationService.FindSheet(
@@ -240,7 +374,7 @@ public sealed class ContentCreationService
         catch (InvalidOperationException exception)
         {
             throw new InvalidOperationException(
-                $"Add Camp Facilities cannot continue because " +
+                $"{operationName} cannot continue because " +
                 $"the required '{sheetName}' sheet was not found. " +
                 "The loaded CDB may be incompatible with this tool.",
                 exception);
@@ -251,6 +385,12 @@ public sealed class ContentCreationService
         SheetModel sheet,
         string entryId)
     {
+        ArgumentNullException.ThrowIfNull(
+            sheet);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            entryId);
+
         try
         {
             return projectMutationService.FindEntry(
@@ -260,7 +400,7 @@ public sealed class ContentCreationService
         catch (InvalidOperationException exception)
         {
             throw new InvalidOperationException(
-                $"Add Camp Facilities cannot continue because " +
+                "Add Camp Facilities cannot continue because " +
                 $"the required entry '{entryId}' was not found " +
                 $"in the '{sheet.Name}' sheet. " +
                 "The loaded CDB may be incompatible with this tool.",

@@ -117,6 +117,257 @@ public sealed class ProjectMutationService
                     StringComparison.Ordinal));
     }
 
+    public PropertyModel? FindPropertyByPath(
+    EntryModel entry,
+    string propertyPath)
+    {
+        ArgumentNullException.ThrowIfNull(
+            entry);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyPath);
+
+        return entry.Properties.FirstOrDefault(
+            property =>
+                string.Equals(
+                    property.EffectivePropertyPath,
+                    propertyPath,
+                    StringComparison.Ordinal));
+    }
+
+    public ProjectMutationResult EnsurePropertyByPath(
+        EntryModel entry,
+        string propertyPath,
+        JToken propertyValue)
+    {
+        ArgumentNullException.ThrowIfNull(
+            entry);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyPath);
+
+        ArgumentNullException.ThrowIfNull(
+            propertyValue);
+
+        if (entry.SourceEntry == null)
+        {
+            throw new InvalidOperationException(
+                $"Entry '{entry.Id}' is not connected " +
+                "to a source JSON object.");
+        }
+
+        PropertyModel? existingProperty =
+            FindPropertyByPath(
+                entry,
+                propertyPath);
+
+        if (existingProperty != null)
+        {
+            return UpdateExistingProperty(
+                existingProperty,
+                propertyValue);
+        }
+
+        string[] pathSegments =
+            propertyPath.Split(
+                '.',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        if (pathSegments.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "A nested property path must contain at least " +
+                "one path segment.");
+        }
+
+        ProjectMutationResult result =
+            new();
+
+        JObject parentObject =
+            entry.SourceEntry;
+
+        string currentPath =
+            string.Empty;
+
+        for (int index = 0;
+             index < pathSegments.Length - 1;
+             index++)
+        {
+            string segment =
+                pathSegments[index];
+
+            currentPath =
+                string.IsNullOrEmpty(
+                    currentPath)
+                    ? segment
+                    : $"{currentPath}.{segment}";
+
+            JToken? existingToken =
+                parentObject[segment];
+
+            if (existingToken == null)
+            {
+                JProperty createdObjectProperty =
+                    new(
+                        segment,
+                        new JObject());
+
+                parentObject.Add(
+                    createdObjectProperty);
+
+                result.AddJsonProperty(
+                    parentObject,
+                    createdObjectProperty);
+
+                parentObject =
+                    (JObject)createdObjectProperty.Value;
+
+                continue;
+            }
+
+            if (existingToken is not JObject existingObject)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create property path '{propertyPath}' " +
+                    $"because '{currentPath}' is not a JSON object.");
+            }
+
+            parentObject =
+                existingObject;
+        }
+
+        string leafName =
+            pathSegments[^1];
+
+        JProperty? existingSourceProperty =
+            parentObject.Property(
+                leafName);
+
+        if (existingSourceProperty != null)
+        {
+            if (existingSourceProperty.Value.Type is
+                JTokenType.Object or JTokenType.Array)
+            {
+                throw new InvalidOperationException(
+                    $"Property path '{propertyPath}' is not a " +
+                    "scalar JSON property.");
+            }
+
+            PropertyModel propertyModel =
+                projectModelFactory.CreatePropertyModel(
+                    ResolveSheetName(
+                        entry),
+                    existingSourceProperty,
+                    propertyPath,
+                    PropertyModelCreationMode.Existing);
+
+            entry.Properties.Add(
+                propertyModel);
+
+            return UpdateExistingProperty(
+                propertyModel,
+                propertyValue);
+        }
+
+        string sheetName =
+            ResolveSheetName(
+                entry);
+
+        JProperty sourceProperty =
+            new(
+                leafName,
+                propertyValue.DeepClone());
+
+        parentObject.Add(
+            sourceProperty);
+
+        PropertyModel createdProperty =
+            projectModelFactory.CreatePropertyModel(
+                sheetName,
+                sourceProperty,
+                propertyPath,
+                PropertyModelCreationMode.NewlyCreated);
+
+        try
+        {
+            entry.Properties.Add(
+                createdProperty);
+        }
+        catch
+        {
+            sourceProperty.Remove();
+            throw;
+        }
+
+        result.AddProperty(
+            entry,
+            createdProperty);
+
+        return result;
+    }
+
+    private static ProjectMutationResult UpdateExistingProperty(
+        PropertyModel property,
+        JToken propertyValue)
+    {
+        if (property.SourceProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{property.EffectivePropertyPath}' " +
+                "is not connected to a source JSON property.");
+        }
+
+        if (JToken.DeepEquals(
+                property.SourceProperty.Value,
+                propertyValue))
+        {
+            return new ProjectMutationResult();
+        }
+
+        JToken previousValue =
+            property.SourceProperty.Value.DeepClone();
+
+        property.ApplySnapshotValue(
+            propertyValue);
+
+        ProjectMutationResult result =
+            new();
+
+        result.AddUpdatedProperty(
+            property,
+            previousValue);
+
+        return result;
+    }
+
+    private static string ResolveSheetName(
+        EntryModel entry)
+    {
+        JToken? current =
+            entry.SourceEntry;
+
+        while (current != null)
+        {
+            if (current is JObject sourceObject &&
+                sourceObject["name"]?.Type ==
+                    JTokenType.String &&
+                sourceObject["lines"] is JArray)
+            {
+                return sourceObject["name"]!
+                    .Value<string>()
+                    ?? string.Empty;
+            }
+
+            current =
+                current.Parent;
+        }
+
+        throw new InvalidOperationException(
+            $"The sheet containing entry '{entry.Id}' " +
+            "could not be resolved.");
+    }
+
     public ProjectMutationResult CreateProperty(
         string sheetName,
         EntryModel entry,

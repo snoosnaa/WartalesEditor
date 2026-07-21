@@ -13,9 +13,14 @@ public sealed class EditHistoryService
     private readonly Stack<IEditAction> redoStack =
         new();
 
+    private int recordingSuppressionDepth;
+
     public event EventHandler? HistoryChanged;
 
     public bool IsApplyingHistory { get; private set; }
+
+    public bool IsRecordingSuppressed =>
+        recordingSuppressionDepth > 0;
 
     public bool CanUndo =>
         undoStack.Count > 0;
@@ -33,6 +38,14 @@ public sealed class EditHistoryService
             ? redoStack.Peek().Description
             : null;
 
+    public IDisposable SuppressRecording()
+    {
+        recordingSuppressionDepth++;
+
+        return new HistoryRecordingSuppressionScope(
+            this);
+    }
+
     public void Record(
         PropertyModel property,
         JToken previousValue,
@@ -48,6 +61,7 @@ public sealed class EditHistoryService
             newValue);
 
         if (IsApplyingHistory ||
+            IsRecordingSuppressed ||
             JToken.DeepEquals(
                 previousValue,
                 newValue))
@@ -68,7 +82,8 @@ public sealed class EditHistoryService
         ArgumentNullException.ThrowIfNull(
             action);
 
-        if (IsApplyingHistory)
+        if (IsApplyingHistory ||
+            IsRecordingSuppressed)
         {
             return;
         }
@@ -84,7 +99,9 @@ public sealed class EditHistoryService
     public bool Undo()
     {
         if (!CanUndo)
+        {
             return false;
+        }
 
         IEditAction action =
             undoStack.Pop();
@@ -103,7 +120,9 @@ public sealed class EditHistoryService
     public bool Redo()
     {
         if (!CanRedo)
+        {
             return false;
+        }
 
         IEditAction action =
             redoStack.Pop();
@@ -133,6 +152,18 @@ public sealed class EditHistoryService
         OnHistoryChanged();
     }
 
+    private void EndRecordingSuppression()
+    {
+        if (recordingSuppressionDepth <= 0)
+        {
+            throw new InvalidOperationException(
+                "Edit history recording suppression " +
+                "ended without a matching suppression scope.");
+        }
+
+        recordingSuppressionDepth--;
+    }
+
     private void ExecuteHistoryAction(
         Action action)
     {
@@ -155,5 +186,36 @@ public sealed class EditHistoryService
         HistoryChanged?.Invoke(
             this,
             EventArgs.Empty);
+    }
+
+    private sealed class
+        HistoryRecordingSuppressionScope :
+            IDisposable
+    {
+        private EditHistoryService? historyService;
+
+        public HistoryRecordingSuppressionScope(
+            EditHistoryService historyService)
+        {
+            this.historyService =
+                historyService
+                ?? throw new ArgumentNullException(
+                    nameof(historyService));
+        }
+
+        public void Dispose()
+        {
+            EditHistoryService? service =
+                historyService;
+
+            if (service == null)
+            {
+                return;
+            }
+
+            historyService = null;
+
+            service.EndRecordingSuppression();
+        }
     }
 }

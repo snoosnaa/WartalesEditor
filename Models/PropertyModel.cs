@@ -35,6 +35,14 @@ public class PropertyModel : ObservableObject
     public string Name { get; set; } =
         string.Empty;
 
+    public string PropertyPath { get; set; } =
+        string.Empty;
+
+    public string EffectivePropertyPath =>
+        string.IsNullOrWhiteSpace(PropertyPath)
+            ? Name
+            : PropertyPath;
+
     public JProperty? SourceProperty { get; set; }
 
     public PropertyDefinition Definition =>

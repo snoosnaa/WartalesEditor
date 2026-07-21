@@ -33,7 +33,7 @@ public partial class MainWindow : Window
                 new();
 
         ProjectMutationService projectMutationService =
-            new();
+    new();
 
         ContentCreationService contentCreationService =
             new(
@@ -44,15 +44,29 @@ public partial class MainWindow : Window
                 new(
                     contentCreationService);
 
-        ProjectOperationService projectOperationService =
+        UpgradeAllEquipmentOperation
+            upgradeAllEquipmentOperation =
+                new(
+                    contentCreationService);
+
+        EditHistoryService editHistoryService =
             new();
+
+        ProjectOperationTransactionService
+            projectOperationTransactionService =
+                new();
+
+        ProjectOperationService projectOperationService =
+            new(
+                new OperationValidatorProvider(),
+                projectOperationTransactionService);
 
         ViewModel =
             new MainViewModel(
                 jsonDataService,
                 new SearchService(),
                 new LocalizationService(),
-                new EditHistoryService(),
+                editHistoryService,
                 new ModificationSnapshotService(),
                 snapshotWorkflowService,
                 new ChangeSummaryService(),
@@ -65,7 +79,9 @@ public partial class MainWindow : Window
                 validationWorkflowService,
                 validationPresentationService,
                 projectOperationService,
+                projectOperationTransactionService,
                 addCampFacilitiesOperation,
+                upgradeAllEquipmentOperation,
                 new WpfFileDialogService(),
                 new WpfMessageDialogService());
 
@@ -73,6 +89,9 @@ public partial class MainWindow : Window
 
         DataContext =
             ViewModel;
+
+        Closing +=
+            OnWindowClosing;
     }
 
     private void Window_SourceInitialized(
@@ -178,5 +197,16 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void OnWindowClosing(
+    object? sender,
+    System.ComponentModel.CancelEventArgs e)
+    {
+        if (!ViewModel
+                .ConfirmAbandonUnsavedChanges())
+        {
+            e.Cancel = true;
+        }
     }
 }

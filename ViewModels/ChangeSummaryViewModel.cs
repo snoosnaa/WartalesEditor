@@ -40,6 +40,12 @@ public sealed class ChangeSummaryViewModel :
                     ChangeSummaryItemModel
                         .CategoryName)));
 
+        GroupedItems.GroupDescriptions.Add(
+            new PropertyGroupDescription(
+                nameof(
+                    ChangeSummaryItemModel
+                        .SettingName)));
+
         NavigateCommand =
             new RelayCommand(
                 _ => NavigateToSelectedItem(),

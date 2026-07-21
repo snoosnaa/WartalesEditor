@@ -2,5 +2,6 @@
 
 public enum ContentCreationOperation
 {
-    AddCampFacilities
+    AddCampFacilities,
+    UpgradeAllEquipment
 }
