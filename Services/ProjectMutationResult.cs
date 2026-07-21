@@ -61,7 +61,8 @@ public sealed class ProjectMutationResult
     public bool WasModified =>
         createdEntries.Count > 0 ||
         createdProperties.Count > 0 ||
-        updatedProperties.Count > 0;
+        updatedProperties.Count > 0 ||
+        createdJsonPropertyRollbackRecords.Count > 0;
 
     public void AddEntry(
         SheetModel sheet,

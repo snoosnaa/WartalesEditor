@@ -111,45 +111,39 @@ public sealed class ContentCreationService
             new();
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 PropsPropertyName,
                 campFacilityJsonBuilder.BuildAnvilProps(
                     existingAnvilProps)));
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 ToolPropertyName,
                 campFacilityJsonBuilder.BuildAnvilTool()));
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 IconPropertyName,
                 campFacilityJsonBuilder.BuildAnvilIcon()));
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 PropsPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryProps(
                     existingApothecaryProps)));
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 ToolPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryTool()));
 
         result.Merge(
-            EnsureObjectProperty(
-                itemSheet,
+            projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 IconPropertyName,
                 campFacilityJsonBuilder.BuildApothecaryIcon()));
@@ -242,50 +236,6 @@ public sealed class ContentCreationService
         }
 
         return result;
-    }
-
-    private ProjectMutationResult EnsureObjectProperty(
-        SheetModel sheet,
-        EntryModel entry,
-        string propertyName,
-        JObject propertyValue)
-    {
-        ArgumentNullException.ThrowIfNull(
-            sheet);
-
-        ArgumentNullException.ThrowIfNull(
-            entry);
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(
-            propertyName);
-
-        ArgumentNullException.ThrowIfNull(
-            propertyValue);
-
-        if (entry.SourceEntry == null)
-        {
-            throw new InvalidOperationException(
-                $"Entry '{entry.Id}' is not connected " +
-                "to a source JSON object.");
-        }
-
-        JToken? existingToken =
-            entry.SourceEntry[propertyName];
-
-        if (existingToken != null &&
-            existingToken.Type != JTokenType.Object)
-        {
-            throw new InvalidOperationException(
-                $"Add Camp Facilities cannot continue because " +
-                $"'{propertyName}' on entry '{entry.Id}' is not " +
-                "a JSON object.");
-        }
-
-        return projectMutationService.EnsureProperty(
-            sheet.Name,
-            entry,
-            propertyName,
-            propertyValue);
     }
 
     private ProjectMutationResult EnsureCraftEntry(

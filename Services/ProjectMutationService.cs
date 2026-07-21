@@ -307,6 +307,396 @@ public sealed class ProjectMutationService
         return result;
     }
 
+    public ProjectMutationResult EnsureObjectByPath(
+        EntryModel entry,
+        string propertyPath,
+        JObject objectValue)
+    {
+        ArgumentNullException.ThrowIfNull(
+            entry);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyPath);
+
+        ArgumentNullException.ThrowIfNull(
+            objectValue);
+
+        if (entry.SourceEntry == null)
+        {
+            throw new InvalidOperationException(
+                $"Entry '{entry.Id}' is not connected " +
+                "to a source JSON object.");
+        }
+
+        string[] pathSegments =
+            propertyPath.Split(
+                '.',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        if (pathSegments.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "An object property path must contain at least " +
+                "one path segment.");
+        }
+
+        ValidateObjectMutation(
+            entry,
+            pathSegments,
+            propertyPath,
+            objectValue);
+
+        ProjectMutationResult result =
+            new();
+
+        JObject targetObject =
+            EnsureObjectPath(
+                entry,
+                pathSegments,
+                propertyPath,
+                result);
+
+        MergeObjectMembers(
+            entry,
+            targetObject,
+            propertyPath,
+            objectValue,
+            result);
+
+        return result;
+    }
+
+    private void ValidateObjectMutation(
+        EntryModel entry,
+        string[] pathSegments,
+        string propertyPath,
+        JObject objectValue)
+    {
+        JObject currentObject =
+            entry.SourceEntry!;
+
+        string currentPath =
+            string.Empty;
+
+        foreach (string segment in pathSegments)
+        {
+            currentPath =
+                string.IsNullOrEmpty(
+                    currentPath)
+                    ? segment
+                    : $"{currentPath}.{segment}";
+
+            JToken? existingToken =
+                currentObject[segment];
+
+            if (existingToken == null)
+            {
+                return;
+            }
+
+            if (existingToken is not JObject nestedObject)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot ensure object path '{propertyPath}' " +
+                    $"because '{currentPath}' is not a JSON object.");
+            }
+
+            currentObject =
+                nestedObject;
+        }
+
+        ValidateObjectMembers(
+            entry,
+            currentObject,
+            propertyPath,
+            objectValue);
+    }
+
+    private void ValidateObjectMembers(
+        EntryModel entry,
+        JObject targetObject,
+        string targetPath,
+        JObject objectValue)
+    {
+        foreach (JProperty incomingProperty in
+                 objectValue.Properties())
+        {
+            string memberPath =
+                $"{targetPath}.{incomingProperty.Name}";
+
+            JProperty? sourceProperty =
+                targetObject.Property(
+                    incomingProperty.Name);
+
+            if (incomingProperty.Value is JObject incomingObject)
+            {
+                if (sourceProperty == null)
+                {
+                    continue;
+                }
+
+                if (sourceProperty.Value is not JObject nestedObject)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot merge object member '{memberPath}' " +
+                        "because the existing value is not a JSON object.");
+                }
+
+                ValidateObjectMembers(
+                    entry,
+                    nestedObject,
+                    memberPath,
+                    incomingObject);
+
+                continue;
+            }
+
+            if (sourceProperty?.Value is JObject)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot replace object member '{memberPath}' " +
+                    "with a non-object value during a deep merge.");
+            }
+
+            PropertyModel? propertyModel =
+                FindPropertyByPath(
+                    entry,
+                    memberPath);
+
+            if (propertyModel != null &&
+                sourceProperty != null &&
+                !ReferenceEquals(
+                    propertyModel.SourceProperty,
+                    sourceProperty))
+            {
+                throw new InvalidOperationException(
+                    $"Property model '{memberPath}' is not connected " +
+                    "to the matching source JSON property.");
+            }
+        }
+    }
+
+    private JObject EnsureObjectPath(
+        EntryModel entry,
+        string[] pathSegments,
+        string propertyPath,
+        ProjectMutationResult result)
+    {
+        JObject currentObject =
+            entry.SourceEntry!;
+
+        string currentPath =
+            string.Empty;
+
+        foreach (string segment in pathSegments)
+        {
+            currentPath =
+                string.IsNullOrEmpty(
+                    currentPath)
+                    ? segment
+                    : $"{currentPath}.{segment}";
+
+            JProperty? sourceProperty =
+                currentObject.Property(
+                    segment);
+
+            if (sourceProperty == null)
+            {
+                sourceProperty =
+                    new JProperty(
+                        segment,
+                        new JObject());
+
+                currentObject.Add(
+                    sourceProperty);
+
+                result.AddJsonProperty(
+                    currentObject,
+                    sourceProperty);
+            }
+
+            if (sourceProperty.Value is not JObject nestedObject)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot ensure object path '{propertyPath}' " +
+                    $"because '{currentPath}' is not a JSON object.");
+            }
+
+            currentObject =
+                nestedObject;
+        }
+
+        return currentObject;
+    }
+
+    private void MergeObjectMembers(
+        EntryModel entry,
+        JObject targetObject,
+        string targetPath,
+        JObject objectValue,
+        ProjectMutationResult result)
+    {
+        foreach (JProperty incomingProperty in
+                 objectValue.Properties())
+        {
+            string memberPath =
+                $"{targetPath}.{incomingProperty.Name}";
+
+            if (incomingProperty.Value is JObject incomingObject)
+            {
+                JObject nestedTarget =
+                    EnsureObjectMember(
+                        targetObject,
+                        incomingProperty.Name,
+                        memberPath,
+                        result);
+
+                MergeObjectMembers(
+                    entry,
+                    nestedTarget,
+                    memberPath,
+                    incomingObject,
+                    result);
+
+                continue;
+            }
+
+            result.Merge(
+                EnsureObjectMemberValue(
+                    entry,
+                    targetObject,
+                    incomingProperty.Name,
+                    memberPath,
+                    incomingProperty.Value));
+        }
+    }
+
+    private static JObject EnsureObjectMember(
+        JObject parentObject,
+        string memberName,
+        string memberPath,
+        ProjectMutationResult result)
+    {
+        JProperty? sourceProperty =
+            parentObject.Property(
+                memberName);
+
+        if (sourceProperty == null)
+        {
+            sourceProperty =
+                new JProperty(
+                    memberName,
+                    new JObject());
+
+            parentObject.Add(
+                sourceProperty);
+
+            result.AddJsonProperty(
+                parentObject,
+                sourceProperty);
+        }
+
+        if (sourceProperty.Value is not JObject nestedObject)
+        {
+            throw new InvalidOperationException(
+                $"Cannot merge object member '{memberPath}' " +
+                "because the existing value is not a JSON object.");
+        }
+
+        return nestedObject;
+    }
+
+    private ProjectMutationResult EnsureObjectMemberValue(
+        EntryModel entry,
+        JObject parentObject,
+        string memberName,
+        string memberPath,
+        JToken memberValue)
+    {
+        PropertyModel? propertyModel =
+            FindPropertyByPath(
+                entry,
+                memberPath);
+
+        JProperty? sourceProperty =
+            parentObject.Property(
+                memberName);
+
+        if (sourceProperty == null)
+        {
+            if (propertyModel != null)
+            {
+                throw new InvalidOperationException(
+                    $"Property model '{memberPath}' does not have " +
+                    "a matching source JSON property.");
+            }
+
+            sourceProperty =
+                new JProperty(
+                    memberName,
+                    memberValue.DeepClone());
+
+            parentObject.Add(
+                sourceProperty);
+
+            PropertyModel createdProperty =
+                projectModelFactory.CreatePropertyModel(
+                    ResolveSheetName(
+                        entry),
+                    sourceProperty,
+                    memberPath,
+                    PropertyModelCreationMode.NewlyCreated);
+
+            try
+            {
+                entry.Properties.Add(
+                    createdProperty);
+            }
+            catch
+            {
+                sourceProperty.Remove();
+                throw;
+            }
+
+            ProjectMutationResult createdResult =
+                new();
+
+            createdResult.AddProperty(
+                entry,
+                createdProperty);
+
+            return createdResult;
+        }
+
+        if (propertyModel == null)
+        {
+            propertyModel =
+                projectModelFactory.CreatePropertyModel(
+                    ResolveSheetName(
+                        entry),
+                    sourceProperty,
+                    memberPath,
+                    PropertyModelCreationMode.Existing);
+
+            entry.Properties.Add(
+                propertyModel);
+        }
+
+        if (!ReferenceEquals(
+                propertyModel.SourceProperty,
+                sourceProperty))
+        {
+            throw new InvalidOperationException(
+                $"Property model '{memberPath}' is not connected " +
+                "to the matching source JSON property.");
+        }
+
+        return UpdateExistingProperty(
+            propertyModel,
+            memberValue);
+    }
+
     private static ProjectMutationResult UpdateExistingProperty(
         PropertyModel property,
         JToken propertyValue)

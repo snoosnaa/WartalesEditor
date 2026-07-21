@@ -455,13 +455,8 @@ public sealed class AddCampFacilitiesOperationValidator
         string propertyName,
         ICollection<string> errors)
     {
-        PropertyModel? property =
-            entry.Properties.FirstOrDefault(
-                candidate =>
-                    string.Equals(
-                        candidate.Name,
-                        propertyName,
-                        StringComparison.Ordinal));
+        JToken? property =
+            entry.SourceEntry?[propertyName];
 
         if (property == null)
         {
@@ -471,21 +466,12 @@ public sealed class AddCampFacilitiesOperationValidator
             return;
         }
 
-        if (property.SourceProperty == null)
-        {
-            errors.Add(
-                $"Property '{propertyName}' on item entry " +
-                $"'{entry.Id}' is not connected to source JSON.");
-            return;
-        }
-
-        if (property.SourceProperty.Value.Type !=
-            JTokenType.Object)
+        if (property.Type != JTokenType.Object)
         {
             errors.Add(
                 $"Property '{propertyName}' on item entry " +
                 $"'{entry.Id}' must be a JSON object, but is " +
-                $"'{property.SourceProperty.Value.Type}'.");
+                $"'{property.Type}'.");
         }
     }
 
@@ -493,15 +479,7 @@ public sealed class AddCampFacilitiesOperationValidator
         EntryModel entry,
         string propertyName)
     {
-        PropertyModel? property =
-            entry.Properties.FirstOrDefault(
-                candidate =>
-                    string.Equals(
-                        candidate.Name,
-                        propertyName,
-                        StringComparison.Ordinal));
-
-        return property?.SourceProperty?.Value
+        return entry.SourceEntry?[propertyName]
             as JObject;
     }
 
