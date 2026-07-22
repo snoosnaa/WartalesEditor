@@ -320,6 +320,54 @@ Reserve time after functional completion for runtime polish before finalizing a 
 
 ---
 
+# Lesson 18 — Recover Infrastructure Instead of Patching Features
+
+During development of the transactional content creation platform, merge integration temporarily broke the Add Camp Facilities implementation.
+
+Rather than repairing the individual feature directly, the underlying Project Mutation infrastructure was extended to support reusable object-valued mutations.
+
+Once the infrastructure correctly handled object-valued JSON, multiple higher-level systems immediately benefited:
+
+- ContentCreationService
+- Add Camp Facilities
+- Operation validation
+- Future content creation features
+
+The feature-specific problem disappeared because the underlying architecture became more capable.
+
+**Guideline**
+
+When several features exhibit similar failures, first determine whether the underlying infrastructure should be extended before introducing feature-specific fixes.
+
+Reusable infrastructure generally produces a more maintainable solution than repairing each affected feature independently.
+
+---
+
+# Lesson 19 — Architecture, Implementation, and Verification Are Different Responsibilities
+
+As Wartales Editor grew, separating responsibilities produced better engineering results.
+
+Architecture, implementation, compilation, runtime verification, documentation, and roadmap planning each require different kinds of thinking.
+
+The project now uses a structured workflow where:
+
+- Architecture and long-term design are planned before implementation.
+- Implementation follows the established architecture.
+- Compilation verifies correctness.
+- Runtime testing verifies behavior.
+- Documentation records the completed milestone.
+- Version control captures a verified checkpoint before continuing.
+
+This separation reduced context switching, improved implementation quality, and made larger milestones easier to complete without compromising architectural consistency.
+
+**Guideline**
+
+Treat architecture, implementation, testing, documentation, and source control as distinct phases of every milestone.
+
+Do not consider a milestone complete until all phases have been successfully completed.
+
+---
+
 # Current Philosophy
 
 The project now follows these guiding principles:

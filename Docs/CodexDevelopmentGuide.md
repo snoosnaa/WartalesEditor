@@ -33,8 +33,9 @@ Long-term maintainability always takes priority over short-term implementation s
 
 Before implementing any milestone, read the following documents in order:
 
-1. Architecture.md
-2. CodexDevelopmentGuide.md
+1. ProjectStatus.md
+2. Architecture.md
+3. CodexDevelopmentGuide.md
 
 Architecture.md defines how the editor is built.
 

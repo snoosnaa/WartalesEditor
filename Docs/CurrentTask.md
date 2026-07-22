@@ -2,111 +2,136 @@
 
 ## Current Milestone
 
-**Version 0.8.1 --- Operation Validation & Transaction Framework
-Complete**
+**Version 0.8.1 — Documentation Completion & Roadmap Review**
 
-------------------------------------------------------------------------
+---
 
 # Current Status
 
 The project builds successfully.
 
-The Operation Validation & Transaction Framework has been fully
-implemented, runtime tested, rollback tested, validated, and verified
-in-game.
+The transactional content creation platform has now been fully implemented, recovered after merge integration, runtime tested, regression tested, and verified through extended in-game testing.
 
 Current build status:
 
--   ✅ Build succeeds.
--   ✅ Documentation update in progress.
--   ⏳ Git commit not yet created.
+- ✅ Build succeeds.
+- ✅ Add Camp Facilities verified.
+- ✅ Upgrade All Equipment verified.
+- ✅ Weather modifications verified.
+- ⏳ Documentation updates in progress.
+- ⏳ Documentation commit pending.
 
-------------------------------------------------------------------------
+---
 
 # Recently Completed
 
-## Project Operation Framework
+## Object Mutation Infrastructure
 
--   ProjectOperationService
--   IProjectOperation
--   ProjectOperationResult
--   Unified operation execution pipeline
+Successfully completed:
 
-## Transaction Framework
+- Object-valued mutation support
+- Nested object mutation synchronization
+- Mutation-based rollback support for object containers
+- Object mutation validation
+- ProjectMutationResult enhancements
 
--   Mutation journaling
--   Automatic rollback
--   Rollback of created entries
--   Rollback of created properties
--   Rollback of modified properties
+## Content Creation Recovery
 
-## Operation Validation
+Successfully completed:
 
--   Operation validator provider
--   Operation-specific validation
--   Separation from generic validation
--   Structural property validation refinement
+- ContentCreationService recovery
+- Add Camp Facilities recovery
+- Nested object mutation integration
+- Validator recovery for nested property architecture
+- Idempotence verification
 
-## First Verified Content Creation Feature
+## Gameplay Verification
 
-Successfully implemented and verified:
+Successfully verified:
 
--   Add Camp Facilities
--   In-game recipe unlock
--   Anvil construction and use
--   Apothecary construction and use
--   Blacksmith profession unlock
--   Save compatibility
--   Game load compatibility
+- Add Camp Facilities
+- Anvil construction and use
+- Apothecary Table construction and use
+- Upgrade All Equipment
+- Weather modifications
+- Save / Reload
+- Atomic Undo / Redo
+- Extended gameplay stability
 
-------------------------------------------------------------------------
+---
 
 # Current Objective
 
-1.  Finish documentation.
-2.  Create Git commit.
-3.  Push to GitHub.
-4.  Begin Upgrade All Equipment.
+1. Complete documentation updates.
+2. Review all documentation for consistency.
+3. Perform a final Visual Studio build.
+4. Commit documentation changes.
+5. Push to GitHub.
+6. Conduct a complete roadmap review.
+7. Organize remaining features into logical implementation milestones.
 
-------------------------------------------------------------------------
+---
 
-# Next Planned Milestones
+# Next Planned Milestone
 
-## 1. Upgrade All Equipment
+## Roadmap Review & Planning
 
-Reuse:
+The next development session will focus on planning rather than implementation.
 
--   ProjectOperationService
--   ProjectMutationService
--   Transaction rollback
--   Operation validation
--   Existing editing infrastructure
+Objectives:
 
-## 2. Additional Content Creation
+- Review every remaining planned feature.
+- Remove obsolete roadmap items.
+- Group related features into implementation milestones.
+- Identify infrastructure reuse opportunities.
+- Prioritize milestones leading toward Version 1.0.
 
--   Additional faction recipes
--   Future camp content
--   NPC creation
--   Profession creation
+Expected milestone groups include:
 
-## 3. Investigation
+### Content Creation
 
--   Weather frequency control
+- Additional camp facilities
+- Additional camp content
+- NPC creation
+- Profession creation
+- Additional gameplay objects
 
-## 4. Engineering
+### Gameplay Tweaks
 
--   Automated transaction tests
--   Byte-for-byte CDB formatting preservation
+- Starting resources
+- Starting knowledge unlocks
+- Path challenge balancing
+- Economy adjustments
+- Additional weather options
+- Difficulty adjustments
 
-------------------------------------------------------------------------
+### Editor Improvements
+
+- Validation expansion
+- Batch operations
+- Search improvements
+- Additional property editors
+- Performance improvements
+
+### Long-Term Features
+
+- Merge Preview
+- Community sharing after Version 1.0
+- In-game profile credits
+- Byte-for-byte CDB formatting preservation
+
+---
 
 # Build Status
 
-✅ Last build successful
+✅ Last Visual Studio build successful
 
-------------------------------------------------------------------------
+✅ Latest Codex build successful
+
+✅ Extended in-game verification successful
+
+---
 
 # Next Session
 
-Begin implementation of **Upgrade All Equipment** using the completed
-operation framework.
+Conduct a complete roadmap review, reorganize future development into implementation milestones, and prepare the next feature milestone for implementation using the established ChatGPT and Codex workflow.

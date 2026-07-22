@@ -70,6 +70,11 @@ The format is inspired by Keep a Changelog and adapted for this project.
 -   Corrected validation handling for structurally added properties.
 -   Eliminated the remaining parallel execution path for Add Camp
     Facilities.
+- Recovered ContentCreationService after merge corruption.
+- Added reusable object-valued mutation support to ProjectMutationService.
+- Updated Add Camp Facilities to use object mutation infrastructure.
+- Updated Add Camp Facilities validation for nested property architecture.
+- Corrected object mutation handling for props, tool, and icon containers.
 
 ## Verified
 
@@ -85,13 +90,24 @@ Successfully verified:
 -   Correct unlocking of the Blacksmith profession.
 -   End-to-end operation pipeline from editor to gameplay.
 -   Successful builds throughout implementation.
+- Object-valued mutation infrastructure.
+- Nested object mutation rollback.
+- Nested object mutation validation.
+- Add Camp Facilities idempotence.
+- Atomic Undo / Redo after object mutations.
+- Save / Reload after object mutations.
+- Upgrade All Equipment regression testing.
+- Extended in-game verification of Add Camp Facilities.
+- Extended in-game verification of Upgrade All Equipment.
+- Extended in-game verification of weather modifications.
 
 ## Notes
 
-This milestone marks the transition from a safe data editor to a
-transactional content creation platform. The first complete content
-creation feature was implemented, validated, exercised through rollback
-testing, and verified in-game using normal gameplay progression.
+This milestone completed the transition from reconstruction-based structural editing to mutation-based transactional content creation.
+
+During final integration, the object mutation layer was extended to support nested JSON objects while preserving rollback, validation, and atomic operation history.
+
+Following recovery of the ContentCreationService and operation validator, all major content creation features were revalidated through extended in-game testing, confirming stable operation of Add Camp Facilities, Upgrade All Equipment, and gameplay weather modifications.
 
 ------------------------------------------------------------------------
 

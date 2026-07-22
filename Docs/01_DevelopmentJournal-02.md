@@ -379,92 +379,228 @@ without requiring additional editing systems.
 
 ## Summary
 
-Completed the Operation Validation & Transaction Framework milestone.
+Completed the Operation Framework, Transaction Framework, and Verified Content Creation milestone.
 
-This milestone transformed Wartales Editor from a safe editing platform
-into a transactional content creation platform capable of introducing
-new gameplay content while preserving project integrity.
+This milestone transformed Wartales Editor from a safe editing platform into a reusable transactional content creation platform capable of safely introducing new gameplay content while preserving project integrity.
 
-Rather than continuing to build individual content creation features
-directly, development paused to establish reusable architecture that
-every future operation can share.
+During final integration, additional work was required to recover object-valued mutation support following merge conflicts introduced while integrating the nested property architecture.
+
+Rather than introducing feature-specific workarounds, the existing Project Mutation infrastructure was extended to support reusable object mutation, preserving the architectural goal of a single mutation pipeline for all future content creation features.
+
+The milestone concluded with successful recovery of the content creation pipeline, validator updates, extended editor testing, and several hours of successful in-game verification.
+
+---
 
 ## Completed
 
 ### Project Operation Architecture
 
--   Introduced ProjectOperationService.
--   Established IProjectOperation as the common operation contract.
--   Added ProjectOperationResult.
--   Unified operation execution.
+Completed:
+
+- ProjectOperationService
+- IProjectOperation
+- ProjectOperationResult
+- Unified operation execution pipeline
+
+Operations now execute exclusively through reusable project operations.
+
+---
 
 ### Transaction Framework
 
--   Implemented transaction orchestration.
--   Added mutation journaling.
--   Added rollback for:
-    -   created entries
-    -   created properties
-    -   modified properties
--   Eliminated project reconstruction in favor of mutation-based
-    rollback.
+Completed:
+
+- Transaction orchestration
+- Mutation journaling
+- Rollback for:
+  - created entries
+  - created properties
+  - modified properties
+  - object-valued mutations
+- Mutation-based rollback
+- Elimination of project reconstruction
+
+Rollback now restores project state entirely through mutation records while preserving modification tracking and editor state.
+
+---
+
+### Project Mutation Layer
+
+Expanded the mutation framework to support nested object mutations.
+
+Implemented:
+
+- Object-valued mutation support
+- Nested JObject synchronization
+- Reusable object mutation API
+- Object mutation rollback
+- Nested PropertyModel synchronization
+- Preservation of existing JSON object instances
+- Preservation of unknown JSON members
+
+This infrastructure is now reusable by future content creation operations.
+
+---
 
 ### Validation
 
--   Introduced operation-specific validators.
--   Separated generic validation from operation validation.
--   Refined structural property validation so newly created properties
-    are validated appropriately without weakening generic token-type
-    validation.
+Completed:
+
+- Operation-specific validators
+- Separation of generic validation from operation validation
+- Validation updates for nested property architecture
+- Object container validation
+- Structural validation refinement
+
+Validation continues to verify project state without mutating project data.
+
+---
 
 ### Content Creation
 
--   Completed AddCampFacilitiesOperation.
--   Integrated it into the Project Operation pipeline.
--   Removed remaining parallel execution paths.
+Completed:
+
+- Recovery of ContentCreationService
+- Recovery of Add Camp Facilities
+- Integration with object mutation infrastructure
+- Removal of obsolete object mutation helpers
+- Reuse of ProjectMutationService for object containers
+
+The completed implementation now reuses the same mutation pipeline for both scalar and object-valued mutations.
+
+---
 
 ## Runtime Testing
 
-Verified:
+Editor verification successfully confirmed:
 
--   Forced validation failure correctly triggered rollback.
--   Rollback restored project cleanliness.
--   Save validation succeeded.
--   Modified CDB loaded successfully in Wartales.
--   Camp recipes unlocked through normal gameplay.
--   Anvil could be constructed and used.
--   Blacksmith profession unlocked correctly.
--   Apothecary functionality verified.
--   Successful builds after every implementation stage.
+- Successful project builds
+- Object mutation infrastructure
+- Nested object mutation
+- Transaction rollback
+- Validation
+- Atomic Undo / Redo
+- Save validation
+- Save / Reload
+- Idempotence
+- Upgrade All Equipment regression testing
+- Add Camp Facilities regression testing
+
+Extended in-game verification confirmed:
+
+- Successful loading of modified data.
+- Stable gameplay over multiple hours.
+- Weather modifications operating as expected.
+- Add Camp Facilities functioning correctly.
+- Successful Anvil construction.
+- Successful Apothecary Table construction.
+- Blacksmith functionality.
+- Alchemy functionality.
+- Upgrade All Equipment functioning correctly.
+- Save / Reload compatibility.
+- No regressions introduced by the recovered mutation architecture.
 
 ## Major Decisions
 
--   Build reusable operation infrastructure before additional content
-    creation features.
--   Keep generic validation generic.
--   Validate operation-specific requirements within operation
-    validators.
--   Roll back mutations rather than rebuilding ProjectModel.
--   Distinguish structural property creation from property modification.
--   Complete in-game verification before closing the milestone.
+Several architectural decisions made during this milestone will guide future development.
+
+- Continue extending existing infrastructure rather than introducing parallel implementations.
+- Extend ProjectMutationService to support reusable object-valued mutation rather than implementing feature-specific object editing.
+- Preserve EntryModel.SourceEntry as the authoritative source for existing JSON containers.
+- Preserve existing JObject instances whenever object-valued properties are updated.
+- Keep PropertyModel.IsModified as the single source of truth for modification state.
+- Preserve mutation-based rollback and prohibit project reconstruction.
+- Keep operation validation read-only.
+- Validate object containers through the underlying JSON document while validating scalar values through PropertyModels.
+- Preserve public APIs wherever practical while extending infrastructure.
+- Complete extended in-game verification before considering the milestone complete.
+- Introduce a structured ChatGPT and Codex development workflow to separate architectural planning from implementation while maintaining a single architectural authority.
+
+The recovery work reinforced the importance of infrastructure-first development.
+
+Rather than repairing individual features independently, the project now possesses reusable object mutation capabilities that future content creation operations can leverage without introducing duplicate implementations.
+
+---
 
 ## Milestone Achieved
 
-**Operation Validation & Transaction Framework**
+**Version 0.8.1 — Operation Framework & Verified Content Creation**
 
-The editor now supports safe, reusable, transactional content creation
-with automatic rollback and verified in-game operation.
+Wartales Editor now provides a mature transactional content creation platform capable of safely introducing and validating new gameplay content.
+
+The editor now supports:
+
+- Reusable Project Operations
+- Transaction Framework
+- Mutation-based rollback
+- Nested property architecture
+- Object-valued mutation
+- Operation-specific validation
+- Reusable Content Creation infrastructure
+- Safe gameplay modification
+- Verified in-game content creation
+
+This milestone concludes the transition from building foundational infrastructure to leveraging that infrastructure for future gameplay features.
+
+---
+
+## Development Workflow
+
+This milestone also established the long-term development workflow for the project.
+
+### ChatGPT
+
+Primary responsibilities:
+
+- Software architecture
+- Milestone planning
+- Documentation
+- Architectural review
+- Runtime testing plans
+- Long-term roadmap management
+
+### Codex
+
+Primary responsibilities:
+
+- Project implementation
+- Complete file generation
+- Compilation
+- Architectural preservation
+- Infrastructure implementation
+
+Every milestone now follows the same verification pipeline:
+
+1. Architectural planning.
+2. Codex implementation.
+3. Codex compilation.
+4. Visual Studio build verification.
+5. Runtime testing.
+6. Documentation updates.
+7. Git commit.
+8. Git push.
+
+No milestone is considered complete until successful runtime verification has been performed.
+
+---
 
 ## Next Focus
 
-Begin implementing **Upgrade All Equipment** using the completed
-operation framework.
+With the transactional content creation platform complete and verified, development now pauses implementation work in favor of a comprehensive roadmap review.
 
-Future operations will reuse:
+The next milestone will:
 
--   ProjectOperationService
--   ProjectMutationService
--   Transaction rollback
--   Operation validation
--   Generic validation
--   Existing editing infrastructure
+- Review every planned feature.
+- Remove obsolete roadmap items.
+- Group remaining work into logical implementation milestones.
+- Identify opportunities to reuse the completed infrastructure.
+- Prioritize development leading toward Version 1.0.
+
+Future feature groups are expected to include:
+
+- Additional Content Creation
+- Gameplay Tweaks
+- Editor Improvements
+- Long-Term Platform Features
+
+This roadmap review marks the transition from infrastructure construction to disciplined feature expansion built upon the now-stable architecture.
