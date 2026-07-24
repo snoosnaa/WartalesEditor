@@ -5,7 +5,7 @@
         MinWidth="520" MinHeight="360" SizeToContent="Manual"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False">
-    <Grid Margin="20">
+    <Grid Margin="{StaticResource GameplayDialogOuterMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -34,8 +34,8 @@
                           SelectedItem="{Binding SelectedPreset}"
                           DisplayMemberPath="Name" MinWidth="220"
                           HorizontalAlignment="Left"/>
-                <Border Background="#FFF7E6" BorderBrush="#E0B35B"
-                        BorderThickness="1" Padding="12" Margin="0,14,0,0">
+                <Border Style="{StaticResource InformationalPanelStyle}"
+                        Margin="0,14,0,0">
                     <TextBlock Text="{Binding PreviewText}" TextWrapping="Wrap"/>
                 </Border>
             </StackPanel>
@@ -47,9 +47,9 @@
 
         <StackPanel Grid.Row="4" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Apply" Width="100" Margin="0,0,8,0"
+            <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}"
                     IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
-            <Button Content="Close" Width="90" Click="CloseButton_Click"/>
+            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}" Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>

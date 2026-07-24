@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using WartalesEditor.Services;
 using WartalesEditor.Services.Operations;
 using WartalesEditor.Services.Validation;
@@ -10,6 +13,17 @@ namespace WartalesEditor;
 
 public partial class MainWindow : Window
 {
+    private const int WmDpiChanged =
+        0x02E0;
+
+    private const int WmExitSizeMove =
+        0x0232;
+
+    private const uint MonitorDefaultToNearest =
+        0x00000002;
+
+    private HwndSource? windowSource;
+
     public MainViewModel ViewModel { get; }
 
     public MainWindow()
@@ -115,36 +129,189 @@ public partial class MainWindow : Window
         object? sender,
         EventArgs e)
     {
-        Rect workArea =
-            SystemParameters.WorkArea;
+        IntPtr handle =
+            new WindowInteropHelper(this).Handle;
+
+        windowSource =
+            HwndSource.FromHwnd(handle);
+        windowSource?.AddHook(
+            WindowMessageHook);
+
+        FitToNearestMonitor(
+            centerWindow: true);
+    }
+
+    private IntPtr WindowMessageHook(
+        IntPtr hwnd,
+        int message,
+        IntPtr wParam,
+        IntPtr lParam,
+        ref bool handled)
+    {
+        if (message == WmExitSizeMove ||
+            message == WmDpiChanged)
+        {
+            Dispatcher.BeginInvoke(
+                new Action(() =>
+                    FitToNearestMonitor(
+                        centerWindow: false)));
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private void FitToNearestMonitor(
+        bool centerWindow)
+    {
+        if (WindowState !=
+            WindowState.Normal)
+        {
+            return;
+        }
+
+        Rect? workArea =
+            GetNearestMonitorWorkArea();
+
+        if (workArea == null)
+        {
+            return;
+        }
+
+        Rect area =
+            workArea.Value;
 
         MaxWidth =
-            workArea.Width;
-
+            area.Width;
         MaxHeight =
-            workArea.Height;
+            area.Height;
 
         Width =
             Math.Min(
                 Width,
-                workArea.Width);
-
+                area.Width);
         Height =
             Math.Min(
                 Height,
-                workArea.Height);
+                area.Height);
+
+        if (centerWindow ||
+            double.IsNaN(Left) ||
+            double.IsNaN(Top))
+        {
+            Left =
+                area.Left +
+                Math.Max(
+                    0,
+                    (area.Width - Width) / 2);
+            Top =
+                area.Top +
+                Math.Max(
+                    0,
+                    (area.Height - Height) / 2);
+
+            return;
+        }
 
         Left =
-            workArea.Left +
             Math.Max(
-                0,
-                (workArea.Width - Width) / 2);
-
+                area.Left,
+                Math.Min(
+                    Left,
+                    area.Right - Width));
         Top =
-            workArea.Top +
             Math.Max(
-                0,
-                (workArea.Height - Height) / 2);
+                area.Top,
+                Math.Min(
+                    Top,
+                    area.Bottom - Height));
+    }
+
+    private Rect? GetNearestMonitorWorkArea()
+    {
+        IntPtr handle =
+            new WindowInteropHelper(this).Handle;
+        IntPtr monitor =
+            MonitorFromWindow(
+                handle,
+                MonitorDefaultToNearest);
+
+        if (monitor == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        MonitorInfo monitorInfo =
+            new()
+            {
+                Size =
+                    Marshal.SizeOf<MonitorInfo>()
+            };
+
+        if (!GetMonitorInfo(
+                monitor,
+                ref monitorInfo))
+        {
+            return null;
+        }
+
+        if (windowSource?.CompositionTarget == null)
+        {
+            return null;
+        }
+
+        Point topLeft =
+            windowSource.CompositionTarget
+                .TransformFromDevice.Transform(
+                    new Point(
+                        monitorInfo.WorkArea.Left,
+                        monitorInfo.WorkArea.Top));
+        Point bottomRight =
+            windowSource.CompositionTarget
+                .TransformFromDevice.Transform(
+                    new Point(
+                        monitorInfo.WorkArea.Right,
+                        monitorInfo.WorkArea.Bottom));
+
+        return new Rect(
+            topLeft,
+            bottomRight);
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(
+        IntPtr hwnd,
+        uint flags);
+
+    [DllImport(
+        "user32.dll",
+        CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(
+        IntPtr monitor,
+        ref MonitorInfo monitorInfo);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+
+        public NativeRect MonitorArea;
+
+        public NativeRect WorkArea;
+
+        public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+
+        public int Top;
+
+        public int Right;
+
+        public int Bottom;
     }
 
     private void Window_PreviewKeyDown(
@@ -206,7 +373,42 @@ public partial class MainWindow : Window
                 }
 
                 break;
+
+            case Key.F:
+                if (!ViewModel.HasProject)
+                {
+                    break;
+                }
+
+                ViewModel
+                    .ShowDetailedEditorWorkspaceCommand
+                    .Execute(null);
+
+                Dispatcher.BeginInvoke(
+                    new Action(() =>
+                    {
+                        SearchBox.Focus();
+                        SearchBox.SelectAll();
+                    }));
+
+                e.Handled = true;
+                break;
         }
+    }
+
+    private void PropertiesListView_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (PropertiesListView.SelectedItem == null)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            new Action(() =>
+                PropertiesListView.ScrollIntoView(
+                    PropertiesListView.SelectedItem)));
     }
 
     private void ExitMenuItem_Click(

@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
 
-    <Grid Margin="16">
+    <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -27,11 +27,10 @@
         <StackPanel Grid.Row="0">
 
             <TextBlock Text="{Binding Header}"
-                       FontSize="20"
-                       FontWeight="SemiBold"/>
+                       Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
 
             <TextBlock Margin="0,4,0,0"
-                       Foreground="DimGray"
+                       Style="{StaticResource SupportingTextStyle}"
                        Text="{Binding StatusText}"/>
 
         </StackPanel>
@@ -175,7 +174,7 @@
                       SelectionUnit="FullRow"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      AlternatingRowBackground="#FFF7F7F7">
+                      AlternatingRowBackground="{StaticResource UtilityAlternatingRowBackgroundBrush}">
 
                 <DataGrid.Columns>
 
@@ -230,12 +229,12 @@
             </DataGrid>
 
             <!-- Empty state -->
-            <Border Padding="24"
-                    Background="White">
+            <Border>
 
                 <Border.Style>
 
-                    <Style TargetType="Border">
+                    <Style TargetType="Border"
+                           BasedOn="{StaticResource EmptyStateContainerStyle}">
 
                         <Setter Property="Visibility"
                                 Value="Collapsed"/>
@@ -262,7 +261,7 @@
                     <TextBlock HorizontalAlignment="Center"
                                FontSize="22"
                                FontWeight="SemiBold"
-                               Foreground="DarkGreen"
+                               Foreground="{StaticResource ValidationSuccessTextBrush}"
                                Text="Validation passed"/>
 
                     <TextBlock Margin="0,8,0,0"
@@ -272,7 +271,7 @@
 
                     <TextBlock Margin="0,5,0,0"
                                HorizontalAlignment="Center"
-                               Foreground="DimGray"
+                               Foreground="{StaticResource SupportingTextBrush}"
                                Text="The current project passed all registered validation rules."/>
 
                 </StackPanel>
@@ -286,32 +285,28 @@
                    LastChildFill="False">
 
             <TextBlock VerticalAlignment="Center"
-                       Foreground="DimGray"
+                       Foreground="{StaticResource SupportingTextBrush}"
                        Text="Double-click an issue or choose Navigate to locate it in the editor."/>
 
             <StackPanel DockPanel.Dock="Right"
                         Orientation="Horizontal">
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="0,0,8,0"
-                        Padding="10,5"
                         Command="{Binding NavigateCommand}"
                         Content="Navigate"/>
 
-                <Button Width="110"
+                <Button Style="{StaticResource UtilityWideActionButtonStyle}"
                         Margin="0,0,8,0"
-                        Padding="10,5"
                         Command="{Binding RerunValidationCommand}"
                         Content="Re-run"/>
 
-                <Button Width="110"
+                <Button Style="{StaticResource UtilityWideActionButtonStyle}"
                         Margin="0,0,8,0"
-                        Padding="10,5"
                         Command="{Binding CopyResultsCommand}"
                         Content="Copy Results"/>
 
-                <Button Width="100"
-                        Padding="10,5"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Content="Close"
                         IsCancel="True"
                         Click="OnCloseButtonClick"/>

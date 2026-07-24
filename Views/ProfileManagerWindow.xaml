@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="True">
 
-    <Grid Margin="16">
+    <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,11 +22,10 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock FontSize="20"
-                       FontWeight="SemiBold"
+            <TextBlock Style="{StaticResource UtilityMajorHeadingTextStyle}"
                        Text="{Binding Header}"/>
             <TextBlock Margin="0,4,0,0"
-                       Foreground="DimGray"
+                       Style="{StaticResource SupportingTextStyle}"
                        Text="Browse and manage profiles stored in the Wartales Editor profile library."/>
         </StackPanel>
 
@@ -34,28 +33,24 @@
                    LastChildFill="False">
 
             <Button DockPanel.Dock="Right"
-                    Width="100"
-                    Padding="10,5"
+                    Style="{StaticResource UtilityActionButtonStyle}"
                     Command="{Binding RefreshCommand}"
                     Content="Refresh"/>
 
             <StackPanel DockPanel.Dock="Left"
                         Orientation="Horizontal">
 
-                <Button Width="100"
-                        Padding="10,5"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Command="{Binding CreateCommand}"
                         Content="New"/>
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
-                        Padding="10,5"
                         Command="{Binding RenameCommand}"
                         Content="Rename"/>
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
-                        Padding="10,5"
                         Command="{Binding DuplicateCommand}"
                         Content="Duplicate"/>
 
@@ -68,23 +63,20 @@
                         Command="{Binding ApplyCommand}"
                         Content="Apply"/>
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
-                        Padding="10,5"
                         Command="{Binding ImportCommand}"
                         Content="Import"/>
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
-                        Padding="10,5"
                         Command="{Binding ExportCommand}"
                         Content="Export"/>
 
                 <Separator Margin="10,0"
                            Width="1"/>
 
-                <Button Width="100"
-                        Padding="10,5"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Command="{Binding DeleteCommand}"
                         Content="Delete"/>
 
@@ -118,7 +110,7 @@
                       SelectionUnit="FullRow"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      AlternatingRowBackground="#FFF7F7F7"
+                      AlternatingRowBackground="{StaticResource UtilityAlternatingRowBackgroundBrush}"
                       MouseDoubleClick="OnProfileGridMouseDoubleClick"
                       PreviewKeyDown="OnProfileGridPreviewKeyDown">
 
@@ -256,7 +248,7 @@
                         <TextBlock FontWeight="SemiBold"
                                    Text="Description"/>
                         <TextBlock Margin="0,5,0,0"
-                                   Foreground="DimGray"
+                                   Foreground="{StaticResource SupportingTextBrush}"
                                    Text="{Binding SelectedProfileDescription}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
@@ -311,12 +303,11 @@
 
             </Border>
 
-            <Border Grid.ColumnSpan="3"
-                    Padding="24"
-                    Background="White">
+            <Border Grid.ColumnSpan="3">
 
                 <Border.Style>
-                    <Style TargetType="Border">
+                    <Style TargetType="Border"
+                           BasedOn="{StaticResource EmptyStateContainerStyle}">
                         <Setter Property="Visibility"
                                 Value="Collapsed"/>
                         <Style.Triggers>
@@ -332,24 +323,21 @@
                 <StackPanel HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                     <TextBlock HorizontalAlignment="Center"
-                               FontSize="18"
-                               FontWeight="SemiBold"
+                               Style="{StaticResource EmptyStateHeadingTextStyle}"
                                Text="No mod profiles found"/>
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
-                               Foreground="DimGray"
+                               Style="{StaticResource EmptyStateSupportingTextStyle}"
                                Text="Import a profile or save one to the Wartales Editor profile library."/>
 
                     <StackPanel Margin="0,16,0,0"
                                 HorizontalAlignment="Center"
                                 Orientation="Horizontal">
-                        <Button Width="110"
-                                Padding="10,5"
+                        <Button Style="{StaticResource UtilityWideActionButtonStyle}"
                                 Command="{Binding ImportCommand}"
                                 Content="Import"/>
-                        <Button Width="110"
+                        <Button Style="{StaticResource UtilityWideActionButtonStyle}"
                                 Margin="8,0,0,0"
-                                Padding="10,5"
                                 Command="{Binding RefreshCommand}"
                                 Content="Refresh"/>
                     </StackPanel>
@@ -362,12 +350,11 @@
         <DockPanel Grid.Row="6"
                    LastChildFill="True">
             <Button DockPanel.Dock="Right"
-                    Width="100"
-                    Padding="10,5"
+                    Style="{StaticResource UtilityActionButtonStyle}"
                     Content="Close"
                     Click="OnCloseButtonClick"/>
             <TextBlock VerticalAlignment="Center"
-                       Foreground="DimGray"
+                       Foreground="{StaticResource SupportingTextBrush}"
                        Text="{Binding Status}"/>
         </DockPanel>
 

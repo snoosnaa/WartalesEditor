@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
 
-    <Grid Margin="16">
+    <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="12"/>
@@ -21,11 +21,10 @@
         <!-- Header -->
         <StackPanel Grid.Row="0">
             <TextBlock Text="{Binding Header}"
-                       FontSize="20"
-                       FontWeight="SemiBold"/>
+                       Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
 
             <TextBlock Margin="0,4,0,0"
-                       Foreground="DimGray"
+                       Style="{StaticResource SupportingTextStyle}"
                        Text="Review all properties that currently differ from the saved baseline."/>
         </StackPanel>
 
@@ -47,7 +46,7 @@
                       SelectionUnit="FullRow"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
-                      AlternatingRowBackground="#FFF7F7F7">
+                      AlternatingRowBackground="{StaticResource UtilityAlternatingRowBackgroundBrush}">
 
                 <!-- Category and Setting groups -->
                 <DataGrid.GroupStyle>
@@ -82,7 +81,7 @@
                                                                       Mode=OneWay}"/>
 
                                                             <TextBlock Margin="8,0,0,0"
-                                                       Foreground="DimGray">
+                                                       Foreground="{StaticResource SupportingTextBrush}">
 
                                                 <Run Text="("/>
 
@@ -142,7 +141,7 @@
                                                                       Mode=OneWay}"/>
 
                                                             <TextBlock Margin="8,0,0,0"
-                                                       Foreground="DimGray">
+                                                       Foreground="{StaticResource SupportingTextBrush}">
 
                                                 <Run Text="("/>
 
@@ -224,11 +223,11 @@
             </DataGrid>
 
             <!-- Empty state -->
-            <Border Padding="24"
-                    Background="White">
+            <Border>
 
                 <Border.Style>
-                    <Style TargetType="Border">
+                    <Style TargetType="Border"
+                           BasedOn="{StaticResource EmptyStateContainerStyle}">
 
                         <Setter Property="Visibility"
                                 Value="Collapsed"/>
@@ -250,13 +249,12 @@
                             VerticalAlignment="Center">
 
                     <TextBlock HorizontalAlignment="Center"
-                               FontSize="18"
-                               FontWeight="SemiBold"
+                               Style="{StaticResource EmptyStateHeadingTextStyle}"
                                Text="No modified properties"/>
 
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
-                               Foreground="DimGray"
+                               Style="{StaticResource EmptyStateSupportingTextStyle}"
                                Text="The current project matches its saved baseline."/>
 
                 </StackPanel>
@@ -270,21 +268,19 @@
                    LastChildFill="False">
 
             <TextBlock VerticalAlignment="Center"
-                       Foreground="DimGray"
+                       Foreground="{StaticResource SupportingTextBrush}"
                        Text="Select a change and choose Navigate to locate it in the editor."/>
 
             <StackPanel DockPanel.Dock="Right"
                         Orientation="Horizontal">
 
-                <Button Width="100"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="0,0,8,0"
-                        Padding="10,5"
                         Command="{Binding NavigateCommand}"
                         Content="Navigate"
                         IsDefault="True"/>
 
-                <Button Width="100"
-                        Padding="10,5"
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Content="Close"
                         Click="OnCloseButtonClick"/>
 

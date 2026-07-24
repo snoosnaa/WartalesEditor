@@ -130,7 +130,7 @@
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
-                     Background="Gainsboro"
+                     Background="{StaticResource ReadOnlyEditorBackgroundBrush}"
                      Text="{Binding Value}"/>
 
         </DataTemplate>
@@ -140,7 +140,7 @@
 
             <TextBox Width="330"
                      IsReadOnly="True"
-                     Background="Gainsboro"
+                     Background="{StaticResource ReadOnlyEditorBackgroundBrush}"
                      Text="{Binding Value}"/>
 
         </DataTemplate>
@@ -160,6 +160,7 @@
 
         <Grid.RowDefinitions>
 
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -210,6 +211,18 @@
 
             <MenuItem Header="_View">
 
+                <MenuItem Header="_Gameplay Tools"
+                          IsCheckable="True"
+                          IsChecked="{Binding IsGameplayToolsWorkspace, Mode=OneWay}"
+                          Command="{Binding ShowGameplayToolsWorkspaceCommand}"/>
+
+                <MenuItem Header="_Detailed Editor"
+                          IsCheckable="True"
+                          IsChecked="{Binding IsDetailedEditorWorkspace, Mode=OneWay}"
+                          Command="{Binding ShowDetailedEditorWorkspaceCommand}"/>
+
+                <Separator/>
+
                 <MenuItem Header="_Change Summary"
                           Command="{Binding ShowChangeSummaryCommand}"/>
 
@@ -244,67 +257,6 @@
                 <MenuItem Header="_Validate Project"
                           Command="{Binding ValidateProjectCommand}"
                           ToolTip="Run the validation framework against the current project."/>
-
-                <Separator/>
-
-                <MenuItem Header="_Content Creation">
-
-                    <MenuItem Header="Add Camp Facilities"
-                              Command="{Binding ContentCreationCommand}"
-                              CommandParameter="{x:Static services:ContentCreationOperation.AddCampFacilities}"
-                              ToolTip="Enable the Anvil and Apothecary Table and add their Workshop recipes."/>
-
-                    <Separator/>
-
-                    <MenuItem Header="Upgrade All Equipment"
-                              Command="{Binding ContentCreationCommand}"
-                              CommandParameter="{x:Static services:ContentCreationOperation.UpgradeAllEquipment}"
-                              ToolTip="Allow normal obtainable equipment to be upgraded at the Brotherhood Training Grounds."/>
-
-                </MenuItem>
-
-                <MenuItem Header="_Gameplay Tools">
-
-                    <MenuItem Header="XP Progression..."
-                              Command="{Binding GameplayProgressionCommand}"
-                              ToolTip="Configure character and profession XP requirements with percentage controls and live previews."/>
-
-                    <MenuItem Header="Starting Resources..."
-                              Command="{Binding StartingResourcesCommand}"
-                              ToolTip="Add extra supplies to every standard new campaign start."/>
-
-                    <Separator/>
-
-                    <MenuItem Header="Volunteer Trait..."
-                              Command="{Binding PartyEconomyCommand}"
-                              CommandParameter="{x:Static models:ProgressionType.VolunteerWages}"
-                              ToolTip="Configure the wage reduction granted by the Volunteer trait."/>
-
-                    <MenuItem Header="Valour Points..."
-                              Command="{Binding PartyEconomyCommand}"
-                              CommandParameter="{x:Static models:ProgressionType.ValourPoints}"
-                              ToolTip="Configure base maximum Valour and Valour restored after rest."/>
-
-                    <MenuItem Header="Carrying Capacity..."
-                              Command="{Binding PartyEconomyCommand}"
-                              CommandParameter="{x:Static models:ProgressionType.CarryingCapacity}"
-                              ToolTip="Configure saddlebags and pony starting carrying capacity."/>
-
-                    <Separator/>
-
-                    <MenuItem Header="Overworld Movement Speed..."
-                              Command="{Binding OverworldMovementSpeedCommand}"
-                              ToolTip="Choose how quickly your party travels across the world map."/>
-
-                    <MenuItem Header="Rain Frequency..."
-                              Command="{Binding RainFrequencyCommand}"
-                              ToolTip="Choose how often ordinary rain occurs across supported regions."/>
-
-                </MenuItem>
-
-                <MenuItem Header="_Developer Tools"
-                          IsEnabled="False"
-                          ToolTip="Developer diagnostics will be added when needed."/>
 
             </MenuItem>
 
@@ -372,6 +324,13 @@
                 Change Summary
             </Button>
 
+            <Button Name="ValidateProjectButton"
+                    Width="130"
+                    Margin="5"
+                    Command="{Binding ValidateProjectCommand}">
+                Validate Project
+            </Button>
+
             <Button Name="ProfileManagerButton"
                     Width="130"
                     Margin="5"
@@ -381,8 +340,174 @@
 
         </ToolBar>
 
+        <!-- Workspace selectors -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Margin="20,6,20,6">
+
+            <RadioButton Content="Gameplay Tools"
+                         GroupName="MainWorkspace"
+                         Style="{StaticResource WorkspaceSelectorStyle}"
+                         IsChecked="{Binding IsGameplayToolsWorkspace, Mode=OneWay}"
+                         Command="{Binding ShowGameplayToolsWorkspaceCommand}"/>
+
+            <RadioButton Content="Detailed Editor"
+                         GroupName="MainWorkspace"
+                         Style="{StaticResource WorkspaceSelectorStyle}"
+                         IsChecked="{Binding IsDetailedEditorWorkspace, Mode=OneWay}"
+                         Command="{Binding ShowDetailedEditorWorkspaceCommand}"/>
+
+        </StackPanel>
+
+        <!-- No-project welcome state -->
+        <Grid Grid.Row="3"
+              Grid.RowSpan="3"
+              Margin="{StaticResource MainWorkspaceMargin}"
+              Visibility="{Binding ShowWelcomeState,
+                                   Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        MaxWidth="560">
+
+                <TextBlock Text="Open a Wartales data.cdb file to begin"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
+
+                <TextBlock Margin="0,10,0,0"
+                           Text="Open your extracted data.cdb file to access Gameplay Tools and the Detailed Editor. Your changes are tracked automatically and can be reviewed before saving."
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Style="{StaticResource SupportingTextStyle}"/>
+
+                <StackPanel Margin="0,20,0,0"
+                            HorizontalAlignment="Center"
+                            Orientation="Horizontal">
+                    <Button Content="Open"
+                            Style="{StaticResource UtilityActionButtonStyle}"
+                            Command="{Binding OpenCommand}"/>
+                    <Button Content="Profile Manager"
+                            Width="130"
+                            Margin="8,0,0,0"
+                            Padding="10,5"
+                            Command="{Binding ShowProfileManagerCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Gameplay Tools workspace -->
+        <ScrollViewer Grid.Row="3"
+                      Grid.RowSpan="3"
+                      Margin="{StaticResource MainWorkspaceMargin}"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsGameplayToolsAvailable,
+                                           Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Margin="{StaticResource DashboardColumnSpacing}">
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Starting Game"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="Starting Resources"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding StartingResourcesCommand}"
+                                    ToolTip="Add extra supplies to every standard new campaign start."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Progression"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="XP Progression"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayProgressionCommand}"
+                                    ToolTip="Configure character and profession XP requirements."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Camp &amp; Equipment"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="Add Camp Facilities"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding ContentCreationCommand}"
+                                    CommandParameter="{x:Static services:ContentCreationOperation.AddCampFacilities}"
+                                    ToolTip="Enable the Anvil and Apothecary Table and add their Workshop recipes."/>
+                            <Button Content="Upgrade All Equipment"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding ContentCreationCommand}"
+                                    CommandParameter="{x:Static services:ContentCreationOperation.UpgradeAllEquipment}"
+                                    ToolTip="Allow obtainable equipment to be upgraded at the Brotherhood Training Grounds."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Party"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="Volunteer Trait"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding PartyEconomyCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.VolunteerWages}"
+                                    ToolTip="Configure the wage reduction granted by the Volunteer trait."/>
+                            <Button Content="Valour Points"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding PartyEconomyCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.ValourPoints}"
+                                    ToolTip="Configure base maximum Valour and Valour restored after rest."/>
+                            <Button Content="Carrying Capacity"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding PartyEconomyCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.CarryingCapacity}"
+                                    ToolTip="Configure saddlebags and pony starting carrying capacity."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="World"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="Movement Speed"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding OverworldMovementSpeedCommand}"
+                                    ToolTip="Choose how quickly your party travels across the world map."/>
+                            <Button Content="Rain Frequency"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding RainFrequencyCommand}"
+                                    ToolTip="Choose how often ordinary rain occurs across supported regions."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Detailed Editor workspace -->
+        <Grid Grid.Row="3"
+              Grid.RowSpan="3"
+              Visibility="{Binding IsDetailedEditorAvailable,
+                                   Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
         <!-- Search -->
-        <DockPanel Grid.Row="2"
+        <DockPanel Grid.Row="0"
                    Margin="5">
 
             <TextBlock Text="Search:"
@@ -426,7 +551,7 @@
         </DockPanel>
 
         <!-- Find Anything -->
-        <Grid Grid.Row="3"
+        <Grid Grid.Row="1"
               Margin="5,0,5,5"
               MaxHeight="160"
               Visibility="{Binding HasSearchText,
@@ -470,7 +595,7 @@
         </Grid>
 
         <!-- Main Area -->
-        <Grid Grid.Row="4">
+        <Grid Grid.Row="2">
 
             <Grid.ColumnDefinitions>
 
@@ -590,7 +715,7 @@
                                                 Value="SemiBold"/>
 
                                         <Setter Property="Foreground"
-                                                Value="DarkOrange"/>
+                                                Value="{StaticResource ModifiedAccentBrush}"/>
 
                                     </DataTrigger>
 
@@ -604,11 +729,13 @@
 
                 </Grid>
 
-                <ListView Grid.Row="1"
+                <ListView x:Name="PropertiesListView"
+                          Grid.Row="1"
                           Margin="5"
                           ItemsSource="{Binding Properties}"
                           SelectedItem="{Binding SelectedProperty,
-                                                 Mode=TwoWay}">
+                                                 Mode=TwoWay}"
+                          SelectionChanged="PropertiesListView_SelectionChanged">
 
                     <ListView.ItemContainerStyle>
 
@@ -623,7 +750,7 @@
                                              Value="True">
 
                                     <Setter Property="Background"
-                                            Value="LightGoldenrodYellow"/>
+                                            Value="{StaticResource ModifiedRowBackgroundBrush}"/>
 
                                     <Setter Property="FontWeight"
                                             Value="SemiBold"/>
@@ -648,7 +775,7 @@
                                     <DataTemplate>
 
                                         <TextBlock Text="●"
-                                                   Foreground="DarkOrange"
+                                                   Foreground="{StaticResource ModifiedAccentBrush}"
                                                    FontSize="12"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
@@ -705,8 +832,10 @@
 
         </Grid>
 
+        </Grid>
+
         <!-- Status Bar -->
-        <StatusBar Grid.Row="5">
+        <StatusBar Grid.Row="6">
 
             <Grid Width="{Binding RelativeSource={RelativeSource AncestorType=StatusBar},
                                   Path=ActualWidth}">
@@ -729,7 +858,7 @@
                             VerticalAlignment="Center">
 
                     <TextBlock Text="●"
-                               Foreground="DarkOrange"
+                               Foreground="{StaticResource ModifiedAccentBrush}"
                                Margin="0,0,5,0"
                                Visibility="{Binding HasModifications,
                                                     Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -749,7 +878,7 @@
                                                  Value="True">
 
                                         <Setter Property="Foreground"
-                                                Value="DarkOrange"/>
+                                                Value="{StaticResource ModifiedAccentBrush}"/>
 
                                         <Setter Property="FontWeight"
                                                 Value="SemiBold"/>

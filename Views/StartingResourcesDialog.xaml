@@ -10,7 +10,7 @@
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
-    <Grid Margin="20">
+    <Grid Margin="{StaticResource GameplayDialogOuterMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -25,8 +25,8 @@
                        FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </StackPanel>
 
-        <Border Grid.Row="1" Background="#FFF7E6" BorderBrush="#E0B35B" BorderThickness="1"
-                Padding="12" Margin="0,0,0,12" Visibility="{Binding NeedsInitialization, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <Border Grid.Row="1" Style="{StaticResource InformationalPanelStyle}"
+                Margin="0,0,0,12" Visibility="{Binding NeedsInitialization, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel>
                 <TextBlock Text="{Binding InitializationText, Mode=OneWay}" TextWrapping="Wrap"/>
                 <Button Content="Initialize Starting Resources" Width="210" HorizontalAlignment="Left"
@@ -56,18 +56,18 @@
                         <Button Content="Clear Extras" Margin="0,0,6,6" Click="ClearButton_Click"/>
                     </WrapPanel>
                     <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding ValidationMessage, Mode=OneWay}"
-                               Foreground="DarkRed" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                               Style="{StaticResource GameplayValidationTextStyle}" Margin="0,8,0,0"/>
                 </Grid>
             </GroupBox>
             <GroupBox Grid.Column="1" Header="Preview" Margin="8,0,0,0">
                 <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" Background="WhiteSmoke" Padding="10" Margin="12"/>
+                         VerticalScrollBarVisibility="Auto" Background="{StaticResource PreviewBackgroundBrush}" Padding="10" Margin="12"/>
             </GroupBox>
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Apply" Width="100" IsEnabled="{Binding CanApply}" Margin="0,0,8,0" Click="ApplyButton_Click"/>
-            <Button Content="Close" Width="90" Click="CloseButton_Click"/>
+            <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}" IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
+            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}" Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>

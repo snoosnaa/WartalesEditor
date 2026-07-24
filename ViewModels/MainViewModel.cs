@@ -133,6 +133,54 @@ public class MainViewModel : ObservableObject
 
     private ProjectModel? project;
 
+    private MainWorkspace activeWorkspace =
+        MainWorkspace.GameplayTools;
+
+    public MainWorkspace ActiveWorkspace
+    {
+        get => activeWorkspace;
+        set
+        {
+            if (!SetProperty(
+                    ref activeWorkspace,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(IsGameplayToolsWorkspace));
+            OnPropertyChanged(
+                nameof(IsDetailedEditorWorkspace));
+            OnPropertyChanged(
+                nameof(IsGameplayToolsAvailable));
+            OnPropertyChanged(
+                nameof(IsDetailedEditorAvailable));
+        }
+    }
+
+    public bool IsGameplayToolsWorkspace =>
+        ActiveWorkspace ==
+        MainWorkspace.GameplayTools;
+
+    public bool IsDetailedEditorWorkspace =>
+        ActiveWorkspace ==
+        MainWorkspace.DetailedEditor;
+
+    public bool HasProject =>
+        Project != null;
+
+    public bool IsGameplayToolsAvailable =>
+        HasProject &&
+        IsGameplayToolsWorkspace;
+
+    public bool IsDetailedEditorAvailable =>
+        HasProject &&
+        IsDetailedEditorWorkspace;
+
+    public bool ShowWelcomeState =>
+        !HasProject;
+
     public ProjectModel? Project
     {
         get => project;
@@ -173,6 +221,10 @@ public class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(Sheets));
             OnPropertyChanged(nameof(Entries));
             OnPropertyChanged(nameof(Properties));
+            OnPropertyChanged(nameof(HasProject));
+            OnPropertyChanged(nameof(IsGameplayToolsAvailable));
+            OnPropertyChanged(nameof(IsDetailedEditorAvailable));
+            OnPropertyChanged(nameof(ShowWelcomeState));
             OnPropertyChanged(
                 nameof(FindAnythingHeader));
 
@@ -570,6 +622,16 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand SaveCommand { get; }
 
+    public RelayCommand ShowGameplayToolsWorkspaceCommand
+    {
+        get;
+    }
+
+    public RelayCommand ShowDetailedEditorWorkspaceCommand
+    {
+        get;
+    }
+
     public RelayCommand NavigateSearchResultCommand
     {
         get;
@@ -797,6 +859,16 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => SaveProject(),
                 _ => Project != null);
+
+        ShowGameplayToolsWorkspaceCommand =
+            new RelayCommand(
+                _ => ActivateWorkspace(
+                    MainWorkspace.GameplayTools));
+
+        ShowDetailedEditorWorkspaceCommand =
+            new RelayCommand(
+                _ => ActivateWorkspace(
+                    MainWorkspace.DetailedEditor));
 
         NavigateSearchResultCommand =
             new RelayCommand(
@@ -3501,6 +3573,8 @@ public class MainViewModel : ObservableObject
     private void NavigateToChangeSummaryItem(
     ChangeSummaryItemModel item)
     {
+        ActivateDetailedEditorWorkspace();
+
         SelectedSheet =
             item.Category;
 
@@ -3546,6 +3620,8 @@ public class MainViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(
             issue);
+
+        ActivateDetailedEditorWorkspace();
 
         if (Project == null ||
             string.IsNullOrWhiteSpace(
@@ -3782,6 +3858,8 @@ public class MainViewModel : ObservableObject
             return;
         }
 
+        ActivateDetailedEditorWorkspace();
+
         SelectedSheet =
             result.Category;
 
@@ -3808,5 +3886,32 @@ public class MainViewModel : ObservableObject
         Status =
             $"Selected: {result.CategoryName} " +
             $"→ {result.SettingName}";
+    }
+
+    private void ActivateDetailedEditorWorkspace()
+    {
+        ActivateWorkspace(
+            MainWorkspace.DetailedEditor);
+    }
+
+    private void ActivateWorkspace(
+        MainWorkspace workspace)
+    {
+        if (ActiveWorkspace != workspace)
+        {
+            ActiveWorkspace =
+                workspace;
+
+            return;
+        }
+
+        OnPropertyChanged(
+            nameof(IsGameplayToolsWorkspace));
+        OnPropertyChanged(
+            nameof(IsDetailedEditorWorkspace));
+        OnPropertyChanged(
+            nameof(IsGameplayToolsAvailable));
+        OnPropertyChanged(
+            nameof(IsDetailedEditorAvailable));
     }
 }
