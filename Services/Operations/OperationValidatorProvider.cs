@@ -15,6 +15,20 @@ public sealed class OperationValidatorProvider
         upgradeAllEquipmentValidator =
             new();
 
+    private readonly ProgressionXpOperationValidator
+        progressionXpValidator =
+            new();
+
+    private readonly StartingResourcesOperationValidator
+        startingResourcesValidator =
+            new();
+
+    private readonly PartyEconomyOperationValidator
+        partyEconomyValidator = new();
+
+    private readonly OverworldMovementSpeedOperationValidator
+        overworldMovementValidator = new();
+
     public OperationValidationResult Validate(
         IProjectOperation operation,
         ProjectModel project,
@@ -37,6 +51,21 @@ public sealed class OperationValidatorProvider
 
                 UpgradeAllEquipmentOperation =>
                     upgradeAllEquipmentValidator,
+
+                CharacterXpRequirementsOperation =>
+                    progressionXpValidator,
+
+                ProfessionXpRequirementsOperation =>
+                    progressionXpValidator,
+
+                StartingResourcesOperation =>
+                    startingResourcesValidator,
+
+                PartyEconomyOperation =>
+                    partyEconomyValidator,
+
+                OverworldMovementSpeedOperation =>
+                    overworldMovementValidator,
 
                 _ => null
             };

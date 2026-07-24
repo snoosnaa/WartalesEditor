@@ -209,14 +209,14 @@ public sealed class ModProfileSerializationService
     private void ValidateForSerialization(
         ModProfileModel profile)
     {
-        if (profile.FormatVersion !=
-            ModProfileFormat.CurrentVersion)
+        if (profile.FormatVersion <
+                ModProfileFormat.LegacyVersion ||
+            profile.FormatVersion >
+                ModProfileFormat.CurrentVersion)
         {
             throw new ModProfileSerializationException(
                 $"Mod profile format version " +
-                $"'{profile.FormatVersion}' cannot be written. " +
-                $"The supported version is " +
-                $"'{ModProfileFormat.CurrentVersion}'.");
+                $"'{profile.FormatVersion}' cannot be written.");
         }
 
         if (profile.Metadata == null)
@@ -235,6 +235,9 @@ public sealed class ModProfileSerializationService
         }
 
         ValidateSnapshot(
+            profile);
+
+        ValidateOperationRequests(
             profile);
     }
 
@@ -255,16 +258,6 @@ public sealed class ModProfileSerializationService
                 $"Mod profile format version " +
                 $"'{profile.FormatVersion}' is newer than the " +
                 $"supported version " +
-                $"'{ModProfileFormat.CurrentVersion}'.");
-        }
-
-        if (profile.FormatVersion <
-            ModProfileFormat.CurrentVersion)
-        {
-            throw new ModProfileSerializationException(
-                $"Mod profile format version " +
-                $"'{profile.FormatVersion}' is no longer " +
-                $"supported. The supported version is " +
                 $"'{ModProfileFormat.CurrentVersion}'.");
         }
 
@@ -345,6 +338,68 @@ public sealed class ModProfileSerializationService
                 "The mod profile contains an invalid " +
                 "modification snapshot.",
                 exception);
+        }
+    }
+
+    private static void ValidateOperationRequests(
+        ModProfileModel profile)
+    {
+        if (profile.OperationRequests == null)
+        {
+            throw new ModProfileSerializationException(
+                "The mod profile has no operation-request collection.");
+        }
+
+        if (profile.FormatVersion ==
+                ModProfileFormat.LegacyVersion &&
+            profile.OperationRequests.Count > 0)
+        {
+            throw new ModProfileSerializationException(
+                "Version 1 profiles cannot contain gameplay-tool requests.");
+        }
+
+        System.Collections.Generic.HashSet<string> operationIds =
+            new(StringComparer.Ordinal);
+
+        foreach (ProfileOperationRequestModel request in
+                 profile.OperationRequests)
+        {
+            if (request == null ||
+                request.FormatVersion !=
+                    ProfileOperationRequestModel
+                        .CurrentFormatVersion ||
+                string.IsNullOrWhiteSpace(
+                    request.OperationId))
+            {
+                throw new ModProfileSerializationException(
+                    "The mod profile contains an invalid " +
+                    "gameplay-tool request.");
+            }
+
+            if (request.OperationId is not
+                (ProfileOperationIds.AddCampFacilities or
+                 ProfileOperationIds.UpgradeAllEquipment))
+            {
+                throw new ModProfileSerializationException(
+                    $"The profile requests an unsupported gameplay " +
+                    $"tool '{request.OperationId}'.");
+            }
+
+            if (request.Settings != null &&
+                request.Settings.HasValues)
+            {
+                throw new ModProfileSerializationException(
+                    $"The gameplay tool '{request.OperationId}' " +
+                    "does not support saved settings.");
+            }
+
+            if (!operationIds.Add(
+                    request.OperationId))
+            {
+                throw new ModProfileSerializationException(
+                    $"The profile contains more than one request " +
+                    $"for gameplay tool '{request.OperationId}'.");
+            }
         }
     }
 

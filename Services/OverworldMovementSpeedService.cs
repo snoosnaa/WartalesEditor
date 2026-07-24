@@ -1,0 +1,254 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json.Linq;
+using WartalesEditor.Models;
+
+namespace WartalesEditor.Services;
+
+public sealed class OverworldMovementSpeedService
+{
+    public const string WalkEntryId = "PlayerBaseSpeed";
+    public const string RunEntryId = "PlayerRunSpeed";
+
+    public static IReadOnlyList<OverworldMovementPresetOption> Presets { get; } =
+        new[]
+        {
+            new OverworldMovementPresetOption(OverworldMovementPreset.Vanilla, "Vanilla", 6, 11),
+            new OverworldMovementPresetOption(OverworldMovementPreset.Faster, "Faster", 8, 14),
+            new OverworldMovementPresetOption(OverworldMovementPreset.Fast, "Fast", 9, 17),
+            new OverworldMovementPresetOption(OverworldMovementPreset.VeryFast, "Very Fast", 12, 22)
+        };
+
+    private readonly ProjectMutationService mutationService;
+    private readonly GameplayOperationStateService stateService;
+
+    public OverworldMovementSpeedService(
+        ProjectMutationService mutationService,
+        GameplayOperationStateService stateService)
+    {
+        this.mutationService = mutationService ?? throw new ArgumentNullException(nameof(mutationService));
+        this.stateService = stateService ?? throw new ArgumentNullException(nameof(stateService));
+    }
+
+    public OverworldMovementPreset DetectPreset(ProjectModel project)
+    {
+        try
+        {
+            (MovementTarget walk, MovementTarget run) = ResolveTargets(project);
+            double walkValue = walk.Property.SourceProperty!.Value.Value<double>();
+            double runValue = run.Property.SourceProperty!.Value.Value<double>();
+            return Presets.FirstOrDefault(x =>
+                       x.WalkSpeed == walkValue && x.RunSpeed == runValue)?.Preset
+                   ?? OverworldMovementPreset.Custom;
+        }
+        catch
+        {
+            return OverworldMovementPreset.Unavailable;
+        }
+    }
+
+    public ProjectMutationResult Apply(
+        ProjectModel project,
+        OverworldMovementPreset preset)
+    {
+        OverworldMovementPresetOption selection = GetRequiredPreset(preset);
+        ValidatePair(selection.WalkSpeed, selection.RunSpeed);
+        (MovementTarget walk, MovementTarget run) = ResolveTargets(project);
+        GameplayOperationStateModel? existing =
+            stateService.FindState(project, ProgressionType.OverworldMovementSpeed);
+
+        if (existing != null)
+        {
+            stateService.ValidateState(project, existing);
+        }
+
+        JArray baseline = existing == null || !existing.IsCompatible
+            ? CaptureTargets(walk, run)
+            : (JArray)existing.BaselineArray.DeepClone();
+        JArray expected = BuildExpected(baseline, selection);
+        JArray current = CaptureTargets(walk, run);
+
+        if (existing != null &&
+            JToken.DeepEquals(current, expected) &&
+            string.Equals(
+                existing.GameplaySettings?.Value<string>("preset"),
+                preset.ToString(),
+                StringComparison.Ordinal))
+            return new ProjectMutationResult();
+
+        ProjectMutationResult result = new();
+        if (!JToken.DeepEquals(current, expected))
+        {
+            result.Merge(mutationService.EnsurePropertyByPath(
+                walk.Entry,
+                "value",
+                CreateCompatibleNumber(
+                    walk.Property.SourceProperty!.Value,
+                    selection.WalkSpeed)));
+            result.Merge(mutationService.EnsurePropertyByPath(
+                run.Entry,
+                "value",
+                CreateCompatibleNumber(
+                    run.Property.SourceProperty!.Value,
+                    selection.RunSpeed)));
+        }
+
+        GameplayOperationStateModel replacement =
+            CreateState(baseline, expected, selection);
+        GameplayOperationStateModel? previous = existing?.DeepClone();
+        bool previousModified = project.IsGameplayOperationStateModified;
+        stateService.ReplaceState(project, replacement);
+        result.AddGameplayOperationState(
+            project, previous, replacement, previousModified);
+        return result;
+    }
+
+    internal static void ValidateState(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        if (state.GameplaySettings == null)
+            throw new InvalidOperationException("The selected movement preset is missing.");
+        string presetName = state.GameplaySettings.Value<string>("preset") ?? string.Empty;
+        if (!Enum.TryParse(presetName, out OverworldMovementPreset preset))
+            throw new InvalidOperationException("The selected movement preset is invalid.");
+        OverworldMovementPresetOption selection = GetRequiredPreset(preset);
+        (MovementTarget walk, MovementTarget run) = ResolveTargets(project);
+        JArray current = CaptureTargets(walk, run);
+        JArray expected = BuildExpected(state.BaselineArray, selection);
+
+        if (state.ElementCount != 2 ||
+            state.BaselineArray.Count != 2 ||
+            !string.Equals(state.TargetSheet, "constant,constant", StringComparison.Ordinal) ||
+            !string.Equals(state.TargetEntry, $"{WalkEntryId},{RunEntryId}", StringComparison.Ordinal) ||
+            !string.Equals(state.TargetPath, "value|value", StringComparison.Ordinal) ||
+            !string.Equals(
+                GameplayOperationFingerprintService.CreateContentFingerprint(state.BaselineArray),
+                state.BaselineFingerprint,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                GameplayOperationFingerprintService.CreateShapeFingerprint(state.BaselineArray),
+                state.ElementShapeFingerprint,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                GameplayOperationFingerprintService.CreateContentFingerprint(expected),
+                state.ExpectedCurrentFingerprint,
+                StringComparison.Ordinal) ||
+            !JToken.DeepEquals(current, expected))
+            throw new InvalidOperationException(
+                "The saved movement settings no longer match the loaded project.");
+    }
+
+    internal static (MovementTarget Walk, MovementTarget Run)
+        ResolveTargets(ProjectModel project)
+    {
+        SheetModel sheet = project.Sheets.SingleOrDefault(x =>
+            string.Equals(x.Name, "constant", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "The required movement settings are not available in this project.");
+        return (
+            ResolveTarget(sheet, WalkEntryId),
+            ResolveTarget(sheet, RunEntryId));
+    }
+
+    private static MovementTarget ResolveTarget(SheetModel sheet, string id)
+    {
+        EntryModel entry = sheet.Entries.SingleOrDefault(x =>
+            string.Equals(x.Id, id, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "A required movement setting is not available in this project.");
+        PropertyModel property = entry.Properties.SingleOrDefault(x =>
+            string.Equals(x.EffectivePropertyPath, "value", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "A required movement value is not available in this project.");
+        if (property.SourceProperty?.Value.Type is not
+            (JTokenType.Integer or JTokenType.Float))
+            throw new InvalidOperationException(
+                "A required movement value is not a supported whole number.");
+        return new MovementTarget(entry, property);
+    }
+
+    private static JArray CaptureTargets(
+        MovementTarget walk,
+        MovementTarget run) => new()
+    {
+        CreateRecord(WalkEntryId, walk.Property.SourceProperty!.Value),
+        CreateRecord(RunEntryId, run.Property.SourceProperty!.Value)
+    };
+
+    private static JObject CreateRecord(string entry, JToken value) => new()
+    {
+        ["sheet"] = "constant",
+        ["entry"] = entry,
+        ["path"] = "value",
+        ["value"] = value.DeepClone()
+    };
+
+    private static JArray BuildExpected(
+        JArray baseline,
+        OverworldMovementPresetOption preset)
+    {
+        if (baseline.Count != 2)
+            throw new InvalidOperationException(
+                "The remembered movement baseline is incomplete.");
+        JArray expected = (JArray)baseline.DeepClone();
+        expected[0]!["value"] = CreateCompatibleNumber(
+            baseline[0]!["value"]!,
+            preset.WalkSpeed);
+        expected[1]!["value"] = CreateCompatibleNumber(
+            baseline[1]!["value"]!,
+            preset.RunSpeed);
+        return expected;
+    }
+
+    private static JValue CreateCompatibleNumber(
+        JToken source,
+        int value) =>
+        source.Type == JTokenType.Float
+            ? new JValue(Convert.ToDouble(value))
+            : new JValue(value);
+
+    private static GameplayOperationStateModel CreateState(
+        JArray baseline,
+        JArray expected,
+        OverworldMovementPresetOption selection) => new()
+    {
+        OperationType = ProgressionType.OverworldMovementSpeed,
+        TargetSheet = "constant,constant",
+        TargetEntry = $"{WalkEntryId},{RunEntryId}",
+        TargetPath = "value|value",
+        BaselineArray = (JArray)baseline.DeepClone(),
+        GameplaySettings = new JObject
+        {
+            ["preset"] = selection.Preset.ToString(),
+            ["walkSpeed"] = selection.WalkSpeed,
+            ["runSpeed"] = selection.RunSpeed
+        },
+        BaselineFingerprint =
+            GameplayOperationFingerprintService.CreateContentFingerprint(baseline),
+        ExpectedCurrentFingerprint =
+            GameplayOperationFingerprintService.CreateContentFingerprint(expected),
+        ElementCount = 2,
+        ElementShapeFingerprint =
+            GameplayOperationFingerprintService.CreateShapeFingerprint(baseline),
+        IsCompatible = true
+    };
+
+    private static OverworldMovementPresetOption GetRequiredPreset(
+        OverworldMovementPreset preset) =>
+        Presets.SingleOrDefault(x => x.Preset == preset)
+        ?? throw new InvalidOperationException(
+            "Select one of the supported movement presets.");
+
+    private static void ValidatePair(int walk, int run)
+    {
+        if (walk <= 0 || run <= 0 || walk >= run)
+            throw new InvalidOperationException(
+                "The selected movement preset is invalid.");
+    }
+}
+
+internal sealed record MovementTarget(
+    EntryModel Entry,
+    PropertyModel Property);

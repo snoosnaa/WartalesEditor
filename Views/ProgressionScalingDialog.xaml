@@ -1,0 +1,155 @@
+<Window x:Class="WartalesEditor.Views.ProgressionScalingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Width="760"
+        Height="650"
+        MinWidth="620"
+        MinHeight="520"
+        SizeToContent="Manual"
+        Visibility="Visible"
+        WindowState="Normal"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Lower percentages reduce XP requirements. Each control uses the project's original values and can be applied independently."
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,14"/>
+
+        <GroupBox Grid.Row="1"
+                  Header="Character XP Requirements"
+                  Margin="0,0,0,10">
+            <Grid Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="70"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Percentage:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <Slider Grid.Row="0" Grid.Column="1"
+                        Minimum="{Binding MinimumPercentage}"
+                        Maximum="{Binding MaximumPercentage}"
+                        Value="{Binding CharacterPercentage, Mode=TwoWay}"
+                        TickFrequency="10"
+                        IsSnapToTickEnabled="True"/>
+                <TextBlock Grid.Row="0" Grid.Column="2"
+                           Text="{Binding CharacterPercentage, StringFormat={}{0}%}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right"/>
+                <TextBox Grid.Row="1" Grid.ColumnSpan="3"
+                         Text="{Binding CharacterPreviewText, Mode=OneWay}"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="WhiteSmoke"
+                         Padding="8"
+                         Margin="0,10,0,0"/>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="3"
+                           Text="{Binding CharacterValidationMessage}"
+                           Foreground="DarkRed"
+                           TextWrapping="Wrap"
+                           Margin="0,6,0,0"/>
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="3"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,8,0,0">
+                    <Button Content="Use Current Values as Baseline"
+                            Width="205"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdoptCharacter}"
+                            Click="AdoptCharacterButton_Click"/>
+                    <Button Content="Apply Character XP"
+                            Width="150"
+                            IsEnabled="{Binding CanApplyCharacter}"
+                            Click="ApplyCharacterButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2"
+                  Header="Profession XP Requirements"
+                  Margin="0,0,0,10">
+            <Grid Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="70"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Percentage:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <Slider Grid.Row="0" Grid.Column="1"
+                        Minimum="{Binding MinimumPercentage}"
+                        Maximum="{Binding MaximumPercentage}"
+                        Value="{Binding ProfessionPercentage, Mode=TwoWay}"
+                        TickFrequency="10"
+                        IsSnapToTickEnabled="True"/>
+                <TextBlock Grid.Row="0" Grid.Column="2"
+                           Text="{Binding ProfessionPercentage, StringFormat={}{0}%}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right"/>
+                <TextBox Grid.Row="1" Grid.ColumnSpan="3"
+                         Text="{Binding ProfessionPreviewText, Mode=OneWay}"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="WhiteSmoke"
+                         Padding="8"
+                         Margin="0,10,0,0"/>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="3"
+                           Text="{Binding ProfessionValidationMessage}"
+                           Foreground="DarkRed"
+                           TextWrapping="Wrap"
+                           Margin="0,6,0,0"/>
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="3"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,8,0,0">
+                    <Button Content="Use Current Values as Baseline"
+                            Width="205"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdoptProfession}"
+                            Click="AdoptProfessionButton_Click"/>
+                    <Button Content="Apply Profession XP"
+                            Width="150"
+                            IsEnabled="{Binding CanApplyProfession}"
+                            Click="ApplyProfessionButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <Button Grid.Row="3"
+                Content="Close"
+                Width="90"
+                HorizontalAlignment="Right"
+                Click="CloseButton_Click"/>
+    </Grid>
+</Window>

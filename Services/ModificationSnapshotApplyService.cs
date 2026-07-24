@@ -17,25 +17,34 @@ public sealed class ModificationSnapshotApplyService
             results =
                 new();
 
+        ProjectMutationResult mutationResult =
+            new();
+
         foreach (ModificationPreviewItemModel previewItem
                  in previewResult.Items)
         {
             results.Add(
-                ApplyItem(previewItem));
+                ApplyItem(
+                    previewItem,
+                    mutationResult));
         }
 
         return new ModificationApplyResultModel(
-            results);
+            results,
+            mutationResult);
     }
 
     private static ModificationApplyItemResultModel
         ApplyItem(
-            ModificationPreviewItemModel previewItem)
+            ModificationPreviewItemModel previewItem,
+            ProjectMutationResult mutationResult)
     {
         return previewItem.Status switch
         {
             ModificationPreviewStatus.SafeToApply =>
-                ApplySafeItem(previewItem),
+                ApplySafeItem(
+                    previewItem,
+                    mutationResult),
 
             ModificationPreviewStatus.AlreadyApplied =>
                 CreateAlreadyAppliedResult(
@@ -72,7 +81,8 @@ public sealed class ModificationSnapshotApplyService
 
     private static ModificationApplyItemResultModel
         ApplySafeItem(
-            ModificationPreviewItemModel previewItem)
+            ModificationPreviewItemModel previewItem,
+            ProjectMutationResult mutationResult)
     {
         ModificationMatchItemModel matchItem =
             previewItem.MatchItem;
@@ -125,6 +135,10 @@ public sealed class ModificationSnapshotApplyService
             matchItem.TargetProperty
                 .ApplySnapshotValue(
                     requestedValue);
+
+            mutationResult.AddUpdatedProperty(
+                matchItem.TargetProperty,
+                currentTargetValue);
 
             JToken appliedValue =
                 matchItem.TargetProperty

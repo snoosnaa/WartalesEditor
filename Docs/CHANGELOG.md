@@ -6,6 +6,61 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.9.1 - Additive Profile Restoration Repair
+
+**Status:** Development; Visual Studio and in-game verification pending
+
+## Added
+
+- Version 2 Mod Profile operation requests with stable identifiers for
+  Add Camp Facilities and Upgrade All Equipment.
+- Safe request validation, duplicate rejection, deterministic operation
+  resolution, and player-facing gameplay-tool result counts.
+- Profile-level mutation aggregation for staged rollback and one-action
+  Undo/Redo.
+
+## Changed
+
+- New profiles detect valid applied additive operations from project
+  content and filter only deterministic operation-owned snapshot records.
+- Profile Manager now displays one effective Changes count representing
+  ordinary and additive project modifications without exposing their
+  internal storage mechanisms.
+- Profile application replays Add Camp Facilities and Upgrade All
+  Equipment before applying ordinary snapshot properties.
+- Version 1 profiles remain loadable without inferred operation requests.
+- Direct Snapshot import remains property-target based.
+- Overworld Movement Speed now appears directly in Gameplay Tools without
+  a World Convenience submenu.
+
+## Fixed
+
+- Clean-project profiles can recreate camp tool structures, Workshop
+  recipes, and missing equipment flags through the verified Project
+  Operation pipeline.
+- Profile apply now refreshes property tracking after structural replay,
+  so newly created equipment and camp PropertyModels appear in the main
+  modified count and Change Summary.
+- Profile apply now reports one player-facing Changes result instead of
+  exposing gameplay-tool and snapshot-property categories.
+- Corrected prior documentation wording that did not distinguish profile
+  capture coverage from verified clean-project additive restoration.
+
+## Verified
+
+- Zero-warning, zero-error build.
+- Disposable model-level harness covering serialization, detection,
+  filtering, ordered replay, idempotence, rollback, and Undo/Redo.
+
+## Pending
+
+- Full Profile Manager and result-dialog verification in Visual Studio.
+- Save/Reload, Save As, reopening, and legacy-profile UI verification.
+- In-game Add Camp Facilities, Upgrade All Equipment, and Overworld
+  Movement Speed verification.
+
+---
+
 # Version 0.8.1 - Operation Framework & Verified Content Creation
 
 **Released:** 2026-07-18

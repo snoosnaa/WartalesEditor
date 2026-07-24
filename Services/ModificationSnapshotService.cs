@@ -21,6 +21,11 @@ public sealed class ModificationSnapshotService
                 GetSourceFileName(project)
         };
 
+        snapshot.GameplayOperationStates.AddRange(
+            project.GameplayOperationStates
+                .Where(state => state.IsCompatible)
+                .Select(state => state.DeepClone()));
+
         foreach (SheetModel category in project.Sheets)
         {
             ModificationSnapshotCategoryModel?

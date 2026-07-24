@@ -15,10 +15,14 @@ public sealed class ModProfileLibraryService
     private readonly ModProfileSerializationService
         serializationService;
 
+    private readonly ProfileEffectiveChangeCountService
+        effectiveChangeCountService;
+
     public ModProfileLibraryService()
         : this(
             new ModProfileLibraryPathService(),
-            new ModProfileSerializationService())
+            new ModProfileSerializationService(),
+            new ProfileEffectiveChangeCountService())
     {
     }
 
@@ -26,6 +30,19 @@ public sealed class ModProfileLibraryService
         ModProfileLibraryPathService pathService,
         ModProfileSerializationService
             serializationService)
+        : this(
+            pathService,
+            serializationService,
+            new ProfileEffectiveChangeCountService())
+    {
+    }
+
+    public ModProfileLibraryService(
+        ModProfileLibraryPathService pathService,
+        ModProfileSerializationService
+            serializationService,
+        ProfileEffectiveChangeCountService
+            effectiveChangeCountService)
     {
         this.pathService =
             pathService
@@ -36,6 +53,11 @@ public sealed class ModProfileLibraryService
             serializationService
             ?? throw new ArgumentNullException(
                 nameof(serializationService));
+
+        this.effectiveChangeCountService =
+            effectiveChangeCountService
+            ?? throw new ArgumentNullException(
+                nameof(effectiveChangeCountService));
     }
 
     public IReadOnlyList<ModProfileSummaryModel>
@@ -564,7 +586,22 @@ public sealed class ModProfileLibraryService
                 },
 
             Snapshot =
-                sourceProfile.Snapshot
+                sourceProfile.Snapshot,
+
+            OperationRequests =
+                sourceProfile.OperationRequests
+                    .Select(request =>
+                        new ProfileOperationRequestModel
+                        {
+                            FormatVersion =
+                                request.FormatVersion,
+                            OperationId =
+                                request.OperationId,
+                            Settings =
+                                (Newtonsoft.Json.Linq.JObject?)
+                                    request.Settings?.DeepClone()
+                        })
+                    .ToList()
         };
     }
 
@@ -587,7 +624,7 @@ public sealed class ModProfileLibraryService
         }
     }
 
-    private static ModProfileSummaryModel
+    private ModProfileSummaryModel
         CreateSummary(
             ModProfileModel profile,
             string filePath)
@@ -646,7 +683,14 @@ public sealed class ModProfileLibraryService
                 settingCount,
 
             PropertyCount =
-                propertyCount
+                propertyCount,
+
+            OperationCount =
+                profile.OperationRequests.Count,
+
+            EffectiveChangeCount =
+                effectiveChangeCountService.Calculate(
+                    profile)
         };
     }
 }

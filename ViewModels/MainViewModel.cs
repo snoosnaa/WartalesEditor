@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using WartalesEditor.Helpers;
@@ -79,6 +80,20 @@ public class MainViewModel : ObservableObject
     private readonly UpgradeAllEquipmentOperation
         upgradeAllEquipmentOperation;
 
+    private readonly ProgressionScalingService
+        progressionScalingService;
+
+    private readonly GameplayOperationStateService
+        gameplayOperationStateService;
+
+    private readonly StartingResourcesService
+        startingResourcesService;
+
+    private readonly PartyEconomyService partyEconomyService;
+
+    private readonly OverworldMovementSpeedService
+        overworldMovementSpeedService;
+
     private readonly IFileDialogService fileDialogService;
 
     private readonly IMessageDialogService messageDialogService;
@@ -100,6 +115,18 @@ public class MainViewModel : ObservableObject
     private ValidationResultsViewModel?
         validationResultsViewModel;
 
+    private ProgressionScalingDialog?
+        progressionScalingDialog;
+
+    private StartingResourcesDialog?
+        startingResourcesDialog;
+
+    private readonly Dictionary<ProgressionType, PartyEconomyDialog>
+        partyEconomyDialogs = new();
+
+    private OverworldMovementSpeedDialog?
+        overworldMovementSpeedDialog;
+
     private ProjectModel? project;
 
     public ProjectModel? Project
@@ -113,6 +140,12 @@ public class MainViewModel : ObservableObject
             {
                 return;
             }
+
+            progressionScalingDialog?.Close();
+            startingResourcesDialog?.Close();
+            foreach (PartyEconomyDialog dialog in partyEconomyDialogs.Values.ToArray())
+                dialog.Close();
+            overworldMovementSpeedDialog?.Close();
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
@@ -581,6 +614,20 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand GameplayProgressionCommand
+    {
+        get;
+    }
+
+    public RelayCommand StartingResourcesCommand
+    {
+        get;
+    }
+
+    public RelayCommand PartyEconomyCommand { get; }
+
+    public RelayCommand OverworldMovementSpeedCommand { get; }
+
     public MainViewModel(
     JsonDataService jsonDataService,
     SearchService searchService,
@@ -700,6 +747,33 @@ public class MainViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(messageDialogService));
 
+        ProjectMutationService progressionMutationService =
+            new();
+
+        gameplayOperationStateService =
+            new GameplayOperationStateService(
+                progressionMutationService);
+
+        progressionScalingService =
+            new ProgressionScalingService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
+        startingResourcesService =
+            new StartingResourcesService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
+        partyEconomyService =
+            new PartyEconomyService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
+        overworldMovementSpeedService =
+            new OverworldMovementSpeedService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
         this.editHistoryService.HistoryChanged +=
             OnHistoryChanged;
 
@@ -776,6 +850,26 @@ public class MainViewModel : ObservableObject
         ContentCreationCommand =
             new RelayCommand(
                 ExecuteContentCreation,
+                _ => Project != null);
+
+        GameplayProgressionCommand =
+            new RelayCommand(
+                ExecuteGameplayProgression,
+                _ => Project != null);
+
+        StartingResourcesCommand =
+            new RelayCommand(
+                ExecuteStartingResources,
+                _ => Project != null);
+
+        PartyEconomyCommand =
+            new RelayCommand(
+                ExecutePartyEconomy,
+                parameter => Project != null && parameter is ProgressionType);
+
+        OverworldMovementSpeedCommand =
+            new RelayCommand(
+                ExecuteOverworldMovementSpeed,
                 _ => Project != null);
     }
 
@@ -1146,7 +1240,8 @@ public class MainViewModel : ObservableObject
                     ? $"Snapshot imported: " +
                       $"{result.AppliedCount:N0} " +
                       $"{GetSingularOrPlural(
-                          result.AppliedCount,
+                          result.AppliedCount +
+                              result.OperationsAppliedCount,
                           "change",
                           "changes")} applied"
                     : "Snapshot imported: " +
@@ -1154,9 +1249,7 @@ public class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            RefreshModificationState();
-            RefreshHistoryState();
-            RefreshCommandStates();
+            RefreshAfterProjectOperation();
 
             messageDialogService.ShowError(
                 $"The snapshot could not be imported." +
@@ -1446,6 +1539,737 @@ public class MainViewModel : ObservableObject
         }
     }
 
+    private void ExecuteGameplayProgression(
+        object? parameter)
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        if (progressionScalingDialog != null)
+        {
+            if (progressionScalingDialog.WindowState ==
+                WindowState.Minimized)
+            {
+                progressionScalingDialog.WindowState =
+                    WindowState.Normal;
+            }
+
+            progressionScalingDialog.Activate();
+            return;
+        }
+
+        ProgressionScalingDialog? dialog =
+            null;
+
+        try
+        {
+            Trace.WriteLine(
+                "XP Progression: command invoked; before construction.");
+
+            Window? owner =
+                Application.Current?.Windows
+                    .OfType<Window>()
+                    .FirstOrDefault(window =>
+                        window.IsActive &&
+                        window is MainWindow)
+                ?? Application.Current?.MainWindow;
+
+            if (owner == null)
+            {
+                throw new InvalidOperationException(
+                    "The main application window is not available.");
+            }
+
+            ProgressionScalingDialogViewModel dialogViewModel =
+                new(
+                    Project,
+                    progressionScalingService,
+                    gameplayOperationStateService);
+
+            dialog =
+                new()
+                {
+                    Owner = owner,
+                    DataContext = dialogViewModel,
+                    WindowStartupLocation =
+                        WindowStartupLocation.CenterOwner
+                };
+
+            dialog.ApplyRequested +=
+                OnProgressionApplyRequested;
+
+            dialog.BaselineAdoptionRequested +=
+                OnProgressionBaselineAdoptionRequested;
+
+            dialog.DisplayFailed +=
+                OnProgressionDialogDisplayFailed;
+
+            dialog.Closed +=
+                OnProgressionDialogClosed;
+
+            Trace.WriteLine(
+                "XP Progression: after construction; before Show.");
+
+            dialog.Show();
+
+            progressionScalingDialog = dialog;
+
+            Trace.WriteLine(
+                "XP Progression: Show returned successfully.");
+
+            Status = "XP Progression opened.";
+        }
+        catch (Exception exception)
+        {
+            Trace.WriteLine(
+                "XP Progression: construction or Show failed: " +
+                exception);
+
+            if (dialog != null)
+            {
+                dialog.Close();
+            }
+
+            progressionScalingDialog = null;
+
+            messageDialogService.ShowError(
+                "XP Progression could not be opened." +
+                Environment.NewLine +
+                Environment.NewLine +
+                exception.Message,
+                "XP Progression");
+
+            Status = "XP Progression failed to open.";
+        }
+        finally
+        {
+            Trace.WriteLine(
+                "XP Progression: command handler finally path.");
+        }
+    }
+
+    private void OnProgressionApplyRequested(
+        object? sender,
+        ProgressionApplyRequestedEventArgs e)
+    {
+        ExecuteProgressionOperation(
+            e.ProgressionType,
+            e.Percentage);
+
+        if (sender is ProgressionScalingDialog dialog &&
+            dialog.DataContext is
+                ProgressionScalingDialogViewModel viewModel)
+        {
+            viewModel.RefreshFromProject();
+        }
+    }
+
+    private void OnProgressionBaselineAdoptionRequested(
+        object? sender,
+        ProgressionBaselineAdoptionRequestedEventArgs e)
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        string displayName =
+            e.ProgressionType == ProgressionType.Character
+                ? "Character XP"
+                : "Profession XP";
+
+        bool confirmed =
+            messageDialogService.ShowConfirmation(
+                $"The editor has no trusted {displayName} baseline " +
+                "metadata for this CDB." +
+                Environment.NewLine +
+                Environment.NewLine +
+                "The current values may already be modified. " +
+                "Adopting them makes the current values the new " +
+                "100% baseline and cannot reconstruct an earlier " +
+                "clean baseline." +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Use the current values as the baseline?",
+                $"Adopt {displayName} Baseline");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        GameplayOperationStateModel? previousState =
+            gameplayOperationStateService.FindState(
+                Project,
+                e.ProgressionType)
+                ?.DeepClone();
+
+        bool previousStateWasModified =
+            Project.IsGameplayOperationStateModified;
+
+        try
+        {
+            gameplayOperationStateService.AdoptCurrentBaseline(
+                Project,
+                e.ProgressionType);
+
+            jsonDataService.SaveGameplayOperationState(Project);
+
+            if (sender is ProgressionScalingDialog dialog &&
+                dialog.DataContext is
+                    ProgressionScalingDialogViewModel viewModel)
+            {
+                viewModel.RefreshFromProject();
+            }
+
+            Status = $"{displayName} baseline adopted and saved.";
+        }
+        catch (Exception exception)
+        {
+            gameplayOperationStateService.RemoveState(
+                Project,
+                e.ProgressionType);
+
+            if (previousState != null)
+            {
+                gameplayOperationStateService.ReplaceState(
+                    Project,
+                    previousState,
+                    markModified: false);
+            }
+
+            Project.IsGameplayOperationStateModified =
+                previousStateWasModified;
+
+            messageDialogService.ShowError(
+                $"The {displayName} baseline could not be adopted." +
+                Environment.NewLine +
+                Environment.NewLine +
+                exception.Message,
+                $"Adopt {displayName} Baseline");
+        }
+    }
+
+    private void OnProgressionDialogDisplayFailed(
+        Exception exception)
+    {
+        messageDialogService.ShowError(
+            "XP Progression failed while loading or rendering." +
+            Environment.NewLine +
+            Environment.NewLine +
+            exception.Message,
+            "XP Progression");
+
+        Status = "XP Progression failed to render.";
+    }
+
+    private void OnProgressionDialogClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is ProgressionScalingDialog dialog)
+        {
+            dialog.ApplyRequested -=
+                OnProgressionApplyRequested;
+
+            dialog.BaselineAdoptionRequested -=
+                OnProgressionBaselineAdoptionRequested;
+
+            dialog.DisplayFailed -=
+                OnProgressionDialogDisplayFailed;
+
+            dialog.Closed -=
+                OnProgressionDialogClosed;
+
+            if (ReferenceEquals(
+                    progressionScalingDialog,
+                    dialog))
+            {
+                progressionScalingDialog = null;
+            }
+        }
+
+        Trace.WriteLine(
+            "XP Progression: Closed handler cleared tracking.");
+    }
+
+    private void ExecuteProgressionOperation(
+        ProgressionType progressionType,
+        int percentage)
+    {
+        if (Project == null)
+        {
+            return;
+        }
+
+        IProjectOperation operation =
+            progressionType switch
+            {
+                ProgressionType.Character =>
+                    new CharacterXpRequirementsOperation(
+                        progressionScalingService,
+                        percentage),
+
+                ProgressionType.Profession =>
+                    new ProfessionXpRequirementsOperation(
+                        progressionScalingService,
+                        percentage),
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(progressionType),
+                    progressionType,
+                    "The progression type is not supported.")
+            };
+
+        try
+        {
+            ProjectOperationResult operationResult;
+
+            using (editHistoryService.SuppressRecording())
+            {
+                operationResult =
+                    projectOperationService.Execute(
+                        operation,
+                        Project);
+            }
+
+            if (!operationResult.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+
+                messageDialogService.ShowError(
+                    operationResult.Message
+                    ?? "The operation failed validation.",
+                    operation.Name);
+
+                Status = $"{operation.Name} failed validation.";
+                return;
+            }
+
+            ProjectMutationResult result =
+                operationResult.MutationResult;
+
+            if (result.WasModified)
+            {
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        operation.Name,
+                        result,
+                        projectOperationTransactionService));
+            }
+
+            RefreshAfterProjectOperation();
+
+            messageDialogService.ShowInformation(
+                operationResult.Message
+                ?? $"{operation.Name} completed.",
+                operation.Name);
+
+            Status = result.WasModified
+                ? $"{operation.Name} set to {percentage}%."
+                : $"{operation.Name} already matched {percentage}%.";
+        }
+        catch (Exception exception)
+        {
+            RefreshAfterProjectOperation();
+
+            messageDialogService.ShowError(
+                $"{operation.Name} could not be applied." +
+                Environment.NewLine +
+                Environment.NewLine +
+                exception.Message,
+                operation.Name);
+
+            Status = $"{operation.Name} failed.";
+        }
+    }
+
+    private void ExecuteStartingResources(object? parameter)
+    {
+        if (Project == null) return;
+        if (startingResourcesDialog != null)
+        {
+            if (startingResourcesDialog.WindowState == WindowState.Minimized)
+                startingResourcesDialog.WindowState = WindowState.Normal;
+            startingResourcesDialog.Activate();
+            return;
+        }
+
+        StartingResourcesDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException("The main application window is not available.");
+            StartingResourcesDialogViewModel viewModel =
+                new(Project, gameplayOperationStateService);
+            dialog = new StartingResourcesDialog
+            {
+                Owner = owner,
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.InitializeRequested += OnStartingResourcesInitializeRequested;
+            dialog.ApplyRequested += OnStartingResourcesApplyRequested;
+            dialog.DisplayFailed += OnStartingResourcesDisplayFailed;
+            dialog.Closed += OnStartingResourcesClosed;
+            dialog.Show();
+            startingResourcesDialog = dialog;
+            Status = "Starting Resources opened.";
+        }
+        catch (Exception exception)
+        {
+            dialog?.Close();
+            startingResourcesDialog = null;
+            messageDialogService.ShowError(
+                "Starting Resources could not be opened." + Environment.NewLine +
+                Environment.NewLine + exception.Message,
+                "Starting Resources");
+            Status = "Starting Resources failed to open.";
+        }
+    }
+
+    private void OnStartingResourcesInitializeRequested(object? sender, EventArgs e)
+    {
+        if (Project == null) return;
+        bool confirmed = messageDialogService.ShowConfirmation(
+            "The editor will remember the current starting supplies so future adjustments remain accurate." +
+            Environment.NewLine + Environment.NewLine + "Continue?",
+            "Initialize Starting Resources");
+        if (!confirmed) return;
+
+        GameplayOperationStateModel? previous = gameplayOperationStateService.FindState(
+            Project, ProgressionType.StartingResources)?.DeepClone();
+        bool previousModified = Project.IsGameplayOperationStateModified;
+        try
+        {
+            startingResourcesService.Initialize(Project);
+            jsonDataService.SaveGameplayOperationState(Project);
+            if (sender is StartingResourcesDialog dialog &&
+                dialog.DataContext is StartingResourcesDialogViewModel vm)
+            {
+                vm.RefreshFromProject(useFirstUseDefaults: true);
+            }
+            RefreshModificationState();
+            Status = "Starting Resources initialized.";
+        }
+        catch (Exception exception)
+        {
+            gameplayOperationStateService.RemoveState(
+                Project, ProgressionType.StartingResources, markModified: false);
+            if (previous != null)
+                gameplayOperationStateService.ReplaceState(Project, previous, markModified: false);
+            Project.IsGameplayOperationStateModified = previousModified;
+            messageDialogService.ShowError(
+                "Starting Resources could not be initialized." + Environment.NewLine +
+                Environment.NewLine + exception.Message,
+                "Starting Resources");
+        }
+    }
+
+    private void OnStartingResourcesApplyRequested(
+        object? sender,
+        StartingResourcesApplyEventArgs e)
+    {
+        if (Project == null) return;
+        IProjectOperation operation = new StartingResourcesOperation(
+            startingResourcesService,
+            e.Settings);
+        try
+        {
+            ProjectOperationResult operationResult;
+            using (editHistoryService.SuppressRecording())
+            {
+                operationResult = projectOperationService.Execute(operation, Project);
+            }
+            if (!operationResult.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    operationResult.Message ?? "Starting Resources failed validation.",
+                    operation.Name);
+                return;
+            }
+            if (operationResult.MutationResult.WasModified)
+            {
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name,
+                    operationResult.MutationResult,
+                    projectOperationTransactionService));
+            }
+            RefreshAfterProjectOperation();
+            if (sender is StartingResourcesDialog dialog &&
+                dialog.DataContext is StartingResourcesDialogViewModel vm)
+            {
+                vm.RefreshFromProject();
+            }
+            messageDialogService.ShowInformation(
+                operationResult.Message ?? "Starting Resources completed.",
+                operation.Name);
+            Status = "Starting Resources updated.";
+        }
+        catch (Exception exception)
+        {
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "Starting Resources could not be applied." + Environment.NewLine +
+                Environment.NewLine + exception.Message,
+                operation.Name);
+        }
+    }
+
+    private void OnStartingResourcesDisplayFailed(Exception exception)
+    {
+        messageDialogService.ShowError(
+            "Starting Resources failed while loading or rendering." + Environment.NewLine +
+            Environment.NewLine + exception.Message,
+            "Starting Resources");
+    }
+
+    private void OnStartingResourcesClosed(object? sender, EventArgs e)
+    {
+        if (sender is not StartingResourcesDialog dialog) return;
+        dialog.InitializeRequested -= OnStartingResourcesInitializeRequested;
+        dialog.ApplyRequested -= OnStartingResourcesApplyRequested;
+        dialog.DisplayFailed -= OnStartingResourcesDisplayFailed;
+        dialog.Closed -= OnStartingResourcesClosed;
+        if (ReferenceEquals(startingResourcesDialog, dialog))
+            startingResourcesDialog = null;
+    }
+
+    private void ExecutePartyEconomy(object? parameter)
+    {
+        if (Project == null || parameter is not ProgressionType type) return;
+        if (partyEconomyDialogs.TryGetValue(type, out PartyEconomyDialog? existing))
+        {
+            if (existing.WindowState == WindowState.Minimized)
+                existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            return;
+        }
+
+        PartyEconomyDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException("The main application window is not available.");
+            PartyEconomyDialogViewModel viewModel =
+                new(Project, partyEconomyService, type);
+            dialog = new PartyEconomyDialog
+            {
+                Owner = owner,
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnPartyEconomyApplyRequested;
+            dialog.DisplayFailed += OnPartyEconomyDisplayFailed;
+            dialog.Closed += OnPartyEconomyClosed;
+            dialog.Show();
+            partyEconomyDialogs[type] = dialog;
+            Status = $"{viewModel.Title} opened.";
+        }
+        catch (Exception)
+        {
+            dialog?.Close();
+            partyEconomyDialogs.Remove(type);
+            messageDialogService.ShowError(
+                "The gameplay tool could not be opened." + Environment.NewLine +
+                Environment.NewLine + "The project was not changed.",
+                "Gameplay Tools");
+        }
+    }
+
+    private void OnPartyEconomyApplyRequested(object? sender, PartyEconomyApplyEventArgs e)
+    {
+        if (Project == null) return;
+        IProjectOperation operation =
+            new PartyEconomyOperation(partyEconomyService, e.OperationType, e.Settings);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    "The settings could not be applied." +
+                    Environment.NewLine + Environment.NewLine +
+                    "No changes were made.",
+                    operation.Name);
+                return;
+            }
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name, result.MutationResult, projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            if (sender is PartyEconomyDialog dialog &&
+                dialog.DataContext is PartyEconomyDialogViewModel viewModel)
+                viewModel.RefreshFromProject();
+            messageDialogService.ShowInformation(
+                result.Message ?? $"{operation.Name} completed.", operation.Name);
+            Status = $"{operation.Name} updated.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The settings could not be applied." +
+                Environment.NewLine + Environment.NewLine +
+                "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnPartyEconomyDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "The gameplay tool could not be displayed." +
+            Environment.NewLine + Environment.NewLine +
+            "The project was not changed.",
+            "Gameplay Tools");
+    }
+
+    private void OnPartyEconomyClosed(object? sender, EventArgs e)
+    {
+        if (sender is not PartyEconomyDialog dialog) return;
+        dialog.ApplyRequested -= OnPartyEconomyApplyRequested;
+        dialog.DisplayFailed -= OnPartyEconomyDisplayFailed;
+        dialog.Closed -= OnPartyEconomyClosed;
+        ProgressionType? key = partyEconomyDialogs
+            .Where(pair => ReferenceEquals(pair.Value, dialog))
+            .Select(pair => (ProgressionType?)pair.Key)
+            .FirstOrDefault();
+        if (key.HasValue) partyEconomyDialogs.Remove(key.Value);
+    }
+
+    private void ExecuteOverworldMovementSpeed(object? parameter)
+    {
+        if (Project == null) return;
+        if (overworldMovementSpeedDialog != null)
+        {
+            if (overworldMovementSpeedDialog.WindowState == WindowState.Minimized)
+                overworldMovementSpeedDialog.WindowState = WindowState.Normal;
+            overworldMovementSpeedDialog.Activate();
+            return;
+        }
+
+        OverworldMovementSpeedDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException(
+                    "The main application window is not available.");
+            OverworldMovementSpeedDialogViewModel viewModel =
+                new(Project, overworldMovementSpeedService);
+            dialog = new OverworldMovementSpeedDialog
+            {
+                Owner = owner,
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnOverworldMovementApplyRequested;
+            dialog.DisplayFailed += OnOverworldMovementDisplayFailed;
+            dialog.Closed += OnOverworldMovementClosed;
+            dialog.Show();
+            overworldMovementSpeedDialog = dialog;
+            Status = "Overworld Movement Speed opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            overworldMovementSpeedDialog = null;
+            messageDialogService.ShowError(
+                "Overworld Movement Speed could not be opened." +
+                Environment.NewLine + Environment.NewLine +
+                "The project was not changed.",
+                "Overworld Movement Speed");
+        }
+    }
+
+    private void OnOverworldMovementApplyRequested(
+        object? sender,
+        OverworldMovementApplyEventArgs e)
+    {
+        if (Project == null) return;
+        IProjectOperation operation =
+            new OverworldMovementSpeedOperation(
+                overworldMovementSpeedService,
+                e.Preset);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    "The movement preset could not be applied." +
+                    Environment.NewLine + Environment.NewLine +
+                    "No changes were made.",
+                    operation.Name);
+                return;
+            }
+
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        operation.Name,
+                        result.MutationResult,
+                        projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            if (sender is OverworldMovementSpeedDialog dialog &&
+                dialog.DataContext is
+                    OverworldMovementSpeedDialogViewModel viewModel)
+                viewModel.RefreshFromProject();
+            messageDialogService.ShowInformation(
+                result.Message ?? "Overworld Movement Speed was updated.",
+                operation.Name);
+            Status = "Overworld Movement Speed updated.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The movement preset could not be applied." +
+                Environment.NewLine + Environment.NewLine +
+                "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnOverworldMovementDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Overworld Movement Speed could not be displayed." +
+            Environment.NewLine + Environment.NewLine +
+            "The project was not changed.",
+            "Overworld Movement Speed");
+    }
+
+    private void OnOverworldMovementClosed(object? sender, EventArgs e)
+    {
+        if (sender is not OverworldMovementSpeedDialog dialog) return;
+        dialog.ApplyRequested -= OnOverworldMovementApplyRequested;
+        dialog.DisplayFailed -= OnOverworldMovementDisplayFailed;
+        dialog.Closed -= OnOverworldMovementClosed;
+        if (ReferenceEquals(overworldMovementSpeedDialog, dialog))
+            overworldMovementSpeedDialog = null;
+    }
+
     private void ValidateProject()
     {
         if (Project == null)
@@ -1470,6 +2294,12 @@ public class MainViewModel : ObservableObject
 
     private void RefreshAfterProjectOperation()
     {
+        if (Project != null)
+        {
+            gameplayOperationStateService.ValidateProjectStates(
+                Project);
+        }
+
         StopTrackingProjectProperties();
         StartTrackingProjectProperties();
 
@@ -1691,10 +2521,26 @@ public class MainViewModel : ObservableObject
         StringBuilder message =
             new();
 
-        message.AppendLine(
-            $"Snapshot: {Path.GetFileName(result.FileName)}");
+        if (result.OperationResults.Count > 0)
+        {
+            message.AppendLine("Gameplay tools");
+            message.AppendLine(
+                $"Applied: {result.OperationsAppliedCount:N0}");
+            message.AppendLine(
+                $"Already configured: " +
+                $"{result.OperationsAlreadyConfiguredCount:N0}");
+            message.AppendLine(
+                $"Failed: {result.OperationsFailedCount:N0}");
+            message.AppendLine();
+            message.AppendLine("Property changes");
+        }
+        else
+        {
+            message.AppendLine(
+                $"Snapshot: {Path.GetFileName(result.FileName)}");
+            message.AppendLine();
+        }
 
-        message.AppendLine();
         message.AppendLine(
             $"Total changes: {result.TotalCount:N0}");
 
@@ -1742,6 +2588,85 @@ public class MainViewModel : ObservableObject
             message.Append(
                 "No new changes were applied. Review the " +
                 "summary above for unresolved items.");
+        }
+
+        return message.ToString();
+    }
+
+    private static string BuildProfileApplySummary(
+        ModificationSnapshotImportResultModel result)
+    {
+        StringBuilder message =
+            new();
+
+        int applied =
+            result.AppliedEffectiveChangeCount;
+
+        int alreadyPresent =
+            result.AlreadyPresentEffectiveChangeCount;
+
+        int unapplied =
+            result.UnappliedEffectiveChangeCount;
+
+        if (unapplied > 0)
+        {
+            message.AppendLine(
+                $"{applied:N0} of " +
+                $"{result.EffectiveChangeCount:N0} " +
+                $"{GetSingularOrPlural(
+                    result.EffectiveChangeCount,
+                    "change",
+                    "changes")} were applied.");
+
+            message.AppendLine();
+            message.Append(
+                $"{unapplied:N0} " +
+                $"{GetSingularOrPlural(
+                    unapplied,
+                    "change",
+                    "changes")} could not be applied.");
+
+            return message.ToString();
+        }
+
+        if (applied == 0)
+        {
+            message.AppendLine(
+                "No changes were needed.");
+
+            message.AppendLine();
+            message.Append(
+                "This profile is already applied.");
+
+            return message.ToString();
+        }
+
+        message.AppendLine(
+            $"{applied:N0} " +
+            $"{GetSingularOrPlural(
+                applied,
+                "change",
+                "changes")} applied.");
+
+        message.AppendLine();
+
+        if (alreadyPresent > 0)
+        {
+            message.AppendLine(
+                $"{alreadyPresent:N0} " +
+                $"{GetSingularOrPlural(
+                    alreadyPresent,
+                    "change was",
+                    "changes were")} already present.");
+
+            message.AppendLine();
+            message.Append(
+                "All profile changes are now active.");
+        }
+        else
+        {
+            message.Append(
+                "Every profile change was applied successfully.");
         }
 
         return message.ToString();
@@ -1878,6 +2803,12 @@ public class MainViewModel : ObservableObject
 
     private void RefreshModificationState()
     {
+        if (Project != null)
+        {
+            gameplayOperationStateService.ValidateProjectStates(
+                Project);
+        }
+
         int modifiedCount =
             trackedProperties.Count(
                 property =>
@@ -1887,7 +2818,8 @@ public class MainViewModel : ObservableObject
             modifiedCount;
 
         bool projectIsModified =
-            modifiedCount > 0;
+            modifiedCount > 0 ||
+            Project?.IsGameplayOperationStateModified == true;
 
         if (Project != null &&
             Project.IsModified
@@ -1950,6 +2882,18 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         ContentCreationCommand?
+            .NotifyCanExecuteChanged();
+
+        GameplayProgressionCommand?
+            .NotifyCanExecuteChanged();
+
+        StartingResourcesCommand?
+            .NotifyCanExecuteChanged();
+
+        PartyEconomyCommand?
+            .NotifyCanExecuteChanged();
+
+        OverworldMovementSpeedCommand?
             .NotifyCanExecuteChanged();
     }
 
@@ -2329,29 +3273,40 @@ public class MainViewModel : ObservableObject
 
         try
         {
-            ModificationSnapshotImportResultModel result =
-                modProfileWorkflowService
-                    .LoadAndApplyProfile(
-                        Project,
-                        profile.FilePath);
+            ModificationSnapshotImportResultModel result;
 
-            RefreshModificationState();
-            RefreshChangeSummaryViewModel();
-            RefreshSearchResults();
-            RefreshHistoryState();
-            RefreshCommandStates();
+            using (editHistoryService.SuppressRecording())
+            {
+                result =
+                    modProfileWorkflowService
+                        .LoadAndApplyProfile(
+                            Project,
+                            profile.FilePath);
+            }
+
+            if (result.MutationResult.WasModified)
+            {
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        $"Apply Profile: {profile.Name}",
+                        result.MutationResult,
+                        projectOperationTransactionService));
+            }
+
+            RefreshAfterProjectOperation();
 
             string message =
-                BuildImportSnapshotSummary(
+                BuildProfileApplySummary(
                     result);
 
-            if (result.HasConflicts ||
-                result.HasUnmatchedItems ||
-                result.HasFailures)
+            bool isIncomplete =
+                result.UnappliedEffectiveChangeCount > 0;
+
+            if (isIncomplete)
             {
                 messageDialogService.ShowWarning(
                     message,
-                    "Profile Apply Complete");
+                    "Profile Apply Incomplete");
             }
             else
             {
@@ -2361,11 +3316,11 @@ public class MainViewModel : ObservableObject
             }
 
             Status =
-                result.HasAppliedChanges
+                result.MutationResult.WasModified
                     ? $"Profile applied: " +
-                      $"{result.AppliedCount:N0} " +
+                      $"{result.AppliedEffectiveChangeCount:N0} " +
                       $"{GetSingularOrPlural(
-                          result.AppliedCount,
+                          result.AppliedEffectiveChangeCount,
                           "change",
                           "changes")} applied"
                     : "Profile applied: " +
@@ -2373,10 +3328,6 @@ public class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            RefreshModificationState();
-            RefreshHistoryState();
-            RefreshCommandStates();
-
             messageDialogService.ShowError(
                 $"The profile could not be applied." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
@@ -2385,6 +3336,8 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Profile apply failed.";
+
+            RefreshAfterProjectOperation();
         }
     }
 

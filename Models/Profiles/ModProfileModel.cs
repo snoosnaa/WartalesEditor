@@ -18,4 +18,11 @@ public sealed class ModProfileModel
         get;
         init;
     } = new();
+
+    public System.Collections.Generic.List<
+        ProfileOperationRequestModel> OperationRequests
+    {
+        get;
+        init;
+    } = new();
 }

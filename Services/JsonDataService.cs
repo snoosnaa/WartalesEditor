@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
@@ -13,19 +14,38 @@ public class JsonDataService
     private readonly ProjectModelFactory
         projectModelFactory;
 
+    private readonly GameplayOperationStatePersistenceService
+        gameplayOperationStatePersistenceService;
+
     public JsonDataService()
         : this(
-            new ProjectModelFactory())
+            new ProjectModelFactory(),
+            new GameplayOperationStatePersistenceService())
     {
     }
 
     public JsonDataService(
         ProjectModelFactory projectModelFactory)
+        : this(
+            projectModelFactory,
+            new GameplayOperationStatePersistenceService())
+    {
+    }
+
+    public JsonDataService(
+        ProjectModelFactory projectModelFactory,
+        GameplayOperationStatePersistenceService
+            gameplayOperationStatePersistenceService)
     {
         this.projectModelFactory =
             projectModelFactory
             ?? throw new ArgumentNullException(
                 nameof(projectModelFactory));
+
+        this.gameplayOperationStatePersistenceService =
+            gameplayOperationStatePersistenceService
+            ?? throw new ArgumentNullException(
+                nameof(gameplayOperationStatePersistenceService));
     }
 
     public string Load(
@@ -93,9 +113,75 @@ public class JsonDataService
             SerializeProject(
                 project);
 
-        File.WriteAllText(
-            fileName,
-            serializedProject);
+        string fullFileName =
+            Path.GetFullPath(fileName);
+
+        string? directory =
+            Path.GetDirectoryName(fullFileName);
+
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        string cdbTemporaryFile =
+            fullFileName + ".tmp";
+
+        string sidecarTemporaryFile =
+            string.Empty;
+
+        bool cdbCommitted = false;
+
+        try
+        {
+            File.WriteAllText(
+                cdbTemporaryFile,
+                serializedProject,
+                new UTF8Encoding(false));
+
+            sidecarTemporaryFile =
+                gameplayOperationStatePersistenceService
+                    .WriteTemporary(
+                        project,
+                        fullFileName);
+
+            File.Move(
+                cdbTemporaryFile,
+                fullFileName,
+                overwrite: true);
+
+            cdbCommitted = true;
+
+            GameplayOperationStatePersistenceService
+                .CommitTemporary(
+                    sidecarTemporaryFile,
+                    gameplayOperationStatePersistenceService
+                        .GetSidecarPath(fullFileName));
+        }
+        catch (Exception exception)
+        {
+            GameplayOperationStatePersistenceService
+                .TryDeleteTemporary(cdbTemporaryFile);
+
+            if (!string.IsNullOrWhiteSpace(
+                    sidecarTemporaryFile))
+            {
+                GameplayOperationStatePersistenceService
+                    .TryDeleteTemporary(sidecarTemporaryFile);
+            }
+
+            if (cdbCommitted)
+            {
+                throw new ProjectPartialSaveException(
+                    "The CDB was saved, but its required gameplay-" +
+                    "operation state sidecar could not be saved. " +
+                    "The project remains modified in memory so the " +
+                    "save can be retried safely.",
+                    exception);
+            }
+
+            throw;
+        }
 
         foreach (SheetModel sheet in
                  project.Sheets)
@@ -112,6 +198,32 @@ public class JsonDataService
         }
 
         project.IsModified =
+            false;
+
+        project.IsGameplayOperationStateModified =
+            false;
+
+        project.FileName =
+            fullFileName;
+    }
+
+    public void SaveGameplayOperationState(
+        ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (string.IsNullOrWhiteSpace(project.FileName))
+        {
+            throw new InvalidOperationException(
+                "The project must have a file path before gameplay-" +
+                "operation state can be saved.");
+        }
+
+        gameplayOperationStatePersistenceService.Save(
+            project,
+            project.FileName);
+
+        project.IsGameplayOperationStateModified =
             false;
     }
 
@@ -281,6 +393,11 @@ public class JsonDataService
 
         project.IsModified =
             false;
+
+        gameplayOperationStatePersistenceService
+            .LoadIntoProject(
+                project,
+                fileName);
 
         return project;
     }

@@ -166,6 +166,57 @@ public sealed class CampFacilityJsonBuilder
             ApothecaryDefinition);
     }
 
+    public int GetEffectivePropertyChangeCount()
+    {
+        return GetEffectivePropertyChangeCount(
+                   AnvilDefinition)
+               +
+               GetEffectivePropertyChangeCount(
+                   ApothecaryDefinition);
+    }
+
+    private static int GetEffectivePropertyChangeCount(
+        CampFacilityDefinition definition)
+    {
+        JObject cleanProps =
+            new()
+            {
+                ["activity"] = definition.Activity,
+                ["hideInCheatMenu"] = true
+            };
+
+        return CountChangedMembers(
+                   cleanProps,
+                   BuildProps(
+                       cleanProps,
+                       definition))
+               + BuildTool(definition)
+                   .Properties()
+                   .Count()
+               + BuildIcon(definition)
+                   .Properties()
+                   .Count();
+    }
+
+    private static int CountChangedMembers(
+        JObject baseline,
+        JObject result)
+    {
+        int count = 0;
+
+        foreach (JProperty property in result.Properties())
+        {
+            if (!JToken.DeepEquals(
+                    baseline[property.Name],
+                    property.Value))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     private static JObject BuildProps(
         JObject existingProps,
         CampFacilityDefinition definition)

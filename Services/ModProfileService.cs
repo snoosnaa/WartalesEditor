@@ -2,6 +2,7 @@
 using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -10,19 +11,38 @@ public sealed class ModProfileService
     private readonly ModificationSnapshotService
         snapshotService;
 
+    private readonly ProfileOperationCaptureService
+        operationCaptureService;
+
     public ModProfileService()
         : this(
-            new ModificationSnapshotService())
+            new ModificationSnapshotService(),
+            CreateDefaultCaptureService())
     {
     }
 
     public ModProfileService(
         ModificationSnapshotService snapshotService)
+        : this(
+            snapshotService,
+            CreateDefaultCaptureService())
+    {
+    }
+
+    public ModProfileService(
+        ModificationSnapshotService snapshotService,
+        ProfileOperationCaptureService
+            operationCaptureService)
     {
         this.snapshotService =
             snapshotService
             ?? throw new ArgumentNullException(
                 nameof(snapshotService));
+
+        this.operationCaptureService =
+            operationCaptureService
+            ?? throw new ArgumentNullException(
+                nameof(operationCaptureService));
     }
 
     public ModProfileModel CreateProfile(
@@ -50,6 +70,13 @@ public sealed class ModProfileService
                 project,
                 editorVersion);
 
+        System.Collections.Generic.IReadOnlyList<
+            ProfileOperationRequestModel>
+            operationRequests =
+                operationCaptureService.Capture(
+                    project,
+                    snapshot);
+
         return new ModProfileModel
         {
             Metadata =
@@ -76,6 +103,11 @@ public sealed class ModProfileService
                 },
 
             Snapshot = snapshot
+            ,
+
+            OperationRequests =
+                System.Linq.Enumerable.ToList(
+                    operationRequests)
         };
     }
 
@@ -117,6 +149,22 @@ public sealed class ModProfileService
             Snapshot =
                 profile.Snapshot,
 
+            OperationRequests =
+                System.Linq.Enumerable.ToList(
+                    System.Linq.Enumerable.Select(
+                        profile.OperationRequests,
+                        request =>
+                        new ProfileOperationRequestModel
+                        {
+                            FormatVersion =
+                                request.FormatVersion,
+                            OperationId =
+                                request.OperationId,
+                            Settings =
+                                (Newtonsoft.Json.Linq.JObject?)
+                                    request.Settings?.DeepClone()
+                        })),
+
             Metadata =
                 new ModProfileMetadataModel
                 {
@@ -151,5 +199,22 @@ public sealed class ModProfileService
                         new(existing.Tags)
                 }
         };
+    }
+
+    private static ProfileOperationCaptureService
+        CreateDefaultCaptureService()
+    {
+        ProjectMutationService mutationService =
+            new();
+
+        ContentCreationService contentCreationService =
+            new(mutationService);
+
+        return new ProfileOperationCaptureService(
+            new OperationValidatorProvider(),
+            new AddCampFacilitiesOperation(
+                contentCreationService),
+            new UpgradeAllEquipmentOperation(
+                contentCreationService));
     }
 }

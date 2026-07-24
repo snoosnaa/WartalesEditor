@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using WartalesEditor.Services;
 
 namespace WartalesEditor.Models.Snapshots;
 
@@ -12,16 +13,31 @@ public sealed class ModificationApplyResultModel
     public ModificationApplyResultModel(
         IEnumerable<
             ModificationApplyItemResultModel> items)
+        : this(
+            items,
+            new ProjectMutationResult())
+    {
+    }
+
+    public ModificationApplyResultModel(
+        IEnumerable<
+            ModificationApplyItemResultModel> items,
+        ProjectMutationResult mutationResult)
     {
         ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(mutationResult);
 
         this.items =
             items.ToList().AsReadOnly();
+
+        MutationResult = mutationResult;
     }
 
     public IReadOnlyList<
         ModificationApplyItemResultModel> Items =>
             items;
+
+    public ProjectMutationResult MutationResult { get; }
 
     public int TotalCount =>
         Items.Count;

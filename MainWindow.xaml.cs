@@ -61,6 +61,18 @@ public partial class MainWindow : Window
                 new OperationValidatorProvider(),
                 projectOperationTransactionService);
 
+        ProfileOperationCaptureService
+            profileOperationCaptureService =
+                new(
+                    new OperationValidatorProvider(),
+                    addCampFacilitiesOperation,
+                    upgradeAllEquipmentOperation);
+
+        ModProfileService modProfileService =
+            new(
+                new ModificationSnapshotService(),
+                profileOperationCaptureService);
+
         ViewModel =
             new MainViewModel(
                 jsonDataService,
@@ -72,9 +84,14 @@ public partial class MainWindow : Window
                 new ChangeSummaryService(),
                 new ModProfileLibraryService(),
                 new ModProfileWorkflowService(
-                    new ModProfileService(),
+                    modProfileService,
                     new ModProfileSerializationService(),
-                    snapshotWorkflowService),
+                    snapshotWorkflowService,
+                    new ProfileOperationResolver(
+                        addCampFacilitiesOperation,
+                        upgradeAllEquipmentOperation),
+                    projectOperationService,
+                    projectOperationTransactionService),
                 ReferenceDataService.Instance,
                 validationWorkflowService,
                 validationPresentationService,

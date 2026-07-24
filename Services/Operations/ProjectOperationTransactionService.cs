@@ -39,7 +39,8 @@ public sealed class ProjectOperationTransactionService
             mutationResult.PropertyRollbackRecords,
             mutationResult.CreatedPropertyRollbackRecords,
             mutationResult.CreatedJsonPropertyRollbackRecords,
-            mutationResult.CreatedEntryRollbackRecords);
+            mutationResult.CreatedEntryRollbackRecords,
+            mutationResult.GameplayOperationStateRollbackRecords);
     }
 
     public void Rollback(
@@ -50,7 +51,9 @@ public sealed class ProjectOperationTransactionService
         IReadOnlyList<CreatedJsonPropertyRollbackRecord>
             createdJsonPropertyRollbackRecords,
         IReadOnlyList<CreatedEntryRollbackRecord>
-            createdEntryRollbackRecords)
+            createdEntryRollbackRecords,
+        IReadOnlyList<GameplayOperationStateRollbackRecord>
+            gameplayOperationStateRollbackRecords)
     {
         ArgumentNullException.ThrowIfNull(
             propertyRollbackRecords);
@@ -63,6 +66,19 @@ public sealed class ProjectOperationTransactionService
 
         ArgumentNullException.ThrowIfNull(
             createdEntryRollbackRecords);
+
+        ArgumentNullException.ThrowIfNull(
+            gameplayOperationStateRollbackRecords);
+
+        foreach (GameplayOperationStateRollbackRecord record in
+                 gameplayOperationStateRollbackRecords.Reverse())
+        {
+            RestoreOperationState(
+                record.Project,
+                record.PreviousState,
+                record.ReplacementState.OperationType,
+                record.PreviousStateWasModified);
+        }
 
         foreach (PropertyRollbackRecord record in
                  propertyRollbackRecords.Reverse())
@@ -103,7 +119,9 @@ public sealed class ProjectOperationTransactionService
         IReadOnlyList<CreatedJsonPropertyRollbackRecord>
             createdJsonPropertyRollbackRecords,
         IReadOnlyList<CreatedEntryRollbackRecord>
-            createdEntryRollbackRecords)
+            createdEntryRollbackRecords,
+        IReadOnlyList<GameplayOperationStateRollbackRecord>
+            gameplayOperationStateRollbackRecords)
     {
         ArgumentNullException.ThrowIfNull(
             propertyRollbackRecords);
@@ -119,6 +137,9 @@ public sealed class ProjectOperationTransactionService
 
         ArgumentNullException.ThrowIfNull(
             createdEntryRollbackRecords);
+
+        ArgumentNullException.ThrowIfNull(
+            gameplayOperationStateRollbackRecords);
 
         if (propertyRollbackRecords.Count !=
             updatedPropertyValues.Count)
@@ -158,6 +179,42 @@ public sealed class ProjectOperationTransactionService
                 .ApplySnapshotValue(
                     updatedPropertyValues[index]);
         }
+
+        foreach (GameplayOperationStateRollbackRecord record in
+                 gameplayOperationStateRollbackRecords)
+        {
+            RestoreOperationState(
+                record.Project,
+                record.ReplacementState,
+                record.ReplacementState.OperationType,
+                stateWasModified: true);
+        }
+    }
+
+    private static void RestoreOperationState(
+        ProjectModel project,
+        GameplayOperationStateModel? state,
+        ProgressionType operationType,
+        bool stateWasModified)
+    {
+        GameplayOperationStateModel? existing =
+            project.GameplayOperationStates.FirstOrDefault(
+                candidate =>
+                    candidate.OperationType == operationType);
+
+        if (existing != null)
+        {
+            project.GameplayOperationStates.Remove(existing);
+        }
+
+        if (state != null)
+        {
+            project.GameplayOperationStates.Add(
+                state.DeepClone());
+        }
+
+        project.IsGameplayOperationStateModified =
+            stateWasModified;
     }
 
     private static void RemoveCreatedProperty(

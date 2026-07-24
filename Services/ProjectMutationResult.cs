@@ -33,6 +33,10 @@ public sealed class ProjectMutationResult
         propertyRollbackRecords =
             new();
 
+    private readonly List<GameplayOperationStateRollbackRecord>
+        gameplayOperationStateRollbackRecords =
+            new();
+
     public IReadOnlyList<EntryModel> CreatedEntries =>
         createdEntries;
 
@@ -58,11 +62,16 @@ public sealed class ProjectMutationResult
         PropertyRollbackRecords =>
             propertyRollbackRecords;
 
+    public IReadOnlyList<GameplayOperationStateRollbackRecord>
+        GameplayOperationStateRollbackRecords =>
+            gameplayOperationStateRollbackRecords;
+
     public bool WasModified =>
         createdEntries.Count > 0 ||
         createdProperties.Count > 0 ||
         updatedProperties.Count > 0 ||
-        createdJsonPropertyRollbackRecords.Count > 0;
+        createdJsonPropertyRollbackRecords.Count > 0 ||
+        gameplayOperationStateRollbackRecords.Count > 0;
 
     public void AddEntry(
         SheetModel sheet,
@@ -137,6 +146,23 @@ public sealed class ProjectMutationResult
                 previousValue));
     }
 
+    public void AddGameplayOperationState(
+        ProjectModel project,
+        GameplayOperationStateModel? previousState,
+        GameplayOperationStateModel replacementState,
+        bool previousStateWasModified)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(replacementState);
+
+        gameplayOperationStateRollbackRecords.Add(
+            new GameplayOperationStateRollbackRecord(
+                project,
+                previousState,
+                replacementState,
+                previousStateWasModified));
+    }
+
     public void Merge(
         ProjectMutationResult other)
     {
@@ -163,5 +189,8 @@ public sealed class ProjectMutationResult
 
         propertyRollbackRecords.AddRange(
             other.propertyRollbackRecords);
+
+        gameplayOperationStateRollbackRecords.AddRange(
+            other.gameplayOperationStateRollbackRecords);
     }
 }

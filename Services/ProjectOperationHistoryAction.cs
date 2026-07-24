@@ -27,6 +27,9 @@ public sealed class ProjectOperationHistoryAction :
     private readonly JToken[]
         updatedPropertyValues;
 
+    private readonly GameplayOperationStateRollbackRecord[]
+        gameplayOperationStateRollbackRecords;
+
     public ProjectOperationHistoryAction(
         string description,
         ProjectMutationResult mutationResult,
@@ -74,6 +77,10 @@ public sealed class ProjectOperationHistoryAction :
                     record.Property
                         .GetCurrentValueSnapshot())
                 .ToArray();
+
+        gameplayOperationStateRollbackRecords =
+            mutationResult.GameplayOperationStateRollbackRecords
+                .ToArray();
     }
 
     public string Description { get; }
@@ -84,7 +91,8 @@ public sealed class ProjectOperationHistoryAction :
             propertyRollbackRecords,
             createdPropertyRollbackRecords,
             createdJsonPropertyRollbackRecords,
-            createdEntryRollbackRecords);
+            createdEntryRollbackRecords,
+            gameplayOperationStateRollbackRecords);
     }
 
     public void Redo()
@@ -94,6 +102,7 @@ public sealed class ProjectOperationHistoryAction :
             updatedPropertyValues,
             createdPropertyRollbackRecords,
             createdJsonPropertyRollbackRecords,
-            createdEntryRollbackRecords);
+            createdEntryRollbackRecords,
+            gameplayOperationStateRollbackRecords);
     }
 }

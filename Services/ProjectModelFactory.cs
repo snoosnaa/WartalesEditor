@@ -167,6 +167,11 @@ public sealed class ProjectModelFactory
                 yield break;
 
             case JTokenType.Array:
+                yield return CreatePropertyModel(
+                    sheetName,
+                    sourceProperty,
+                    propertyPath,
+                    creationMode);
                 yield break;
 
             default:

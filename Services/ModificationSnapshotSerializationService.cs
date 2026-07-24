@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+using WartalesEditor.Models;
 using WartalesEditor.Models.Snapshots;
 
 namespace WartalesEditor.Services;
@@ -206,6 +207,26 @@ public sealed class ModificationSnapshotSerializationService
             throw new ModificationSnapshotSerializationException(
                 "The modification snapshot has no " +
                 "category collection.");
+        }
+
+        if (snapshot.GameplayOperationStates == null)
+        {
+            throw new ModificationSnapshotSerializationException(
+                "The modification snapshot has no gameplay-operation " +
+                "state collection.");
+        }
+
+        foreach (GameplayOperationStateModel state in
+                 snapshot.GameplayOperationStates)
+        {
+            if (state == null ||
+                state.FormatVersion !=
+                    GameplayOperationStateModel.CurrentFormatVersion)
+            {
+                throw new ModificationSnapshotSerializationException(
+                    "The modification snapshot contains an unsupported " +
+                    "gameplay-operation state.");
+            }
         }
 
         foreach (ModificationSnapshotCategoryModel category

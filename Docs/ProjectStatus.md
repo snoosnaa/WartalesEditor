@@ -1,169 +1,421 @@
-﻿# Project Status
+﻿Project Status
 
-**Application Version:** 0.8.1 (Development)
+Application Version: 0.9.1 (Development)
 
-**Status:** Active Development
+Status: Active Development
 
-**Last Updated:** 2026-07-21
+Last Updated: 2026-07-23
 
----
+Purpose
 
-# Current State
+This document describes the current state of the Wartales Editorproject.
 
-The project is currently considered architecturally stable.
+It is intentionally concise.
 
-The editor:
+It answers:
 
-- Builds successfully.
-- Passes runtime testing.
-- Passes extended in-game verification.
-- Documentation is current.
-- Source control is up to date.
+Where the project is today.
 
-Development is transitioning from infrastructure construction to feature expansion.
+What has been completed.
 
----
+What is currently being developed.
 
-# Current Milestone
+What is planned next.
 
-Version 0.8.1 has been completed.
+Detailed architecture belongs in Architecture.md.
 
-Recently completed:
+Development workflow belongs in CodexDevelopmentGuide.md.
 
-- Object mutation infrastructure
-- ContentCreationService recovery
-- Validator recovery
-- Extended gameplay verification
+Product philosophy belongs in PlayerFirstDesign.md.
 
-The next milestone is a comprehensive roadmap review before beginning additional implementation work.
+Historical information belongs in DevelopmentJournal.md andChangelog.md.
 
----
+Current State
 
-# Completed Architecture
+Wartales Editor has transitioned from infrastructure development toplayer-focused gameplay feature development.
 
-The following reusable subsystems are complete.
+The application:
 
-- Editing Platform
-- Snapshot Workflow
-- Mod Profiles
-- Validation Framework
-- Project Mutation Layer
-- Content Creation Infrastructure
-- Project Operation Framework
-- Transaction Framework
-- Nested Property Infrastructure
-- Object-Valued Mutation Infrastructure
+Builds successfully.
 
----
+Passes validation.
 
-# Verified Features
+Passes save/reload testing.
 
-The following features have been verified through editor testing and in-game testing.
+Supports persistent Gameplay Operation State.
 
-## Editing
+Passes extended runtime testing.
 
-- Undo / Redo
-- Change Summary
-- Save
-- Save Validation
-- Snapshot Import / Export
-- Mod Profiles
+Has completed multiple in-game verification passes.
 
-## Gameplay
+Is maintained with Git and GitHub.
 
-- Add Camp Facilities
-- Upgrade All Equipment
-- Weather modifications
+The editing platform and supporting architecture are considered stable.
 
-## Transaction System
+Future development is focused primarily on expanding gameplay tools andimproving the player experience.
 
-- Mutation-based rollback
-- Operation validation
-- Atomic operation history
-- Nested object mutation
-- Object mutation rollback
+Current Milestone
 
----
+Version 0.9.1 --- World Convenience
 
-# Engineering Rules
+Current phase:
 
-The following architectural rules are considered permanent.
+Pass 1 implementation and verification
 
-- PropertyModel.IsModified is the single source of truth.
-- Rollback is mutation-based.
-- Project reconstruction is prohibited.
-- Extend infrastructure before features.
-- Preserve verified implementations.
-- Validation verifies project state but does not mutate project state.
-- Keep public APIs stable whenever practical.
-- Complete runtime verification before closing a milestone.
+Overworld Movement Speed is implemented and build verified.
 
----
+Additive Mod Profile restoration has been repaired and build verified.
+New Version 2 profiles store explicit, validated requests for Add Camp
+Facilities and Upgrade All Equipment, replay those operations before
+ordinary snapshot properties, and record the combined result as one
+mutation-based Undo/Redo action.
 
-# Standard Development Workflow
+Version 1 profiles remain loadable and retain their original
+property-target behavior. Direct Snapshot import remains property-target
+based and does not replay gameplay operations.
 
-Every implementation milestone follows the same workflow.
+The Gameplay Tools menu is now flat; Overworld Movement Speed appears
+directly after the existing separator.
 
-1. Architectural planning
-2. Codex implementation
-3. Codex compilation
-4. Visual Studio build verification
-5. Runtime testing
-6. Documentation updates
-7. Git commit
-8. Git push
+Automated model-level verification confirms request detection, operation
+ownership filtering, Version 1 and Version 2 serialization, deterministic
+replay, idempotence, staged rollback, ordinary property application, and
+combined Undo/Redo.
 
-No milestone is considered complete until every step has been successfully completed.
+Profile Manager now presents one effective Changes count that combines
+ordinary profile changes with the deterministic project impact of
+additive gameplay operations. Internal snapshot and operation-request
+counts are no longer exposed in the player-facing summary.
 
----
+Profile application now refreshes the editor's tracked PropertyModel set
+after additive replay. Newly created nested properties therefore remain
+visible through PropertyModel.IsModified, the main modification count,
+and Change Summary. Profile Manager, apply results, the main counter, and
+Change Summary now use the same modified-property outcome semantics.
 
-# Current Roadmap
+The profile-apply result presents one player-facing Changes summary.
+Snapshot-property and gameplay-operation categories remain internal.
 
-The next development session will reorganize all remaining work into implementation groups.
+Implemented presets:
 
-Current roadmap categories include:
+Vanilla
 
-## Content Creation
+Faster
 
-- Additional camp facilities
-- Additional camp content
-- NPC creation
-- Profession creation
-- Additional gameplay objects
+Fast
 
-## Gameplay Tweaks
+Very Fast
 
-- Starting resources
-- Starting knowledge
-- Path balancing
-- Economy adjustments
-- Additional weather options
-- Difficulty adjustments
+Real-CDB automated verification confirms exact preset detection, Custom
+state detection, atomic mutation, failed-target safety, and one-action
+Undo/Redo.
 
-## Editor Improvements
+Pending Visual Studio verification:
 
-- Validation expansion
-- Batch operations
-- Additional property editors
-- Search improvements
-- Performance improvements
+Runtime UI
 
-## Long-Term Features
+Profile creation and application UI
 
-- Merge Preview
-- Community sharing after Version 1.0
-- In-game profile credits
-- Byte-for-byte CDB formatting preservation
+Combined profile result presentation
 
----
+Legacy profile application UI
 
-# Next Session
+Additive profile Change Summary and Undo/Redo interaction
 
-Before implementing new features:
+Save/Reload and Save As
 
-1. Review the roadmap.
-2. Organize future milestones.
-3. Identify infrastructure reuse opportunities.
-4. Begin the next implementation milestone using the established ChatGPT + Codex workflow.
+Validation presentation
 
-This document should always reflect the current state of the project rather than its history.
+Change Summary
+
+Profiles
+
+Snapshots
+
+Pending Wartales verification:
+
+Movement behavior
+
+Encounters and pursuit
+
+Collision and pathfinding
+
+World-time and fatigue progression
+
+Remaining World Convenience scope:
+
+Vendor refresh speed
+
+Resource respawn speed
+
+Camera zoom improvements
+
+Global Weather Controls
+
+Weather investigation has previously been completed and will beincorporated into this milestone where appropriate.
+
+Recently Completed
+
+Version 0.9.0 --- Personal Gameplay Expansion
+
+Completed and verified:
+
+Starting Resources
+
+Volunteer Trait Wage Reduction
+
+Maximum Valour
+
+Valour Restored After Rest
+
+Saddlebag Carrying Capacity
+
+Pony Starting Capacity
+
+Verification included:
+
+Successful builds
+
+Runtime testing
+
+Save/Reload
+
+Validation
+
+Change Summary
+
+Undo/Redo
+
+Profile integration
+
+Snapshot integration
+
+Gameplay Operation State persistence
+
+Multiple in-game verification passes
+
+Volunteer correctly supports a 100% wage reduction.
+
+Valour modifications function correctly in-game.
+
+Saddlebag and pony carrying-capacity modifications function correctlyin-game.
+
+Gameplay Features
+
+Completed
+
+The following gameplay tools have been implemented and verified:
+
+Add Camp Facilities
+
+Upgrade All Equipment
+
+Character XP Controls
+
+Profession XP Controls
+
+Starting Resources
+
+Volunteer Trait Wage Reduction
+
+Maximum Valour
+
+Valour Restored After Rest
+
+Saddlebag Carrying Capacity
+
+Pony Starting Capacity
+
+Investigation Complete
+
+Global Weather Controls
+
+Regional Weather Controls
+
+Disable Rain Across All Regions
+
+A dedicated Weather gameplay tool remains planned as part of the WorldConvenience milestone.
+
+Completed Architecture
+
+The following major systems are complete:
+
+Editing Platform
+
+Snapshot Workflow
+
+Mod Profiles
+
+Validation Framework
+
+Project Mutation Layer
+
+Content Creation Infrastructure
+
+Project Operation Framework
+
+Transaction Framework
+
+Nested Property Infrastructure
+
+Object-Valued Mutation Infrastructure
+
+Array Mutation Infrastructure
+
+Gameplay Operation State
+
+Gameplay Operation State Persistence
+
+The architecture is considered stable.
+
+Future infrastructure should only be introduced when it directlysupports approved gameplay features.
+
+Current Roadmap
+
+Immediate Priorities
+
+World Convenience
+
+Camp Improvements
+
+Profession Improvements
+
+Tomb Puzzle Simplification
+
+Recruitment Improvements
+
+Boss Capture
+
+Roadmap priorities may continue evolving as additional game systems areinvestigated.
+
+High-Priority Technical Work
+
+Update Survival
+
+Profile migration improvements
+
+Merge Preview
+
+Conflict resolution
+
+Compare Projects
+
+Preserve original CDB formatting
+
+Preserve unknown game data
+
+Automatic backups
+
+These remain important but should not interrupt gameplay-featuredevelopment unless required.
+
+Post-Version 1.0
+
+Gameplay
+
+Starting Influence
+
+Community profile sharing
+
+Community content sharing
+
+Creator metadata
+
+In-game profile credits
+
+NPC creation
+
+Encounter creation
+
+Profession creation
+
+Trait creation
+
+Status-effect creation
+
+Steam Workshop integration is intentionally excluded because Wartalesdoes not support Steam Workshop.
+
+Current Regression Profile
+
+The regression-testing Mod Profile contains all completed gameplay
+features and should continue expanding. Clean-project restoration of Add
+Camp Facilities and Equipment Upgrades requires a newly created Version 2
+profile; legacy Version 1 profiles preserve their original snapshot-only
+behavior.
+
+Current coverage includes:
+
+Camp Facilities
+
+Equipment Upgrades
+
+Character XP
+
+Profession XP
+
+Starting Resources
+
+Volunteer Trait Wage Reduction
+
+Maximum Valour
+
+Valour Restored After Rest
+
+Saddlebag Carrying Capacity
+
+Pony Starting Capacity
+
+Every new gameplay feature should be regression-tested against thisprofile before being considered complete.
+
+Required Codex Reading
+
+Before implementing any milestone, Codex must read:
+
+ProjectStatus.md
+
+Architecture.md
+
+CodexDevelopmentGuide.md
+
+When available, PlayerFirstDesign.md should be added to this list.
+
+Next Task
+
+Investigate Version 0.9.1 --- World Convenience.
+
+Initial investigation targets:
+
+Overworld movement speed
+
+Vendor refresh speed
+
+Resource respawn speed
+
+Camera zoom improvements
+
+Global Weather Controls
+
+Investigation should identify the safest player-facing gameplayoperations before implementation begins.
+
+Document Maintenance
+
+ProjectStatus.md should always describe the project's current state.
+
+Update this document whenever a milestone is completed and verified.
+
+Historical information belongs in:
+
+DevelopmentJournal.md
+
+Changelog.md
+
+Architecture belongs in:
+
+Architecture.md
+
+Development workflow belongs in:
+
+CodexDevelopmentGuide.md
+
+Player experience and UI philosophy belong in:
+
+PlayerFirstDesign.md

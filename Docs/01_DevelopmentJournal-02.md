@@ -604,3 +604,64 @@ Future feature groups are expected to include:
 - Long-Term Platform Features
 
 This roadmap review marks the transition from infrastructure construction to disciplined feature expansion built upon the now-stable architecture.
+
+---
+
+# Session 0.9.1 — Additive Profile Restoration Repair
+
+## Summary
+
+Investigated and repaired the gap between property-target snapshots and
+additive content operations. Mod Profile Version 2 now stores explicit
+requests for Add Camp Facilities and Upgrade All Equipment. Profile apply
+resolves only these approved identities, executes them through the
+existing Project Operation pipeline, then applies the filtered ordinary
+snapshot and restores gameplay-operation state.
+
+Operation-owned filtering is deliberately narrow. Camp filtering is
+limited to Anvil and ApothecaryTable builder-owned values. Equipment
+filtering is limited to approved catalog entries whose flag change is
+exactly the operation's bitwise-OR output. Unrelated manual changes remain
+in the property snapshot.
+
+The combined mutation result uses the existing rollback and operation
+history infrastructure. One profile application therefore produces one
+Undo/Redo action for additive, ordinary-property, and gameplay-state
+changes. A later additive failure rolls back earlier replayed operations
+and stops snapshot application.
+
+Version 1 profiles remain loadable with an empty request collection.
+Direct Snapshot import was intentionally left unchanged.
+
+The World Convenience menu wrapper was removed. Overworld Movement Speed
+is now a direct Gameplay Tools item.
+
+## Verification
+
+- Build succeeded with zero warnings and zero errors.
+- Disposable automated verification covered Version 1 compatibility,
+  Version 2 round-trip serialization, unknown and duplicate requests,
+  all operation-detection combinations, partial-state rejection, ordered
+  replay, complete equipment-catalog mutation, craft creation,
+  operation-owned filtering, manual-property preservation, idempotence,
+  staged rollback, and combined Undo/Redo.
+- Visual Studio UI, save/reload, and in-game verification remain pending.
+
+## Profile Tracking and Result Refinement
+
+Visual Studio verification exposed a UI tracking discrepancy after
+profile replay. Additive operations created the expected JSON,
+PropertyModels, IsModified state, and rollback records, but
+MainViewModel retained the clean project's original trackedProperties
+set. That set omitted 488 newly created equipment properties and 24
+newly created camp properties, producing a displayed count of 61 instead
+of 573.
+
+Profile apply now uses the same post-operation tracking refresh as direct
+operations. Model-level verification reproduced the old 61 count from
+the stale set and confirmed 573 after rescan, with matching Change
+Summary, direct/profile JSON and modified paths, one-action Undo/Redo,
+idempotent reapply, and additive failure rollback.
+
+The result popup now presents one Changes outcome and no longer exposes
+gameplay-tool versus property-change categories.

@@ -36,6 +36,10 @@ public sealed class ModProfileSummaryModel
 
     public int PropertyCount { get; init; }
 
+    public int OperationCount { get; init; }
+
+    public int EffectiveChangeCount { get; init; }
+
     public bool HasChanges =>
-        PropertyCount > 0;
+        EffectiveChangeCount > 0;
 }

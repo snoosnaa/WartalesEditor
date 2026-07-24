@@ -1,0 +1,73 @@
+<Window x:Class="WartalesEditor.Views.StartingResourcesDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:WartalesEditor.Converters"
+        Title="{Binding Title}"
+        Width="680" Height="670" MinWidth="560" MinHeight="560"
+        SizeToContent="Manual" WindowState="Normal"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False" Visibility="Visible">
+    <Window.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Add extra money, food, and crafting materials to every standard new campaign start. Your chosen starting group keeps its normal supplies and bonuses."
+                       TextWrapping="Wrap"/>
+            <TextBlock Text="These settings apply to newly created campaigns. Existing saves are not changed."
+                       FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="#FFF7E6" BorderBrush="#E0B35B" BorderThickness="1"
+                Padding="12" Margin="0,0,0,12" Visibility="{Binding NeedsInitialization, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel>
+                <TextBlock Text="{Binding InitializationText, Mode=OneWay}" TextWrapping="Wrap"/>
+                <Button Content="Initialize Starting Resources" Width="210" HorizontalAlignment="Left"
+                        Margin="0,10,0,0" Click="InitializeButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" IsEnabled="{Binding IsInitialized}">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <GroupBox Grid.Column="0" Header="Extra supplies" Margin="0,0,8,0">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Extra Krowns" VerticalAlignment="Center"/><TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Krowns, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <TextBlock Grid.Row="1" Text="Extra Bread" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Bread, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <TextBlock Grid.Row="2" Text="Extra Apples" VerticalAlignment="Center"/><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Apples, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <TextBlock Grid.Row="3" Text="Extra Iron Ore" VerticalAlignment="Center"/><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding IronOre, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <TextBlock Grid.Row="4" Text="Extra Wood" VerticalAlignment="Center"/><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Wood, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <TextBlock Grid.Row="5" Text="Extra Cloth" VerticalAlignment="Center"/><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Cloth, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                    <WrapPanel Grid.Row="6" Grid.ColumnSpan="2" Margin="0,12,0,0">
+                        <Button Content="+5 to All Materials" Margin="0,0,6,6" Click="AddFiveButton_Click"/>
+                        <Button Content="+10 to All Materials" Margin="0,0,6,6" Click="AddTenButton_Click"/>
+                        <Button Content="Clear Extras" Margin="0,0,6,6" Click="ClearButton_Click"/>
+                    </WrapPanel>
+                    <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding ValidationMessage, Mode=OneWay}"
+                               Foreground="DarkRed" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                </Grid>
+            </GroupBox>
+            <GroupBox Grid.Column="1" Header="Preview" Margin="8,0,0,0">
+                <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" Background="WhiteSmoke" Padding="10" Margin="12"/>
+            </GroupBox>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Apply" Width="100" IsEnabled="{Binding CanApply}" Margin="0,0,8,0" Click="ApplyButton_Click"/>
+            <Button Content="Close" Width="90" Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

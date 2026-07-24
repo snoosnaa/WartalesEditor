@@ -246,12 +246,12 @@ public sealed class ProjectMutationService
 
         if (existingSourceProperty != null)
         {
-            if (existingSourceProperty.Value.Type is
-                JTokenType.Object or JTokenType.Array)
+            if (existingSourceProperty.Value.Type ==
+                JTokenType.Object)
             {
                 throw new InvalidOperationException(
                     $"Property path '{propertyPath}' is not a " +
-                    "scalar JSON property.");
+                    "scalar or array JSON property.");
             }
 
             PropertyModel propertyModel =

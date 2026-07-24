@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using WartalesEditor.Models;
 
 namespace WartalesEditor.Models.Snapshots;
 
@@ -20,6 +21,13 @@ public sealed class ModificationSnapshotModel
         = string.Empty;
 
     public List<ModificationSnapshotCategoryModel> Categories
+    {
+        get;
+        init;
+    } = new();
+
+    public List<GameplayOperationStateModel>
+        GameplayOperationStates
     {
         get;
         init;

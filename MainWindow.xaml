@@ -7,6 +7,7 @@
         xmlns:converters="clr-namespace:WartalesEditor.Converters"
         xmlns:validation="clr-namespace:WartalesEditor.Validation"
         xmlns:services="clr-namespace:WartalesEditor.Services"
+        xmlns:models="clr-namespace:WartalesEditor.Models"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         Width="1200"
@@ -259,6 +260,41 @@
                               Command="{Binding ContentCreationCommand}"
                               CommandParameter="{x:Static services:ContentCreationOperation.UpgradeAllEquipment}"
                               ToolTip="Allow normal obtainable equipment to be upgraded at the Brotherhood Training Grounds."/>
+
+                </MenuItem>
+
+                <MenuItem Header="_Gameplay Tools">
+
+                    <MenuItem Header="XP Progression..."
+                              Command="{Binding GameplayProgressionCommand}"
+                              ToolTip="Configure character and profession XP requirements with percentage controls and live previews."/>
+
+                    <MenuItem Header="Starting Resources..."
+                              Command="{Binding StartingResourcesCommand}"
+                              ToolTip="Add extra supplies to every standard new campaign start."/>
+
+                    <Separator/>
+
+                    <MenuItem Header="Volunteer Trait..."
+                              Command="{Binding PartyEconomyCommand}"
+                              CommandParameter="{x:Static models:ProgressionType.VolunteerWages}"
+                              ToolTip="Configure the wage reduction granted by the Volunteer trait."/>
+
+                    <MenuItem Header="Valour Points..."
+                              Command="{Binding PartyEconomyCommand}"
+                              CommandParameter="{x:Static models:ProgressionType.ValourPoints}"
+                              ToolTip="Configure base maximum Valour and Valour restored after rest."/>
+
+                    <MenuItem Header="Carrying Capacity..."
+                              Command="{Binding PartyEconomyCommand}"
+                              CommandParameter="{x:Static models:ProgressionType.CarryingCapacity}"
+                              ToolTip="Configure saddlebags and pony starting carrying capacity."/>
+
+                    <Separator/>
+
+                    <MenuItem Header="Overworld Movement Speed..."
+                              Command="{Binding OverworldMovementSpeedCommand}"
+                              ToolTip="Choose how quickly your party travels across the world map."/>
 
                 </MenuItem>
 

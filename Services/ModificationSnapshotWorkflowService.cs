@@ -21,13 +21,17 @@ public sealed class ModificationSnapshotWorkflowService
     private readonly ModificationSnapshotApplyService
         applyService;
 
+    private readonly GameplayOperationStateService
+        gameplayOperationStateService;
+
     public ModificationSnapshotWorkflowService()
         : this(
             new ModificationSnapshotService(),
             new ModificationSnapshotSerializationService(),
             new ModificationSnapshotMatcher(),
             new ModificationSnapshotPreviewService(),
-            new ModificationSnapshotApplyService())
+            new ModificationSnapshotApplyService(),
+            new GameplayOperationStateService())
     {
     }
 
@@ -38,6 +42,25 @@ public sealed class ModificationSnapshotWorkflowService
         ModificationSnapshotMatcher matcher,
         ModificationSnapshotPreviewService previewService,
         ModificationSnapshotApplyService applyService)
+        : this(
+            snapshotService,
+            serializationService,
+            matcher,
+            previewService,
+            applyService,
+            new GameplayOperationStateService())
+    {
+    }
+
+    public ModificationSnapshotWorkflowService(
+        ModificationSnapshotService snapshotService,
+        ModificationSnapshotSerializationService
+            serializationService,
+        ModificationSnapshotMatcher matcher,
+        ModificationSnapshotPreviewService previewService,
+        ModificationSnapshotApplyService applyService,
+        GameplayOperationStateService
+            gameplayOperationStateService)
     {
         this.snapshotService =
             snapshotService
@@ -63,6 +86,11 @@ public sealed class ModificationSnapshotWorkflowService
             applyService
             ?? throw new ArgumentNullException(
                 nameof(applyService));
+
+        this.gameplayOperationStateService =
+            gameplayOperationStateService
+            ?? throw new ArgumentNullException(
+                nameof(gameplayOperationStateService));
     }
 
     public ModificationSnapshotExportResultModel
@@ -167,12 +195,36 @@ public sealed class ModificationSnapshotWorkflowService
             applyService.Apply(
                 previewResult);
 
+        ProjectMutationResult mutationResult =
+            new();
+
+        mutationResult.Merge(
+            applyResult.MutationResult);
+
+        if (snapshot.GameplayOperationStates.Count > 0)
+        {
+            mutationResult.Merge(
+                gameplayOperationStateService
+                    .RestoreSnapshotStatesWithMutations(
+                        targetProject,
+                        snapshot.GameplayOperationStates));
+        }
+        else
+        {
+            gameplayOperationStateService.ValidateProjectStates(
+                targetProject);
+        }
+
         return new ModificationSnapshotImportResultModel(
             snapshot,
             matchResult,
             previewResult,
             applyResult,
-            sourceName);
+            sourceName,
+            System.Array.Empty<
+                Models.Profiles
+                    .ProfileOperationApplyItemResultModel>(),
+            mutationResult);
     }
 
     public ModificationSnapshotImportResultModel

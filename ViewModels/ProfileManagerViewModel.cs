@@ -255,7 +255,7 @@ public sealed class ProfileManagerViewModel :
             }
 
             return
-                $"Modified Properties: {SelectedProfile.PropertyCount:N0}";
+                $"Changes: {SelectedProfile.EffectiveChangeCount:N0}";
         }
     }
 
