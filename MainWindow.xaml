@@ -296,6 +296,10 @@
                               Command="{Binding OverworldMovementSpeedCommand}"
                               ToolTip="Choose how quickly your party travels across the world map."/>
 
+                    <MenuItem Header="Rain Frequency..."
+                              Command="{Binding RainFrequencyCommand}"
+                              ToolTip="Choose how often ordinary rain occurs across supported regions."/>
+
                 </MenuItem>
 
                 <MenuItem Header="_Developer Tools"

@@ -158,7 +158,8 @@ public sealed class GameplayOperationStatePersistenceService
         else if (state.OperationType is ProgressionType.VolunteerWages
                  or ProgressionType.ValourPoints
                  or ProgressionType.CarryingCapacity
-                 or ProgressionType.OverworldMovementSpeed)
+                 or ProgressionType.OverworldMovementSpeed
+                 or ProgressionType.RainFrequency)
         {
             if (state.GameplaySettings == null)
                 throw new InvalidDataException("The gameplay settings are missing.");

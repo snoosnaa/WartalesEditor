@@ -4,7 +4,7 @@ Application Version: 0.9.1 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-07-23
+Last Updated: 2026-07-24
 
 Purpose
 
@@ -60,9 +60,12 @@ Version 0.9.1 --- World Convenience
 
 Current phase:
 
-Pass 1 implementation and verification
+Complete and verified
 
-Overworld Movement Speed is implemented and build verified.
+Overworld Movement Speed and Rain Frequency are implemented and verified.
+Rain Frequency's Vanilla, Less Rain, Rare Rain, and No Rain presets
+update only `props.meteo.rainDaysPerMonth` on the twelve approved region
+entries while preserving each region's baseline.
 
 Additive Mod Profile restoration has been repaired and build verified.
 New Version 2 profiles store explicit, validated requests for Add Camp
@@ -106,53 +109,21 @@ Fast
 
 Very Fast
 
-Real-CDB automated verification confirms exact preset detection, Custom
-state detection, atomic mutation, failed-target safety, and one-action
-Undo/Redo.
+Verification includes build verification, runtime testing, validation,
+Save / Reload, Undo / Redo, Change Summary, Profiles, Snapshots, and
+multiple in-game verification passes.
 
-Pending Visual Studio verification:
-
-Runtime UI
-
-Profile creation and application UI
-
-Combined profile result presentation
-
-Legacy profile application UI
-
-Additive profile Change Summary and Undo/Redo interaction
-
-Save/Reload and Save As
-
-Validation presentation
-
-Change Summary
-
-Profiles
-
-Snapshots
-
-Pending Wartales verification:
-
-Movement behavior
-
-Encounters and pursuit
-
-Collision and pathfinding
-
-World-time and fatigue progression
+The Resource Respawn Speed investigation is complete. It confirmed
+shared Slow, Normal, and Fast gather-refill constants, but also identified
+shared exposure to excluded gathering systems. Implementation is deferred
+pending future runtime validation. No Resource Respawn gameplay feature
+was added.
 
 Remaining World Convenience scope:
 
 Vendor refresh speed
 
-Resource respawn speed
-
 Camera zoom improvements
-
-Global Weather Controls
-
-Weather investigation has previously been completed and will beincorporated into this milestone where appropriate.
 
 Recently Completed
 
@@ -171,6 +142,10 @@ Valour Restored After Rest
 Saddlebag Carrying Capacity
 
 Pony Starting Capacity
+
+Overworld Movement Speed
+
+Rain Frequency
 
 Verification included:
 
@@ -228,13 +203,7 @@ Pony Starting Capacity
 
 Investigation Complete
 
-Global Weather Controls
-
-Regional Weather Controls
-
-Disable Rain Across All Regions
-
-A dedicated Weather gameplay tool remains planned as part of the WorldConvenience milestone.
+Resource Respawn Speed --- deferred pending future runtime validation
 
 Completed Architecture
 
@@ -274,17 +243,13 @@ Current Roadmap
 
 Immediate Priorities
 
-World Convenience
+Profile polish
 
-Camp Improvements
+UI polish investigation and implementation
 
-Profession Improvements
+Gameplay roadmap audit
 
-Tomb Puzzle Simplification
-
-Recruitment Improvements
-
-Boss Capture
+Bundled gameplay feature development
 
 Roadmap priorities may continue evolving as additional game systems areinvestigated.
 
@@ -364,6 +329,10 @@ Saddlebag Carrying Capacity
 
 Pony Starting Capacity
 
+Overworld Movement Speed
+
+Rain Frequency
+
 Every new gameplay feature should be regression-tested against thisprofile before being considered complete.
 
 Required Codex Reading
@@ -380,21 +349,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Investigate Version 0.9.1 --- World Convenience.
-
-Initial investigation targets:
-
-Overworld movement speed
-
-Vendor refresh speed
-
-Resource respawn speed
-
-Camera zoom improvements
-
-Global Weather Controls
-
-Investigation should identify the safest player-facing gameplayoperations before implementation begins.
+Complete documentation, commit and push Version 0.9.1, then investigate
+and implement Profile polish. UI polish, a gameplay roadmap audit, and
+bundled gameplay feature development follow.
 
 Document Maintenance
 

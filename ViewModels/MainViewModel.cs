@@ -94,6 +94,8 @@ public class MainViewModel : ObservableObject
     private readonly OverworldMovementSpeedService
         overworldMovementSpeedService;
 
+    private readonly RainFrequencyService rainFrequencyService;
+
     private readonly IFileDialogService fileDialogService;
 
     private readonly IMessageDialogService messageDialogService;
@@ -127,6 +129,8 @@ public class MainViewModel : ObservableObject
     private OverworldMovementSpeedDialog?
         overworldMovementSpeedDialog;
 
+    private RainFrequencyDialog? rainFrequencyDialog;
+
     private ProjectModel? project;
 
     public ProjectModel? Project
@@ -146,6 +150,7 @@ public class MainViewModel : ObservableObject
             foreach (PartyEconomyDialog dialog in partyEconomyDialogs.Values.ToArray())
                 dialog.Close();
             overworldMovementSpeedDialog?.Close();
+            rainFrequencyDialog?.Close();
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
@@ -628,6 +633,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand OverworldMovementSpeedCommand { get; }
 
+    public RelayCommand RainFrequencyCommand { get; }
+
     public MainViewModel(
     JsonDataService jsonDataService,
     SearchService searchService,
@@ -774,6 +781,11 @@ public class MainViewModel : ObservableObject
                 progressionMutationService,
                 gameplayOperationStateService);
 
+        rainFrequencyService =
+            new RainFrequencyService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
         this.editHistoryService.HistoryChanged +=
             OnHistoryChanged;
 
@@ -870,6 +882,11 @@ public class MainViewModel : ObservableObject
         OverworldMovementSpeedCommand =
             new RelayCommand(
                 ExecuteOverworldMovementSpeed,
+                _ => Project != null);
+
+        RainFrequencyCommand =
+            new RelayCommand(
+                ExecuteRainFrequency,
                 _ => Project != null);
     }
 
@@ -2270,6 +2287,123 @@ public class MainViewModel : ObservableObject
             overworldMovementSpeedDialog = null;
     }
 
+    private void ExecuteRainFrequency(object? parameter)
+    {
+        if (Project == null) return;
+        if (rainFrequencyDialog != null)
+        {
+            if (rainFrequencyDialog.WindowState == WindowState.Minimized)
+                rainFrequencyDialog.WindowState = WindowState.Normal;
+            rainFrequencyDialog.Activate();
+            return;
+        }
+
+        RainFrequencyDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException(
+                    "The main application window is not available.");
+            RainFrequencyDialogViewModel viewModel =
+                new(Project, rainFrequencyService);
+            dialog = new RainFrequencyDialog
+            {
+                Owner = owner,
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnRainFrequencyApplyRequested;
+            dialog.DisplayFailed += OnRainFrequencyDisplayFailed;
+            dialog.Closed += OnRainFrequencyClosed;
+            dialog.Show();
+            rainFrequencyDialog = dialog;
+            Status = "Rain Frequency opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            rainFrequencyDialog = null;
+            messageDialogService.ShowError(
+                "Rain Frequency could not be opened." +
+                Environment.NewLine + Environment.NewLine +
+                "The project was not changed.",
+                "Rain Frequency");
+        }
+    }
+
+    private void OnRainFrequencyApplyRequested(
+        object? sender,
+        RainFrequencyApplyEventArgs e)
+    {
+        if (Project == null) return;
+        IProjectOperation operation =
+            new RainFrequencyOperation(rainFrequencyService, e.Preset);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    "The rain preset could not be applied." +
+                    Environment.NewLine + Environment.NewLine +
+                    "No changes were made.",
+                    operation.Name);
+                return;
+            }
+
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        operation.Name,
+                        result.MutationResult,
+                        projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            if (sender is RainFrequencyDialog dialog &&
+                dialog.DataContext is RainFrequencyDialogViewModel viewModel)
+                viewModel.RefreshFromProject();
+            messageDialogService.ShowInformation(
+                result.Message ?? "Rain Frequency was updated.",
+                operation.Name);
+            Status = "Rain Frequency updated.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The rain preset could not be applied." +
+                Environment.NewLine + Environment.NewLine +
+                "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnRainFrequencyDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Rain Frequency could not be displayed." +
+            Environment.NewLine + Environment.NewLine +
+            "The project was not changed.",
+            "Rain Frequency");
+    }
+
+    private void OnRainFrequencyClosed(object? sender, EventArgs e)
+    {
+        if (sender is not RainFrequencyDialog dialog) return;
+        dialog.ApplyRequested -= OnRainFrequencyApplyRequested;
+        dialog.DisplayFailed -= OnRainFrequencyDisplayFailed;
+        dialog.Closed -= OnRainFrequencyClosed;
+        if (ReferenceEquals(rainFrequencyDialog, dialog))
+            rainFrequencyDialog = null;
+    }
+
     private void ValidateProject()
     {
         if (Project == null)
@@ -2894,6 +3028,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         OverworldMovementSpeedCommand?
+            .NotifyCanExecuteChanged();
+
+        RainFrequencyCommand?
             .NotifyCanExecuteChanged();
     }
 

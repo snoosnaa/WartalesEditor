@@ -293,6 +293,13 @@ public sealed class GameplayOperationStateService
             return;
         }
 
+        if (state.OperationType ==
+            ProgressionType.RainFrequency)
+        {
+            RainFrequencyService.ValidateState(project, state);
+            return;
+        }
+
         ProgressionTableBinding binding =
             tableResolver.Resolve(project, state.OperationType);
 
@@ -426,6 +433,8 @@ public sealed class GameplayOperationStateService
             ProgressionType.CarryingCapacity => "Carrying Capacity",
             ProgressionType.OverworldMovementSpeed =>
                 "Overworld Movement Speed",
+            ProgressionType.RainFrequency =>
+                "Rain Frequency",
             _ => "gameplay operation"
         };
     }

@@ -2,9 +2,9 @@
 
 ## Project Snapshot
 
-**Application Version:** 0.8.1 (Development)  
-**Documentation Version:** 1.1  
-**Last Updated:** 2026-07-21
+**Application Version:** 0.9.1  
+**Documentation Version:** 1.2  
+**Last Updated:** 2026-07-24
 
 ---
 
@@ -22,11 +22,11 @@ The long-term goal is to provide a complete content creation platform that allow
 
 **Status:** Stable Development Build ✅
 
-**Current Development Version:** 0.8.1
+**Current Development Version:** 0.9.1
 
 **Current Milestone:**
 
-Operation Framework, Transaction Framework, and Verified Content Creation
+World Convenience
 
 **Status:** Complete ✅
 
@@ -219,14 +219,23 @@ The following milestones have been completed and verified.
 - ✅ Add Camp Facilities (Fully Verified In-Game)
 - ✅ Upgrade All Equipment (Fully Verified In-Game)
 - ✅ Weather Gameplay Modification (Verified In-Game)
+- ✅ Character and Profession XP Controls
+- ✅ Starting Resources
+- ✅ Party Economy Controls
+- ✅ Persistent Gameplay Operation State
+- ✅ Version 2 Additive Profile Restoration
+- ✅ Overworld Movement Speed
+- ✅ Rain Frequency
 
 ---
 
 # Current Roadmap
 
-The editor has transitioned from building foundational infrastructure to expanding reusable content creation capabilities.
+The editor has transitioned from foundational infrastructure to
+player-facing gameplay development.
 
-The next phase will focus on organizing future work into logical implementation groups before additional development begins.
+The next phase focuses on Profile polish, UI polish, a gameplay roadmap
+audit, and bundled gameplay feature development.
 
 ## Content Creation
 
@@ -246,12 +255,14 @@ Future gameplay modifications will be grouped into a dedicated milestone.
 
 Current roadmap items include:
 
-- Starting resources
 - Starting knowledge unlocks
 - Path challenge balancing
 - Economy adjustments
 - Additional weather options
 - Difficulty adjustments
+- Vendor Refresh Speed
+- Camera Zoom Improvements
+- Resource Respawn Speed, deferred pending future runtime validation
 
 ## Editor Improvements
 
@@ -318,13 +329,14 @@ No milestone is considered complete until runtime testing has been successfully 
 
 # Current Task
 
-1. Complete remaining documentation updates.
-2. Perform final documentation review.
-3. Final build verification.
-4. Commit documentation.
-5. Push to GitHub.
-6. Conduct a comprehensive roadmap review.
-7. Organize remaining work into future implementation milestones.
+1. Documentation complete.
+2. Commit and push Version 0.9.1.
+3. Profile polish investigation.
+4. Profile polish implementation.
+5. UI polish investigation.
+6. UI polish implementation.
+7. Gameplay roadmap audit.
+8. Bundled gameplay development.
 
 ---
 

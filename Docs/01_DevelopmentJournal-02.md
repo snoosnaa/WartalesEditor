@@ -665,3 +665,95 @@ idempotent reapply, and additive failure rollback.
 
 The result popup now presents one Changes outcome and no longer exposes
 gameplay-tool versus property-change categories.
+
+---
+
+# Session 0.9.1 — World Convenience Pass 2
+
+## Rain Frequency
+
+Implemented Rain Frequency through the existing Gameplay Operation,
+nested-property mutation, validation, transaction, state persistence,
+history, snapshot, and profile architecture. The feature targets only
+`props.meteo.rainDaysPerMonth` on the twelve approved region entries.
+
+The four player-facing presets are Vanilla, Less Rain, Rare Rain, and No
+Rain. Values are always derived from the verified per-region Vanilla
+baseline of 4 or 6, so preset changes do not compound. Rare Rain retains
+the required numeric 1.5 value for baseline-6 regions. Preset recognition
+requires all twelve current values to match; mixed values remain Custom,
+and missing or incompatible targets make the feature unavailable.
+
+The dialog is modeless and appears directly after Overworld Movement
+Speed in Gameplay Tools. It uses the existing ownership, duplicate
+prevention, centering, focus restoration, and display-failure patterns.
+
+Build verification completed with zero warnings and zero errors.
+Disposable model-level verification covered all presets, Custom
+detection, exact scope, unrelated-member preservation, atomic
+failed-target behavior, safe no-op reapplication, and Undo/Redo.
+Visual Studio and Wartales verification remain pending.
+
+## Future Profile Usability
+
+Profile application failures should identify the feature or edit that
+could not be applied. Large failure sets should use grouped, expandable
+details while the normal result remains concise. This item was recorded
+only; it was not implemented in this pass.
+
+---
+
+# Session 0.9.1 — World Convenience Completion
+
+## Summary
+
+Completed and verified Version 0.9.1. The World Convenience milestone
+delivered Overworld Movement Speed and Rain Frequency through the mature
+Gameplay Operation architecture.
+
+Overworld Movement Speed provides baseline-relative travel presets.
+Rain Frequency provides Vanilla, Less Rain, Rare Rain, and No Rain while
+preserving regional baseline differences and unrelated weather systems.
+
+## Profile Restoration
+
+Version 2 profiles now store explicit operation requests for Add Camp
+Facilities and Upgrade All Equipment. Applying those profiles correctly
+recreates additive content before applying ordinary snapshot changes.
+
+Profile Manager presents one effective Changes count. Profile application
+refreshes PropertyModel tracking so newly created nested properties
+remain visible through modification counts and Change Summary. Gameplay
+Tools remain flat rather than exposing internal feature groupings.
+
+## Gameplay Operation State
+
+Gameplay Operation State and its persistence workflow matured across
+progression, economy, movement, and weather operations. Actual project
+values remain authoritative while compatible state preserves clean
+baselines, preset recognition, validation, and non-compounding
+reapplication.
+
+## Verification
+
+Version 0.9.1 completed build verification, runtime testing, validation,
+Save / Reload, Undo / Redo, Change Summary, Profiles, Snapshots, and
+multiple in-game verification passes.
+
+## Resource Respawn Investigation
+
+Investigation confirmed global Slow, Normal, and Fast gather-refill
+constants and explicit refill-category assignments in external resource
+prefabs. The same architecture also appears on excluded gathering
+systems, including fishing and special resources.
+
+Resource Respawn Speed was therefore deferred pending future runtime
+validation. No Resource Respawn gameplay feature was added.
+
+## Transition
+
+With the architecture stable and Version 0.9.1 complete, development
+shifts toward Profile polish, UI polish, a gameplay roadmap audit, and
+bundled gameplay feature development. Related features can now be
+planned together while retaining focused implementation and verification
+boundaries.

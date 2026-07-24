@@ -1,137 +1,53 @@
-﻿# Current Task
+# Current Task
 
 ## Current Milestone
 
-**Version 0.8.1 — Documentation Completion & Roadmap Review**
+**Version 0.9.1 — Documentation Reconciliation**
 
 ---
 
 # Current Status
 
-The project builds successfully.
+Version 0.9.1 implementation and verification are complete.
 
-The transactional content creation platform has now been fully implemented, recovered after merge integration, runtime tested, regression tested, and verified through extended in-game testing.
+Completed gameplay features include Overworld Movement Speed and Rain
+Frequency. Version 2 profile restoration, effective Changes reporting,
+PropertyModel tracking after profile application, and the flat Gameplay
+Tools menu are complete.
 
-Current build status:
-
-- ✅ Build succeeds.
-- ✅ Add Camp Facilities verified.
-- ✅ Upgrade All Equipment verified.
-- ✅ Weather modifications verified.
-- ⏳ Documentation updates in progress.
-- ⏳ Documentation commit pending.
+The Resource Respawn Speed investigation is complete. Implementation is
+deferred pending future runtime validation; no gameplay feature was
+added.
 
 ---
 
-# Recently Completed
+# Current Workflow
 
-## Object Mutation Infrastructure
-
-Successfully completed:
-
-- Object-valued mutation support
-- Nested object mutation synchronization
-- Mutation-based rollback support for object containers
-- Object mutation validation
-- ProjectMutationResult enhancements
-
-## Content Creation Recovery
-
-Successfully completed:
-
-- ContentCreationService recovery
-- Add Camp Facilities recovery
-- Nested object mutation integration
-- Validator recovery for nested property architecture
-- Idempotence verification
-
-## Gameplay Verification
-
-Successfully verified:
-
-- Add Camp Facilities
-- Anvil construction and use
-- Apothecary Table construction and use
-- Upgrade All Equipment
-- Weather modifications
-- Save / Reload
-- Atomic Undo / Redo
-- Extended gameplay stability
+1. Documentation complete
+2. Commit and push Version 0.9.1
+3. Profile polish investigation
+4. Profile polish implementation
+5. UI polish investigation
+6. UI polish implementation
+7. Gameplay roadmap audit
+8. Bundled gameplay development
 
 ---
 
-# Current Objective
+# Near-Term Profile Polish
 
-1. Complete documentation updates.
-2. Review all documentation for consistency.
-3. Perform a final Visual Studio build.
-4. Commit documentation changes.
-5. Push to GitHub.
-6. Conduct a complete roadmap review.
-7. Organize remaining features into logical implementation milestones.
+Planned work:
 
----
+- Update Profile
+- Better profile failure reporting
+- Expandable failure details for large failure sets
 
-# Next Planned Milestone
-
-## Roadmap Review & Planning
-
-The next development session will focus on planning rather than implementation.
-
-Objectives:
-
-- Review every remaining planned feature.
-- Remove obsolete roadmap items.
-- Group related features into implementation milestones.
-- Identify infrastructure reuse opportunities.
-- Prioritize milestones leading toward Version 1.0.
-
-Expected milestone groups include:
-
-### Content Creation
-
-- Additional camp facilities
-- Additional camp content
-- NPC creation
-- Profession creation
-- Additional gameplay objects
-
-### Gameplay Tweaks
-
-- Starting resources
-- Starting knowledge unlocks
-- Path challenge balancing
-- Economy adjustments
-- Additional weather options
-- Difficulty adjustments
-
-### Editor Improvements
-
-- Validation expansion
-- Batch operations
-- Search improvements
-- Additional property editors
-- Performance improvements
-
-### Long-Term Features
-
-- Merge Preview
-- Community sharing after Version 1.0
-- In-game profile credits
-- Byte-for-byte CDB formatting preservation
+These items are not yet implemented.
 
 ---
 
-# Build Status
+# Scope
 
-✅ Last Visual Studio build successful
-
-✅ Latest Codex build successful
-
-✅ Extended in-game verification successful
-
----
-
-# Next Session
-
-Conduct a complete roadmap review, reorganize future development into implementation milestones, and prepare the next feature milestone for implementation using the established ChatGPT and Codex workflow.
+This task updates documentation only. Application code, architecture,
+serialization, replay, snapshots, validation, and gameplay operations
+remain unchanged.

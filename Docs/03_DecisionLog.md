@@ -1,8 +1,8 @@
 ﻿# Decision Log
 
-**Version:** 0.1
+**Version:** 0.2
 **Status:** Active
-**Last Updated:** 2026-07-10
+**Last Updated:** 2026-07-24
 **Applies To:** Entire Project
 
 ---
@@ -14,6 +14,9 @@
 - Decision 0003
 - Decision 0004
 - Decision 0005
+- Decision 0006
+- Decision 0007
+- Decision 0008
 
 ---
 
@@ -94,3 +97,57 @@ Accepted
 ## Reason
 
 Develop the application in small, testable milestones with successful builds after each milestone.
+
+---
+
+# Decision 0006
+
+## Title
+
+Represent outcomes, not implementation.
+
+## Status
+
+Accepted
+
+## Reason
+
+Player-facing information should describe the gameplay result rather
+than internal mutation, snapshot, replay, or transaction mechanisms.
+
+---
+
+# Decision 0007
+
+## Title
+
+Investigate before implementation.
+
+## Status
+
+Accepted
+
+## Reason
+
+Runtime data relationships and gameplay behavior must be confirmed before
+an operation is designed. Unresolved scope or side effects require
+deferral rather than assumption.
+
+---
+
+# Decision 0008
+
+## Title
+
+Bundle compatible gameplay features after architectural maturity.
+
+## Status
+
+Accepted
+
+## Reason
+
+The stable gameplay-operation platform now supports related
+player-facing features without repeated infrastructure work. Compatible
+features may be planned together while retaining focused implementation
+and verification boundaries.

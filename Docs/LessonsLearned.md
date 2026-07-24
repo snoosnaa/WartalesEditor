@@ -1,7 +1,7 @@
 ﻿# Lessons Learned
 
 **Document Version:** 1.1  
-**Last Updated:** 2026-07-12
+**Last Updated:** 2026-07-24
 
 ---
 
@@ -368,6 +368,34 @@ Do not consider a milestone complete until all phases have been successfully com
 
 ---
 
+# Lesson 20 — Stable Architecture Accelerates Gameplay Development
+
+Version 0.9.1 demonstrated that mature operation, mutation, validation,
+state, profile, snapshot, and history systems allow new gameplay tools
+to be implemented and verified without architectural redesign.
+
+**Guideline**
+
+After architecture matures, group compatible gameplay features into
+focused development bundles and reuse the verified platform.
+
+---
+
+# Lesson 21 — Represent Outcomes, Not Implementation
+
+Profile restoration exposed several internal storage and replay concepts
+that were technically accurate but not useful to players. Presenting one
+effective Changes result produced a clearer and more consistent
+experience.
+
+**Guideline**
+
+Player-facing language should describe what a feature does. Keep
+transactions, mutation ownership, snapshots, and replay mechanics in
+diagnostics rather than normal workflows.
+
+---
+
 # Current Philosophy
 
 The project now follows these guiding principles:
@@ -381,6 +409,8 @@ The project now follows these guiding principles:
 - Verify every milestone through runtime testing and UI polish.
 - Keep documentation synchronized.
 - Favor maintainability over shortcuts.
+- Represent gameplay outcomes rather than implementation details.
+- Bundle compatible gameplay work after the supporting architecture is stable.
 
 These principles have consistently produced the most reliable results throughout development.
 

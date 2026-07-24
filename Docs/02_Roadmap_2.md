@@ -186,31 +186,27 @@ Objective
 
 Reduce repetitive waiting and travel while preserving normal gameplay progression.
 
-Planned Features
+Completed Features
 Travel
 Increase overworld movement speed
+Weather
+Rain Frequency with Vanilla, Less Rain, Rare Rain, and No Rain presets
+
+Deferred
+Resources
+Resource Respawn Speed pending future runtime validation
+
+Remaining World Convenience
 Vendors
 Faster vendor refresh
-Resources
-Faster resource respawns
 Camera
 Increased camera zoom distance
 Investigate additional camera limitations where data-driven
-Weather Controls
 
-Expand the completed weather framework into reusable gameplay tools.
-
-Planned operations include:
-
-Reduce rain frequency
-Disable rain globally across all regions
-Adjustable regional weather controls
-Global weather operations
-Weather presets for personal gameplay
-
-The investigation phase has already been completed.
-
-Future work focuses entirely on exposing these capabilities through reusable editor tools.
+The Resource Respawn investigation confirmed shared gather-refill
+constants but also identified possible effects on excluded systems.
+Implementation remains deferred until runtime validation establishes a
+safe player-facing scope.
 
 Complexity:
 

@@ -29,6 +29,9 @@ public sealed class OperationValidatorProvider
     private readonly OverworldMovementSpeedOperationValidator
         overworldMovementValidator = new();
 
+    private readonly RainFrequencyOperationValidator
+        rainFrequencyValidator = new();
+
     public OperationValidationResult Validate(
         IProjectOperation operation,
         ProjectModel project,
@@ -66,6 +69,9 @@ public sealed class OperationValidatorProvider
 
                 OverworldMovementSpeedOperation =>
                     overworldMovementValidator,
+
+                RainFrequencyOperation =>
+                    rainFrequencyValidator,
 
                 _ => null
             };

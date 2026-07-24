@@ -344,8 +344,10 @@ The player comes first.
 
 # Represent Outcomes, Not Implementation
 
-Player-facing profile information should describe the complete gameplay
-result as Changes.
+Player-facing information should describe the gameplay result a player
+will experience, not the internal mechanism used to produce it.
+
+For profiles, the complete gameplay result is represented as Changes.
 
 It should not separate that result into internal storage or execution
 concepts such as snapshot properties, gameplay-operation requests, or

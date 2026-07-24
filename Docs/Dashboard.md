@@ -1,14 +1,14 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 0.8.1  
-**Document Version:** 1.8  
-**Last Updated:** 2026-07-21
+**Application Version:** 0.9.1  
+**Document Version:** 1.9  
+**Last Updated:** 2026-07-24
 
 ---
 
 # Project Status
 
-**Current Phase:** Phase 6 — Content Creation Platform
+**Current Phase:** Player-Facing Gameplay Development
 
 Wartales Editor has successfully transitioned from a safe editing platform into a transactional content creation platform.
 
@@ -20,7 +20,7 @@ The architecture has now been verified through both editor testing and extended 
 
 # Current Release
 
-## Version 0.8.1 — Operation Framework & Verified Content Creation
+## Version 0.9.1 — World Convenience
 
 **Status:** ✅ Complete
 
@@ -111,12 +111,27 @@ This workflow has now been verified through multiple editor tests and extended i
 - Verified camp facility creation
 - Verified equipment upgrade operation
 - Verified gameplay modification support
+- Persistent Gameplay Operation State
+- Version 2 additive profile restoration
+
+## Verified Gameplay Features
+
+- Add Camp Facilities
+- Upgrade All Equipment
+- Character and Profession XP Controls
+- Starting Resources
+- Volunteer Wage Reduction
+- Maximum Valour and Restored Valour
+- Saddlebag and Pony Carrying Capacity
+- Overworld Movement Speed
+- Rain Frequency
 
 ---
 
 # Roadmap
 
-The next phase of development will begin with a roadmap review to organize remaining work into logical implementation milestones.
+The next phase begins with Profile polish and UI polish, followed by a
+gameplay roadmap audit and bundled gameplay feature development.
 
 ## Content Creation
 
@@ -133,17 +148,23 @@ Planned features include:
 
 Planned features include:
 
-- Starting resources
 - Starting knowledge unlocks
 - Path challenge balancing
 - Economy adjustments
 - Additional weather options
 - Difficulty adjustments
+- Vendor Refresh Speed
+- Camera Zoom Improvements
+- Resource Respawn Speed, deferred pending future runtime validation
 
 ## Editor Improvements
 
 Planned features include:
 
+- Update Profile
+- Better profile failure reporting
+- Expandable failure details
+- UI polish
 - Validation expansion
 - Batch operations
 - Additional property editors
@@ -161,19 +182,20 @@ Planned features include:
 
 # Current Priorities
 
-1. Complete documentation updates.
-2. Final documentation review.
-3. Build verification.
-4. Commit documentation.
-5. Push milestone.
-6. Conduct comprehensive roadmap review.
-7. Begin the next planned implementation milestone.
+1. Documentation complete.
+2. Commit and push Version 0.9.1.
+3. Profile polish investigation and implementation.
+4. UI polish investigation and implementation.
+5. Gameplay roadmap audit.
+6. Bundled gameplay feature development.
 
 ---
 
 # Most Recent Accomplishment
 
-Completed recovery and verification of the transactional content creation platform.
+Completed and verified Version 0.9.1 World Convenience, including
+Overworld Movement Speed, Rain Frequency, and profile restoration
+improvements.
 
 The editor now safely creates new gameplay content through reusable project operations, mutation-based rollback, nested object mutation, operation validation, and reusable content creation infrastructure.
 

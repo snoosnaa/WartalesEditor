@@ -8,5 +8,6 @@ public enum ProgressionType
     VolunteerWages,
     ValourPoints,
     CarryingCapacity,
-    OverworldMovementSpeed
+    OverworldMovementSpeed,
+    RainFrequency
 }

@@ -10,7 +10,7 @@ The long-term goal is to provide a powerful, safe, and extensible editor that al
 
 # Current Status
 
-**Application Version:** 0.8.1 (Development)
+**Application Version:** 0.9.1
 
 Current state:
 
@@ -24,6 +24,10 @@ Recently verified:
 - Add Camp Facilities
 - Upgrade All Equipment
 - Weather gameplay modifications
+- Character and Profession XP Controls
+- Starting Resources and Party Economy controls
+- Overworld Movement Speed
+- Rain Frequency
 - Transaction rollback
 - Save / Reload
 - Validation
@@ -64,7 +68,13 @@ Recently verified:
 
 - Add Camp Facilities
 - Upgrade All Equipment
-- Weather modifications
+- Character and Profession XP Controls
+- Starting Resources
+- Volunteer Wage Reduction
+- Maximum and Restored Valour
+- Saddlebag and Pony Carrying Capacity
+- Overworld Movement Speed
+- Rain Frequency
 
 ---
 

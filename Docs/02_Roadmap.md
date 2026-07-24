@@ -1,7 +1,7 @@
 ﻿# Wartales Editor Roadmap
 
 **Application Roadmap**\
-**Last Updated:** 2026-07-18
+**Last Updated:** 2026-07-24
 
 ------------------------------------------------------------------------
 
@@ -36,6 +36,8 @@ personal gameplay experience through safe, reusable editing tools.
 -   0.6.0 Snapshot Workflow ✅
 -   0.7.0 Profile Manager ✅
 -   0.8.0 Validation Framework ✅
+-   0.9.0 Character Progression & Party Economy ✅
+-   0.9.1 World Convenience — Overworld Movement Speed and Rain Frequency ✅
 
 ------------------------------------------------------------------------
 
@@ -43,26 +45,26 @@ personal gameplay experience through safe, reusable editing tools.
 
 ## Character Progression
 
--   Character XP requirement slider
--   Profession XP requirement slider
+-   Character XP requirement slider ✅
+-   Profession XP requirement slider ✅
 
 ## Equipment
 
--   Make All Equipment Upgradeable
+-   Make All Equipment Upgradeable ✅
 
 ## Economy & Bonuses
 
--   Volunteer wages reduced to 0%
--   Adjustable Valour Point bonuses
--   Adjustable Carrying Capacity bonuses
+-   Volunteer wages reduced to 0% ✅
+-   Adjustable Valour Point bonuses ✅
+-   Adjustable Carrying Capacity bonuses ✅
 -   Adjustable Food Consumption reduction
 
 ## World
 
--   Increase overworld movement speed
+-   Increase overworld movement speed ✅
 -   Faster vendor refresh
--   Faster resource respawns
--   Reduce rain frequency (investigate)
+-   Faster resource respawns — deferred pending future runtime validation
+-   Reduce rain frequency ✅
 -   Increase camera zoom distance (investigate)
 
 ## Camp

@@ -6,6 +6,42 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 0.9.1 - World Convenience
+
+**Status:** Complete and verified
+
+## Added
+
+- Rain Frequency as a direct Gameplay Tools item after Overworld
+  Movement Speed.
+- Vanilla, Less Rain, Rare Rain, and No Rain presets for ordinary
+  regional rain.
+- Exact preset detection, Custom and unavailable states, persisted
+  gameplay-operation state, and a modeless player-facing dialog.
+
+## Changed
+
+- The twelve approved `region` entries can now update only
+  `props.meteo.rainDaysPerMonth` as one atomic operation.
+- Each preset is calculated from the entry's verified Vanilla baseline
+  of 4 or 6; Rare Rain preserves 1.5 for baseline-6 regions.
+
+## Verified
+
+- Build verification, runtime testing, validation, Save / Reload,
+  Undo / Redo, Change Summary, Profiles, Snapshots, and multiple in-game
+  verification passes.
+
+## Investigated
+
+- Resource Respawn Speed confirmed shared Slow, Normal, and Fast gather
+  refill constants.
+- Implementation was deferred pending future runtime validation because
+  the shared refill architecture may affect excluded gathering systems.
+- No Resource Respawn gameplay feature was added.
+
+---
+
 # Version 0.9.1 - Additive Profile Restoration Repair
 
 **Status:** Development; Visual Studio and in-game verification pending
