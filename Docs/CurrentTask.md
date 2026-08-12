@@ -51,3 +51,8 @@ These items are not yet implemented.
 This task updates documentation only. Application code, architecture,
 serialization, replay, snapshots, validation, and gameplay operations
 remain unchanged.
+# Current Task
+
+Complete Visual Studio runtime verification for Version 0.10.0 Pass 5 player
+communication and language polish. After that verification, complete the
+separate Search Scope Semantics Correction before Version 1.0.

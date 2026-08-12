@@ -13,7 +13,7 @@
         Width="1200"
         Height="700"
         MinWidth="800"
-        MinHeight="550"
+        MinHeight="450"
         SizeToContent="Manual"
         WindowStartupLocation="CenterScreen"
         SourceInitialized="Window_SourceInitialized"
@@ -131,6 +131,7 @@
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
                      Background="{StaticResource ReadOnlyEditorBackgroundBrush}"
+                     ToolTip="This value is read-only in the Detailed Editor."
                      Text="{Binding Value}"/>
 
         </DataTemplate>
@@ -141,6 +142,7 @@
             <TextBox Width="330"
                      IsReadOnly="True"
                      Background="{StaticResource ReadOnlyEditorBackgroundBrush}"
+                     ToolTip="This value is protected and cannot be edited."
                      Text="{Binding Value}"/>
 
         </DataTemplate>
@@ -175,11 +177,11 @@
 
             <MenuItem Header="_File">
 
-                <MenuItem Header="_Open..."
+                <MenuItem Header="_Open Wartales File..."
                           Command="{Binding OpenCommand}"
                           InputGestureText="Ctrl+O"/>
 
-                <MenuItem Header="_Save As..."
+                <MenuItem Header="_Save Modded File..."
                           Command="{Binding SaveCommand}"
                           InputGestureText="Ctrl+S"/>
 
@@ -204,7 +206,7 @@
 
                 <Separator/>
 
-                <MenuItem Header="_Reset Selected Property"
+                <MenuItem Header="_Restore Original Value"
                           Command="{Binding ResetSelectedPropertyCommand}"/>
 
             </MenuItem>
@@ -223,47 +225,29 @@
 
                 <Separator/>
 
-                <MenuItem Header="_Change Summary"
+                <MenuItem Header="_Review Changes"
                           Command="{Binding ShowChangeSummaryCommand}"/>
 
             </MenuItem>
 
             <MenuItem Header="_Tools">
 
-                <MenuItem Header="_Profile Manager"
+                <MenuItem Header="_Profiles"
                           Command="{Binding ShowProfileManagerCommand}"
-                          ToolTip="Browse mod profiles stored in the Wartales Editor profile library."/>
+                          ToolTip="Create, apply, import, and export profiles."/>
 
                 <Separator/>
 
-                <MenuItem Header="_Snapshots">
-
-                    <MenuItem Header="_Export Snapshot..."
-                              Command="{Binding ExportSnapshotCommand}"
-                              ToolTip="Export the current project modifications to a snapshot file."/>
-
-                    <MenuItem Header="_Preview Snapshot..."
-                              Command="{Binding PreviewSnapshotCommand}"
-                              ToolTip="Preview how a snapshot would apply without modifying the project."/>
-
-                    <MenuItem Header="_Import Snapshot..."
-                              Command="{Binding ImportSnapshotCommand}"
-                              ToolTip="Safely import and apply compatible changes from a snapshot file."/>
-
-                </MenuItem>
-
-                <Separator/>
-
-                <MenuItem Header="_Validate Project"
+                <MenuItem Header="_Check Project"
                           Command="{Binding ValidateProjectCommand}"
-                          ToolTip="Run the validation framework against the current project."/>
+                          ToolTip="Check whether the current project is ready to save."/>
 
             </MenuItem>
 
             <MenuItem Header="_Help">
 
                 <MenuItem Header="_About Wartales Editor"
-                          IsEnabled="False"/>
+                          Command="{Binding ShowAboutCommand}"/>
 
             </MenuItem>
 
@@ -311,8 +295,9 @@
             <Button Name="ResetPropertyButton"
                     Width="120"
                     Margin="5"
-                    Command="{Binding ResetSelectedPropertyCommand}">
-                Reset Property
+                    Command="{Binding ResetSelectedPropertyCommand}"
+                    ToolTip="Restore the selected value to its original value.">
+                Restore Value
             </Button>
 
             <Separator/>
@@ -321,21 +306,21 @@
                     Width="130"
                     Margin="5"
                     Command="{Binding ShowChangeSummaryCommand}">
-                Change Summary
+                Review Changes
             </Button>
 
             <Button Name="ValidateProjectButton"
                     Width="130"
                     Margin="5"
                     Command="{Binding ValidateProjectCommand}">
-                Validate Project
+                Check Project
             </Button>
 
             <Button Name="ProfileManagerButton"
                     Width="130"
                     Margin="5"
                     Command="{Binding ShowProfileManagerCommand}">
-                Profile Manager
+                Profiles
             </Button>
 
         </ToolBar>
@@ -370,13 +355,13 @@
                         VerticalAlignment="Center"
                         MaxWidth="560">
 
-                <TextBlock Text="Open a Wartales data.cdb file to begin"
+                <TextBlock Text="Open a Wartales File to Begin"
                            HorizontalAlignment="Center"
                            TextAlignment="Center"
                            Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
 
                 <TextBlock Margin="0,10,0,0"
-                           Text="Open your extracted data.cdb file to access Gameplay Tools and the Detailed Editor. Your changes are tracked automatically and can be reviewed before saving."
+                           Text="Open an extracted Wartales data file to use Gameplay Tools and the Detailed Editor. Your changes are tracked automatically."
                            TextAlignment="Center"
                            TextWrapping="Wrap"
                            Style="{StaticResource SupportingTextStyle}"/>
@@ -387,7 +372,7 @@
                     <Button Content="Open"
                             Style="{StaticResource UtilityActionButtonStyle}"
                             Command="{Binding OpenCommand}"/>
-                    <Button Content="Profile Manager"
+                    <Button Content="Profiles"
                             Width="130"
                             Margin="8,0,0,0"
                             Padding="10,5"
@@ -507,25 +492,44 @@
             </Grid.RowDefinitions>
 
         <!-- Search -->
-        <DockPanel Grid.Row="0"
-                   Margin="5">
+        <Grid Grid.Row="0"
+              Margin="5">
 
-            <TextBlock Text="Search:"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="Search:"
                        VerticalAlignment="Center"
                        Margin="0,0,5,0"/>
 
-            <TextBox Name="SearchBox"
-                     Width="250"
-                     Margin="0,0,10,0"
+            <TextBox Grid.Column="1"
+                     Name="SearchBox"
+                     MinWidth="180"
+                     Margin="0,0,6,0"
                      Text="{Binding SearchText,
                                     Mode=TwoWay,
                                     UpdateSourceTrigger=PropertyChanged}"/>
 
-            <TextBlock Text="In:"
+            <Button Grid.Column="2"
+                    Content="Clear"
+                    Margin="0,0,12,0"
+                    Style="{StaticResource SearchClearButtonStyle}"
+                    Command="{Binding ClearSearchCommand}"/>
+
+            <TextBlock Grid.Column="3"
+                       Text="In:"
                        VerticalAlignment="Center"
                        Margin="0,0,5,0"/>
 
-            <ComboBox Width="110"
+            <ComboBox Grid.Column="4"
+                      Width="110"
                       Margin="0,0,15,0"
                       SelectedValuePath="Content"
                       SelectedValue="{Binding SearchScope,
@@ -539,16 +543,14 @@
 
             </ComboBox>
 
-            <CheckBox Content="Show Empty Categories"
-                      VerticalAlignment="Center"
-                      IsChecked="{Binding ShowEmptyCategories,
-                                          Mode=TwoWay}"/>
-
-            <TextBlock Text="{Binding LocalizationStatus}"
+            <TextBlock Grid.Column="5"
+                       Text="{Binding LocalizationStatus}"
+                       Style="{StaticResource SupportingTextStyle}"
                        VerticalAlignment="Center"
-                       Margin="20,0,0,0"/>
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding LocalizationStatus}"/>
 
-        </DockPanel>
+        </Grid>
 
         <!-- Find Anything -->
         <Grid Grid.Row="1"
@@ -569,28 +571,88 @@
                        FontWeight="Bold"
                        Margin="5,3,5,5"/>
 
-            <ListView Grid.Row="1"
-                      ItemsSource="{Binding SearchResults}"
-                      SelectedItem="{Binding SelectedSearchResult,
-                                             Mode=TwoWay}">
+            <Grid Grid.Row="1">
 
-                <ListView.View>
+                <ListView x:Name="SearchResultsList"
+                          ItemsSource="{Binding SearchResults}"
+                          SelectedItem="{Binding SelectedSearchResult,
+                                                 Mode=TwoWay}">
 
-                    <GridView>
+                    <ListView.Style>
+                        <Style TargetType="ListView">
+                            <Setter Property="Visibility"
+                                    Value="Visible"/>
+                            <Style.Triggers>
+                                <Trigger Property="HasItems"
+                                         Value="False">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.Style>
 
-                        <GridViewColumn Header="Category"
-                                        Width="180"
-                                        DisplayMemberBinding="{Binding CategoryName}"/>
+                    <ListView.View>
 
-                        <GridViewColumn Header="Name"
-                                        Width="600"
-                                        DisplayMemberBinding="{Binding DisplayName}"/>
+                        <GridView>
 
-                    </GridView>
+                            <GridViewColumn Header="Category"
+                                            Width="180">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CategoryName}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding CategoryName}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                </ListView.View>
+                            <GridViewColumn Header="Setting"
+                                            Width="470">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-            </ListView>
+                            <GridViewColumn Header="Matched Property"
+                                            Width="255">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding MatchedProperty}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding MatchedProperty}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
+                        </GridView>
+
+                    </ListView.View>
+
+                </ListView>
+
+                <TextBlock Text="No matching settings or values found."
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock"
+                               BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=SearchResultsList,
+                                                               Path=HasItems}"
+                                             Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+            </Grid>
 
         </Grid>
 
@@ -599,7 +661,8 @@
 
             <Grid.ColumnDefinitions>
 
-                <ColumnDefinition Width="370"/>
+                <ColumnDefinition Width="370"
+                                  MinWidth="300"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
 
@@ -620,19 +683,34 @@
 
                     <Grid.ColumnDefinitions>
 
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
 
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0"
-                               Text="Categories"
-                               FontWeight="Bold"
-                               Margin="5"/>
+                    <Grid Grid.Column="0"
+                          Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Categories"
+                                   Style="{StaticResource DetailedEditorSectionHeadingTextStyle}"/>
+
+                        <CheckBox Grid.Column="1"
+                                  Content="Show Empty"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  ToolTip="Show Empty Categories"
+                                  IsChecked="{Binding ShowEmptyCategories,
+                                                      Mode=TwoWay}"/>
+                    </Grid>
 
                     <TextBlock Grid.Column="1"
                                Text="Settings"
-                               FontWeight="Bold"
+                               Style="{StaticResource DetailedEditorSectionHeadingTextStyle}"
                                Margin="5"/>
 
                 </Grid>
@@ -641,22 +719,158 @@
 
                     <Grid.ColumnDefinitions>
 
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
 
                     </Grid.ColumnDefinitions>
 
-                    <ListBox Grid.Column="0"
-                             Margin="5"
-                             ItemsSource="{Binding Sheets}"
-                             SelectedItem="{Binding SelectedSheet}"
-                             DisplayMemberPath="Name"/>
+                    <Grid Grid.Column="0"
+                          Margin="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <ListBox Grid.Column="1"
-                             Margin="5"
-                             ItemsSource="{Binding Entries}"
-                             SelectedItem="{Binding SelectedEntry}"
-                             DisplayMemberPath="DisplayName"/>
+                        <ListBox x:Name="CategoriesList"
+                                 Grid.Row="0"
+                                 ItemsSource="{Binding Sheets}"
+                                 SelectedItem="{Binding SelectedSheet}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Name}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Text="No categories match the current search."
+                                   Grid.Row="0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasVisibleCategories}"
+                                                     Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Grid.Row="1"
+                                   Text="Select a category to view its settings."
+                                   Margin="5,6,5,2"
+                                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource SupportingTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasVisibleCategories}" Value="True"/>
+                                                <Condition Binding="{Binding HasSelectedCategory}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid Grid.Column="1"
+                          Margin="5">
+                        <ListBox x:Name="SettingsList"
+                                 ItemsSource="{Binding Entries}"
+                                 SelectedItem="{Binding SelectedEntry}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding DisplayName}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Text="Select a category to view its settings."
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasSelectedCategory}"
+                                                     Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="No settings are available in this category."
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasSelectedCategory}" Value="True"/>
+                                                <Condition Binding="{Binding SelectedCategoryHasSettings}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="No settings match the current search."
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding SelectedCategoryHasSettings}" Value="True"/>
+                                                <Condition Binding="{Binding HasVisibleSettings}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="Select a setting to view its values."
+                                   IsHitTestVisible="False"
+                                   VerticalAlignment="Bottom">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock"
+                                       BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasVisibleSettings}" Value="True"/>
+                                                <Condition Binding="{Binding HasSelectedSetting}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
 
                 </Grid>
 
@@ -672,11 +886,42 @@
                 <Grid.RowDefinitions>
 
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
 
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0"
+                <Border Grid.Row="0"
+                        Margin="5,5,5,0"
+                        Style="{StaticResource DetailedEditorContextPanelStyle}"
+                        Visibility="{Binding HasSelectedSetting,
+                                             Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding SelectedSettingTitle}"
+                                       ToolTip="{Binding SelectedSettingTitle}"
+                                       Style="{StaticResource DetailedEditorContextHeadingTextStyle}"/>
+                            <TextBlock Text="{Binding SelectedSettingContext}"
+                                       ToolTip="{Binding SelectedSettingContext}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Style="{StaticResource SupportingTextStyle}"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding SelectedSettingModificationStatus}"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModifiedAccentBrush}"/>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="1"
                       Margin="10,5,5,0">
 
                     <Grid.ColumnDefinitions>
@@ -688,54 +933,27 @@
 
                     <TextBlock Grid.Column="0"
                                Text="Properties"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"/>
+                               Style="{StaticResource DetailedEditorSectionHeadingTextStyle}"/>
 
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding ModificationStatus}"
-                               Margin="10,0,5,0"
-                               VerticalAlignment="Center">
-
-                        <TextBlock.Style>
-
-                            <Style TargetType="TextBlock">
-
-                                <Setter Property="FontWeight"
-                                        Value="Normal"/>
-
-                                <Setter Property="Foreground"
-                                        Value="Gray"/>
-
-                                <Style.Triggers>
-
-                                    <DataTrigger Binding="{Binding HasModifications}"
-                                                 Value="True">
-
-                                        <Setter Property="FontWeight"
-                                                Value="SemiBold"/>
-
-                                        <Setter Property="Foreground"
-                                                Value="{StaticResource ModifiedAccentBrush}"/>
-
-                                    </DataTrigger>
-
-                                </Style.Triggers>
-
-                            </Style>
-
-                        </TextBlock.Style>
-
-                    </TextBlock>
+                    <Button Grid.Column="1"
+                            Content="Restore Original Value"
+                            Margin="10,0,5,0"
+                            Style="{StaticResource DetailedEditorLocalActionButtonStyle}"
+                            Command="{Binding ResetSelectedPropertyCommand}"
+                            IsEnabled="{Binding CanResetSelectedProperty}"
+                            ToolTip="Restore the selected property to its original value."/>
 
                 </Grid>
 
-                <ListView x:Name="PropertiesListView"
-                          Grid.Row="1"
-                          Margin="5"
-                          ItemsSource="{Binding Properties}"
-                          SelectedItem="{Binding SelectedProperty,
-                                                 Mode=TwoWay}"
-                          SelectionChanged="PropertiesListView_SelectionChanged">
+                <Grid Grid.Row="2"
+                      Margin="5">
+                    <ListView x:Name="PropertiesListView"
+                              ItemsSource="{Binding Properties}"
+                              SelectedItem="{Binding SelectedProperty,
+                                                     Mode=TwoWay}"
+                              PreviewGotKeyboardFocus="PropertiesListView_PreviewGotKeyboardFocus"
+                              PreviewMouseLeftButtonDown="PropertiesListView_PreviewMouseLeftButtonDown"
+                              SelectionChanged="PropertiesListView_SelectionChanged">
 
                     <ListView.ItemContainerStyle>
 
@@ -779,7 +997,7 @@
                                                    FontSize="12"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   ToolTip="This property has unsaved changes"
+                                                   ToolTip="This value has unsaved changes."
                                                    Visibility="{Binding IsModified,
                                                                         Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
@@ -797,7 +1015,13 @@
                                     <DataTemplate>
 
                                         <TextBlock Text="{Binding Name}"
-                                                   VerticalAlignment="Center"/>
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.ToolTip>
+                                                <TextBlock Text="{Binding EffectivePropertyPath,
+                                                                          StringFormat='Internal path: {0}'}"/>
+                                            </TextBlock.ToolTip>
+                                        </TextBlock>
 
                                     </DataTemplate>
 
@@ -826,7 +1050,27 @@
 
                     </ListView.View>
 
-                </ListView>
+                    </ListView>
+
+                    <TextBlock Text="No editable values are available for this setting."
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock"
+                                   BasedOn="{StaticResource DetailedEditorEmptyStateTextStyle}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding HasSelectedSetting}" Value="True"/>
+                                            <Condition Binding="{Binding HasVisibleProperties}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
 
             </Grid>
 

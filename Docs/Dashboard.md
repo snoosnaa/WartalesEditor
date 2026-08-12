@@ -214,3 +214,12 @@ Detailed implementation information belongs in:
 - Changelog.md
 - CurrentTask.md
 - ProjectSnapshot.md
+# Version 0.10.0 UI Polish
+
+Pass 5 player communication and language polish: implemented and build
+verified; Visual Studio runtime verification pending.
+
+Primary workflows: Gameplay Tools, Detailed Editor, Profiles, Review Changes,
+and Check Project.
+
+Pending pre-1.0 correction: Search Scope Semantics Correction.

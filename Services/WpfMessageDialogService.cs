@@ -2,6 +2,8 @@
 
 namespace WartalesEditor.Services;
 
+using System.Linq;
+
 public sealed class WpfMessageDialogService :
     IMessageDialogService
 {
@@ -9,7 +11,7 @@ public sealed class WpfMessageDialogService :
         string message,
         string title)
     {
-        MessageBox.Show(
+        ShowMessage(
             message,
             title,
             MessageBoxButton.OK,
@@ -20,7 +22,7 @@ public sealed class WpfMessageDialogService :
         string message,
         string title)
     {
-        MessageBox.Show(
+        ShowMessage(
             message,
             title,
             MessageBoxButton.OK,
@@ -31,7 +33,7 @@ public sealed class WpfMessageDialogService :
         string message,
         string title)
     {
-        MessageBox.Show(
+        ShowMessage(
             message,
             title,
             MessageBoxButton.OK,
@@ -43,7 +45,7 @@ public sealed class WpfMessageDialogService :
         string title)
     {
         MessageBoxResult result =
-            MessageBox.Show(
+            ShowMessage(
                 message,
                 title,
                 MessageBoxButton.YesNo,
@@ -58,7 +60,7 @@ public sealed class WpfMessageDialogService :
         string title)
     {
         MessageBoxResult result =
-            MessageBox.Show(
+            ShowMessage(
                 message,
                 title,
                 MessageBoxButton.YesNoCancel,
@@ -75,5 +77,41 @@ public sealed class WpfMessageDialogService :
             _ =>
                 UnsavedChangesResult.Cancel
         };
+    }
+
+    private static MessageBoxResult ShowMessage(
+        string message,
+        string title,
+        MessageBoxButton buttons,
+        MessageBoxImage image)
+    {
+        Window? owner =
+            ResolveOwner();
+
+        return owner == null
+            ? MessageBox.Show(
+                message,
+                title,
+                buttons,
+                image)
+            : MessageBox.Show(
+                owner,
+                message,
+                title,
+                buttons,
+                image);
+    }
+
+    private static Window? ResolveOwner()
+    {
+        Application? application =
+            Application.Current;
+
+        return application?.Windows
+                   .OfType<Window>()
+                   .FirstOrDefault(window =>
+                       window.IsActive)
+               ??
+               application?.MainWindow;
     }
 }

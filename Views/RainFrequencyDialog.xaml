@@ -15,20 +15,20 @@
         </Grid.RowDefinitions>
 
         <TextBlock Text="Control how often ordinary rain occurs across supported regions. Other weather systems remain unchanged."
-                   TextWrapping="Wrap" Margin="0,0,0,16"/>
+                   Style="{StaticResource DialogExplanationTextStyle}"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Current setting:" FontWeight="SemiBold"
+            <TextBlock Text="Current preset:" FontWeight="SemiBold"
                        VerticalAlignment="Center" Margin="0,0,8,0"/>
             <TextBlock Grid.Column="1" Text="{Binding CurrentStateText}"
                        VerticalAlignment="Center"/>
         </Grid>
 
-        <GroupBox Grid.Row="2" Header="Rain preset" Margin="0,16,0,0">
+        <GroupBox Grid.Row="2" Header="Preset" Margin="0,16,0,0">
             <StackPanel Margin="12">
                 <ComboBox ItemsSource="{Binding Presets}"
                           SelectedItem="{Binding SelectedPreset}"
@@ -41,15 +41,25 @@
             </StackPanel>
         </GroupBox>
 
-        <Button Grid.Row="3" Content="Reset to Vanilla"
-                HorizontalAlignment="Left" Margin="0,14,0,0"
-                Click="ResetButton_Click"/>
+        <DockPanel Grid.Row="3"
+                   Grid.RowSpan="2"
+                   LastChildFill="False"
+                   Margin="{StaticResource DialogActionRowSpacing}">
+            <Button DockPanel.Dock="Left"
+                    Content="Reset to Vanilla"
+                    Click="ResetButton_Click"/>
 
-        <StackPanel Grid.Row="4" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}"
-                    IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
-            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}" Click="CloseButton_Click"/>
-        </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal">
+                <Button Content="Apply"
+                        Style="{StaticResource GameplayApplyButtonStyle}"
+                        IsEnabled="{Binding CanApply}"
+                        Click="ApplyButton_Click"/>
+                <Button Content="Close"
+                        Style="{StaticResource GameplayCloseButtonStyle}"
+                        IsCancel="True"
+                        Click="CloseButton_Click"/>
+            </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>

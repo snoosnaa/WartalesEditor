@@ -22,9 +22,8 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="Lower percentages reduce XP requirements. Each control uses the project's original values and can be applied independently."
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,14"/>
+                   Text="Lower percentages reduce XP requirements. Each control uses the values from the opened Wartales file and can be applied independently."
+                   Style="{StaticResource DialogExplanationTextStyle}"/>
 
         <GroupBox Grid.Row="1"
                   Header="Character XP Requirements"
@@ -72,7 +71,7 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="0,8,0,0">
-                    <Button Content="Use Current Values as Baseline"
+                    <Button Content="Use Current Values as 100%"
                             Width="205"
                             Margin="0,0,8,0"
                             IsEnabled="{Binding CanAdoptCharacter}"
@@ -131,7 +130,7 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="0,8,0,0">
-                    <Button Content="Use Current Values as Baseline"
+                    <Button Content="Use Current Values as 100%"
                             Width="205"
                             Margin="0,0,8,0"
                             IsEnabled="{Binding CanAdoptProfession}"
@@ -148,6 +147,7 @@
                 Content="Close"
                 Style="{StaticResource GameplayCloseButtonStyle}"
                 HorizontalAlignment="Right"
+                IsCancel="True"
                 Click="CloseButton_Click"/>
     </Grid>
 </Window>

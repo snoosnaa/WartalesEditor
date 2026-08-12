@@ -22,16 +22,19 @@ namespace WartalesEditor.ViewModels;
 
 public class MainViewModel : ObservableObject
 {
-    private const string ApplicationVersion =
-        "0.7.0";
+    private static string ApplicationVersion =>
+        typeof(MainViewModel).Assembly
+            .GetName()
+            .Version?
+            .ToString(3)
+        ?? "Unknown";
 
     private const string ProjectOpenFilter =
-        "CDB Files (*.cdb)|*.cdb|" +
-        "JSON Files (*.json)|*.json|" +
+        "Wartales Data Files (*.cdb)|*.cdb|" +
         "All Files (*.*)|*.*";
 
     private const string ProjectSaveFilter =
-        "CDB Files (*.cdb)|*.cdb|" +
+        "Wartales Data Files (*.cdb)|*.cdb|" +
         "All Files (*.*)|*.*";
 
     private const string SnapshotFileFilter =
@@ -114,6 +117,9 @@ public class MainViewModel : ObservableObject
     private ValidationResultsWindow?
         validationResultsWindow;
 
+    private ValidationResultModel?
+        lastValidationResult;
+
     private ValidationResultsViewModel?
         validationResultsViewModel;
 
@@ -193,6 +199,7 @@ public class MainViewModel : ObservableObject
                 return;
             }
 
+            validationResultsWindow?.Close();
             progressionScalingDialog?.Close();
             startingResourcesDialog?.Close();
             foreach (PartyEconomyDialog dialog in partyEconomyDialogs.Values.ToArray())
@@ -221,6 +228,16 @@ public class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(Sheets));
             OnPropertyChanged(nameof(Entries));
             OnPropertyChanged(nameof(Properties));
+            OnPropertyChanged(
+                nameof(HasVisibleCategories));
+            OnPropertyChanged(
+                nameof(HasSelectedCategory));
+            OnPropertyChanged(
+                nameof(SelectedCategoryHasSettings));
+            OnPropertyChanged(
+                nameof(HasVisibleSettings));
+            OnPropertyChanged(
+                nameof(HasVisibleProperties));
             OnPropertyChanged(nameof(HasProject));
             OnPropertyChanged(nameof(IsGameplayToolsAvailable));
             OnPropertyChanged(nameof(IsDetailedEditorAvailable));
@@ -285,6 +302,8 @@ public class MainViewModel : ObservableObject
                     value))
             {
                 OnPropertyChanged(nameof(Sheets));
+                OnPropertyChanged(
+                    nameof(HasVisibleCategories));
             }
         }
     }
@@ -306,6 +325,12 @@ public class MainViewModel : ObservableObject
             SelectedEntry = null;
 
             OnPropertyChanged(nameof(Entries));
+            OnPropertyChanged(
+                nameof(HasSelectedCategory));
+            OnPropertyChanged(
+                nameof(SelectedCategoryHasSettings));
+            OnPropertyChanged(
+                nameof(HasVisibleSettings));
             RefreshCommandStates();
         }
     }
@@ -366,7 +391,10 @@ public class MainViewModel : ObservableObject
 
             OnPropertyChanged(nameof(Properties));
             OnPropertyChanged(
+                nameof(HasVisibleProperties));
+            OnPropertyChanged(
                 nameof(CanResetProperty));
+            NotifySelectedSettingPresentationChanged();
 
             RefreshCommandStates();
         }
@@ -392,6 +420,8 @@ public class MainViewModel : ObservableObject
 
             OnPropertyChanged(
                 nameof(CanResetProperty));
+            OnPropertyChanged(
+                nameof(CanResetSelectedProperty));
 
             RefreshCommandStates();
         }
@@ -399,6 +429,98 @@ public class MainViewModel : ObservableObject
 
     public bool CanResetProperty =>
         GetResetTargetProperty() != null;
+
+    public bool CanResetSelectedProperty =>
+        SelectedProperty?.CanReset == true;
+
+    public bool HasSelectedSetting =>
+        SelectedEntry != null;
+
+    public bool HasSelectedCategory =>
+        SelectedSheet != null;
+
+    public bool HasVisibleCategories =>
+        Sheets.Count > 0;
+
+    public bool SelectedCategoryHasSettings =>
+        SelectedSheet?.Entries.Count > 0;
+
+    public bool HasVisibleSettings =>
+        Entries.Count > 0;
+
+    public bool HasVisibleProperties =>
+        Properties.Count > 0;
+
+    public string SelectedSettingTitle
+    {
+        get
+        {
+            if (SelectedEntry == null)
+            {
+                return string.Empty;
+            }
+
+            string? localizedName =
+                localizationService.GetLocalizedName(
+                    SelectedEntry.DisplayName);
+
+            return string.IsNullOrWhiteSpace(
+                    localizedName)
+                ? SelectedEntry.DisplayName
+                : localizedName;
+        }
+    }
+
+    public string SelectedSettingContext
+    {
+        get
+        {
+            if (SelectedEntry == null)
+            {
+                return string.Empty;
+            }
+
+            string categoryName =
+                SelectedSheet?.Name
+                ?? string.Empty;
+            string internalName =
+                SelectedEntry.DisplayName;
+            string? localizedName =
+                localizationService.GetLocalizedName(
+                    internalName);
+
+            if (string.IsNullOrWhiteSpace(
+                    localizedName)
+                ||
+                string.Equals(
+                    localizedName,
+                    internalName,
+                    StringComparison.Ordinal))
+            {
+                return categoryName;
+            }
+
+            return string.IsNullOrWhiteSpace(
+                    categoryName)
+                ? internalName
+                : $"{categoryName} · {internalName}";
+        }
+    }
+
+    public int SelectedSettingModifiedCount =>
+        SelectedEntry?.Properties.Count(
+            property =>
+                property.IsModified)
+        ?? 0;
+
+    public string SelectedSettingModificationStatus =>
+        SelectedSettingModifiedCount switch
+        {
+            0 => string.Empty,
+            1 => "1 change in this setting",
+            int count =>
+                $"{count:N0} changes in this setting"
+        };
 
     public ObservableCollection<SearchResultModel>
         SearchResults
@@ -411,17 +533,25 @@ public class MainViewModel : ObservableObject
             SearchText);
 
     public string FindAnythingHeader =>
-        $"Find Anything ({SearchResults.Count})";
+        $"Search Results ({SearchResults.Count})";
 
     private string localizationStatus =
-        "Localization: Not loaded";
+        "English names not loaded";
 
     public string LocalizationStatus
     {
         get => localizationStatus;
-        set => SetProperty(
-            ref localizationStatus,
-            value);
+        set
+        {
+            if (!SetProperty(
+                    ref localizationStatus,
+                    value))
+            {
+                return;
+            }
+
+            NotifySelectedSettingPresentationChanged();
+        }
     }
 
     private SearchResultModel? selectedSearchResult;
@@ -465,9 +595,14 @@ public class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(Sheets));
             OnPropertyChanged(nameof(Entries));
             OnPropertyChanged(
+                nameof(HasVisibleCategories));
+            OnPropertyChanged(
+                nameof(HasVisibleSettings));
+            OnPropertyChanged(
                 nameof(HasSearchText));
 
             RefreshSearchResults();
+            RefreshCommandStates();
         }
     }
 
@@ -488,6 +623,10 @@ public class MainViewModel : ObservableObject
 
             OnPropertyChanged(nameof(Sheets));
             OnPropertyChanged(nameof(Entries));
+            OnPropertyChanged(
+                nameof(HasVisibleCategories));
+            OnPropertyChanged(
+                nameof(HasVisibleSettings));
 
             RefreshSearchResults();
         }
@@ -560,14 +699,13 @@ public class MainViewModel : ObservableObject
             if (!HasModifications)
                 return "No unsaved changes";
 
-            string propertyText =
+            string changeText =
                 ModifiedPropertyCount == 1
-                    ? "property"
-                    : "properties";
+                    ? "change"
+                    : "changes";
 
             return
-                $"{ModifiedPropertyCount:N0} " +
-                $"modified {propertyText}";
+                $"{ModifiedPropertyCount:N0} {changeText}";
         }
     }
 
@@ -578,7 +716,7 @@ public class MainViewModel : ObservableObject
             string fileName =
                 string.IsNullOrWhiteSpace(
                     CurrentFile)
-                    ? "No file loaded"
+                    ? "No Wartales file open"
                     : Path.GetFileName(
                         CurrentFile);
 
@@ -637,6 +775,11 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ClearSearchCommand
+    {
+        get;
+    }
+
     public RelayCommand ResetSelectedPropertyCommand
     {
         get;
@@ -672,6 +815,11 @@ public class MainViewModel : ObservableObject
     }
 
     public RelayCommand ValidateProjectCommand
+    {
+        get;
+    }
+
+    public RelayCommand ShowAboutCommand
     {
         get;
     }
@@ -887,6 +1035,11 @@ public class MainViewModel : ObservableObject
                     ||
                     SelectedSearchResult != null);
 
+        ClearSearchCommand =
+            new RelayCommand(
+                _ => SearchText = string.Empty,
+                _ => HasSearchText);
+
         ResetSelectedPropertyCommand =
             new RelayCommand(
                 _ => ResetSelectedProperty(),
@@ -930,6 +1083,10 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => ValidateProject(),
                 _ => Project != null);
+
+        ShowAboutCommand =
+            new RelayCommand(
+                _ => ShowAbout());
 
         ContentCreationCommand =
             new RelayCommand(
@@ -1006,13 +1163,13 @@ public class MainViewModel : ObservableObject
                     localizationFile);
 
                 LocalizationStatus =
-                    $"Localization: English " +
+                    $"English names loaded " +
                     $"({localizationService.EntryCount:N0})";
             }
             else
             {
                 LocalizationStatus =
-                    "Localization: English not found";
+                    "English names unavailable";
             }
 
             RefreshSearchResults();
@@ -1020,16 +1177,18 @@ public class MainViewModel : ObservableObject
             RefreshCommandStates();
 
             Status =
-                $"Loaded: " +
+                $"Opened: " +
                 $"{Path.GetFileName(CurrentFile)}";
         }
         catch (Exception exception)
         {
             messageDialogService.ShowError(
-                $"The project could not be opened." +
+                $"The Wartales file could not be opened." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
-                "Open Project");
+                "No project was loaded. Check that the file is an extracted .cdb file and try again." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
+                "Open Wartales File");
 
             Status =
                 "Project open failed.";
@@ -1121,10 +1280,12 @@ public class MainViewModel : ObservableObject
         catch (Exception exception)
         {
             messageDialogService.ShowError(
-                $"The project could not be saved." +
+                $"The Wartales file could not be saved." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
-                "Save Project");
+                "Your unsaved changes remain open in the editor. Check the destination and try again." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
+                "Save Modded File");
 
             Status =
                 "Project save failed.";
@@ -1149,10 +1310,9 @@ public class MainViewModel : ObservableObject
 
         UnsavedChangesResult result =
             messageDialogService.ShowUnsavedChanges(
-                $"There are unsaved changes in {fileName}." +
-                Environment.NewLine +
-                Environment.NewLine +
-                "Choose Yes to save before continuing, " +
+                $"Save changes to {fileName} before continuing?" +
+                Environment.NewLine + Environment.NewLine +
+                "Choose Yes to save, " +
                 "No to discard the changes, or Cancel " +
                 "to return to the editor.",
                 "Unsaved Changes");
@@ -1400,11 +1560,7 @@ public class MainViewModel : ObservableObject
 
         bool confirmed =
             messageDialogService.ShowConfirmation(
-                "Add and enable the Anvil and Apothecary Table?" +
-                Environment.NewLine +
-                Environment.NewLine +
-                "This will configure both camp facilities and add " +
-                "their Workshop crafting recipes.",
+                "Add the Anvil and Apothecary Table to the camp, including their Workshop recipes?",
                 "Add Camp Facilities");
 
         if (!confirmed)
@@ -1456,15 +1612,6 @@ public class MainViewModel : ObservableObject
 
             RefreshAfterProjectOperation();
 
-            int createdEntryCount =
-                result.CreatedEntries.Count;
-
-            int createdPropertyCount =
-                result.CreatedProperties.Count;
-
-            int updatedPropertyCount =
-                result.UpdatedProperties.Count;
-
             if (!result.WasModified)
             {
                 messageDialogService.ShowInformation(
@@ -1479,17 +1626,9 @@ public class MainViewModel : ObservableObject
             }
 
             messageDialogService.ShowInformation(
-                "Camp facilities were added successfully." +
-                Environment.NewLine +
-                Environment.NewLine +
-                $"Created entries: {createdEntryCount:N0}" +
-                Environment.NewLine +
-                $"Created properties: {createdPropertyCount:N0}" +
-                Environment.NewLine +
-                $"Updated properties: {updatedPropertyCount:N0}" +
-                Environment.NewLine +
-                Environment.NewLine +
-                "Save the project to write these changes to a CDB file.",
+                "Camp facilities added." +
+                Environment.NewLine + Environment.NewLine +
+                "The Anvil and Apothecary Table are now configured with their Workshop recipes.",
                 "Add Camp Facilities");
 
             Status =
@@ -1503,7 +1642,7 @@ public class MainViewModel : ObservableObject
                 "The camp facilities could not be added." +
                 Environment.NewLine +
                 Environment.NewLine +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Add Camp Facilities");
 
             Status =
@@ -1596,17 +1735,10 @@ public class MainViewModel : ObservableObject
             }
 
             messageDialogService.ShowInformation(
-                "Eligible equipment was made upgradeable " +
-                "successfully." +
+                "Equipment can now be upgraded." +
                 Environment.NewLine +
                 Environment.NewLine +
-                $"Updated equipment entries: " +
-                $"{affectedEquipmentCount:N0}" +
-                Environment.NewLine +
-                Environment.NewLine +
-                "Only the upgradeable flag was changed. " +
-                "Save the project to write these changes " +
-                "to a CDB file.",
+                $"{affectedEquipmentCount:N0} equipment items were updated.",
                 "Upgrade All Equipment");
 
             Status =
@@ -1620,7 +1752,7 @@ public class MainViewModel : ObservableObject
                 "Equipment could not be made upgradeable." +
                 Environment.NewLine +
                 Environment.NewLine +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Upgrade All Equipment");
 
             Status =
@@ -1638,14 +1770,8 @@ public class MainViewModel : ObservableObject
 
         if (progressionScalingDialog != null)
         {
-            if (progressionScalingDialog.WindowState ==
-                WindowState.Minimized)
-            {
-                progressionScalingDialog.WindowState =
-                    WindowState.Normal;
-            }
-
-            progressionScalingDialog.Activate();
+            RestoreAndActivateWindow(
+                progressionScalingDialog);
             return;
         }
 
@@ -1727,7 +1853,7 @@ public class MainViewModel : ObservableObject
                 "XP Progression could not be opened." +
                 Environment.NewLine +
                 Environment.NewLine +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "XP Progression");
 
             Status = "XP Progression failed to open.";
@@ -1771,18 +1897,16 @@ public class MainViewModel : ObservableObject
 
         bool confirmed =
             messageDialogService.ShowConfirmation(
-                $"The editor has no trusted {displayName} baseline " +
-                "metadata for this CDB." +
+                $"The editor does not have the original {displayName} values for this file." +
                 Environment.NewLine +
                 Environment.NewLine +
-                "The current values may already be modified. " +
-                "Adopting them makes the current values the new " +
-                "100% baseline and cannot reconstruct an earlier " +
-                "clean baseline." +
+                "The current values may already be modified. If you continue, " +
+                "they will become the new 100% values. Earlier values cannot " +
+                "be recovered automatically." +
                 Environment.NewLine +
                 Environment.NewLine +
-                "Use the current values as the baseline?",
-                $"Adopt {displayName} Baseline");
+                "Use the current values as 100%?",
+                $"Use Current {displayName} Values?");
 
         if (!confirmed)
         {
@@ -1813,7 +1937,7 @@ public class MainViewModel : ObservableObject
                 viewModel.RefreshFromProject();
             }
 
-            Status = $"{displayName} baseline adopted and saved.";
+            Status = $"Current {displayName} values are now 100%.";
         }
         catch (Exception exception)
         {
@@ -1836,8 +1960,8 @@ public class MainViewModel : ObservableObject
                 $"The {displayName} baseline could not be adopted." +
                 Environment.NewLine +
                 Environment.NewLine +
-                exception.Message,
-                $"Adopt {displayName} Baseline");
+                $"Details: {exception.Message}",
+                $"Use Current {displayName} Values?");
         }
     }
 
@@ -1848,7 +1972,7 @@ public class MainViewModel : ObservableObject
             "XP Progression failed while loading or rendering." +
             Environment.NewLine +
             Environment.NewLine +
-            exception.Message,
+            $"Details: {exception.Message}",
             "XP Progression");
 
         Status = "XP Progression failed to render.";
@@ -1952,8 +2076,9 @@ public class MainViewModel : ObservableObject
             RefreshAfterProjectOperation();
 
             messageDialogService.ShowInformation(
-                operationResult.Message
-                ?? $"{operation.Name} completed.",
+                result.WasModified
+                    ? $"{(progressionType == ProgressionType.Character ? "Character XP" : "Profession XP")} set to {percentage}%."
+                    : $"{(progressionType == ProgressionType.Character ? "Character XP" : "Profession XP")} already matches {percentage}%.",
                 operation.Name);
 
             Status = result.WasModified
@@ -1968,7 +2093,7 @@ public class MainViewModel : ObservableObject
                 $"{operation.Name} could not be applied." +
                 Environment.NewLine +
                 Environment.NewLine +
-                exception.Message,
+                $"Details: {exception.Message}",
                 operation.Name);
 
             Status = $"{operation.Name} failed.";
@@ -1980,9 +2105,8 @@ public class MainViewModel : ObservableObject
         if (Project == null) return;
         if (startingResourcesDialog != null)
         {
-            if (startingResourcesDialog.WindowState == WindowState.Minimized)
-                startingResourcesDialog.WindowState = WindowState.Normal;
-            startingResourcesDialog.Activate();
+            RestoreAndActivateWindow(
+                startingResourcesDialog);
             return;
         }
 
@@ -2015,7 +2139,7 @@ public class MainViewModel : ObservableObject
             startingResourcesDialog = null;
             messageDialogService.ShowError(
                 "Starting Resources could not be opened." + Environment.NewLine +
-                Environment.NewLine + exception.Message,
+                Environment.NewLine + $"Details: {exception.Message}",
                 "Starting Resources");
             Status = "Starting Resources failed to open.";
         }
@@ -2025,9 +2149,8 @@ public class MainViewModel : ObservableObject
     {
         if (Project == null) return;
         bool confirmed = messageDialogService.ShowConfirmation(
-            "The editor will remember the current starting supplies so future adjustments remain accurate." +
-            Environment.NewLine + Environment.NewLine + "Continue?",
-            "Initialize Starting Resources");
+            "Remember the current starting supplies so future adjustments remain accurate?",
+            "Set Up Starting Resources");
         if (!confirmed) return;
 
         GameplayOperationStateModel? previous = gameplayOperationStateService.FindState(
@@ -2054,7 +2177,7 @@ public class MainViewModel : ObservableObject
             Project.IsGameplayOperationStateModified = previousModified;
             messageDialogService.ShowError(
                 "Starting Resources could not be initialized." + Environment.NewLine +
-                Environment.NewLine + exception.Message,
+                Environment.NewLine + $"Details: {exception.Message}",
                 "Starting Resources");
         }
     }
@@ -2095,9 +2218,6 @@ public class MainViewModel : ObservableObject
             {
                 vm.RefreshFromProject();
             }
-            messageDialogService.ShowInformation(
-                operationResult.Message ?? "Starting Resources completed.",
-                operation.Name);
             Status = "Starting Resources updated.";
         }
         catch (Exception exception)
@@ -2105,7 +2225,7 @@ public class MainViewModel : ObservableObject
             RefreshAfterProjectOperation();
             messageDialogService.ShowError(
                 "Starting Resources could not be applied." + Environment.NewLine +
-                Environment.NewLine + exception.Message,
+                Environment.NewLine + $"Details: {exception.Message}",
                 operation.Name);
         }
     }
@@ -2114,7 +2234,7 @@ public class MainViewModel : ObservableObject
     {
         messageDialogService.ShowError(
             "Starting Resources failed while loading or rendering." + Environment.NewLine +
-            Environment.NewLine + exception.Message,
+            Environment.NewLine + $"Details: {exception.Message}",
             "Starting Resources");
     }
 
@@ -2134,9 +2254,8 @@ public class MainViewModel : ObservableObject
         if (Project == null || parameter is not ProgressionType type) return;
         if (partyEconomyDialogs.TryGetValue(type, out PartyEconomyDialog? existing))
         {
-            if (existing.WindowState == WindowState.Minimized)
-                existing.WindowState = WindowState.Normal;
-            existing.Activate();
+            RestoreAndActivateWindow(
+                existing);
             return;
         }
 
@@ -2200,9 +2319,12 @@ public class MainViewModel : ObservableObject
             if (sender is PartyEconomyDialog dialog &&
                 dialog.DataContext is PartyEconomyDialogViewModel viewModel)
                 viewModel.RefreshFromProject();
-            messageDialogService.ShowInformation(
-                result.Message ?? $"{operation.Name} completed.", operation.Name);
-            Status = $"{operation.Name} updated.";
+            Status = e.OperationType switch
+            {
+                ProgressionType.VolunteerWages => "Volunteer Trait updated.",
+                ProgressionType.ValourPoints => "Valour Points updated.",
+                _ => "Carrying Capacity updated."
+            };
         }
         catch (Exception exception)
         {
@@ -2244,9 +2366,8 @@ public class MainViewModel : ObservableObject
         if (Project == null) return;
         if (overworldMovementSpeedDialog != null)
         {
-            if (overworldMovementSpeedDialog.WindowState == WindowState.Minimized)
-                overworldMovementSpeedDialog.WindowState = WindowState.Normal;
-            overworldMovementSpeedDialog.Activate();
+            RestoreAndActivateWindow(
+                overworldMovementSpeedDialog);
             return;
         }
 
@@ -2322,10 +2443,7 @@ public class MainViewModel : ObservableObject
                 dialog.DataContext is
                     OverworldMovementSpeedDialogViewModel viewModel)
                 viewModel.RefreshFromProject();
-            messageDialogService.ShowInformation(
-                result.Message ?? "Overworld Movement Speed was updated.",
-                operation.Name);
-            Status = "Overworld Movement Speed updated.";
+            Status = "Movement Speed updated.";
         }
         catch (Exception exception)
         {
@@ -2364,9 +2482,8 @@ public class MainViewModel : ObservableObject
         if (Project == null) return;
         if (rainFrequencyDialog != null)
         {
-            if (rainFrequencyDialog.WindowState == WindowState.Minimized)
-                rainFrequencyDialog.WindowState = WindowState.Normal;
-            rainFrequencyDialog.Activate();
+            RestoreAndActivateWindow(
+                rainFrequencyDialog);
             return;
         }
 
@@ -2439,9 +2556,6 @@ public class MainViewModel : ObservableObject
             if (sender is RainFrequencyDialog dialog &&
                 dialog.DataContext is RainFrequencyDialogViewModel viewModel)
                 viewModel.RefreshFromProject();
-            messageDialogService.ShowInformation(
-                result.Message ?? "Rain Frequency was updated.",
-                operation.Name);
             Status = "Rain Frequency updated.";
         }
         catch (Exception exception)
@@ -2483,19 +2597,24 @@ public class MainViewModel : ObservableObject
             return;
         }
 
-        ValidationResultModel validationResult =
-            validationWorkflowService
-                .ValidateProject(Project);
+        try
+        {
+            ValidationResultModel validationResult =
+                validationWorkflowService
+                    .ValidateProject(Project);
 
-        ShowValidationResults(
-            validationResult);
+            ShowValidationResults(
+                validationResult);
 
-        Status =
-            validationResult.HasErrors
-                ? "Validation completed with errors."
-                : validationResult.HasWarnings
-                    ? "Validation completed with warnings."
-                    : "Validation completed successfully.";
+            SetProjectCheckStatus(
+                validationResult);
+        }
+        catch (Exception exception)
+        {
+            ShowProjectCheckFailure(
+                exception,
+                "No validation result is available.");
+        }
     }
 
     private void RefreshAfterProjectOperation()
@@ -2512,6 +2631,12 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(Sheets));
         OnPropertyChanged(nameof(Entries));
         OnPropertyChanged(nameof(Properties));
+        OnPropertyChanged(
+            nameof(HasVisibleCategories));
+        OnPropertyChanged(
+            nameof(HasVisibleSettings));
+        OnPropertyChanged(
+            nameof(HasVisibleProperties));
 
         RefreshModificationState();
         RefreshChangeSummaryViewModel();
@@ -2526,20 +2651,16 @@ public class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(
             validationResult);
 
+        lastValidationResult =
+            validationResult;
+
         if (validationResultsWindow != null)
         {
             validationResultsViewModel?.Refresh(
                 validationResult);
 
-            if (validationResultsWindow.WindowState
-                == WindowState.Minimized)
-            {
-                validationResultsWindow.WindowState =
-                    WindowState.Normal;
-            }
-
-            validationResultsWindow.Activate();
-            validationResultsWindow.Focus();
+            RestoreAndActivateWindow(
+                validationResultsWindow);
 
             return;
         }
@@ -2554,6 +2675,10 @@ public class MainViewModel : ObservableObject
         validationResultsWindow =
             new ValidationResultsWindow
             {
+                Owner =
+                    GetMainWindowOwner(),
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner,
                 DataContext =
                     validationResultsViewModel
             };
@@ -2573,18 +2698,57 @@ public class MainViewModel : ObservableObject
             return ValidationResultModel.Empty;
         }
 
-        ValidationResultModel validationResult =
-            validationWorkflowService
-                .ValidateProject(Project);
+        try
+        {
+            ValidationResultModel validationResult =
+                validationWorkflowService
+                    .ValidateProject(Project);
 
+            lastValidationResult =
+                validationResult;
+
+            SetProjectCheckStatus(
+                validationResult);
+
+            return validationResult;
+        }
+        catch (Exception exception)
+        {
+            ShowProjectCheckFailure(
+                exception,
+                "The previous results are still displayed.");
+
+            return lastValidationResult
+                ?? ValidationResultModel.Empty;
+        }
+    }
+
+    private void SetProjectCheckStatus(
+        ValidationResultModel validationResult)
+    {
         Status =
             validationResult.HasErrors
-                ? "Validation completed with errors."
+                ? "Project check found errors."
                 : validationResult.HasWarnings
-                    ? "Validation completed with warnings."
-                    : "Validation completed successfully.";
+                    ? "Ready to save, but review the warnings."
+                    : validationResult.HasInformation
+                        ? "Ready to save. Additional information is available."
+                        : "Ready to save. No issues were found.";
+    }
 
-        return validationResult;
+    private void ShowProjectCheckFailure(
+        Exception exception,
+        string resultState)
+    {
+        messageDialogService.ShowError(
+            "The project could not be checked." +
+            Environment.NewLine + Environment.NewLine +
+            resultState + " Try again; if the problem continues, reopen the Wartales file." +
+            Environment.NewLine + Environment.NewLine +
+            $"Details: {exception.Message}",
+            "Check Project");
+
+        Status = "Project check failed.";
     }
 
     private void CopyValidationResults(
@@ -2600,7 +2764,7 @@ public class MainViewModel : ObservableObject
             resultsText);
 
         Status =
-            "Validation results copied to the clipboard.";
+            "Project check details copied to the clipboard.";
     }
 
     private void OnValidationResultsWindowClosed(
@@ -2830,7 +2994,7 @@ public class MainViewModel : ObservableObject
                 $"{GetSingularOrPlural(
                     unapplied,
                     "change",
-                    "changes")} could not be applied.");
+                    "changes")} are not available in this Wartales file.");
 
             return message.ToString();
         }
@@ -2872,10 +3036,23 @@ public class MainViewModel : ObservableObject
         else
         {
             message.Append(
-                "Every profile change was applied successfully.");
+                "Every profile change was applied.");
         }
 
         return message.ToString();
+    }
+
+    private void ShowAbout()
+    {
+        messageDialogService.ShowInformation(
+            $"Wartales Editor" +
+            Environment.NewLine +
+            $"Version {ApplicationVersion}" +
+            Environment.NewLine + Environment.NewLine +
+            "A companion application for safely customizing Wartales game data." +
+            Environment.NewLine + Environment.NewLine +
+            "Wartales Editor is an unofficial community project and is not affiliated with or endorsed by Shiro Games.",
+            "About Wartales Editor");
     }
 
     private static string GetSingularOrPlural(
@@ -2982,6 +3159,9 @@ public class MainViewModel : ObservableObject
 
         OnPropertyChanged(
             nameof(CanResetProperty));
+        OnPropertyChanged(
+            nameof(CanResetSelectedProperty));
+        NotifySelectedSettingPresentationChanged();
 
         RefreshCommandStates();
     }
@@ -3051,8 +3231,25 @@ public class MainViewModel : ObservableObject
 
         OnPropertyChanged(
             nameof(CanResetProperty));
+        OnPropertyChanged(
+            nameof(CanResetSelectedProperty));
+        NotifySelectedSettingPresentationChanged();
 
         RefreshCommandStates();
+    }
+
+    private void NotifySelectedSettingPresentationChanged()
+    {
+        OnPropertyChanged(
+            nameof(HasSelectedSetting));
+        OnPropertyChanged(
+            nameof(SelectedSettingTitle));
+        OnPropertyChanged(
+            nameof(SelectedSettingContext));
+        OnPropertyChanged(
+            nameof(SelectedSettingModifiedCount));
+        OnPropertyChanged(
+            nameof(SelectedSettingModificationStatus));
     }
 
     private void RefreshCommandStates()
@@ -3061,6 +3258,9 @@ public class MainViewModel : ObservableObject
         SaveCommand?.NotifyCanExecuteChanged();
 
         NavigateSearchResultCommand?
+            .NotifyCanExecuteChanged();
+
+        ClearSearchCommand?
             .NotifyCanExecuteChanged();
 
         ResetSelectedPropertyCommand?
@@ -3141,15 +3341,8 @@ public class MainViewModel : ObservableObject
 
         if (changeSummaryWindow != null)
         {
-            if (changeSummaryWindow.WindowState
-                == WindowState.Minimized)
-            {
-                changeSummaryWindow.WindowState =
-                    WindowState.Normal;
-            }
-
-            changeSummaryWindow.Activate();
-            changeSummaryWindow.Focus();
+            RestoreAndActivateWindow(
+                changeSummaryWindow);
             return;
         }
 
@@ -3161,6 +3354,10 @@ public class MainViewModel : ObservableObject
         changeSummaryWindow =
             new ChangeSummaryWindow
             {
+                Owner =
+                    GetMainWindowOwner(),
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner,
                 DataContext =
                     changeSummaryViewModel
             };
@@ -3193,15 +3390,8 @@ public class MainViewModel : ObservableObject
             profileManagerViewModel?.Refresh();
             RefreshProfileManagerProjectState();
 
-            if (profileManagerWindow.WindowState
-                == WindowState.Minimized)
-            {
-                profileManagerWindow.WindowState =
-                    WindowState.Normal;
-            }
-
-            profileManagerWindow.Activate();
-            profileManagerWindow.Focus();
+            RestoreAndActivateWindow(
+                profileManagerWindow);
             return;
         }
 
@@ -3220,6 +3410,10 @@ public class MainViewModel : ObservableObject
         profileManagerWindow =
             new ProfileManagerWindow
             {
+                Owner =
+                    GetMainWindowOwner(),
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner,
                 DataContext =
                     profileManagerViewModel
             };
@@ -3231,7 +3425,32 @@ public class MainViewModel : ObservableObject
         profileManagerWindow.Activate();
 
         Status =
-            "Profile Manager opened.";
+            "Profiles opened.";
+    }
+
+    private static Window GetMainWindowOwner()
+    {
+        return Application.Current?.MainWindow
+            ?? throw new InvalidOperationException(
+                "The main application window is not available.");
+    }
+
+    private static void RestoreAndActivateWindow(
+        Window window)
+    {
+        ArgumentNullException.ThrowIfNull(
+            window);
+
+        if (window.WindowState ==
+            WindowState.Minimized)
+        {
+            window.WindowState =
+                WindowState.Normal;
+        }
+
+        window.Show();
+        window.Activate();
+        window.Focus();
     }
 
     private bool? ShowProfileDetailsDialog(
@@ -3290,7 +3509,7 @@ public class MainViewModel : ObservableObject
         if (Project == null)
         {
             messageDialogService.ShowWarning(
-                "Open a project before creating a mod profile.",
+                "Open a Wartales file before creating a profile.",
                 "Create Profile");
 
             Status =
@@ -3318,15 +3537,8 @@ public class MainViewModel : ObservableObject
                 createdProfile.FilePath);
 
             Status =
-                $"Created profile: {createdProfile.Name}";
+                $"Profile created: {createdProfile.Name}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was created successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {createdProfile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {createdProfile.FileName}",
-                "Create Profile");
         }
         catch (Exception exception)
         {
@@ -3336,7 +3548,7 @@ public class MainViewModel : ObservableObject
             messageDialogService.ShowError(
                 $"The profile could not be created." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Create Profile");
         }
     }
@@ -3366,15 +3578,8 @@ public class MainViewModel : ObservableObject
                 renamedProfile.FilePath);
 
             Status =
-                $"Renamed profile: {renamedProfile.Name}";
+                $"Profile renamed: {renamedProfile.Name}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was renamed successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {renamedProfile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {renamedProfile.FileName}",
-                "Rename Profile");
         }
         catch (Exception exception)
         {
@@ -3384,7 +3589,7 @@ public class MainViewModel : ObservableObject
             messageDialogService.ShowError(
                 $"The profile could not be renamed." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Rename Profile");
         }
     }
@@ -3414,15 +3619,8 @@ public class MainViewModel : ObservableObject
                 duplicatedProfile.FilePath);
 
             Status =
-                $"Duplicated profile: {duplicatedProfile.Name}";
+                $"Profile duplicated: {duplicatedProfile.Name}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was duplicated successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {duplicatedProfile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {duplicatedProfile.FileName}",
-                "Duplicate Profile");
         }
         catch (Exception exception)
         {
@@ -3432,7 +3630,7 @@ public class MainViewModel : ObservableObject
             messageDialogService.ShowError(
                 $"The profile could not be duplicated." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Duplicate Profile");
         }
     }
@@ -3471,7 +3669,7 @@ public class MainViewModel : ObservableObject
         if (Project == null)
         {
             messageDialogService.ShowWarning(
-                "Open a project before applying a mod profile.",
+                "Open a Wartales file before applying a profile.",
                 "Apply Profile");
 
             Status =
@@ -3540,7 +3738,9 @@ public class MainViewModel : ObservableObject
             messageDialogService.ShowError(
                 $"The profile could not be applied." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                "Review the opened Wartales file and try again." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
                 "Apply Profile");
 
             Status =
@@ -3773,7 +3973,7 @@ public class MainViewModel : ObservableObject
             if (ModifiedPropertyCount > 1)
             {
                 Status =
-                    "Select a modified property " +
+                    "Select a changed value " +
                     "before resetting.";
             }
 
@@ -3791,7 +3991,7 @@ public class MainViewModel : ObservableObject
         RefreshCommandStates();
 
         Status =
-            $"Reset property: {propertyName}";
+            $"Restored original value: {propertyName}";
     }
 
     private void Undo()

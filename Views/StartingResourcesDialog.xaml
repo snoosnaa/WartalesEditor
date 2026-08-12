@@ -20,6 +20,7 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,14">
             <TextBlock Text="Add extra money, food, and crafting materials to every standard new campaign start. Your chosen starting group keeps its normal supplies and bonuses."
+                       Style="{StaticResource SupportingTextStyle}"
                        TextWrapping="Wrap"/>
             <TextBlock Text="These settings apply to newly created campaigns. Existing saves are not changed."
                        FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/>
@@ -29,7 +30,7 @@
                 Margin="0,0,0,12" Visibility="{Binding NeedsInitialization, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel>
                 <TextBlock Text="{Binding InitializationText, Mode=OneWay}" TextWrapping="Wrap"/>
-                <Button Content="Initialize Starting Resources" Width="210" HorizontalAlignment="Left"
+                <Button Content="Set Up Starting Resources" Width="210" HorizontalAlignment="Left"
                         Margin="0,10,0,0" Click="InitializeButton_Click"/>
             </StackPanel>
         </Border>
@@ -65,9 +66,11 @@
             </GroupBox>
         </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="{StaticResource DialogActionRowSpacing}">
             <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}" IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
-            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}" Click="CloseButton_Click"/>
+            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}"
+                    IsCancel="True" Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>

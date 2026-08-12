@@ -529,3 +529,14 @@ Future releases will continue documenting:
 - Bug fixes
 - Performance improvements
 - Documentation updates
+# Version 0.10.0 — UI Polish
+
+- Standardized player-facing terminology around Gameplay Tools, Detailed
+  Editor, Profiles, Review Changes, and Check Project.
+- Made routine profile maintenance and refresh-backed gameplay successes
+  nonblocking while retaining blocking safety and compatibility results.
+- Reworked standard errors to lead with player outcomes and retain technical
+  details secondarily.
+- Added an About experience backed by the authoritative assembly version.
+- Kept Snapshot infrastructure internal and unchanged.
+- Deferred Search Scope Semantics Correction to a separate pre-1.0 task.

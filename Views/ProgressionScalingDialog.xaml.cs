@@ -138,8 +138,6 @@ public partial class ProgressionScalingDialog : Window
             Trace.WriteLine(
                 "XP Progression: ContentRendered.");
 
-            EnsureVisiblePlacement();
-
             Activate();
             Focus();
         }
@@ -156,95 +154,14 @@ public partial class ProgressionScalingDialog : Window
         }
     }
 
-    private void EnsureVisiblePlacement()
-    {
-        if (Owner == null)
-        {
-            CenterInPrimaryWorkArea();
-            return;
-        }
-
-        Rect ownerBounds =
-            new(
-                Owner.Left,
-                Owner.Top,
-                Owner.ActualWidth,
-                Owner.ActualHeight);
-
-        Rect dialogBounds =
-            new(
-                Left,
-                Top,
-                ActualWidth,
-                ActualHeight);
-
-        bool hasUsableSize =
-            ActualWidth >= MinWidth &&
-            ActualHeight >= MinHeight;
-
-        if (hasUsableSize &&
-            dialogBounds.IntersectsWith(ownerBounds))
-        {
-            return;
-        }
-
-        Left = Owner.Left +
-               Math.Max(0, (Owner.ActualWidth - Width) / 2);
-
-        Top = Owner.Top +
-              Math.Max(0, (Owner.ActualHeight - Height) / 2);
-
-        ClampToVirtualScreen();
-
-        Trace.WriteLine(
-            $"XP Progression: recentered at ({Left}, {Top}).");
-    }
-
-    private void CenterInPrimaryWorkArea()
-    {
-        Rect workArea =
-            SystemParameters.WorkArea;
-
-        Left = workArea.Left +
-               Math.Max(0, (workArea.Width - Width) / 2);
-
-        Top = workArea.Top +
-              Math.Max(0, (workArea.Height - Height) / 2);
-
-        Trace.WriteLine(
-            "XP Progression: owner unavailable; centered in " +
-            "the primary work area.");
-    }
-
-    private void ClampToVirtualScreen()
-    {
-        double virtualLeft =
-            SystemParameters.VirtualScreenLeft;
-
-        double virtualTop =
-            SystemParameters.VirtualScreenTop;
-
-        double virtualRight =
-            virtualLeft +
-            SystemParameters.VirtualScreenWidth;
-
-        double virtualBottom =
-            virtualTop +
-            SystemParameters.VirtualScreenHeight;
-
-        Left = Math.Min(
-            Math.Max(Left, virtualLeft),
-            Math.Max(virtualLeft, virtualRight - Width));
-
-        Top = Math.Min(
-            Math.Max(Top, virtualTop),
-            Math.Max(virtualTop, virtualBottom - Height));
-    }
-
     private void OnDialogClosed(
         object? sender,
         EventArgs e)
     {
+        Loaded -= OnDialogLoaded;
+        ContentRendered -= OnDialogContentRendered;
+        Closed -= OnDialogClosed;
+
         Trace.WriteLine(
             "XP Progression: Closed.");
     }

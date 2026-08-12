@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WartalesEditor.Views.ProfileManagerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Profile Manager"
+        Title="Profiles"
         Width="1050"
         Height="650"
         MinWidth="800"
@@ -26,7 +26,7 @@
                        Text="{Binding Header}"/>
             <TextBlock Margin="0,4,0,0"
                        Style="{StaticResource SupportingTextStyle}"
-                       Text="Browse and manage profiles stored in the Wartales Editor profile library."/>
+                       Text="Save and reuse your Wartales customizations."/>
         </StackPanel>
 
         <DockPanel Grid.Row="2"
@@ -42,7 +42,7 @@
 
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Command="{Binding CreateCommand}"
-                        Content="New"/>
+                        Content="New Profile"/>
 
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
@@ -61,7 +61,7 @@
                         Padding="12,6"
                         FontWeight="SemiBold"
                         Command="{Binding ApplyCommand}"
-                        Content="Apply"/>
+                        Content="Apply Profile"/>
 
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
@@ -151,7 +151,7 @@
                     <DataGridTextColumn Header="Author"
                                         Binding="{Binding Author}"
                                         Width="130"/>
-                    <DataGridTextColumn Header="Version"
+                    <DataGridTextColumn Header="Profile Version"
                                         Binding="{Binding ProfileVersion}"
                                         Width="85"/>
                     <DataGridTextColumn Header="Changes"
@@ -221,7 +221,7 @@
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
                                    FontWeight="SemiBold"
-                                   Text="Version"/>
+                                   Text="Profile Version"/>
                         <TextBlock Grid.Row="2"
                                    Grid.Column="1"
                                    Text="{Binding SelectedProfileVersion}"/>
@@ -257,7 +257,7 @@
 
                     <StackPanel Grid.Row="10">
                         <TextBlock FontWeight="SemiBold"
-                                   Text="Profile Change Count"/>
+                                   Text="Changes"/>
                         <TextBlock Margin="0,5,0,0"
                                    Text="{Binding SelectedProfileChangeSummary}"
                                    TextWrapping="Wrap"/>
@@ -267,7 +267,7 @@
 
                     <StackPanel Grid.Row="13">
                         <TextBlock FontWeight="SemiBold"
-                                   Text="Additional Information"/>
+                                   Text="Details"/>
 
                         <Grid Margin="0,6,0,0">
                             <Grid.ColumnDefinitions>
@@ -291,13 +291,41 @@
                             <TextBlock Grid.Row="2"
                                        Grid.Column="0"
                                        FontWeight="SemiBold"
-                                       Text="File"/>
+                                       Text="File name"/>
                             <TextBlock Grid.Row="2"
                                        Grid.Column="1"
                                        Text="{Binding SelectedProfileFileName}"
                                        TextWrapping="Wrap"/>
                         </Grid>
                     </StackPanel>
+
+                    <Border Grid.RowSpan="14">
+                        <Border.Style>
+                            <Style TargetType="Border"
+                                   BasedOn="{StaticResource EmptyStateContainerStyle}">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasSelectedProfile}"
+                                                 Value="False">
+                                        <Setter Property="Visibility"
+                                                Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <TextBlock HorizontalAlignment="Center"
+                                       Style="{StaticResource EmptyStateHeadingTextStyle}"
+                                       Text="No profile selected"/>
+                            <TextBlock Margin="0,6,0,0"
+                                       HorizontalAlignment="Center"
+                                       Style="{StaticResource EmptyStateSupportingTextStyle}"
+                                       Text="Select a profile to view its details."/>
+                        </StackPanel>
+                    </Border>
 
                 </Grid>
 
@@ -324,11 +352,11 @@
                             VerticalAlignment="Center">
                     <TextBlock HorizontalAlignment="Center"
                                Style="{StaticResource EmptyStateHeadingTextStyle}"
-                               Text="No mod profiles found"/>
+                               Text="No profiles found"/>
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
                                Style="{StaticResource EmptyStateSupportingTextStyle}"
-                               Text="Import a profile or save one to the Wartales Editor profile library."/>
+                               Text="Import a profile or create one from the current project."/>
 
                     <StackPanel Margin="0,16,0,0"
                                 HorizontalAlignment="Center"
@@ -352,6 +380,7 @@
             <Button DockPanel.Dock="Right"
                     Style="{StaticResource UtilityActionButtonStyle}"
                     Content="Close"
+                    IsCancel="True"
                     Click="OnCloseButtonClick"/>
             <TextBlock VerticalAlignment="Center"
                        Foreground="{StaticResource SupportingTextBrush}"

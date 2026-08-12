@@ -1,10 +1,10 @@
 ﻿Project Status
 
-Application Version: 0.9.1 (Development)
+Application Version: 0.10.0 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-07-24
+Last Updated: 2026-08-12
 
 Purpose
 
@@ -55,6 +55,20 @@ The editing platform and supporting architecture are considered stable.
 Future development is focused primarily on expanding gameplay tools andimproving the player experience.
 
 Current Milestone
+
+Version 0.10.0 --- UI Polish
+
+Current phase:
+
+Pass 5 player communication and language polish is implemented and build
+verified. The primary player-facing workflows are Gameplay Tools, Detailed
+Editor, Profiles, Review Changes, and Check Project. Profiles remain the sole
+player-facing persistence workflow; Snapshot infrastructure remains internal.
+
+Visual Studio runtime verification remains required. Search Scope Semantics
+Correction remains a separate required pre-1.0 task.
+
+Previous milestone:
 
 Version 0.9.1 --- World Convenience
 

@@ -211,12 +211,12 @@ public sealed class ValidationResultsViewModel :
             if (!HasIssues)
             {
                 return
-                    "No Validation Issues";
+                    "Ready to Save";
             }
 
             return TotalCount == 1
-                ? "1 Validation Issue"
-                : $"{TotalCount:N0} Validation Issues";
+                ? "1 Issue Found"
+                : $"{TotalCount:N0} Issues Found";
         }
     }
 
@@ -227,23 +227,23 @@ public sealed class ValidationResultsViewModel :
             if (HasErrors)
             {
                 return
-                    "Blocking validation errors were found.";
+                    "Not ready to save. Fix the errors below and check the project again.";
             }
 
             if (HasWarnings)
             {
                 return
-                    "Validation completed with warnings.";
+                    "Ready to save, but review the warnings.";
             }
 
             if (HasInformation)
             {
                 return
-                    "Validation completed with informational results.";
+                    "Ready to save. Additional information is available.";
             }
 
             return
-                "Validation completed successfully.";
+                "Ready to save. No issues were found.";
         }
     }
 
@@ -402,7 +402,7 @@ public sealed class ValidationResultsViewModel :
             new();
 
         text.AppendLine(
-            "Wartales Editor Validation Results");
+            "Wartales Editor Project Check Details");
 
         text.AppendLine();
         text.AppendLine(

@@ -12,7 +12,7 @@ public sealed class ProfileManagerViewModel :
     ObservableObject
 {
     private const string ProfileFileFilter =
-        "Wartales Profile (*.wtprofile)|*.wtprofile|" +
+        "Wartales Profiles (*.wtprofile)|*.wtprofile|" +
         "All Files (*.*)|*.*";
 
     private readonly ModProfileLibraryService
@@ -198,8 +198,8 @@ public sealed class ProfileManagerViewModel :
 
     public string Header =>
         Profiles.Count == 1
-            ? "1 Mod Profile"
-            : $"{Profiles.Count:N0} Mod Profiles";
+            ? "1 Profile"
+            : $"{Profiles.Count:N0} Profiles";
 
     public string Status
     {
@@ -255,7 +255,9 @@ public sealed class ProfileManagerViewModel :
             }
 
             return
-                $"Changes: {SelectedProfile.EffectiveChangeCount:N0}";
+                SelectedProfile.EffectiveChangeCount == 1
+                    ? "1 change"
+                    : $"{SelectedProfile.EffectiveChangeCount:N0} changes";
         }
     }
 
@@ -387,8 +389,10 @@ public sealed class ProfileManagerViewModel :
             messageDialogService.ShowError(
                 $"The profile library could not be refreshed." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
-                "Profile Manager");
+                "Try again. If the problem continues, check that the profile folder is accessible." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
+                "Profiles");
         }
     }
 
@@ -550,16 +554,9 @@ public sealed class ProfileManagerViewModel :
                 ?? SelectedProfile;
 
             Status =
-                $"Imported profile: " +
+                $"Profile imported: " +
                 $"{importedProfile.Name}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was imported successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {importedProfile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {importedProfile.FileName}",
-                "Import Profile");
         }
         catch (Exception exception)
         {
@@ -569,7 +566,9 @@ public sealed class ProfileManagerViewModel :
             messageDialogService.ShowError(
                 $"The profile could not be imported." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                "Check that the selected file is a valid Wartales profile and try again." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
                 "Import Profile");
         }
     }
@@ -602,15 +601,8 @@ public sealed class ProfileManagerViewModel :
                 destinationFile);
 
             Status =
-                $"Exported profile: {profile.Name}";
+                $"Profile exported: {profile.Name}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was exported successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {profile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {Path.GetFileName(destinationFile)}",
-                "Export Profile");
         }
         catch (Exception exception)
         {
@@ -620,7 +612,9 @@ public sealed class ProfileManagerViewModel :
             messageDialogService.ShowError(
                 $"The profile could not be exported." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                "Check the destination and try again." +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"Details: {exception.Message}",
                 "Export Profile");
         }
     }
@@ -637,11 +631,7 @@ public sealed class ProfileManagerViewModel :
 
         bool confirmed =
             messageDialogService.ShowConfirmation(
-                $"Delete the selected profile?" +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {profile.Name}" +
-                $"{Environment.NewLine}" +
-                $"File: {profile.FileName}" +
+                $"Delete ‘{profile.Name}’?" +
                 $"{Environment.NewLine}{Environment.NewLine}" +
                 "This action cannot be undone.",
                 "Delete Profile");
@@ -666,14 +656,9 @@ public sealed class ProfileManagerViewModel :
                 deletedFilePath);
 
             Status =
-                $"Deleted profile: " +
+                $"Profile deleted: " +
                 $"{deletedProfileName}";
 
-            messageDialogService.ShowInformation(
-                $"The profile was deleted successfully." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Profile: {deletedProfileName}",
-                "Delete Profile");
         }
         catch (Exception exception)
         {
@@ -683,7 +668,7 @@ public sealed class ProfileManagerViewModel :
             messageDialogService.ShowError(
                 $"The profile could not be deleted." +
                 $"{Environment.NewLine}{Environment.NewLine}" +
-                exception.Message,
+                $"Details: {exception.Message}",
                 "Delete Profile");
         }
     }

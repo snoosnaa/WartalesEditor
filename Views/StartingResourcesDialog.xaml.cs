@@ -18,6 +18,12 @@ public partial class StartingResourcesDialog : Window
         ContentRendered += OnContentRendered;
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        ContentRendered -= OnContentRendered;
+        base.OnClosed(e);
+    }
+
     private void InitializeButton_Click(object sender, RoutedEventArgs e) =>
         InitializeRequested?.Invoke(this, EventArgs.Empty);
 
@@ -64,7 +70,6 @@ public partial class StartingResourcesDialog : Window
     {
         try
         {
-            EnsureVisible();
             Activate();
             Focus();
         }
@@ -75,26 +80,6 @@ public partial class StartingResourcesDialog : Window
         }
     }
 
-    private void EnsureVisible()
-    {
-        Rect work = SystemParameters.WorkArea;
-        Rect bounds = new(Left, Top, ActualWidth, ActualHeight);
-        if (ActualWidth >= MinWidth && ActualHeight >= MinHeight && bounds.IntersectsWith(work)) return;
-        if (Owner != null)
-        {
-            Left = Owner.Left + Math.Max(0, (Owner.ActualWidth - Width) / 2);
-            Top = Owner.Top + Math.Max(0, (Owner.ActualHeight - Height) / 2);
-        }
-        else
-        {
-            Left = work.Left + Math.Max(0, (work.Width - Width) / 2);
-            Top = work.Top + Math.Max(0, (work.Height - Height) / 2);
-        }
-        Left = Math.Min(Math.Max(Left, SystemParameters.VirtualScreenLeft),
-            SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - Width);
-        Top = Math.Min(Math.Max(Top, SystemParameters.VirtualScreenTop),
-            SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - Height);
-    }
 }
 
 public sealed class StartingResourcesApplyEventArgs : EventArgs

@@ -354,3 +354,12 @@ concepts such as snapshot properties, gameplay-operation requests, or
 replayed operations. Those distinctions may remain available for
 diagnostics, validation, and rollback, but they should not define the
 normal player experience.
+
+# Player-Facing Terminology
+
+The standard workflow names are Gameplay Tools, Detailed Editor, Profiles,
+Review Changes, and Check Project. Profiles are the sole player-facing
+persistence workflow. Snapshot terminology remains internal. Standard messages
+lead with what happened, state whether the project is safe when that can be
+proven, explain the next useful action, and place technical diagnostics after
+the player-facing message.

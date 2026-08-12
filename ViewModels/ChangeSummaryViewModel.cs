@@ -84,8 +84,8 @@ public sealed class ChangeSummaryViewModel :
 
     public string Header =>
         Items.Count == 1
-            ? "1 Modified Property"
-            : $"{Items.Count:N0} Modified Properties";
+            ? "1 Change"
+            : $"{Items.Count:N0} Changes";
 
     public bool HasChanges =>
         Items.Count > 0;

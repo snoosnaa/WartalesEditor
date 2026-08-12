@@ -57,8 +57,8 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
     public bool NeedsInitialization => !IsInitialized;
 
     public string InitializationText =>
-        "Before you can adjust starting resources, the editor needs to remember " +
-        "the normal starting supplies for this project.\n\nThis only needs to be done once.";
+        "Before these extras can be adjusted, the editor needs to remember the current " +
+        "starting supplies. This only needs to be done once for this Wartales file.";
 
     public string ValidationMessage
     {

@@ -757,3 +757,12 @@ shifts toward Profile polish, UI polish, a gameplay roadmap audit, and
 bundled gameplay feature development. Related features can now be
 planned together while retaining focused implementation and verification
 boundaries.
+# 2026-08-12 — Version 0.10.0 Pass 5
+
+Implemented the Player First communication pass. Visible terminology now
+describes player outcomes, routine refresh-backed successes no longer interrupt
+the workflow, compatibility and structural results remain blocking, and raw
+technical errors are secondary details. Established project version 0.10.0 as
+the assembly-backed About source. Build verification passed; Visual Studio
+runtime verification remains pending. Search scope semantics were deliberately
+left unchanged for a separate pre-1.0 correction.

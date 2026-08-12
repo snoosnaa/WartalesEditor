@@ -44,7 +44,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0"
-                           Text="Profile Name"
+                           Text="Profile Name *"
                            FontWeight="SemiBold" />
 
                 <TextBox x:Name="ProfileNameTextBox"
@@ -61,7 +61,7 @@
                            FontSize="12" />
 
                 <TextBlock Grid.Row="6"
-                           Text="Author"
+                           Text="Author (optional)"
                            FontWeight="SemiBold" />
 
                 <TextBox Grid.Row="8"
@@ -86,10 +86,15 @@
                                Foreground="Firebrick"
                                FontSize="12"
                                Margin="0,8,0,0" />
+
+                    <TextBlock Text="Identifies this profile's release, not the Wartales version."
+                               Style="{StaticResource SupportingTextStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,5,0,0" />
                 </StackPanel>
 
                 <TextBlock Grid.Row="14"
-                           Text="Description"
+                           Text="Description (optional)"
                            FontWeight="SemiBold" />
 
                 <TextBox Grid.Row="16"

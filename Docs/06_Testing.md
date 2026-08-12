@@ -404,3 +404,14 @@ Testing currently consists of:
 - Live gameplay verification
 
 Automated testing may be introduced in a future version if practical.
+# Version 0.10.0 player communication verification
+
+Runtime verification must cover the minimum window width and 100%, 125%, and
+150% DPI; all menus and toolbars; Profiles complete, partial, already-applied,
+and failed outcomes; Review Changes; all Check Project outcome branches; every
+gameplay dialog; confirmations; file filters; About; keyboard access; status
+messages; and representative error paths. Verify that no standard workflow
+exposes Snapshot or mutation terminology and that no new binding errors occur.
+
+Search Scope Semantics Correction is tracked separately and is not part of the
+Pass 5 wording verification.

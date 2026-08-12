@@ -17,6 +17,16 @@
         </Grid.RowDefinitions>
 
         <StackPanel>
+            <TextBlock Text="Configure the Volunteer trait's wage reduction."
+                       Style="{StaticResource DialogExplanationTextStyle}"
+                       Visibility="{Binding IsVolunteer, Converter={StaticResource BoolVis}}"/>
+            <TextBlock Text="Configure maximum Valour and the amount restored after resting."
+                       Style="{StaticResource DialogExplanationTextStyle}"
+                       Visibility="{Binding IsValour, Converter={StaticResource BoolVis}}"/>
+            <TextBlock Text="Configure saddlebag and pony starting carrying capacity."
+                       Style="{StaticResource DialogExplanationTextStyle}"
+                       Visibility="{Binding IsCarrying, Converter={StaticResource BoolVis}}"/>
+
             <GroupBox Header="Volunteer Wage Reduction"
                       Visibility="{Binding IsVolunteer, Converter={StaticResource BoolVis}}">
                 <Grid Margin="12" ToolTip="Adjusts the wage reduction granted by the Volunteer trait. 100% means companions with the Volunteer trait require no Krowns during wage payments.">
@@ -29,7 +39,7 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Valour settings"
+            <GroupBox Header="Valour Points"
                       Visibility="{Binding IsValour, Converter={StaticResource BoolVis}}">
                 <Grid Margin="12">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
@@ -60,18 +70,31 @@
                        Style="{StaticResource GameplayValidationTextStyle}" Margin="0,12,0,0"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left"
-                    Margin="0,14,0,0">
-            <Button Content="Reset to Game Default"
-                    Margin="0,0,8,0" Click="ResetButton_Click"/>
-            <Button Content="No Wages"
-                    Visibility="{Binding IsVolunteer, Converter={StaticResource BoolVis}}"
-                    Click="NoWagesButton_Click"/>
-        </StackPanel>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}"
-                    IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
-            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}" Click="CloseButton_Click"/>
-        </StackPanel>
+        <DockPanel Grid.Row="1"
+                   Grid.RowSpan="2"
+                   LastChildFill="False"
+                   Margin="{StaticResource DialogActionRowSpacing}">
+            <StackPanel DockPanel.Dock="Left"
+                        Orientation="Horizontal">
+                <Button Content="Reset to Game Default"
+                        Margin="0,0,8,0"
+                        Click="ResetButton_Click"/>
+                <Button Content="No Wages"
+                        Visibility="{Binding IsVolunteer, Converter={StaticResource BoolVis}}"
+                        Click="NoWagesButton_Click"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal">
+                <Button Content="Apply"
+                        Style="{StaticResource GameplayApplyButtonStyle}"
+                        IsEnabled="{Binding CanApply}"
+                        Click="ApplyButton_Click"/>
+                <Button Content="Close"
+                        Style="{StaticResource GameplayCloseButtonStyle}"
+                        IsCancel="True"
+                        Click="CloseButton_Click"/>
+            </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>

@@ -55,7 +55,7 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
     public string PreviewText => SelectedPreset == null
         ? detectedPreset == OverworldMovementPreset.Unavailable
             ? "Movement settings are not available for this project."
-            : "Choose a preset to replace the current custom values."
+            : "Choose a preset to replace the current movement values."
         : $"{SelectedPreset.Name}: your party travels faster across the world map. " +
           "Other roaming parties keep their normal speeds.";
 

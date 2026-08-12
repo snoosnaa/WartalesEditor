@@ -58,4 +58,13 @@ public partial class ProfileDetailsWindow :
         DialogResult =
             false;
     }
+
+    protected override void OnClosed(
+        EventArgs e)
+    {
+        Loaded -=
+            ProfileDetailsWindow_Loaded;
+
+        base.OnClosed(e);
+    }
 }

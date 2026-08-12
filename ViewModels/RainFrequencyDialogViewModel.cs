@@ -61,7 +61,7 @@ public sealed class RainFrequencyDialogViewModel
     public string PreviewText => SelectedPreset == null
         ? detectedPreset == RainFrequencyPreset.Unavailable
             ? "Rain Frequency settings are not available for this project."
-            : "Choose a preset to replace the current custom values."
+            : "Choose a preset to replace the current rain values."
         : SelectedPreset.Preview;
 
     public void SelectVanilla()

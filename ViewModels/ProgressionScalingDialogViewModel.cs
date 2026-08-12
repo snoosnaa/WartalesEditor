@@ -248,7 +248,7 @@ public sealed class ProgressionScalingDialogViewModel :
                     value => value.ToString("N0")));
 
             setPreview(
-                $"Original: {baseline}" +
+                $"100%: {baseline}" +
                 Environment.NewLine +
                 $"At {percentage}%: {scaled}");
 

@@ -69,17 +69,17 @@ public sealed class ValidationPresentationService
         if (result.HasErrors)
         {
             return
-                $"{operationName} Validation Failed";
+                $"{operationName} Check Found Errors";
         }
 
         if (result.HasWarnings)
         {
             return
-                $"{operationName} Validation Warnings";
+                $"{operationName} Check Warnings";
         }
 
         return
-            $"{operationName} Validation Complete";
+            $"{operationName} Check Complete";
     }
 
     private static string BuildSummary(
@@ -92,20 +92,19 @@ public sealed class ValidationPresentationService
         if (!result.HasIssues)
         {
             message.Append(
-                $"{operationName} validation completed " +
-                "successfully.");
+                $"{operationName} is ready to continue.");
 
             message.AppendLine();
             message.AppendLine();
 
             message.Append(
-                "No validation issues were found.");
+                "No issues were found.");
 
             return message.ToString();
         }
 
         message.AppendLine(
-            $"{operationName} validation found " +
+            $"{operationName} check found " +
             $"{result.TotalCount:N0} " +
             $"{GetSingularOrPlural(
                 result.TotalCount,
@@ -128,13 +127,12 @@ public sealed class ValidationPresentationService
         if (result.HasErrors)
         {
             message.AppendLine(
-                "The operation cannot continue until " +
-                "all validation errors are resolved.");
+                "The action cannot continue until the errors are resolved.");
         }
         else
         {
             message.AppendLine(
-                "No blocking validation errors were found.");
+                "The action can continue, but review the issues below.");
         }
 
         message.AppendLine();

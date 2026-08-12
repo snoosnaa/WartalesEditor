@@ -1,13 +1,13 @@
 ﻿<Window x:Class="WartalesEditor.Views.ChangeSummaryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Change Summary"
+        Title="Review Changes"
         Width="1100"
         Height="650"
         MinWidth="800"
         MinHeight="450"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False">
+        ShowInTaskbar="True">
 
     <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
         <Grid.RowDefinitions>
@@ -25,7 +25,7 @@
 
             <TextBlock Margin="0,4,0,0"
                        Style="{StaticResource SupportingTextStyle}"
-                       Text="Review all properties that currently differ from the saved baseline."/>
+                       Text="Review everything changed before saving."/>
         </StackPanel>
 
         <!-- Change list -->
@@ -47,6 +47,20 @@
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
                       AlternatingRowBackground="{StaticResource UtilityAlternatingRowBackgroundBrush}">
+
+                <DataGrid.Style>
+                    <Style TargetType="DataGrid">
+                        <Setter Property="Visibility"
+                                Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasChanges}"
+                                         Value="False">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Style>
 
                 <!-- Category and Setting groups -->
                 <DataGrid.GroupStyle>
@@ -148,7 +162,7 @@
                                                 <Run Text="{Binding ItemCount,
                                                                     Mode=OneWay}"/>
 
-                                                <Run Text=" properties)"/>
+                                                <Run Text=" changes)"/>
 
                                                             </TextBlock>
 
@@ -250,12 +264,12 @@
 
                     <TextBlock HorizontalAlignment="Center"
                                Style="{StaticResource EmptyStateHeadingTextStyle}"
-                               Text="No modified properties"/>
+                               Text="No changes to review"/>
 
                     <TextBlock Margin="0,6,0,0"
                                HorizontalAlignment="Center"
                                Style="{StaticResource EmptyStateSupportingTextStyle}"
-                               Text="The current project matches its saved baseline."/>
+                               Text="This project has no unsaved changes."/>
 
                 </StackPanel>
 
@@ -269,7 +283,7 @@
 
             <TextBlock VerticalAlignment="Center"
                        Foreground="{StaticResource SupportingTextBrush}"
-                       Text="Select a change and choose Navigate to locate it in the editor."/>
+                       Text="Select a change and choose Show in Editor to locate it."/>
 
             <StackPanel DockPanel.Dock="Right"
                         Orientation="Horizontal">
@@ -277,11 +291,12 @@
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="0,0,8,0"
                         Command="{Binding NavigateCommand}"
-                        Content="Navigate"
+                        Content="Show in Editor"
                         IsDefault="True"/>
 
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Content="Close"
+                        IsCancel="True"
                         Click="OnCloseButtonClick"/>
 
             </StackPanel>

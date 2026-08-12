@@ -356,3 +356,10 @@ The editor now possesses a mature reusable infrastructure including:
 Future development is expected to focus primarily on extending the existing architecture rather than redesigning it.
 
 The project has successfully transitioned from infrastructure construction into feature expansion while maintaining a clean, reusable architecture suitable for long-term development.
+# Version 0.10.0 UI state
+
+The application now presents Profiles as the sole player-facing persistence
+workflow while preserving Snapshot infrastructure internally. Primary visible
+workflows use the names Gameplay Tools, Detailed Editor, Profiles, Review
+Changes, and Check Project. Pass 5 is build verified; runtime verification and
+the separate Search Scope Semantics Correction remain pending.
