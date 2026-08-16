@@ -32,6 +32,7 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
     }
 
     public string Title => "Starting Resources";
+    public GameplayApplyFeedbackViewModel ApplyFeedback { get; } = new();
     public int MaximumExtra => StartingResourcesSettings.MaximumExtra;
 
     public int Krowns { get => krowns; set => SetAmount(ref krowns, value, nameof(Krowns)); }
@@ -78,6 +79,7 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
     {
         if (inputBindingValid == value) return;
         inputBindingValid = value;
+        if (!value) ApplyFeedback.Clear();
         OnPropertyChanged(nameof(CanApply));
     }
 
@@ -174,6 +176,7 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
     {
         if (SetProperty(ref field, value, propertyName))
         {
+            ApplyFeedback.Clear();
             ValidateInputs();
             OnPropertyChanged(nameof(PreviewText));
         }

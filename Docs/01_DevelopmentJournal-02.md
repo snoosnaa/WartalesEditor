@@ -766,3 +766,99 @@ technical errors are secondary details. Established project version 0.10.0 as
 the assembly-backed About source. Build verification passed; Visual Studio
 runtime verification remains pending. Search scope semantics were deliberately
 left unchanged for a separate pre-1.0 correction.
+# 2026-08-12 — Class A Gameplay Expansion
+
+Implemented fourteen preset-based Gameplay Tools using the existing mutation,
+operation-state, transaction, rollback, validation, profile, snapshot, and
+Undo/Redo architecture. Expanded Valour Points with Tent tier bonuses and
+Carrying Capacity with Hitching Post tier bonuses, including compatible legacy
+state validation and upgrade-on-apply behavior.
+
+Added the Professions dashboard category and the approved Party, World, and Camp
+& Equipment entries. A clean-CDB smoke suite verified all 16 outcomes, forced
+validator rollback, exact Undo/Redo, idempotence, malformed targets, save/reload,
+and a 49-change mixed profile replay.
+
+Profile replay exposed an existing ambiguity for nested properties that share a
+leaf name. New snapshots now retain the effective property path, while legacy
+snapshots continue to use their original name matching.
+
+Engineering Review identified two compatibility defects in captured-baseline
+restoration and legacy Party Economy expansion. The focused correction now makes
+Vanilla restore the exact captured baseline, scales Mining and merchant rates
+from that baseline, and preserves a differing Battle Camera minimum. Legacy
+Valour and Carrying states now read current Tent and Hitching Post values instead
+of supplying historical defaults; custom values require an explicit supported
+preset selection before ownership expands.
+
+A repository-backed compatibility smoke project now verifies differing-baseline
+Vanilla restoration, proportional drift cases, safe legacy upgrades and exact
+Undo/Redo, full-path and legacy snapshot matching, all preset catalog entries,
+and representative malformed targets. Build verification completed with zero
+warnings and zero errors. Renewed Engineering Review, interactive Visual Studio,
+and in-game acceptance remain pending. Resource Replenishment was not implemented
+and remains the next gameplay priority after its focused runtime smoke test.
+
+# 2026-08-15 — Gameplay Corrections and Resource Replenishment
+
+Implemented Resource Replenishment through the shared preset operation path.
+The operation captures the current Slow, Normal, and Fast gather-refill values,
+requires a finite positive strict ordering, and derives 2×, 3×, and 5× values
+from that immutable baseline. Vanilla restores the exact baseline;
+`GatherRefillFactorExtreme` remains untouched.
+
+Focused compiled-schema inspection confirmed `item.tool.capacity` as the runtime
+Campfire assignment-limit member, while current CDB data also retains the legacy
+`toolCapacity` source representation. The preset keeps both synchronized with
+the four dimension fields. The approved Tier 1 capacity remains 4; Tier 2 and
+Tier 3 output 8 and 12 and still require in-game assignment verification.
+
+Centralized the established modeless feature-window lifecycle so closing a
+tracked Gameplay Tool or utility window explicitly restores and focuses its
+owner without changing a non-minimized state. Added shared, non-modal in-dialog
+Apply feedback for success and no-op results, plus the approved Starting
+Resources, Movement Speed, and Battle Camera visual notes.
+
+The compatibility smoke passed Resource baseline scaling, exact restoration,
+no compounding, idempotence, malformed inputs, atomic failure, Undo/Redo,
+operation-state save/reload, snapshot serialization, profile replay, and
+unrelated-value preservation. The same suite verifies coordinated Campfire
+dimensions and both capacity fields.
+
+Project-owner evidence records a fresh installation and fresh extraction using
+the complete current mod set: launch, new game, playable state, save, full exit,
+relaunch, and save load all succeeded. The earlier new-game-load freeze is
+non-reproducible after clean reinstall and fresh extraction; its cause was not
+identified. One camp-item creation session displayed `stacked content: 2`
+without blocking gameplay or creation. A narrow string search did not locate its
+origin, so it remains a non-blocking observation with no speculative fix.
+
+# 2026-08-16 — Gameplay Milestone Final Reconciliation
+
+Corrected the shared preset Reset to Game Default handler. The button had only
+selected Vanilla in the dialog; it now raises the same operation request as
+Apply, restoring the exact captured baseline through the established
+transaction, mutation, operation-state, Review Changes, feedback, and Undo/Redo
+pipeline. Invalid Starting Resources and Party Economy binding states now clear
+stale Applied successfully or Already applied feedback.
+
+Expanded permanent repository-backed compatibility coverage with explicit
+Vanilla-state checks for scalar, baseline-scaled, and multi-target presets, and
+with symmetric missing/wrong-type `tool.toolCapacity` Campfire cases. Both
+malformed cases fail without accepted mutation.
+
+Focused Engineering Review completed with no blocking findings. Project Owner
+testing on a completely fresh installation and fresh extraction applied the
+complete current mod set and passed launch, new game, playable gameplay, save,
+full exit, relaunch, and save reload. The earlier freeze was non-reproducible
+after reinstall; its cause was not identified.
+
+Campfire output/reference equivalence is established. Tier 1 intentionally
+remains at capacity 4, while direct Tier 2 and Tier 3 assignment-count
+verification remains pending and non-blocking. Resource Replenishment is not
+claimed as exhaustively timed across every supported category.
+
+The next authorized feature batch is Lectern Knowledge Gain, Update Existing
+Profile, and Positive Random Traits. Integrated Import / Install / Restore has
+been investigated but not implemented; bounded QuickBMS/package experiments and
+Update Survival remain future work.

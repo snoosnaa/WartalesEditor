@@ -422,6 +422,38 @@
 
                     <Border Style="{StaticResource GameplayCategoryPanelStyle}">
                         <StackPanel>
+                            <TextBlock Text="Professions"
+                                       Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
+                            <Button Content="Delicious Meals"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.DeliciousMealChance}"
+                                    ToolTip="Choose Delicious Meal chances for Tier 2 and Tier 3 Cooking Pots."/>
+                            <Button Content="Forging Assistance"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.ForgingAssistance}"
+                                    ToolTip="Choose a more forgiving perfect-heat reaction window."/>
+                            <Button Content="Mining &amp; Woodcutting"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.MiningWoodcuttingTiming}"
+                                    ToolTip="Choose how quickly the shared timing indicator moves."/>
+                            <Button Content="Fishing"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.FishingSpeed}"
+                                    ToolTip="Shorten the fishing control phase while preserving the minigame."/>
+                            <Button Content="Lockpicking"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.LockpickingTolerance}"
+                                    ToolTip="Make difficult lockpicking zones more forgiving."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource GameplayCategoryPanelStyle}">
+                        <StackPanel>
                             <TextBlock Text="Camp &amp; Equipment"
                                        Style="{StaticResource GameplayCategoryHeadingTextStyle}"/>
                             <Button Content="Add Camp Facilities"
@@ -434,6 +466,26 @@
                                     Command="{Binding ContentCreationCommand}"
                                     CommandParameter="{x:Static services:ContentCreationOperation.UpgradeAllEquipment}"
                                     ToolTip="Allow obtainable equipment to be upgraded at the Brotherhood Training Grounds."/>
+                            <Button Content="Campfire Expansion"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.CampfireExpansion}"
+                                    ToolTip="Increase campfire dimensions and higher-tier assignment capacity."/>
+                            <Button Content="Cooking Pot Food Reduction"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.CookingPotFoodReduction}"
+                                    ToolTip="Choose food saved per rest by an assigned cook at each tier."/>
+                            <Button Content="Workshop Materials"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.WorkshopMaterials}"
+                                    ToolTip="Choose Raw Materials produced per rest by an assigned Tinkerer."/>
+                            <Button Content="Ruby &amp; Sapphire Value"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.RubySapphireValue}"
+                                    ToolTip="Choose the base economy value of Ruby and Sapphire."/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -452,12 +504,17 @@
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding PartyEconomyCommand}"
                                     CommandParameter="{x:Static models:ProgressionType.ValourPoints}"
-                                    ToolTip="Configure base maximum Valour and Valour restored after rest."/>
+                                    ToolTip="Configure global Valour, rest recovery, and Tent bonuses by tier."/>
                             <Button Content="Carrying Capacity"
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding PartyEconomyCommand}"
                                     CommandParameter="{x:Static models:ProgressionType.CarryingCapacity}"
-                                    ToolTip="Configure saddlebags and pony starting carrying capacity."/>
+                                    ToolTip="Configure saddlebags, pony starting capacity, and Hitching Post bonuses."/>
+                            <Button Content="Run Stamina Recovery"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.RunStaminaRecovery}"
+                                    ToolTip="Choose how quickly overworld running stamina recovers."/>
                         </StackPanel>
                     </Border>
 
@@ -473,6 +530,31 @@
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding RainFrequencyCommand}"
                                     ToolTip="Choose how often ordinary rain occurs across supported regions."/>
+                            <Button Content="Vendor Refresh"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.VendorRefresh}"
+                                    ToolTip="Choose how quickly merchant inventories replenish."/>
+                            <Button Content="Resource Replenishment"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.ResourceReplenishment}"
+                                    ToolTip="Choose how quickly renewable world resources replenish."/>
+                            <Button Content="Battle Camera Zoom"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.BattleCameraZoom}"
+                                    ToolTip="Choose maximum camera zoom distance during battles only."/>
+                            <Button Content="Nine Puzzle Assistance"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.NinePuzzleAssistance}"
+                                    ToolTip="Start the Nine Puzzle with fewer shuffles and more placed tiles."/>
+                            <Button Content="Time Between Rests"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.TimeBetweenRests}"
+                                    ToolTip="Choose approximate travel hours before fatigue requires another rest."/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

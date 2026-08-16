@@ -300,6 +300,12 @@ public sealed class GameplayOperationStateService
             return;
         }
 
+        if (GameplayPresetCatalog.IsSupported(state.OperationType))
+        {
+            GameplayPresetService.ValidateState(project, state);
+            return;
+        }
+
         ProgressionTableBinding binding =
             tableResolver.Resolve(project, state.OperationType);
 
@@ -435,6 +441,8 @@ public sealed class GameplayOperationStateService
                 "Overworld Movement Speed",
             ProgressionType.RainFrequency =>
                 "Rain Frequency",
+            _ when GameplayPresetCatalog.IsSupported(progressionType) =>
+                GameplayPresetCatalog.Get(progressionType).Title,
             _ => "gameplay operation"
         };
     }

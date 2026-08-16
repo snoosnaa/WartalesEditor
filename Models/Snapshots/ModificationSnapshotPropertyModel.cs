@@ -7,6 +7,9 @@ public sealed class ModificationSnapshotPropertyModel
     public string Name { get; init; }
         = string.Empty;
 
+    public string PropertyPath { get; init; }
+        = string.Empty;
+
     public JToken OriginalValue { get; init; }
         = JValue.CreateNull();
 

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:WartalesEditor.Converters"
         Title="{Binding Title}"
-        Width="680" Height="670" MinWidth="560" MinHeight="560"
+        Width="680" Height="780" MinWidth="560" MinHeight="650"
         SizeToContent="Manual" WindowState="Normal"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False" Visibility="Visible">
@@ -66,11 +66,26 @@
             </GroupBox>
         </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
-                    Margin="{StaticResource DialogActionRowSpacing}">
-            <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}" IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
-            <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}"
-                    IsCancel="True" Click="CloseButton_Click"/>
+        <StackPanel Grid.Row="3" Margin="{StaticResource DialogActionRowSpacing}">
+            <Border Style="{StaticResource InformationalPanelStyle}"
+                    Margin="0,0,0,10">
+                <TextBlock TextWrapping="Wrap"
+                           Text="Display note: If a starting configuration contains enough resources to exceed the visible list area, moving the mouse between displayed configurations may cause the list to jump or shift visually. This is a display-only issue and does not affect the configuration or added resources."/>
+            </Border>
+            <Border Style="{StaticResource GameplayApplyFeedbackPanelStyle}"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="{Binding ApplyFeedback.Heading}"
+                               Style="{StaticResource GameplayApplyFeedbackHeadingStyle}"/>
+                    <TextBlock Text="{Binding ApplyFeedback.Message}"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}" IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
+                <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}"
+                        IsCancel="True" Click="CloseButton_Click"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

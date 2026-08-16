@@ -2,57 +2,50 @@
 
 ## Current Milestone
 
-**Version 0.9.1 — Documentation Reconciliation**
+Gameplay Corrections, UX Consistency, and Resource Replenishment
 
----
+## Current Status
 
-# Current Status
+Implementation, focused compatibility correction, renewed Engineering Review,
+and final reconciliation are complete. Resource Replenishment, shared
+feature-window lifecycle handling, in-dialog Apply feedback, exact captured-
+baseline restoration, and the approved non-blocking visual notes are included.
 
-Version 0.9.1 implementation and verification are complete.
+Project Owner testing on a fresh Wartales installation and fresh extraction
+used the complete current mod set. Launch, new game, playable gameplay, save,
+full exit, relaunch, and save reload passed. The earlier new-game-load freeze
+was non-reproducible after the clean reinstall and extraction; its cause was not
+identified.
 
-Completed gameplay features include Overworld Movement Speed and Rain
-Frequency. Version 2 profile restoration, effective Changes reporting,
-PropertyModel tracking after profile application, and the flat Gameplay
-Tools menu are complete.
+Campfire output/reference equivalence is established. Tier 1 intentionally
+remains at capacity 4; direct Tier 2 and Tier 3 assignment-count verification
+remains pending and non-blocking. Resource Replenishment is implemented across
+the shared land, fishing, sea, and special renewable refill categories, but
+every category has not been exhaustively timed in game.
 
-The Resource Respawn Speed investigation is complete. Implementation is
-deferred pending future runtime validation; no gameplay feature was
-added.
+The integrated Import / Install / Restore investigation is complete.
+Implementation, bounded QuickBMS/package-replacement experiments, and Update
+Survival have not started.
 
----
+## Next Authorized Feature Batch
 
-# Current Workflow
+1. Lectern Knowledge Gain
+2. Update Existing Profile
+3. Positive Random Traits
 
-1. Documentation complete
-2. Commit and push Version 0.9.1
-3. Profile polish investigation
-4. Profile polish implementation
-5. UI polish investigation
-6. UI polish implementation
-7. Gameplay roadmap audit
-8. Bundled gameplay development
+Update Existing Profile should explicitly select an existing profile and
+atomically rebuild it from the complete current effective project state while
+preserving appropriate identity and metadata. It must replace the profile, not
+append deltas.
 
----
+Positive Random Traits is expected to provide Vanilla and Positive Only. Its
+accepted scope is eligible procedural recruits rather than tavern recruits
+alone. Existing units remain unchanged.
 
-# Near-Term Profile Polish
+After that feature batch:
 
-Planned work:
+1. Bounded QuickBMS/package-replacement experiments
+2. Integrated Import / Install / Restore
+3. Update Survival
 
-- Update Profile
-- Better profile failure reporting
-- Expandable failure details for large failure sets
-
-These items are not yet implemented.
-
----
-
-# Scope
-
-This task updates documentation only. Application code, architecture,
-serialization, replay, snapshots, validation, and gameplay operations
-remain unchanged.
-# Current Task
-
-Complete Visual Studio runtime verification for Version 0.10.0 Pass 5 player
-communication and language polish. After that verification, complete the
-separate Search Scope Semantics Correction before Version 1.0.
+Do not begin those later phases as part of the closed gameplay milestone.

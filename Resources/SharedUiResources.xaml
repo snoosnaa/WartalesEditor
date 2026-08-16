@@ -8,6 +8,8 @@
     <SolidColorBrush x:Key="UtilityAlternatingRowBackgroundBrush" Color="#FFF7F7F7"/>
     <SolidColorBrush x:Key="GameplayValidationTextBrush" Color="DarkRed"/>
     <SolidColorBrush x:Key="ValidationSuccessTextBrush" Color="DarkGreen"/>
+    <SolidColorBrush x:Key="ApplyFeedbackBackgroundBrush" Color="#EEF8EE"/>
+    <SolidColorBrush x:Key="ApplyFeedbackBorderBrush" Color="#79A879"/>
     <SolidColorBrush x:Key="InformationalPanelBackgroundBrush" Color="#FFF7E6"/>
     <SolidColorBrush x:Key="InformationalPanelBorderBrush" Color="#E0B35B"/>
     <SolidColorBrush x:Key="EmptyStateBackgroundBrush" Color="White"/>
@@ -61,6 +63,24 @@
         <Setter Property="BorderBrush" Value="{StaticResource InformationalPanelBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="{StaticResource CommonPanelPadding}"/>
+    </Style>
+
+    <Style x:Key="GameplayApplyFeedbackPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource ApplyFeedbackBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ApplyFeedbackBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ApplyFeedback.IsVisible}" Value="True">
+                <Setter Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="GameplayApplyFeedbackHeadingStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ValidationSuccessTextBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
 
     <Style x:Key="EmptyStateContainerStyle" TargetType="Border">

@@ -60,6 +60,7 @@ public sealed class ProgressionScalingDialogViewModel :
     }
 
     public string Title => "XP Progression";
+    public GameplayApplyFeedbackViewModel ApplyFeedback { get; } = new();
 
     public int MinimumPercentage =>
         ProgressionScalingService.MinimumPercentage;
@@ -74,6 +75,7 @@ public sealed class ProgressionScalingDialogViewModel :
         {
             if (SetProperty(ref characterPercentage, value))
             {
+                ApplyFeedback.Clear();
                 RefreshCharacterPreview();
             }
         }
@@ -86,6 +88,7 @@ public sealed class ProgressionScalingDialogViewModel :
         {
             if (SetProperty(ref professionPercentage, value))
             {
+                ApplyFeedback.Clear();
                 RefreshProfessionPreview();
             }
         }

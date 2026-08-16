@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Operations;
 
@@ -31,6 +32,27 @@ public sealed class OperationValidatorProvider
 
     private readonly RainFrequencyOperationValidator
         rainFrequencyValidator = new();
+
+    private readonly IReadOnlyDictionary<ProgressionType, IProjectOperationValidator>
+        gameplayPresetValidators =
+            new Dictionary<ProgressionType, IProjectOperationValidator>
+            {
+                [ProgressionType.DeliciousMealChance] = new DeliciousMealChanceOperationValidator(),
+                [ProgressionType.ForgingAssistance] = new ForgingAssistanceOperationValidator(),
+                [ProgressionType.MiningWoodcuttingTiming] = new MiningWoodcuttingTimingOperationValidator(),
+                [ProgressionType.FishingSpeed] = new FishingSpeedOperationValidator(),
+                [ProgressionType.LockpickingTolerance] = new LockpickingToleranceOperationValidator(),
+                [ProgressionType.NinePuzzleAssistance] = new NinePuzzleAssistanceOperationValidator(),
+                [ProgressionType.RunStaminaRecovery] = new RunStaminaRecoveryOperationValidator(),
+                [ProgressionType.BattleCameraZoom] = new BattleCameraZoomOperationValidator(),
+                [ProgressionType.CampfireExpansion] = new CampfireExpansionOperationValidator(),
+                [ProgressionType.CookingPotFoodReduction] = new CookingPotFoodReductionOperationValidator(),
+                [ProgressionType.WorkshopMaterials] = new WorkshopMaterialsOperationValidator(),
+                [ProgressionType.VendorRefresh] = new VendorRefreshOperationValidator(),
+                [ProgressionType.ResourceReplenishment] = new ResourceReplenishmentOperationValidator(),
+                [ProgressionType.RubySapphireValue] = new RubySapphireValueOperationValidator(),
+                [ProgressionType.TimeBetweenRests] = new TimeBetweenRestsOperationValidator()
+            };
 
     public OperationValidationResult Validate(
         IProjectOperation operation,
@@ -72,6 +94,9 @@ public sealed class OperationValidatorProvider
 
                 RainFrequencyOperation =>
                     rainFrequencyValidator,
+
+                GameplayPresetOperation presetOperation =>
+                    gameplayPresetValidators[presetOperation.OperationType],
 
                 _ => null
             };

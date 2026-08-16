@@ -98,6 +98,7 @@ public sealed class ModificationSnapshotService
         return new ModificationSnapshotPropertyModel
         {
             Name = property.Name,
+            PropertyPath = property.EffectivePropertyPath,
             OriginalValue =
                 property.GetOriginalValueSnapshot(),
             CurrentValue =

@@ -27,6 +27,7 @@ public sealed class RainFrequencyDialogViewModel
     }
 
     public string Title => "Rain Frequency";
+    public GameplayApplyFeedbackViewModel ApplyFeedback { get; } = new();
 
     public IReadOnlyList<RainFrequencyPresetOption> Presets =>
         RainFrequencyService.Presets;
@@ -38,6 +39,7 @@ public sealed class RainFrequencyDialogViewModel
         {
             if (SetProperty(ref selectedPreset, value))
             {
+                ApplyFeedback.Clear();
                 OnPropertyChanged(nameof(CanApply));
                 OnPropertyChanged(nameof(PreviewText));
             }

@@ -248,10 +248,15 @@ public sealed class ModificationSnapshotMatcher
         List<PropertyModel> propertyMatches =
             targetSetting.Properties
                 .Where(property =>
-                    string.Equals(
-                        property.Name,
-                        snapshotProperty.Name,
-                        StringComparison.Ordinal))
+                    string.IsNullOrWhiteSpace(snapshotProperty.PropertyPath)
+                        ? string.Equals(
+                            property.Name,
+                            snapshotProperty.Name,
+                            StringComparison.Ordinal)
+                        : string.Equals(
+                            property.EffectivePropertyPath,
+                            snapshotProperty.PropertyPath,
+                            StringComparison.Ordinal))
                 .ToList();
 
         if (propertyMatches.Count == 0)
@@ -262,7 +267,7 @@ public sealed class ModificationSnapshotMatcher
                     snapshotSetting,
                     snapshotProperty,
                     ModificationMatchStatus.PropertyNotFound,
-                    $"Property '{snapshotProperty.Name}' was not " +
+                    $"Property '{GetPropertyIdentity(snapshotProperty)}' was not " +
                     $"found in setting ID " +
                     $"'{targetSetting.Id}'.",
                     targetCategory,
@@ -279,7 +284,7 @@ public sealed class ModificationSnapshotMatcher
                     snapshotSetting,
                     snapshotProperty,
                     ModificationMatchStatus.PropertyAmbiguous,
-                    $"Property '{snapshotProperty.Name}' matched " +
+                    $"Property '{GetPropertyIdentity(snapshotProperty)}' matched " +
                     $"{propertyMatches.Count} properties in " +
                     $"setting ID '{targetSetting.Id}'.",
                     targetCategory,
@@ -303,8 +308,14 @@ public sealed class ModificationSnapshotMatcher
                 reason,
                 targetCategory,
                 targetSetting,
-                propertyMatches[0]));
+            propertyMatches[0]));
     }
+
+    private static string GetPropertyIdentity(
+        ModificationSnapshotPropertyModel property) =>
+        string.IsNullOrWhiteSpace(property.PropertyPath)
+            ? property.Name
+            : property.PropertyPath;
 
     private static void AddCategoryFailureResults(
         ModificationSnapshotCategoryModel snapshotCategory,

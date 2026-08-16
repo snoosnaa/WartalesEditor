@@ -4,7 +4,7 @@ Application Version: 0.10.0 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-08-12
+Last Updated: 2026-08-16
 
 Purpose
 
@@ -56,17 +56,58 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-Version 0.10.0 --- UI Polish
+Class A Gameplay Expansion
 
 Current phase:
 
-Pass 5 player communication and language polish is implemented and build
-verified. The primary player-facing workflows are Gameplay Tools, Detailed
-Editor, Profiles, Review Changes, and Check Project. Profiles remain the sole
-player-facing persistence workflow; Snapshot infrastructure remains internal.
+Complete. Engineering compatibility corrections, Resource Replenishment, and
+the current UX consistency pass are implemented, reviewed, and final-
+reconciliation verified.
+Fifteen preset-based Gameplay Tools were added, and the existing Valour Points
+and Carrying Capacity tools were expanded with Tent and Hitching Post effects.
+The dashboard now includes the Professions category and the approved Party,
+World, and Camp & Equipment additions.
 
-Visual Studio runtime verification remains required. Search Scope Semantics
-Correction remains a separate required pre-1.0 task.
+Preset Vanilla restoration now uses the exact captured operation baseline.
+Mining and merchant refill rates scale from that baseline, and Battle Camera
+preserves a differing captured minimum. Legacy two-target Valour and Carrying
+states resolve current Tent and Hitching Post values without guessed defaults,
+and expand their baselines only after an explicit safe Apply.
+
+Repository-backed focused verification covers differing-baseline restoration,
+Mining proportional scaling, merchant-rate scaling, Battle Camera baseline
+drift, supported and custom legacy Party Economy upgrades, snapshot path
+compatibility, every preset catalog entry, and representative malformed-target
+failures. Resource Replenishment additionally covers 2×/3×/5× baseline-relative
+scaling, exact Vanilla restoration, no compounding, atomic failures, Undo/Redo,
+state persistence, snapshot serialization, profile replay, and preservation of
+`GatherRefillFactorExtreme` and unrelated values.
+
+Gameplay feature windows now share explicit owner restoration after closing,
+and Apply actions show success or already-applied feedback inside the active
+dialog. Starting Resources, Movement Speed, and Battle Camera Zoom include the
+approved non-blocking visual notes. Reset to Game Default now executes the
+shared operation pipeline and restores the exact captured baseline rather than
+only changing the selected preset. Invalid Starting Resources and Party Economy
+input clears stale success feedback.
+
+A fresh Wartales installation and freshly extracted game data were used for a
+full current-mod-set gameplay smoke. The game launched, started a new campaign,
+reached playable gameplay, saved, exited completely, relaunched, and loaded the
+save. An earlier new-game-load freeze is non-reproducible after clean reinstall
+and fresh extraction; its original cause was not identified.
+
+During one camp-placeable-item creation session, the game displayed
+`stacked content: 2`. Gameplay and item creation continued. A narrow literal
+search did not locate its origin, so this remains a non-blocking diagnostic
+observation and no speculative correction was made.
+
+The shared window lifecycle and in-dialog Apply feedback passed focused
+Engineering Review and received positive Project Owner visual feedback.
+Resource Replenishment is not claimed as exhaustively timed across every
+resource category. Campfire implementation/reference equivalence is
+established; direct Tier 2 and Tier 3 assignment-count verification remains
+pending and non-blocking, while Tier 1 intentionally remains at capacity 4.
 
 Previous milestone:
 
@@ -127,23 +168,16 @@ Verification includes build verification, runtime testing, validation,
 Save / Reload, Undo / Redo, Change Summary, Profiles, Snapshots, and
 multiple in-game verification passes.
 
-The Resource Respawn Speed investigation is complete. It confirmed
-shared Slow, Normal, and Fast gather-refill constants, but also identified
-shared exposure to excluded gathering systems. Implementation is deferred
-pending future runtime validation. No Resource Respawn gameplay feature
-was added.
-
-Remaining World Convenience scope:
-
-Vendor refresh speed
-
-Camera zoom improvements
+The Resource Respawn Speed investigation identified the shared Slow, Normal,
+and Fast gather-refill constants. The resulting Resource Replenishment feature
+is now implemented in the current milestone. Vendor Refresh and Battle Camera
+Zoom are also implemented; neither remains pending World Convenience work.
 
 Recently Completed
 
 Version 0.9.0 --- Personal Gameplay Expansion
 
-Completed and verified:
+Completed with app-level verification:
 
 Starting Resources
 
@@ -156,10 +190,6 @@ Valour Restored After Rest
 Saddlebag Carrying Capacity
 
 Pony Starting Capacity
-
-Overworld Movement Speed
-
-Rain Frequency
 
 Verification included:
 
@@ -180,8 +210,6 @@ Profile integration
 Snapshot integration
 
 Gameplay Operation State persistence
-
-Multiple in-game verification passes
 
 Volunteer correctly supports a 100% wage reduction.
 
@@ -215,9 +243,9 @@ Saddlebag Carrying Capacity
 
 Pony Starting Capacity
 
-Investigation Complete
+Resource Replenishment
 
-Resource Respawn Speed --- deferred pending future runtime validation
+Class A preset tools listed in the current milestone
 
 Completed Architecture
 
@@ -257,19 +285,24 @@ Current Roadmap
 
 Immediate Priorities
 
-Profile polish
+Lectern Knowledge Gain
 
-UI polish investigation and implementation
+Update Existing Profile
 
-Gameplay roadmap audit
+Positive Random Traits
 
-Bundled gameplay feature development
+Bounded QuickBMS/package-replacement experiments, followed by integrated
+Import / Install / Restore
+
+Update Survival after the integrated package workflow
 
 Roadmap priorities may continue evolving as additional game systems areinvestigated.
 
 High-Priority Technical Work
 
 Update Survival
+
+Update Existing Profile
 
 Profile migration improvements
 
@@ -347,6 +380,10 @@ Overworld Movement Speed
 
 Rain Frequency
 
+Class A preset tools
+
+Resource Replenishment
+
 Every new gameplay feature should be regression-tested against thisprofile before being considered complete.
 
 Required Codex Reading
@@ -363,9 +400,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Complete documentation, commit and push Version 0.9.1, then investigate
-and implement Profile polish. UI polish, a gameplay roadmap audit, and
-bundled gameplay feature development follow.
+Implement the next authorized feature batch: Lectern Knowledge Gain, Update
+Existing Profile, and Positive Random Traits. Integrated Import / Install /
+Restore investigation is complete, but QuickBMS experiments, integration, and
+Update Survival have not started.
 
 Document Maintenance
 

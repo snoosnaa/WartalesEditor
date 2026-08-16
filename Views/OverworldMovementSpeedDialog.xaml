@@ -1,8 +1,8 @@
 <Window x:Class="WartalesEditor.Views.OverworldMovementSpeedDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{Binding Title}" Width="600" Height="410"
-        MinWidth="520" MinHeight="360" SizeToContent="Manual"
+        Title="{Binding Title}" Width="600" Height="540"
+        MinWidth="520" MinHeight="460" SizeToContent="Manual"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False">
     <Grid Margin="{StaticResource GameplayDialogOuterMargin}">
@@ -41,25 +41,35 @@
             </StackPanel>
         </GroupBox>
 
-        <DockPanel Grid.Row="3"
-                   Grid.RowSpan="2"
-                   LastChildFill="False"
-                   Margin="{StaticResource DialogActionRowSpacing}">
-            <Button DockPanel.Dock="Left"
-                    Content="Reset to Vanilla"
-                    Click="ResetButton_Click"/>
-
-            <StackPanel DockPanel.Dock="Right"
-                        Orientation="Horizontal">
-                <Button Content="Apply"
-                        Style="{StaticResource GameplayApplyButtonStyle}"
-                        IsEnabled="{Binding CanApply}"
-                        Click="ApplyButton_Click"/>
-                <Button Content="Close"
-                        Style="{StaticResource GameplayCloseButtonStyle}"
-                        IsCancel="True"
-                        Click="CloseButton_Click"/>
-            </StackPanel>
-        </DockPanel>
+        <StackPanel Grid.Row="3" Grid.RowSpan="2"
+                    Margin="{StaticResource DialogActionRowSpacing}">
+            <Border Style="{StaticResource InformationalPanelStyle}"
+                    Margin="0,0,0,10">
+                <TextBlock TextWrapping="Wrap"
+                           Text="Visual note: Higher movement-speed settings can make the troop appear blurry while moving. This is a visual effect only and does not affect gameplay."/>
+            </Border>
+            <Border Style="{StaticResource GameplayApplyFeedbackPanelStyle}"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="{Binding ApplyFeedback.Heading}"
+                               Style="{StaticResource GameplayApplyFeedbackHeadingStyle}"/>
+                    <TextBlock Text="{Binding ApplyFeedback.Message}"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <DockPanel LastChildFill="False">
+                <Button DockPanel.Dock="Left" Content="Reset to Vanilla"
+                        Click="ResetButton_Click"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Apply"
+                            Style="{StaticResource GameplayApplyButtonStyle}"
+                            IsEnabled="{Binding CanApply}"
+                            Click="ApplyButton_Click"/>
+                    <Button Content="Close"
+                            Style="{StaticResource GameplayCloseButtonStyle}"
+                            IsCancel="True" Click="CloseButton_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </StackPanel>
     </Grid>
 </Window>

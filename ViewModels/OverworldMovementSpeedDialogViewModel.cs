@@ -24,6 +24,7 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
     }
 
     public string Title => "Overworld Movement Speed";
+    public GameplayApplyFeedbackViewModel ApplyFeedback { get; } = new();
     public IReadOnlyList<OverworldMovementPresetOption> Presets =>
         OverworldMovementSpeedService.Presets;
 
@@ -34,6 +35,7 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
         {
             if (SetProperty(ref selectedPreset, value))
             {
+                ApplyFeedback.Clear();
                 OnPropertyChanged(nameof(CanApply));
                 OnPropertyChanged(nameof(PreviewText));
             }

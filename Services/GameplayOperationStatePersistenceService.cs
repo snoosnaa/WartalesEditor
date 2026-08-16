@@ -159,7 +159,8 @@ public sealed class GameplayOperationStatePersistenceService
                  or ProgressionType.ValourPoints
                  or ProgressionType.CarryingCapacity
                  or ProgressionType.OverworldMovementSpeed
-                 or ProgressionType.RainFrequency)
+                 or ProgressionType.RainFrequency ||
+                 GameplayPresetCatalog.IsSupported(state.OperationType))
         {
             if (state.GameplaySettings == null)
                 throw new InvalidDataException("The gameplay settings are missing.");

@@ -99,6 +99,8 @@ public class MainViewModel : ObservableObject
 
     private readonly RainFrequencyService rainFrequencyService;
 
+    private readonly GameplayPresetService gameplayPresetService;
+
     private readonly IFileDialogService fileDialogService;
 
     private readonly IMessageDialogService messageDialogService;
@@ -136,6 +138,9 @@ public class MainViewModel : ObservableObject
         overworldMovementSpeedDialog;
 
     private RainFrequencyDialog? rainFrequencyDialog;
+
+    private readonly Dictionary<ProgressionType, GameplayPresetDialog>
+        gameplayPresetDialogs = new();
 
     private ProjectModel? project;
 
@@ -206,6 +211,8 @@ public class MainViewModel : ObservableObject
                 dialog.Close();
             overworldMovementSpeedDialog?.Close();
             rainFrequencyDialog?.Close();
+            foreach (GameplayPresetDialog dialog in gameplayPresetDialogs.Values.ToArray())
+                dialog.Close();
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
@@ -845,6 +852,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand RainFrequencyCommand { get; }
 
+    public RelayCommand GameplayPresetCommand { get; }
+
     public MainViewModel(
     JsonDataService jsonDataService,
     SearchService searchService,
@@ -996,6 +1005,11 @@ public class MainViewModel : ObservableObject
                 progressionMutationService,
                 gameplayOperationStateService);
 
+        gameplayPresetService =
+            new GameplayPresetService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
         this.editHistoryService.HistoryChanged +=
             OnHistoryChanged;
 
@@ -1117,6 +1131,14 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 ExecuteRainFrequency,
                 _ => Project != null);
+
+        GameplayPresetCommand =
+            new RelayCommand(
+                ExecuteGameplayPreset,
+                parameter =>
+                    Project != null &&
+                    parameter is ProgressionType type &&
+                    GameplayPresetCatalog.IsSupported(type));
     }
 
     private void OpenProject()
@@ -1827,7 +1849,7 @@ public class MainViewModel : ObservableObject
             Trace.WriteLine(
                 "XP Progression: after construction; before Show.");
 
-            dialog.Show();
+            ShowFeatureWindow(dialog);
 
             progressionScalingDialog = dialog;
 
@@ -1869,7 +1891,11 @@ public class MainViewModel : ObservableObject
         object? sender,
         ProgressionApplyRequestedEventArgs e)
     {
-        ExecuteProgressionOperation(
+        if (sender is ProgressionScalingDialog feedbackDialog &&
+            feedbackDialog.DataContext is ProgressionScalingDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
+
+        bool? wasModified = ExecuteProgressionOperation(
             e.ProgressionType,
             e.Percentage);
 
@@ -1878,6 +1904,15 @@ public class MainViewModel : ObservableObject
                 ProgressionScalingDialogViewModel viewModel)
         {
             viewModel.RefreshFromProject();
+            if (wasModified == true)
+            {
+                viewModel.ApplyFeedback.ShowApplied(
+                    $"{(e.ProgressionType == ProgressionType.Character ? "Character XP" : "Profession XP")} was updated.");
+            }
+            else if (wasModified == false)
+            {
+                viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
         }
     }
 
@@ -2008,13 +2043,13 @@ public class MainViewModel : ObservableObject
             "XP Progression: Closed handler cleared tracking.");
     }
 
-    private void ExecuteProgressionOperation(
+    private bool? ExecuteProgressionOperation(
         ProgressionType progressionType,
         int percentage)
     {
         if (Project == null)
         {
-            return;
+            return null;
         }
 
         IProjectOperation operation =
@@ -2058,7 +2093,7 @@ public class MainViewModel : ObservableObject
                     operation.Name);
 
                 Status = $"{operation.Name} failed validation.";
-                return;
+                return null;
             }
 
             ProjectMutationResult result =
@@ -2075,15 +2110,10 @@ public class MainViewModel : ObservableObject
 
             RefreshAfterProjectOperation();
 
-            messageDialogService.ShowInformation(
-                result.WasModified
-                    ? $"{(progressionType == ProgressionType.Character ? "Character XP" : "Profession XP")} set to {percentage}%."
-                    : $"{(progressionType == ProgressionType.Character ? "Character XP" : "Profession XP")} already matches {percentage}%.",
-                operation.Name);
-
             Status = result.WasModified
                 ? $"{operation.Name} set to {percentage}%."
                 : $"{operation.Name} already matched {percentage}%.";
+            return result.WasModified;
         }
         catch (Exception exception)
         {
@@ -2097,6 +2127,7 @@ public class MainViewModel : ObservableObject
                 operation.Name);
 
             Status = $"{operation.Name} failed.";
+            return null;
         }
     }
 
@@ -2129,7 +2160,7 @@ public class MainViewModel : ObservableObject
             dialog.ApplyRequested += OnStartingResourcesApplyRequested;
             dialog.DisplayFailed += OnStartingResourcesDisplayFailed;
             dialog.Closed += OnStartingResourcesClosed;
-            dialog.Show();
+            ShowFeatureWindow(dialog);
             startingResourcesDialog = dialog;
             Status = "Starting Resources opened.";
         }
@@ -2187,6 +2218,9 @@ public class MainViewModel : ObservableObject
         StartingResourcesApplyEventArgs e)
     {
         if (Project == null) return;
+        if (sender is StartingResourcesDialog feedbackDialog &&
+            feedbackDialog.DataContext is StartingResourcesDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
         IProjectOperation operation = new StartingResourcesOperation(
             startingResourcesService,
             e.Settings);
@@ -2217,6 +2251,10 @@ public class MainViewModel : ObservableObject
                 dialog.DataContext is StartingResourcesDialogViewModel vm)
             {
                 vm.RefreshFromProject();
+                if (operationResult.MutationResult.WasModified)
+                    vm.ApplyFeedback.ShowApplied("Starting resources were updated.");
+                else
+                    vm.ApplyFeedback.ShowAlreadyApplied();
             }
             Status = "Starting Resources updated.";
         }
@@ -2277,7 +2315,7 @@ public class MainViewModel : ObservableObject
             dialog.ApplyRequested += OnPartyEconomyApplyRequested;
             dialog.DisplayFailed += OnPartyEconomyDisplayFailed;
             dialog.Closed += OnPartyEconomyClosed;
-            dialog.Show();
+            ShowFeatureWindow(dialog);
             partyEconomyDialogs[type] = dialog;
             Status = $"{viewModel.Title} opened.";
         }
@@ -2295,6 +2333,9 @@ public class MainViewModel : ObservableObject
     private void OnPartyEconomyApplyRequested(object? sender, PartyEconomyApplyEventArgs e)
     {
         if (Project == null) return;
+        if (sender is PartyEconomyDialog feedbackDialog &&
+            feedbackDialog.DataContext is PartyEconomyDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
         IProjectOperation operation =
             new PartyEconomyOperation(partyEconomyService, e.OperationType, e.Settings);
         try
@@ -2318,7 +2359,19 @@ public class MainViewModel : ObservableObject
             RefreshAfterProjectOperation();
             if (sender is PartyEconomyDialog dialog &&
                 dialog.DataContext is PartyEconomyDialogViewModel viewModel)
+            {
                 viewModel.RefreshFromProject();
+                if (result.MutationResult.WasModified)
+                    viewModel.ApplyFeedback.ShowApplied(
+                        e.OperationType switch
+                        {
+                            ProgressionType.VolunteerWages => "Volunteer wage settings were updated.",
+                            ProgressionType.ValourPoints => "Valour Point settings were updated.",
+                            _ => "Carrying Capacity settings were updated."
+                        });
+                else
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
             Status = e.OperationType switch
             {
                 ProgressionType.VolunteerWages => "Volunteer Trait updated.",
@@ -2361,6 +2414,131 @@ public class MainViewModel : ObservableObject
         if (key.HasValue) partyEconomyDialogs.Remove(key.Value);
     }
 
+    private void ExecuteGameplayPreset(object? parameter)
+    {
+        if (Project == null ||
+            parameter is not ProgressionType type ||
+            !GameplayPresetCatalog.IsSupported(type))
+            return;
+
+        if (gameplayPresetDialogs.TryGetValue(type, out GameplayPresetDialog? existing))
+        {
+            RestoreAndActivateWindow(existing);
+            return;
+        }
+
+        GameplayPresetDialog? dialog = null;
+        try
+        {
+            GameplayPresetDialogViewModel viewModel =
+                new(Project, gameplayPresetService, type);
+            dialog = new GameplayPresetDialog
+            {
+                Owner = GetMainWindowOwner(),
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnGameplayPresetApplyRequested;
+            dialog.DisplayFailed += OnGameplayPresetDisplayFailed;
+            dialog.Closed += OnGameplayPresetClosed;
+            ShowFeatureWindow(dialog);
+            gameplayPresetDialogs[type] = dialog;
+            Status = $"{viewModel.Title} opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            gameplayPresetDialogs.Remove(type);
+            messageDialogService.ShowError(
+                "The gameplay tool could not be opened." + Environment.NewLine +
+                Environment.NewLine + "The project was not changed.",
+                "Gameplay Tools");
+        }
+    }
+
+    private void OnGameplayPresetApplyRequested(
+        object? sender,
+        GameplayPresetApplyEventArgs e)
+    {
+        if (Project == null) return;
+        if (sender is GameplayPresetDialog feedbackDialog &&
+            feedbackDialog.DataContext is GameplayPresetDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
+        IProjectOperation operation = new GameplayPresetOperation(
+            gameplayPresetService,
+            e.OperationType,
+            e.PresetKey);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    "The settings could not be applied." + Environment.NewLine +
+                    Environment.NewLine + "No changes were made.",
+                    operation.Name);
+                return;
+            }
+
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name,
+                    result.MutationResult,
+                    projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            if (sender is GameplayPresetDialog dialog &&
+                dialog.DataContext is GameplayPresetDialogViewModel viewModel)
+            {
+                viewModel.RefreshFromProject();
+                if (result.MutationResult.WasModified)
+                    viewModel.ApplyFeedback.ShowApplied(
+                        $"{viewModel.Title} was updated.");
+                else
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
+
+            Status = result.MutationResult.WasModified
+                ? $"{operation.Name} updated."
+                : "No changes were applied. These settings already match the current project.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The settings could not be applied." + Environment.NewLine +
+                Environment.NewLine + "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnGameplayPresetDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "The gameplay tool could not be displayed." + Environment.NewLine +
+            Environment.NewLine + "The project was not changed.",
+            "Gameplay Tools");
+    }
+
+    private void OnGameplayPresetClosed(object? sender, EventArgs e)
+    {
+        if (sender is not GameplayPresetDialog dialog) return;
+        dialog.ApplyRequested -= OnGameplayPresetApplyRequested;
+        dialog.DisplayFailed -= OnGameplayPresetDisplayFailed;
+        dialog.Closed -= OnGameplayPresetClosed;
+        ProgressionType? key = gameplayPresetDialogs
+            .Where(pair => ReferenceEquals(pair.Value, dialog))
+            .Select(pair => (ProgressionType?)pair.Key)
+            .FirstOrDefault();
+        if (key.HasValue) gameplayPresetDialogs.Remove(key.Value);
+    }
+
     private void ExecuteOverworldMovementSpeed(object? parameter)
     {
         if (Project == null) return;
@@ -2390,7 +2568,7 @@ public class MainViewModel : ObservableObject
             dialog.ApplyRequested += OnOverworldMovementApplyRequested;
             dialog.DisplayFailed += OnOverworldMovementDisplayFailed;
             dialog.Closed += OnOverworldMovementClosed;
-            dialog.Show();
+            ShowFeatureWindow(dialog);
             overworldMovementSpeedDialog = dialog;
             Status = "Overworld Movement Speed opened.";
         }
@@ -2412,6 +2590,9 @@ public class MainViewModel : ObservableObject
         OverworldMovementApplyEventArgs e)
     {
         if (Project == null) return;
+        if (sender is OverworldMovementSpeedDialog feedbackDialog &&
+            feedbackDialog.DataContext is OverworldMovementSpeedDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
         IProjectOperation operation =
             new OverworldMovementSpeedOperation(
                 overworldMovementSpeedService,
@@ -2442,8 +2623,16 @@ public class MainViewModel : ObservableObject
             if (sender is OverworldMovementSpeedDialog dialog &&
                 dialog.DataContext is
                     OverworldMovementSpeedDialogViewModel viewModel)
+            {
                 viewModel.RefreshFromProject();
-            Status = "Movement Speed updated.";
+                if (result.MutationResult.WasModified)
+                    viewModel.ApplyFeedback.ShowApplied("Movement speed was updated.");
+                else
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
+            Status = result.MutationResult.WasModified
+                ? "Movement Speed updated."
+                : "Movement Speed already matched the selected setting.";
         }
         catch (Exception exception)
         {
@@ -2506,7 +2695,7 @@ public class MainViewModel : ObservableObject
             dialog.ApplyRequested += OnRainFrequencyApplyRequested;
             dialog.DisplayFailed += OnRainFrequencyDisplayFailed;
             dialog.Closed += OnRainFrequencyClosed;
-            dialog.Show();
+            ShowFeatureWindow(dialog);
             rainFrequencyDialog = dialog;
             Status = "Rain Frequency opened.";
         }
@@ -2528,6 +2717,9 @@ public class MainViewModel : ObservableObject
         RainFrequencyApplyEventArgs e)
     {
         if (Project == null) return;
+        if (sender is RainFrequencyDialog feedbackDialog &&
+            feedbackDialog.DataContext is RainFrequencyDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
         IProjectOperation operation =
             new RainFrequencyOperation(rainFrequencyService, e.Preset);
         try
@@ -2555,8 +2747,16 @@ public class MainViewModel : ObservableObject
             RefreshAfterProjectOperation();
             if (sender is RainFrequencyDialog dialog &&
                 dialog.DataContext is RainFrequencyDialogViewModel viewModel)
+            {
                 viewModel.RefreshFromProject();
-            Status = "Rain Frequency updated.";
+                if (result.MutationResult.WasModified)
+                    viewModel.ApplyFeedback.ShowApplied("Rain frequency was updated.");
+                else
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
+            Status = result.MutationResult.WasModified
+                ? "Rain Frequency updated."
+                : "Rain Frequency already matched the selected setting.";
         }
         catch (Exception exception)
         {
@@ -2686,8 +2886,7 @@ public class MainViewModel : ObservableObject
         validationResultsWindow.Closed +=
             OnValidationResultsWindowClosed;
 
-        validationResultsWindow.Show();
-        validationResultsWindow.Activate();
+        ShowFeatureWindow(validationResultsWindow);
     }
 
     private ValidationResultModel
@@ -3304,6 +3503,9 @@ public class MainViewModel : ObservableObject
 
         RainFrequencyCommand?
             .NotifyCanExecuteChanged();
+
+        GameplayPresetCommand?
+            .NotifyCanExecuteChanged();
     }
 
     private IReadOnlyList<ChangeSummaryItemModel>
@@ -3365,8 +3567,7 @@ public class MainViewModel : ObservableObject
         changeSummaryWindow.Closed +=
             OnChangeSummaryWindowClosed;
 
-        changeSummaryWindow.Show();
-        changeSummaryWindow.Activate();
+        ShowFeatureWindow(changeSummaryWindow);
     }
 
     private void OnChangeSummaryWindowClosed(
@@ -3421,8 +3622,7 @@ public class MainViewModel : ObservableObject
         profileManagerWindow.Closed +=
             OnProfileManagerWindowClosed;
 
-        profileManagerWindow.Show();
-        profileManagerWindow.Activate();
+        ShowFeatureWindow(profileManagerWindow);
 
         Status =
             "Profiles opened.";
@@ -3451,6 +3651,46 @@ public class MainViewModel : ObservableObject
         window.Show();
         window.Activate();
         window.Focus();
+    }
+
+    private static void ShowFeatureWindow(Window window)
+    {
+        ArgumentNullException.ThrowIfNull(window);
+
+        Window owner = window.Owner ?? GetMainWindowOwner();
+        WindowState ownerState = owner.WindowState == WindowState.Minimized
+            ? WindowState.Normal
+            : owner.WindowState;
+        EventHandler? restoreOwner = null;
+        restoreOwner = (_, _) =>
+        {
+            window.Closed -= restoreOwner;
+            owner.Dispatcher.BeginInvoke(
+                DispatcherPriority.ApplicationIdle,
+                new Action(() =>
+                {
+                    if (owner.Dispatcher.HasShutdownStarted || !owner.IsLoaded)
+                        return;
+                    if (!owner.IsVisible)
+                        owner.Show();
+                    if (owner.WindowState == WindowState.Minimized)
+                        owner.WindowState = ownerState;
+                    owner.Activate();
+                    owner.Focus();
+                }));
+        };
+
+        window.Closed += restoreOwner;
+        try
+        {
+            window.Show();
+            window.Activate();
+        }
+        catch
+        {
+            window.Closed -= restoreOwner;
+            throw;
+        }
     }
 
     private bool? ShowProfileDetailsDialog(

@@ -6,6 +6,85 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Class A Gameplay Expansion
+
+**Status:** Complete; focused compatibility corrections, Resource
+Replenishment, UX consistency, Engineering Review, Project Owner runtime smoke,
+and final reconciliation verification passed
+
+## Added
+
+- Preset Gameplay Tools for Delicious Meals, Forging Assistance, Mining &
+  Woodcutting, Fishing, Lockpicking, Nine Puzzle Assistance, Run Stamina
+  Recovery, Battle Camera Zoom, Campfire Expansion, Cooking Pot Food Reduction,
+  Workshop Materials, Vendor Refresh, Ruby & Sapphire Value, and Time Between
+  Rests.
+- A Professions dashboard category and the approved Party, World, and Camp &
+  Equipment dashboard entries.
+- Feature-specific validator dispatch for every new operation.
+- Resource Replenishment presets that scale the captured Slow, Normal, and Fast
+  refill categories by 1×, 2×, 3×, or 5× without changing the Extreme factor.
+
+## Changed
+
+- Valour Points now includes Vanilla and Increased Tent Valour tier presets.
+- Carrying Capacity now includes Vanilla and Increased Hitching Post base and
+  Draught Pony tier bonuses.
+- Legacy two-target Valour and Carrying operation states remain valid and are
+  upgraded to the expanded state shape on the next explicit safe Apply. Current
+  Tent and Hitching Post values are resolved from the project rather than guessed.
+- Vanilla preset restoration uses each operation's exact captured baseline.
+  Mining and merchant rates scale proportionally from that baseline, while
+  Battle Camera preserves the captured minimum distance.
+- New snapshots record effective nested property paths. Older snapshots without
+  paths retain their original leaf-name matching behavior.
+- Gameplay Tool dialogs show in-dialog Applied successfully or Already applied
+  feedback, and feature windows explicitly restore their owner after closing.
+- Reset to Game Default now applies Vanilla through the shared operation
+  pipeline, restoring the exact captured baseline with normal operation state,
+  Review Changes, and single-action Undo/Redo behavior.
+- Starting Resources and Party Economy clear stale success/no-op feedback when
+  their current input becomes invalid.
+- Starting Resources, Movement Speed, and Battle Camera Zoom show the approved
+  non-blocking display/visual notes.
+
+## Verified
+
+- Zero-warning, zero-error build.
+- Clean-CDB apply, validation, forced-failure rollback, exact Undo/Redo,
+  idempotence, missing/wrong/duplicate target handling, save/reload state
+  persistence, profile serialization, mixed profile replay, and effective
+  change counting.
+- Repository-backed focused coverage for differing-baseline Vanilla restoration,
+  Mining and merchant proportional scaling, Battle Camera baseline drift,
+  supported and custom legacy Valour/Carrying upgrades, snapshot full-path and
+  legacy matching, all preset catalog entries, and representative malformed
+  tier/discriminator/state cases.
+- Reset coverage for a scalar preset, baseline-scaled preset, and multi-target
+  Campfire preset, including recorded Vanilla state and exact Undo/Redo.
+- Symmetric Campfire malformed-target coverage for missing and wrong-type
+  `tool.toolCapacity` as well as `tool.capacity`.
+- Resource Replenishment baseline capture, proportional outputs, exact
+  restoration, no compounding, malformed baselines, atomic rollback, Undo/Redo,
+  state persistence, snapshot serialization, profile replay, and preservation of
+  unrelated values and `GatherRefillFactorExtreme`.
+- A fresh-install, fresh-extraction full-mod gameplay smoke launched, started a
+  new game, reached play, saved, exited, relaunched, and loaded the save. The
+  earlier freeze is non-reproducible after clean reinstall and fresh extraction;
+  its cause remains unknown.
+
+## Non-Blocking Notes
+
+- Campfire implementation/reference equivalence is established. Direct in-game
+  Tier 2/Tier 3 assignment-count verification remains pending; Tier 1
+  intentionally remains at capacity 4.
+- Resource Replenishment is not claimed as exhaustively timed across every land,
+  fishing, sea, and special renewable category.
+- `stacked content: 2` remains a non-blocking observation from one camp-item
+  creation session; its origin was not located by the narrow string search.
+
+---
+
 # Version 0.9.1 - World Convenience
 
 **Status:** Complete and verified

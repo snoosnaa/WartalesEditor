@@ -26,6 +26,11 @@ public sealed class PartyEconomyService
         {
             stateService.ValidateState(project, state);
             if (!state.IsCompatible) throw new InvalidOperationException(state.CompatibilityMessage);
+            if (IsLegacyExpandedState(state))
+                return ReadLegacySettings(
+                    state.GameplaySettings,
+                    type,
+                    CaptureTargets(project, type));
             return ReadSettings(state.GameplaySettings, type);
         }
 
@@ -36,9 +41,13 @@ public sealed class PartyEconomyService
     public PartyEconomySettings GetBaselineSettings(ProjectModel project, ProgressionType type)
     {
         GameplayOperationStateModel? state = stateService.FindState(project, type);
-        return state == null
-            ? SettingsFromTargets(CaptureTargets(project, type), type)
-            : SettingsFromTargets(state.BaselineArray, type);
+        if (state == null)
+            return SettingsFromTargets(CaptureTargets(project, type), type);
+        JArray baseline = ExpandLegacyBaseline(
+            project,
+            type,
+            state.BaselineArray);
+        return SettingsFromTargets(baseline, type);
     }
 
     public ProjectMutationResult Apply(
@@ -58,7 +67,10 @@ public sealed class PartyEconomyService
         {
             stateService.ValidateState(project, existing);
             if (!existing.IsCompatible) throw new InvalidOperationException(existing.CompatibilityMessage);
-            baseline = (JArray)existing.BaselineArray.DeepClone();
+            baseline = ExpandLegacyBaseline(
+                project,
+                type,
+                existing.BaselineArray);
         }
 
         JArray expected = BuildExpected(baseline, settings, type);
@@ -82,9 +94,14 @@ public sealed class PartyEconomyService
 
     internal static void ValidateState(ProjectModel project, GameplayOperationStateModel state)
     {
+        JArray current = CaptureTargets(project, state.OperationType);
+        if (IsLegacyExpandedState(state))
+        {
+            ValidateLegacyState(state, current);
+            return;
+        }
         PartyEconomySettings settings = ReadSettings(state.GameplaySettings, state.OperationType);
         settings.Validate(state.OperationType);
-        JArray current = CaptureTargets(project, state.OperationType);
         JArray expected = BuildExpected(state.BaselineArray, settings, state.OperationType);
         string targetSheets = string.Join(",", current.OfType<JObject>().Select(x => x.Value<string>("sheet")));
         string targetEntries = string.Join(",", current.OfType<JObject>().Select(x => x.Value<string>("entry")));
@@ -98,6 +115,41 @@ public sealed class PartyEconomyService
             !string.Equals(GameplayOperationFingerprintService.CreateContentFingerprint(expected), state.ExpectedCurrentFingerprint, StringComparison.Ordinal) ||
             !JToken.DeepEquals(current, expected))
             throw new InvalidOperationException("The remembered targets no longer match the loaded project.");
+    }
+
+    private static void ValidateLegacyState(
+        GameplayOperationStateModel state,
+        JArray current)
+    {
+        JArray currentLegacy = new(current.Take(2).Select(x => x!.DeepClone()));
+        JArray expectedLegacy = (JArray)state.BaselineArray.DeepClone();
+        int[] values = state.OperationType == ProgressionType.ValourPoints
+            ? new[]
+            {
+                RequiredInt(state.GameplaySettings, "maximumValour"),
+                RequiredInt(state.GameplaySettings, "restoredValour")
+            }
+            : new[]
+            {
+                RequiredInt(state.GameplaySettings, "saddlebagCapacity"),
+                RequiredInt(state.GameplaySettings, "ponyStartingCapacity")
+            };
+        for (int index = 0; index < 2; index++)
+            expectedLegacy[index]!["value"] = values[index];
+
+        string targetSheets = string.Join(",", currentLegacy.OfType<JObject>().Select(x => x.Value<string>("sheet")));
+        string targetEntries = string.Join(",", currentLegacy.OfType<JObject>().Select(x => x.Value<string>("entry")));
+        string targetPaths = string.Join("|", currentLegacy.OfType<JObject>().Select(x => x.Value<string>("path")));
+        if (state.ElementCount != 2 ||
+            !string.Equals(state.TargetSheet, targetSheets, StringComparison.Ordinal) ||
+            !string.Equals(state.TargetEntry, targetEntries, StringComparison.Ordinal) ||
+            !string.Equals(state.TargetPath, targetPaths, StringComparison.Ordinal) ||
+            !string.Equals(GameplayOperationFingerprintService.CreateContentFingerprint(state.BaselineArray), state.BaselineFingerprint, StringComparison.Ordinal) ||
+            !string.Equals(GameplayOperationFingerprintService.CreateShapeFingerprint(state.BaselineArray), state.ElementShapeFingerprint, StringComparison.Ordinal) ||
+            !string.Equals(GameplayOperationFingerprintService.CreateContentFingerprint(expectedLegacy), state.ExpectedCurrentFingerprint, StringComparison.Ordinal) ||
+            !JToken.DeepEquals(currentLegacy, expectedLegacy))
+            throw new InvalidOperationException(
+                "The saved legacy Party Economy settings no longer match the loaded project.");
     }
 
     internal static JArray CaptureTargets(ProjectModel project, ProgressionType type)
@@ -127,12 +179,20 @@ public sealed class PartyEconomyService
             ProgressionType.ValourPoints => new[]
             {
                 Resolve(project, "constant", "ActionPointBaseMax", "value", new JObject()),
-                Resolve(project, "constant", "ActionPointGainPerSleep", "value", new JObject())
+                Resolve(project, "constant", "ActionPointGainPerSleep", "value", new JObject()),
+                ResolveArrayValue(project, "item", "Tent", "props.bonuses", "bonus", "ActionPoint"),
+                ResolveArrayValue(project, "item", "TentT2", "props.bonuses", "bonus", "ActionPoint"),
+                ResolveArrayValue(project, "item", "TentT3", "props.bonuses", "bonus", "ActionPoint")
             },
             ProgressionType.CarryingCapacity => new[]
             {
                 ResolveArrayValue(project, "item", "AnimAccCarriage", "baseBonus", "attribute", "Transport"),
-                ResolveArrayValue(project, "unitClass", "Pony", "stats", "attribute", "Transport")
+                ResolveArrayValue(project, "unitClass", "Pony", "stats", "attribute", "Transport"),
+                ResolveArrayValue(project, "item", "PonyAuge", "tool.personalBonuses", "bonus", "PonyAugeTransport"),
+                ResolveArrayValue(project, "item", "PonyAugeT2", "tool.personalBonuses", "bonus", "PonyAugeTransport"),
+                ResolveArrayValue(project, "item", "PonyAugeT3", "tool.personalBonuses", "bonus", "PonyAugeTransport"),
+                ResolveArrayValue(project, "item", "PonyAugeT2", "tool.personalBonuses", "bonus", "PonyAugeTransportTrait"),
+                ResolveArrayValue(project, "item", "PonyAugeT3", "tool.personalBonuses", "bonus", "PonyAugeTransportTrait")
             },
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
@@ -145,8 +205,19 @@ public sealed class PartyEconomyService
         int[] values = type switch
         {
             ProgressionType.VolunteerWages => new[] { settings.VolunteerPercentage },
-            ProgressionType.ValourPoints => new[] { settings.MaximumValour, settings.RestoredValour },
-            ProgressionType.CarryingCapacity => new[] { settings.SaddlebagCapacity, settings.PonyStartingCapacity },
+            ProgressionType.ValourPoints => new[]
+            {
+                settings.MaximumValour, settings.RestoredValour,
+                settings.TentTier1Valour, settings.TentTier2Valour,
+                settings.TentTier3Valour
+            },
+            ProgressionType.CarryingCapacity => new[]
+            {
+                settings.SaddlebagCapacity, settings.PonyStartingCapacity,
+                settings.HitchingPostTier1Base, settings.HitchingPostTier2Base,
+                settings.HitchingPostTier3Base, settings.HitchingPostTier2Trait,
+                settings.HitchingPostTier3Trait
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
         for (int index = 0; index < expected.Count; index++)
@@ -198,8 +269,24 @@ public sealed class PartyEconomyService
         type switch
         {
             ProgressionType.VolunteerWages => new PartyEconomySettings { VolunteerPercentage = targets[0]!["value"]!.Value<int>() },
-            ProgressionType.ValourPoints => new PartyEconomySettings { MaximumValour = targets[0]!["value"]!.Value<int>(), RestoredValour = targets[1]!["value"]!.Value<int>() },
-            ProgressionType.CarryingCapacity => new PartyEconomySettings { SaddlebagCapacity = targets[0]!["value"]!.Value<int>(), PonyStartingCapacity = targets[1]!["value"]!.Value<int>() },
+            ProgressionType.ValourPoints => new PartyEconomySettings
+            {
+                MaximumValour = targets[0]!["value"]!.Value<int>(),
+                RestoredValour = targets[1]!["value"]!.Value<int>(),
+                TentTier1Valour = targets[2]!["value"]!.Value<int>(),
+                TentTier2Valour = targets[3]!["value"]!.Value<int>(),
+                TentTier3Valour = targets[4]!["value"]!.Value<int>()
+            },
+            ProgressionType.CarryingCapacity => new PartyEconomySettings
+            {
+                SaddlebagCapacity = targets[0]!["value"]!.Value<int>(),
+                PonyStartingCapacity = targets[1]!["value"]!.Value<int>(),
+                HitchingPostTier1Base = targets[2]!["value"]!.Value<int>(),
+                HitchingPostTier2Base = targets[3]!["value"]!.Value<int>(),
+                HitchingPostTier3Base = targets[4]!["value"]!.Value<int>(),
+                HitchingPostTier2Trait = targets[5]!["value"]!.Value<int>(),
+                HitchingPostTier3Trait = targets[6]!["value"]!.Value<int>()
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
 
@@ -207,8 +294,25 @@ public sealed class PartyEconomyService
         type switch
         {
             ProgressionType.VolunteerWages => new JObject { ["volunteerPercentage"] = settings.VolunteerPercentage },
-            ProgressionType.ValourPoints => new JObject { ["maximumValour"] = settings.MaximumValour, ["restoredValour"] = settings.RestoredValour },
-            ProgressionType.CarryingCapacity => new JObject { ["saddlebagCapacity"] = settings.SaddlebagCapacity, ["ponyStartingCapacity"] = settings.PonyStartingCapacity },
+            ProgressionType.ValourPoints => new JObject
+            {
+                ["maximumValour"] = settings.MaximumValour,
+                ["restoredValour"] = settings.RestoredValour,
+                ["tentTier1Valour"] = settings.TentTier1Valour,
+                ["tentTier2Valour"] = settings.TentTier2Valour,
+                ["tentTier3Valour"] = settings.TentTier3Valour
+            },
+            ProgressionType.CarryingCapacity => new JObject
+            {
+                ["saddlebagCapacity"] = settings.SaddlebagCapacity,
+                ["ponyStartingCapacity"] = settings.PonyStartingCapacity,
+                ["hitchingPostTier1Base"] = settings.HitchingPostTier1Base,
+                ["hitchingPostTier2Base"] = settings.HitchingPostTier2Base,
+                ["hitchingPostTier3Base"] = settings.HitchingPostTier3Base,
+                ["hitchingPostTier1Trait"] = settings.HitchingPostTier1Trait,
+                ["hitchingPostTier2Trait"] = settings.HitchingPostTier2Trait,
+                ["hitchingPostTier3Trait"] = settings.HitchingPostTier3Trait
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
 
@@ -218,15 +322,97 @@ public sealed class PartyEconomyService
         return type switch
         {
             ProgressionType.VolunteerWages => new PartyEconomySettings { VolunteerPercentage = RequiredInt(value, "volunteerPercentage") },
-            ProgressionType.ValourPoints => new PartyEconomySettings { MaximumValour = RequiredInt(value, "maximumValour"), RestoredValour = RequiredInt(value, "restoredValour") },
-            ProgressionType.CarryingCapacity => new PartyEconomySettings { SaddlebagCapacity = RequiredInt(value, "saddlebagCapacity"), PonyStartingCapacity = RequiredInt(value, "ponyStartingCapacity") },
+            ProgressionType.ValourPoints => new PartyEconomySettings
+            {
+                MaximumValour = RequiredInt(value, "maximumValour"),
+                RestoredValour = RequiredInt(value, "restoredValour"),
+                TentTier1Valour = RequiredInt(value, "tentTier1Valour"),
+                TentTier2Valour = RequiredInt(value, "tentTier2Valour"),
+                TentTier3Valour = RequiredInt(value, "tentTier3Valour")
+            },
+            ProgressionType.CarryingCapacity => new PartyEconomySettings
+            {
+                SaddlebagCapacity = RequiredInt(value, "saddlebagCapacity"),
+                PonyStartingCapacity = RequiredInt(value, "ponyStartingCapacity"),
+                HitchingPostTier1Base = RequiredInt(value, "hitchingPostTier1Base"),
+                HitchingPostTier2Base = RequiredInt(value, "hitchingPostTier2Base"),
+                HitchingPostTier3Base = RequiredInt(value, "hitchingPostTier3Base"),
+                HitchingPostTier1Trait = RequiredInt(value, "hitchingPostTier1Trait"),
+                HitchingPostTier2Trait = RequiredInt(value, "hitchingPostTier2Trait"),
+                HitchingPostTier3Trait = RequiredInt(value, "hitchingPostTier3Trait")
+            },
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }
 
-    private static int RequiredInt(JObject value, string name) =>
-        value[name]?.Type == JTokenType.Integer ? value.Value<int>(name) :
+    private static int RequiredInt(JObject? value, string name) =>
+        value?[name]?.Type == JTokenType.Integer ? value!.Value<int>(name) :
         throw new InvalidOperationException($"Saved setting '{name}' is missing or invalid.");
+
+    private static PartyEconomySettings ReadLegacySettings(
+        JObject? value,
+        ProgressionType type,
+        JArray current)
+    {
+        if (current.Count != (type == ProgressionType.ValourPoints ? 5 : 7))
+            throw new InvalidOperationException(
+                "The current Party Economy targets are incomplete.");
+
+        return type switch
+        {
+            ProgressionType.ValourPoints => new PartyEconomySettings
+            {
+                MaximumValour = RequiredInt(value, "maximumValour"),
+                RestoredValour = RequiredInt(value, "restoredValour"),
+                TentTier1Valour = current[2]!["value"]!.Value<int>(),
+                TentTier2Valour = current[3]!["value"]!.Value<int>(),
+                TentTier3Valour = current[4]!["value"]!.Value<int>()
+            },
+            ProgressionType.CarryingCapacity => new PartyEconomySettings
+            {
+                SaddlebagCapacity = RequiredInt(value, "saddlebagCapacity"),
+                PonyStartingCapacity = RequiredInt(value, "ponyStartingCapacity"),
+                HitchingPostTier1Base = current[2]!["value"]!.Value<int>(),
+                HitchingPostTier2Base = current[3]!["value"]!.Value<int>(),
+                HitchingPostTier3Base = current[4]!["value"]!.Value<int>(),
+                HitchingPostTier1Trait = 0,
+                HitchingPostTier2Trait = current[5]!["value"]!.Value<int>(),
+                HitchingPostTier3Trait = current[6]!["value"]!.Value<int>()
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
+    }
+
+    private static bool IsLegacyExpandedState(
+        GameplayOperationStateModel state) =>
+        state.BaselineArray.Count == 2 &&
+        state.OperationType is
+            (ProgressionType.ValourPoints or ProgressionType.CarryingCapacity);
+
+    private static JArray ExpandLegacyBaseline(
+        ProjectModel project,
+        ProgressionType type,
+        JArray baseline)
+    {
+        int expectedCount = type switch
+        {
+            ProgressionType.ValourPoints => 5,
+            ProgressionType.CarryingCapacity => 7,
+            _ => baseline.Count
+        };
+        if (baseline.Count == expectedCount)
+            return (JArray)baseline.DeepClone();
+        if (baseline.Count != 2 ||
+            type is not (ProgressionType.ValourPoints or ProgressionType.CarryingCapacity))
+            throw new InvalidOperationException(
+                "The remembered Party Economy baseline is incomplete.");
+
+        JArray expanded = (JArray)baseline.DeepClone();
+        JArray current = CaptureTargets(project, type);
+        for (int index = 2; index < current.Count; index++)
+            expanded.Add(current[index]!.DeepClone());
+        return expanded;
+    }
 
     private static Target Resolve(ProjectModel project, string sheet, string entryId, string path, JObject context)
     {

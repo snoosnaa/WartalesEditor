@@ -9,5 +9,20 @@ public enum ProgressionType
     ValourPoints,
     CarryingCapacity,
     OverworldMovementSpeed,
-    RainFrequency
+    RainFrequency,
+    DeliciousMealChance,
+    ForgingAssistance,
+    MiningWoodcuttingTiming,
+    FishingSpeed,
+    LockpickingTolerance,
+    NinePuzzleAssistance,
+    RunStaminaRecovery,
+    BattleCameraZoom,
+    CampfireExpansion,
+    CookingPotFoodReduction,
+    WorkshopMaterials,
+    VendorRefresh,
+    RubySapphireValue,
+    TimeBetweenRests,
+    ResourceReplenishment
 }
