@@ -105,6 +105,7 @@ public sealed class GameplayOperationStatePersistenceService
             }
 
             stateService.ValidateProjectStates(project);
+            stateService.AcceptCurrentStates(project);
 
             foreach (GameplayOperationStateModel state in
                      project.GameplayOperationStates
@@ -159,7 +160,8 @@ public sealed class GameplayOperationStatePersistenceService
                  or ProgressionType.ValourPoints
                  or ProgressionType.CarryingCapacity
                  or ProgressionType.OverworldMovementSpeed
-                 or ProgressionType.RainFrequency ||
+                 or ProgressionType.RainFrequency
+                 or ProgressionType.RandomTraitExclusions ||
                  GameplayPresetCatalog.IsSupported(state.OperationType))
         {
             if (state.GameplaySettings == null)
@@ -187,6 +189,8 @@ public sealed class GameplayOperationStatePersistenceService
             CommitTemporary(
                 temporaryPath,
                 sidecarPath);
+
+            stateService.AcceptCurrentStates(project);
         }
         catch
         {
@@ -265,5 +269,10 @@ public sealed class GameplayOperationStatePersistenceService
         catch
         {
         }
+    }
+
+    internal void AcceptCurrentStates(ProjectModel project)
+    {
+        stateService.AcceptCurrentStates(project);
     }
 }

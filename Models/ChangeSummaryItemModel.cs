@@ -16,6 +16,23 @@ public sealed class ChangeSummaryItemModel
         SettingName = settingName;
         OriginalValue = originalValue;
         CurrentValue = currentValue;
+        CanNavigate = true;
+    }
+
+    public ChangeSummaryItemModel(
+        string categoryName,
+        string settingName,
+        string propertyName,
+        string originalValue,
+        string currentValue)
+    {
+        Category = new SheetModel { Name = categoryName };
+        Setting = new EntryModel { Id = settingName, DisplayName = settingName };
+        Property = new PropertyModel { Name = propertyName };
+        SettingName = settingName;
+        OriginalValue = originalValue;
+        CurrentValue = currentValue;
+        CanNavigate = false;
     }
 
     public SheetModel Category { get; }
@@ -35,4 +52,6 @@ public sealed class ChangeSummaryItemModel
     public string OriginalValue { get; }
 
     public string CurrentValue { get; }
+
+    public bool CanNavigate { get; }
 }

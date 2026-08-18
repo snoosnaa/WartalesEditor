@@ -52,6 +52,10 @@ public sealed class GameplayOperationStateModel
     public string CompatibilityMessage { get; set; } =
         string.Empty;
 
+    [JsonIgnore]
+    public string PersistedStateFingerprint { get; set; } =
+        string.Empty;
+
     public GameplayOperationStateModel DeepClone()
     {
         return new GameplayOperationStateModel
@@ -71,7 +75,8 @@ public sealed class GameplayOperationStateModel
             StartingResources = StartingResources?.DeepClone(),
             GameplaySettings = (JObject?)GameplaySettings?.DeepClone(),
             IsCompatible = IsCompatible,
-            CompatibilityMessage = CompatibilityMessage
+            CompatibilityMessage = CompatibilityMessage,
+            PersistedStateFingerprint = PersistedStateFingerprint
         };
     }
 }

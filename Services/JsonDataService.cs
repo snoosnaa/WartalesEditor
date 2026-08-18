@@ -157,6 +157,9 @@ public class JsonDataService
                     sidecarTemporaryFile,
                     gameplayOperationStatePersistenceService
                         .GetSidecarPath(fullFileName));
+
+            gameplayOperationStatePersistenceService
+                .AcceptCurrentStates(project);
         }
         catch (Exception exception)
         {
@@ -344,6 +347,25 @@ public class JsonDataService
             Load(
                 fileName);
 
+        ProjectModel project =
+            CreateProjectFromJson(
+                json,
+                fileName);
+
+        gameplayOperationStatePersistenceService
+            .LoadIntoProject(
+                project,
+                fileName);
+
+        return project;
+    }
+
+    internal ProjectModel CreateProjectFromJson(
+        string json,
+        string fileName = "")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+
         JObject root =
             JObject.Parse(
                 json);
@@ -393,11 +415,6 @@ public class JsonDataService
 
         project.IsModified =
             false;
-
-        gameplayOperationStatePersistenceService
-            .LoadIntoProject(
-                project,
-                fileName);
 
         return project;
     }

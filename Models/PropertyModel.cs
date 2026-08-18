@@ -180,6 +180,16 @@ public class PropertyModel : ObservableObject
         UpdateModifiedState();
     }
 
+    internal void InitializeValueFromSource()
+    {
+        value = SourceProperty == null
+            ? null
+            : GetTokenDisplayValue(SourceProperty.Value);
+
+        OnPropertyChanged(nameof(Value));
+        OnPropertyChanged(nameof(CurrentDisplayValue));
+    }
+
     public void CaptureNewPropertyBaseline()
     {
         if (SourceProperty == null)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Snapshots;
 
@@ -182,49 +183,91 @@ public sealed class ModificationSnapshotWorkflowService
         ArgumentNullException.ThrowIfNull(
             snapshot);
 
-        ModificationMatchResultModel matchResult =
-            matcher.Match(
-                targetProject,
-                snapshot);
-
-        ModificationPreviewResultModel previewResult =
-            previewService.Preview(
-                matchResult);
-
-        ModificationApplyResultModel applyResult =
-            applyService.Apply(
-                previewResult);
-
         ProjectMutationResult mutationResult =
             new();
 
-        mutationResult.Merge(
-            applyResult.MutationResult);
-
-        if (snapshot.GameplayOperationStates.Count > 0)
+        try
         {
-            mutationResult.Merge(
-                gameplayOperationStateService
-                    .RestoreSnapshotStatesWithMutations(
+            GameplayOperationStateModel? randomTraitState =
+                snapshot.GameplayOperationStates
+                    .SingleOrDefault(state =>
+                        state.OperationType ==
+                        ProgressionType.RandomTraitExclusions);
+
+            if (randomTraitState != null)
+            {
+                RandomTraitExclusionsService exclusionsService =
+                    new(
+                        new ProjectMutationService(),
+                        gameplayOperationStateService);
+
+                mutationResult.Merge(
+                    exclusionsService.RestoreState(
                         targetProject,
-                        snapshot.GameplayOperationStates));
-        }
-        else
-        {
-            gameplayOperationStateService.ValidateProjectStates(
-                targetProject);
-        }
+                        randomTraitState));
+            }
 
-        return new ModificationSnapshotImportResultModel(
-            snapshot,
-            matchResult,
-            previewResult,
-            applyResult,
-            sourceName,
-            System.Array.Empty<
-                Models.Profiles
-                    .ProfileOperationApplyItemResultModel>(),
-            mutationResult);
+            ModificationMatchResultModel matchResult =
+                matcher.Match(
+                    targetProject,
+                    snapshot);
+
+            ModificationPreviewResultModel previewResult =
+                previewService.Preview(
+                    matchResult);
+
+            ModificationApplyResultModel applyResult =
+                applyService.Apply(
+                    previewResult);
+
+            mutationResult.Merge(
+                applyResult.MutationResult);
+
+            if (snapshot.GameplayOperationStates.Count > 0)
+            {
+                GameplayOperationStateModel[] remainingStates =
+                    snapshot.GameplayOperationStates
+                        .Where(state =>
+                            state.OperationType !=
+                            ProgressionType.RandomTraitExclusions)
+                        .ToArray();
+
+                if (remainingStates.Length > 0)
+                {
+                    mutationResult.Merge(
+                        gameplayOperationStateService
+                            .RestoreSnapshotStatesWithMutations(
+                                targetProject,
+                                remainingStates));
+                }
+            }
+            else
+            {
+                gameplayOperationStateService.ValidateProjectStates(
+                    targetProject);
+            }
+
+            return new ModificationSnapshotImportResultModel(
+                snapshot,
+                matchResult,
+                previewResult,
+                applyResult,
+                sourceName,
+                System.Array.Empty<
+                    Models.Profiles
+                        .ProfileOperationApplyItemResultModel>(),
+                mutationResult);
+        }
+        catch
+        {
+            if (mutationResult.WasModified)
+            {
+                new Operations.ProjectOperationTransactionService()
+                    .Rollback(mutationResult);
+            }
+
+            throw;
+        }
     }
 
     public ModificationSnapshotImportResultModel

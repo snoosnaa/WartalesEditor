@@ -109,6 +109,19 @@ Extend ProjectMutationService.
 
 Do not duplicate mutation logic elsewhere.
 
+Known property removal must use
+`ProjectMutationService.RemovePropertyByPath`. It is a strict operation: a
+missing, ambiguous, or disconnected path fails without mutation. Its dedicated
+rollback record preserves the exact `PropertyModel`, source `JProperty`, parent,
+ordering, path, and prior modification state for rollback and repeated
+Undo / Redo. The API must explicitly reject an object-valued source property
+before recording or applying any removal.
+
+Do not generalize this primitive into object deletion, array-element deletion,
+entry deletion, recursive empty-object cleanup, or arbitrary JSON patching.
+Features that restore a previously absent baseline must pair this primitive
+with the established Gameplay Operation State and transaction architecture.
+
 ---
 
 ## Validation

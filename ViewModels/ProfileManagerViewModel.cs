@@ -78,6 +78,11 @@ public sealed class ProfileManagerViewModel :
                 _ => CreateProfile(),
                 _ => CanApplyToCurrentProject);
 
+        UpdateCommand =
+            new RelayCommand(
+                _ => UpdateProfile(),
+                _ => CanUpdate);
+
         RenameCommand =
             new RelayCommand(
                 _ => RenameProfile(),
@@ -137,6 +142,9 @@ public sealed class ProfileManagerViewModel :
                 nameof(CanApply));
 
             OnPropertyChanged(
+                nameof(CanUpdate));
+
+            OnPropertyChanged(
                 nameof(SelectedProfileHeader));
 
             OnPropertyChanged(
@@ -188,11 +196,18 @@ public sealed class ProfileManagerViewModel :
             OnPropertyChanged(
                 nameof(CanApply));
 
+            OnPropertyChanged(
+                nameof(CanUpdate));
+
             RefreshCommandStates();
         }
     }
 
     public bool CanApply =>
+        HasSelectedProfile &&
+        CanApplyToCurrentProject;
+
+    public bool CanUpdate =>
         HasSelectedProfile &&
         CanApplyToCurrentProject;
 
@@ -291,6 +306,11 @@ public sealed class ProfileManagerViewModel :
         get;
     }
 
+    public RelayCommand UpdateCommand
+    {
+        get;
+    }
+
     public RelayCommand RenameCommand
     {
         get;
@@ -334,6 +354,13 @@ public sealed class ProfileManagerViewModel :
             filePath);
     }
 
+    public void ReportProfileUpdated(
+        string filePath)
+    {
+        RefreshProfiles(filePath);
+        Status = "Profile updated successfully";
+    }
+
     private void RefreshProfiles(
         string? preferredFilePath)
     {
@@ -356,8 +383,7 @@ public sealed class ProfileManagerViewModel :
 
             SelectedProfile =
                 FindProfileByPath(
-                    preferredFilePath)
-                ?? Profiles.FirstOrDefault();
+                    preferredFilePath);
 
             OnPropertyChanged(nameof(Header));
             OnPropertyChanged(nameof(HasProfiles));
@@ -460,6 +486,31 @@ public sealed class ProfileManagerViewModel :
                 details.NormalizedDescription,
                 details.NormalizedAuthor,
                 details.NormalizedProfileVersion));
+    }
+
+    private void UpdateProfile()
+    {
+        ModProfileSummaryModel? profile = SelectedProfile;
+        if (!CanUpdate || profile == null)
+        {
+            return;
+        }
+
+        bool confirmed = messageDialogService.ShowConfirmation(
+            $"Update ‘{profile.Name}’ from the current project?" +
+            Environment.NewLine + Environment.NewLine +
+            "The selected profile will be updated to reproduce the current configuration.",
+            "Update Profile");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        RaiseOperationRequested(
+            new ProfileManagerRequestModel(
+                ProfileManagerOperation.Update,
+                profile));
     }
 
     private void DuplicateProfile()
@@ -687,7 +738,7 @@ public sealed class ProfileManagerViewModel :
         }
 
         SelectedProfile =
-            Profiles.FirstOrDefault();
+            null;
 
         OnPropertyChanged(nameof(Header));
         OnPropertyChanged(nameof(HasProfiles));
@@ -735,6 +786,7 @@ public sealed class ProfileManagerViewModel :
     {
         RefreshCommand.NotifyCanExecuteChanged();
         CreateCommand.NotifyCanExecuteChanged();
+        UpdateCommand.NotifyCanExecuteChanged();
         RenameCommand.NotifyCanExecuteChanged();
         DuplicateCommand.NotifyCanExecuteChanged();
         ApplyCommand.NotifyCanExecuteChanged();

@@ -101,12 +101,18 @@ public class MainViewModel : ObservableObject
 
     private readonly GameplayPresetService gameplayPresetService;
 
+    private readonly RandomTraitExclusionsService
+        randomTraitExclusionsService;
+
     private readonly IFileDialogService fileDialogService;
 
     private readonly IMessageDialogService messageDialogService;
 
     private readonly HashSet<PropertyModel> trackedProperties =
         new();
+
+    private readonly EffectiveChangeCountService
+        effectiveChangeCountService = new();
 
     private ChangeSummaryWindow? changeSummaryWindow;
 
@@ -141,6 +147,9 @@ public class MainViewModel : ObservableObject
 
     private readonly Dictionary<ProgressionType, GameplayPresetDialog>
         gameplayPresetDialogs = new();
+
+    private RandomTraitExclusionsDialog?
+        randomTraitExclusionsDialog;
 
     private ProjectModel? project;
 
@@ -213,6 +222,7 @@ public class MainViewModel : ObservableObject
             rainFrequencyDialog?.Close();
             foreach (GameplayPresetDialog dialog in gameplayPresetDialogs.Values.ToArray())
                 dialog.Close();
+            randomTraitExclusionsDialog?.Close();
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
@@ -854,6 +864,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand GameplayPresetCommand { get; }
 
+    public RelayCommand RandomTraitExclusionsCommand { get; }
+
     public MainViewModel(
     JsonDataService jsonDataService,
     SearchService searchService,
@@ -1010,6 +1022,11 @@ public class MainViewModel : ObservableObject
                 progressionMutationService,
                 gameplayOperationStateService);
 
+        randomTraitExclusionsService =
+            new RandomTraitExclusionsService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
         this.editHistoryService.HistoryChanged +=
             OnHistoryChanged;
 
@@ -1139,6 +1156,11 @@ public class MainViewModel : ObservableObject
                     Project != null &&
                     parameter is ProgressionType type &&
                     GameplayPresetCatalog.IsSupported(type));
+
+        RandomTraitExclusionsCommand =
+            new RelayCommand(
+                _ => ExecuteRandomTraitExclusions(),
+                _ => Project != null);
     }
 
     private void OpenProject()
@@ -2539,6 +2561,128 @@ public class MainViewModel : ObservableObject
         if (key.HasValue) gameplayPresetDialogs.Remove(key.Value);
     }
 
+    private void ExecuteRandomTraitExclusions()
+    {
+        if (Project == null) return;
+        if (randomTraitExclusionsDialog != null)
+        {
+            RestoreAndActivateWindow(randomTraitExclusionsDialog);
+            return;
+        }
+
+        RandomTraitExclusionsDialog? dialog = null;
+        try
+        {
+            RandomTraitExclusionsDialogViewModel viewModel =
+                new(
+                    Project,
+                    randomTraitExclusionsService,
+                    localizationService);
+            dialog = new RandomTraitExclusionsDialog
+            {
+                Owner = GetMainWindowOwner(),
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnRandomTraitExclusionsApplyRequested;
+            dialog.DisplayFailed += OnRandomTraitExclusionsDisplayFailed;
+            dialog.Closed += OnRandomTraitExclusionsClosed;
+            ShowFeatureWindow(dialog);
+            randomTraitExclusionsDialog = dialog;
+            Status = "Random Trait Exclusions opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            randomTraitExclusionsDialog = null;
+            messageDialogService.ShowError(
+                "Random Trait Exclusions could not be opened." + Environment.NewLine +
+                Environment.NewLine + "The project was not changed.",
+                "Random Trait Exclusions");
+        }
+    }
+
+    private void OnRandomTraitExclusionsApplyRequested(
+        object? sender,
+        RandomTraitExclusionsApplyEventArgs e)
+    {
+        if (Project == null) return;
+        if (sender is RandomTraitExclusionsDialog feedbackDialog &&
+            feedbackDialog.DataContext is RandomTraitExclusionsDialogViewModel feedbackViewModel)
+            feedbackViewModel.ApplyFeedback.Clear();
+
+        IProjectOperation operation = new RandomTraitExclusionsOperation(
+            randomTraitExclusionsService,
+            e.AllowedTraitIds);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    "The exclusions could not be applied." + Environment.NewLine +
+                    Environment.NewLine + "No changes were made.",
+                    operation.Name);
+                return;
+            }
+
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name,
+                    result.MutationResult,
+                    projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+
+            if (sender is RandomTraitExclusionsDialog dialog &&
+                dialog.DataContext is RandomTraitExclusionsDialogViewModel viewModel)
+            {
+                viewModel.RefreshFromProject(Project, randomTraitExclusionsService);
+                if (result.MutationResult.WasModified)
+                    viewModel.ApplyFeedback.ShowApplied(
+                        "Random trait exclusions were updated.");
+                else
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+            }
+
+            Status = result.MutationResult.WasModified
+                ? "Random trait exclusions updated."
+                : "No changes were applied. These settings already match the current project.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The exclusions could not be applied." + Environment.NewLine +
+                Environment.NewLine + "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnRandomTraitExclusionsDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Random Trait Exclusions could not be displayed." + Environment.NewLine +
+            Environment.NewLine + "The project was not changed.",
+            "Random Trait Exclusions");
+    }
+
+    private void OnRandomTraitExclusionsClosed(object? sender, EventArgs e)
+    {
+        if (sender is not RandomTraitExclusionsDialog dialog) return;
+        dialog.ApplyRequested -= OnRandomTraitExclusionsApplyRequested;
+        dialog.DisplayFailed -= OnRandomTraitExclusionsDisplayFailed;
+        dialog.Closed -= OnRandomTraitExclusionsClosed;
+        if (ReferenceEquals(randomTraitExclusionsDialog, dialog))
+            randomTraitExclusionsDialog = null;
+    }
+
     private void ExecuteOverworldMovementSpeed(object? parameter)
     {
         if (Project == null) return;
@@ -3394,10 +3538,9 @@ public class MainViewModel : ObservableObject
                 Project);
         }
 
-        int modifiedCount =
-            trackedProperties.Count(
-                property =>
-                    property.IsModified);
+        int modifiedCount = Project == null
+            ? 0
+            : effectiveChangeCountService.Calculate(Project);
 
         ModifiedPropertyCount =
             modifiedCount;
@@ -3505,6 +3648,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         GameplayPresetCommand?
+            .NotifyCanExecuteChanged();
+
+        RandomTraitExclusionsCommand?
             .NotifyCanExecuteChanged();
     }
 
@@ -3725,6 +3871,10 @@ public class MainViewModel : ObservableObject
 
             case ProfileManagerOperation.Apply:
                 ApplyProfile(request);
+                break;
+
+            case ProfileManagerOperation.Update:
+                UpdateProfile(request);
                 break;
 
             case ProfileManagerOperation.Rename:
@@ -4326,6 +4476,61 @@ public class MainViewModel : ObservableObject
         Status =
             $"Selected: {result.CategoryName} " +
             $"→ {result.SettingName}";
+    }
+
+    private void UpdateProfile(
+        ProfileManagerRequestModel request)
+    {
+        if (Project == null)
+        {
+            messageDialogService.ShowWarning(
+                "Open a Wartales file before updating a profile.",
+                "Update Profile");
+            Status = "Profile update requires an open project.";
+            return;
+        }
+
+        ModProfileSummaryModel? selectedProfile = request.Profile;
+        if (selectedProfile == null)
+        {
+            return;
+        }
+
+        try
+        {
+            ModProfileModel existingProfile =
+                modProfileLibraryService.LoadProfile(selectedProfile);
+            ModProfileModel updatedProfile =
+                modProfileWorkflowService.CreateUpdatedProfile(
+                    Project,
+                    existingProfile,
+                    ApplicationVersion);
+            ModProfileSummaryModel updatedSummary =
+                modProfileLibraryService.UpdateProfile(
+                    selectedProfile,
+                    updatedProfile,
+                    candidate =>
+                        modProfileWorkflowService
+                            .ValidateUpdatedProfileCandidate(
+                                Project,
+                                existingProfile,
+                                candidate));
+
+            profileManagerViewModel?.ReportProfileUpdated(
+                updatedSummary.FilePath);
+            Status = $"Profile updated: {updatedSummary.Name}";
+        }
+        catch (Exception exception)
+        {
+            Status = "Profile update failed.";
+            messageDialogService.ShowError(
+                "The selected profile could not be updated." +
+                Environment.NewLine + Environment.NewLine +
+                "The existing profile was not changed." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Update Profile");
+        }
     }
 
     private void ActivateDetailedEditorWorkspace()

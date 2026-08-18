@@ -99,6 +99,7 @@ public sealed class ModificationSnapshotService
         {
             Name = property.Name,
             PropertyPath = property.EffectivePropertyPath,
+            OriginalPropertyExisted = !property.IsStructurallyAdded,
             OriginalValue =
                 property.GetOriginalValueSnapshot(),
             CurrentValue =

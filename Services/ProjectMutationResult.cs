@@ -17,6 +17,9 @@ public sealed class ProjectMutationResult
     private readonly List<PropertyModel> updatedProperties =
         new();
 
+    private readonly List<PropertyModel> removedProperties =
+        new();
+
     private readonly List<CreatedEntryRollbackRecord>
         createdEntryRollbackRecords =
             new();
@@ -33,6 +36,10 @@ public sealed class ProjectMutationResult
         propertyRollbackRecords =
             new();
 
+    private readonly List<RemovedPropertyRollbackRecord>
+        removedPropertyRollbackRecords =
+            new();
+
     private readonly List<GameplayOperationStateRollbackRecord>
         gameplayOperationStateRollbackRecords =
             new();
@@ -45,6 +52,9 @@ public sealed class ProjectMutationResult
 
     public IReadOnlyList<PropertyModel> UpdatedProperties =>
         updatedProperties;
+
+    public IReadOnlyList<PropertyModel> RemovedProperties =>
+        removedProperties;
 
     public IReadOnlyList<CreatedEntryRollbackRecord>
         CreatedEntryRollbackRecords =>
@@ -62,6 +72,10 @@ public sealed class ProjectMutationResult
         PropertyRollbackRecords =>
             propertyRollbackRecords;
 
+    public IReadOnlyList<RemovedPropertyRollbackRecord>
+        RemovedPropertyRollbackRecords =>
+            removedPropertyRollbackRecords;
+
     public IReadOnlyList<GameplayOperationStateRollbackRecord>
         GameplayOperationStateRollbackRecords =>
             gameplayOperationStateRollbackRecords;
@@ -70,6 +84,7 @@ public sealed class ProjectMutationResult
         createdEntries.Count > 0 ||
         createdProperties.Count > 0 ||
         updatedProperties.Count > 0 ||
+        removedProperties.Count > 0 ||
         createdJsonPropertyRollbackRecords.Count > 0 ||
         gameplayOperationStateRollbackRecords.Count > 0;
 
@@ -146,6 +161,21 @@ public sealed class ProjectMutationResult
                 previousValue));
     }
 
+    public void AddRemovedProperty(
+        EntryModel entry,
+        PropertyModel property)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(property);
+
+        removedProperties.Add(property);
+
+        removedPropertyRollbackRecords.Add(
+            new RemovedPropertyRollbackRecord(
+                entry,
+                property));
+    }
+
     public void AddGameplayOperationState(
         ProjectModel project,
         GameplayOperationStateModel? previousState,
@@ -178,6 +208,9 @@ public sealed class ProjectMutationResult
         updatedProperties.AddRange(
             other.updatedProperties);
 
+        removedProperties.AddRange(
+            other.removedProperties);
+
         createdEntryRollbackRecords.AddRange(
             other.createdEntryRollbackRecords);
 
@@ -189,6 +222,9 @@ public sealed class ProjectMutationResult
 
         propertyRollbackRecords.AddRange(
             other.propertyRollbackRecords);
+
+        removedPropertyRollbackRecords.AddRange(
+            other.removedPropertyRollbackRecords);
 
         gameplayOperationStateRollbackRecords.AddRange(
             other.gameplayOperationStateRollbackRecords);

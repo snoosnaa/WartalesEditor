@@ -56,11 +56,25 @@ public sealed class ChangeSummaryService
                          snapshotProperty in
                          snapshotSetting.Properties)
                 {
-                    PropertyModel? property =
-                        FindProperty(
+                    SnapshotPropertyResolutionResult resolution =
+                        new SnapshotPropertyResolutionService().Resolve(
                             setting,
                             snapshotProperty);
 
+                    if (resolution.Status ==
+                        SnapshotPropertyResolutionStatus.Ambiguous)
+                    {
+                        items.Add(
+                            new ChangeSummaryItemModel(
+                                category.Name,
+                                settingName,
+                                GetPropertyIdentity(snapshotProperty),
+                                FormatValue(snapshotProperty.OriginalValue),
+                                "Ambiguous legacy property; update is required"));
+                        continue;
+                    }
+
+                    PropertyModel? property = resolution.Property;
                     if (property == null)
                         continue;
 
@@ -80,7 +94,47 @@ public sealed class ChangeSummaryService
             }
         }
 
+        AddRandomTraitExclusionSummary(
+            project,
+            snapshot,
+            items);
+
         return items;
+    }
+
+    private static void AddRandomTraitExclusionSummary(
+        ProjectModel project,
+        ModificationSnapshotModel snapshot,
+        ICollection<ChangeSummaryItemModel> items)
+    {
+        if (!new EffectiveChangeCountService()
+                .HasUnrepresentedRandomTraitExclusionChange(project))
+            return;
+
+        GameplayOperationStateModel? state =
+            snapshot.GameplayOperationStates.SingleOrDefault(candidate =>
+                candidate.OperationType == ProgressionType.RandomTraitExclusions);
+        if (state == null)
+            return;
+
+        HashSet<string> owned = state.BaselineArray
+            .OfType<JObject>()
+            .Select(record => record.Value<string>("id") ?? string.Empty)
+            .ToHashSet(StringComparer.Ordinal);
+        bool represented = items.Any(item =>
+            string.Equals(item.CategoryName, "trait", StringComparison.Ordinal) &&
+            owned.Contains(item.Setting.Id) &&
+            string.Equals(item.PropertyName, "done", StringComparison.Ordinal));
+        if (represented)
+            return;
+
+        int allowed = RandomTraitExclusionsService.ReadAllowedIds(state).Count;
+        items.Add(new ChangeSummaryItemModel(
+            "Gameplay Tools",
+            "Random Trait Exclusions",
+            "Random eligibility",
+            "Game defaults",
+            $"{allowed:N0} of {state.ElementCount:N0} traits allowed"));
     }
 
     private static SheetModel? FindCategory(
@@ -181,23 +235,11 @@ public sealed class ChangeSummaryService
         return null;
     }
 
-    private static PropertyModel? FindProperty(
-        EntryModel setting,
-        ModificationSnapshotPropertyModel snapshotProperty)
-    {
-        List<PropertyModel> matches =
-            setting.Properties
-                .Where(property =>
-                    string.Equals(
-                        property.Name,
-                        snapshotProperty.Name,
-                        StringComparison.Ordinal))
-                .ToList();
-
-        return matches.Count == 1
-            ? matches[0]
-            : null;
-    }
+    private static string GetPropertyIdentity(
+        ModificationSnapshotPropertyModel property) =>
+        string.IsNullOrWhiteSpace(property.PropertyPath)
+            ? property.Name
+            : property.PropertyPath;
 
     private static string GetSettingName(
         EntryModel setting,

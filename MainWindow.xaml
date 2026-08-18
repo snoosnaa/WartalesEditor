@@ -417,6 +417,11 @@
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding GameplayProgressionCommand}"
                                     ToolTip="Configure character and profession XP requirements."/>
+                            <Button Content="Lectern Knowledge Gain"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.LecternKnowledgeGain}"
+                                    ToolTip="Adjust Knowledge earned from using the Lectern during rest."/>
                         </StackPanel>
                     </Border>
 
@@ -515,6 +520,15 @@
                                     Command="{Binding GameplayPresetCommand}"
                                     CommandParameter="{x:Static models:ProgressionType.RunStaminaRecovery}"
                                     ToolTip="Choose how quickly overworld running stamina recovers."/>
+                            <Button Content="Positive Random Traits"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding GameplayPresetCommand}"
+                                    CommandParameter="{x:Static models:ProgressionType.PositiveRandomTraits}"
+                                    ToolTip="Give future eligible procedural recruits two positive random traits. Existing units are unchanged."/>
+                            <Button Content="Random Trait Exclusions"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding RandomTraitExclusionsCommand}"
+                                    ToolTip="Choose which traits may appear for future recruits and other eligible procedural units. Existing units are unchanged."/>
                         </StackPanel>
                     </Border>
 

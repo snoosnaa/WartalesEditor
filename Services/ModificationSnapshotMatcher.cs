@@ -245,19 +245,11 @@ public sealed class ModificationSnapshotMatcher
         ICollection<ModificationMatchItemModel> results,
         bool usedLegacyMatching)
     {
-        List<PropertyModel> propertyMatches =
-            targetSetting.Properties
-                .Where(property =>
-                    string.IsNullOrWhiteSpace(snapshotProperty.PropertyPath)
-                        ? string.Equals(
-                            property.Name,
-                            snapshotProperty.Name,
-                            StringComparison.Ordinal)
-                        : string.Equals(
-                            property.EffectivePropertyPath,
-                            snapshotProperty.PropertyPath,
-                            StringComparison.Ordinal))
-                .ToList();
+        SnapshotPropertyResolutionResult resolution =
+            new SnapshotPropertyResolutionService().Resolve(
+                targetSetting,
+                snapshotProperty);
+        IReadOnlyList<PropertyModel> propertyMatches = resolution.Matches;
 
         if (propertyMatches.Count == 0)
         {
@@ -294,7 +286,9 @@ public sealed class ModificationSnapshotMatcher
         }
 
         string reason =
-            usedLegacyMatching
+            usedLegacyMatching ||
+            resolution.Status ==
+                SnapshotPropertyResolutionStatus.UniqueLegacyNameMatch
                 ? "Exact property match found using the " +
                   "legacy snapshot setting identifier."
                 : "Exact match found.";

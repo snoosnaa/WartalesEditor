@@ -24,5 +24,8 @@ public enum ProgressionType
     VendorRefresh,
     RubySapphireValue,
     TimeBetweenRests,
-    ResourceReplenishment
+    ResourceReplenishment,
+    LecternKnowledgeGain,
+    PositiveRandomTraits,
+    RandomTraitExclusions
 }

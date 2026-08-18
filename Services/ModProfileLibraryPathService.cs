@@ -11,8 +11,32 @@ public sealed class ModProfileLibraryPathService
     private const string ProfilesFolderName =
         "Profiles";
 
+    private readonly string? libraryDirectoryOverride;
+
+    public ModProfileLibraryPathService()
+    {
+    }
+
+    public ModProfileLibraryPathService(
+        string libraryDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(libraryDirectory))
+        {
+            throw new ArgumentException(
+                "A profile library directory is required.",
+                nameof(libraryDirectory));
+        }
+
+        libraryDirectoryOverride = Path.GetFullPath(libraryDirectory);
+    }
+
     public string GetLibraryDirectory()
     {
+        if (libraryDirectoryOverride != null)
+        {
+            return libraryDirectoryOverride;
+        }
+
         string documentsDirectory =
             Environment.GetFolderPath(
                 Environment.SpecialFolder.MyDocuments);

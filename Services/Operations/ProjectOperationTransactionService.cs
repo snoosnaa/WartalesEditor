@@ -37,6 +37,7 @@ public sealed class ProjectOperationTransactionService
 
         Rollback(
             mutationResult.PropertyRollbackRecords,
+            mutationResult.RemovedPropertyRollbackRecords,
             mutationResult.CreatedPropertyRollbackRecords,
             mutationResult.CreatedJsonPropertyRollbackRecords,
             mutationResult.CreatedEntryRollbackRecords,
@@ -55,8 +56,34 @@ public sealed class ProjectOperationTransactionService
         IReadOnlyList<GameplayOperationStateRollbackRecord>
             gameplayOperationStateRollbackRecords)
     {
+        Rollback(
+            propertyRollbackRecords,
+            Array.Empty<RemovedPropertyRollbackRecord>(),
+            createdPropertyRollbackRecords,
+            createdJsonPropertyRollbackRecords,
+            createdEntryRollbackRecords,
+            gameplayOperationStateRollbackRecords);
+    }
+
+    public void Rollback(
+        IReadOnlyList<PropertyRollbackRecord>
+            propertyRollbackRecords,
+        IReadOnlyList<RemovedPropertyRollbackRecord>
+            removedPropertyRollbackRecords,
+        IReadOnlyList<CreatedPropertyRollbackRecord>
+            createdPropertyRollbackRecords,
+        IReadOnlyList<CreatedJsonPropertyRollbackRecord>
+            createdJsonPropertyRollbackRecords,
+        IReadOnlyList<CreatedEntryRollbackRecord>
+            createdEntryRollbackRecords,
+        IReadOnlyList<GameplayOperationStateRollbackRecord>
+            gameplayOperationStateRollbackRecords)
+    {
         ArgumentNullException.ThrowIfNull(
             propertyRollbackRecords);
+
+        ArgumentNullException.ThrowIfNull(
+            removedPropertyRollbackRecords);
 
         ArgumentNullException.ThrowIfNull(
             createdPropertyRollbackRecords);
@@ -78,6 +105,13 @@ public sealed class ProjectOperationTransactionService
                 record.PreviousState,
                 record.ReplacementState.OperationType,
                 record.PreviousStateWasModified);
+        }
+
+        foreach (RemovedPropertyRollbackRecord record in
+                 removedPropertyRollbackRecords.Reverse())
+        {
+            RestoreRemovedProperty(
+                record);
         }
 
         foreach (PropertyRollbackRecord record in
@@ -123,11 +157,40 @@ public sealed class ProjectOperationTransactionService
         IReadOnlyList<GameplayOperationStateRollbackRecord>
             gameplayOperationStateRollbackRecords)
     {
+        Replay(
+            propertyRollbackRecords,
+            updatedPropertyValues,
+            Array.Empty<RemovedPropertyRollbackRecord>(),
+            createdPropertyRollbackRecords,
+            createdJsonPropertyRollbackRecords,
+            createdEntryRollbackRecords,
+            gameplayOperationStateRollbackRecords);
+    }
+
+    public void Replay(
+        IReadOnlyList<PropertyRollbackRecord>
+            propertyRollbackRecords,
+        IReadOnlyList<JToken>
+            updatedPropertyValues,
+        IReadOnlyList<RemovedPropertyRollbackRecord>
+            removedPropertyRollbackRecords,
+        IReadOnlyList<CreatedPropertyRollbackRecord>
+            createdPropertyRollbackRecords,
+        IReadOnlyList<CreatedJsonPropertyRollbackRecord>
+            createdJsonPropertyRollbackRecords,
+        IReadOnlyList<CreatedEntryRollbackRecord>
+            createdEntryRollbackRecords,
+        IReadOnlyList<GameplayOperationStateRollbackRecord>
+            gameplayOperationStateRollbackRecords)
+    {
         ArgumentNullException.ThrowIfNull(
             propertyRollbackRecords);
 
         ArgumentNullException.ThrowIfNull(
             updatedPropertyValues);
+
+        ArgumentNullException.ThrowIfNull(
+            removedPropertyRollbackRecords);
 
         ArgumentNullException.ThrowIfNull(
             createdPropertyRollbackRecords);
@@ -180,6 +243,13 @@ public sealed class ProjectOperationTransactionService
                     updatedPropertyValues[index]);
         }
 
+        foreach (RemovedPropertyRollbackRecord record in
+                 removedPropertyRollbackRecords)
+        {
+            RemoveRestoredProperty(
+                record);
+        }
+
         foreach (GameplayOperationStateRollbackRecord record in
                  gameplayOperationStateRollbackRecords)
         {
@@ -215,6 +285,128 @@ public sealed class ProjectOperationTransactionService
 
         project.IsGameplayOperationStateModified =
             stateWasModified;
+    }
+
+    private static void RestoreRemovedProperty(
+        RemovedPropertyRollbackRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        JProperty? sourceProperty =
+            record.Property.SourceProperty;
+
+        if (sourceProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Removed property '{record.PropertyPath}' is not " +
+                "connected to a source JSON property.");
+        }
+
+        if (record.Entry.Properties.Contains(record.Property) ||
+            sourceProperty.Parent != null)
+        {
+            throw new InvalidOperationException(
+                $"Removed property '{record.PropertyPath}' is " +
+                "already attached during rollback.");
+        }
+
+        if (record.Entry.Properties.Any(property =>
+                string.Equals(
+                    property.EffectivePropertyPath,
+                    record.PropertyPath,
+                    StringComparison.Ordinal)) ||
+            record.ParentObject.Property(sourceProperty.Name) != null)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{record.PropertyPath}' already " +
+                "exists during rollback.");
+        }
+
+        JProperty[] sourceProperties =
+            record.ParentObject.Properties().ToArray();
+
+        if (record.PropertyIndex > record.Entry.Properties.Count ||
+            record.SourcePropertyIndex > sourceProperties.Length)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{record.PropertyPath}' cannot be " +
+                "restored at its original position.");
+        }
+
+        if (record.SourcePropertyIndex == sourceProperties.Length)
+        {
+            record.ParentObject.Add(sourceProperty);
+        }
+        else
+        {
+            sourceProperties[record.SourcePropertyIndex]
+                .AddBeforeSelf(sourceProperty);
+        }
+
+        try
+        {
+            record.Entry.Properties.Insert(
+                record.PropertyIndex,
+                record.Property);
+        }
+        catch
+        {
+            sourceProperty.Remove();
+            throw;
+        }
+
+        if (record.Property.IsModified !=
+            record.PropertyWasModified)
+        {
+            record.Entry.Properties.Remove(record.Property);
+            sourceProperty.Remove();
+
+            throw new InvalidOperationException(
+                $"Property path '{record.PropertyPath}' did not " +
+                "restore its prior modification state.");
+        }
+    }
+
+    private static void RemoveRestoredProperty(
+        RemovedPropertyRollbackRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        JProperty? sourceProperty =
+            record.Property.SourceProperty;
+
+        if (sourceProperty == null ||
+            !ReferenceEquals(
+                sourceProperty.Parent,
+                record.ParentObject) ||
+            !record.Entry.Properties.Contains(record.Property) ||
+            record.Property.IsModified != record.PropertyWasModified)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{record.PropertyPath}' is not in " +
+                "the expected state during replay.");
+        }
+
+        int propertyIndex =
+            record.Entry.Properties.IndexOf(record.Property);
+
+        try
+        {
+            record.Entry.Properties.RemoveAt(propertyIndex);
+
+            sourceProperty.Remove();
+        }
+        catch
+        {
+            if (!record.Entry.Properties.Contains(record.Property))
+            {
+                record.Entry.Properties.Insert(
+                    propertyIndex,
+                    record.Property);
+            }
+
+            throw;
+        }
     }
 
     private static void RemoveCreatedProperty(

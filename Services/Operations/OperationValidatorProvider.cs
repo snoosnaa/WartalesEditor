@@ -33,6 +33,9 @@ public sealed class OperationValidatorProvider
     private readonly RainFrequencyOperationValidator
         rainFrequencyValidator = new();
 
+    private readonly RandomTraitExclusionsOperationValidator
+        randomTraitExclusionsValidator = new();
+
     private readonly IReadOnlyDictionary<ProgressionType, IProjectOperationValidator>
         gameplayPresetValidators =
             new Dictionary<ProgressionType, IProjectOperationValidator>
@@ -50,6 +53,8 @@ public sealed class OperationValidatorProvider
                 [ProgressionType.WorkshopMaterials] = new WorkshopMaterialsOperationValidator(),
                 [ProgressionType.VendorRefresh] = new VendorRefreshOperationValidator(),
                 [ProgressionType.ResourceReplenishment] = new ResourceReplenishmentOperationValidator(),
+                [ProgressionType.LecternKnowledgeGain] = new LecternKnowledgeGainOperationValidator(),
+                [ProgressionType.PositiveRandomTraits] = new PositiveRandomTraitsOperationValidator(),
                 [ProgressionType.RubySapphireValue] = new RubySapphireValueOperationValidator(),
                 [ProgressionType.TimeBetweenRests] = new TimeBetweenRestsOperationValidator()
             };
@@ -94,6 +99,9 @@ public sealed class OperationValidatorProvider
 
                 RainFrequencyOperation =>
                     rainFrequencyValidator,
+
+                RandomTraitExclusionsOperation =>
+                    randomTraitExclusionsValidator,
 
                 GameplayPresetOperation presetOperation =>
                     gameplayPresetValidators[presetOperation.OperationType],

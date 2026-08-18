@@ -1,0 +1,91 @@
+<Window x:Class="WartalesEditor.Views.RandomTraitExclusionsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Random Trait Exclusions"
+        Width="900" Height="680"
+        MinWidth="700" MinHeight="540"
+        SizeToContent="Manual"
+        WindowState="Normal"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False">
+    <Grid Margin="{StaticResource GameplayDialogOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Choose which traits may appear when Wartales randomly generates traits for future recruits and other eligible procedural units. Existing units are unchanged."
+                       Style="{StaticResource DialogExplanationTextStyle}"/>
+            <TextBlock Text="Checked traits are allowed. Unchecked traits are excluded from future random generation."
+                       Margin="0,8,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,14,0,0">
+            <TextBlock Text="Search traits..." FontWeight="SemiBold"/>
+            <TextBox Margin="0,5,0,0" Padding="8,6"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Search traits by name"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="{Binding PositiveHeading}">
+                <ListBox ItemsSource="{Binding PositiveTraitsView}"
+                         BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsAllowed, Mode=TwoWay}"
+                                      Content="{Binding DisplayName}" Padding="4"
+                                      ToolTip="{Binding StatusNote}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+            <GroupBox Grid.Column="2" Header="{Binding NegativeHeading}">
+                <ListBox ItemsSource="{Binding NegativeTraitsView}"
+                         BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsAllowed, Mode=TwoWay}"
+                                      Content="{Binding DisplayName}" Padding="4"
+                                      ToolTip="{Binding StatusNote}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Margin="{StaticResource DialogActionRowSpacing}">
+            <Border Style="{StaticResource GameplayApplyFeedbackPanelStyle}" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="{Binding ApplyFeedback.Heading}"
+                               Style="{StaticResource GameplayApplyFeedbackHeadingStyle}"/>
+                    <TextBlock Text="{Binding ApplyFeedback.Message}"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <Button Content="Select All" Click="SelectAllButton_Click"/>
+                    <Button Content="Clear All" Margin="8,0,0,0" Click="ClearAllButton_Click"/>
+                    <Button Content="Restore Game Defaults" Margin="8,0,0,0"
+                            Click="RestoreDefaultsButton_Click"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Apply" Style="{StaticResource GameplayApplyButtonStyle}"
+                            IsEnabled="{Binding CanApply}" Click="ApplyButton_Click"/>
+                    <Button Content="Close" Style="{StaticResource GameplayCloseButtonStyle}"
+                            IsCancel="True" Click="CloseButton_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </StackPanel>
+    </Grid>
+</Window>

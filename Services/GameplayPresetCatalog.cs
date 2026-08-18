@@ -210,6 +210,34 @@ public static class GameplayPresetCatalog
                 Preset("VeryFast", "Very Fast", "5× replenishment", "Renewable world resources replenish at five times their normal rates.", 0.75, 1.5, 5.0)),
 
             Definition(
+                ProgressionType.LecternKnowledgeGain,
+                "Lectern Knowledge Gain",
+                "Adjust the Knowledge earned from using the Lectern during rest.",
+                new[]
+                {
+                    Scalar(
+                        "constant", "GainOnLecternRest", "value",
+                        GameplayPresetValueSemantics.BaselineScaled)
+                },
+                Preset("Vanilla", "Vanilla", "1×", "Lectern Knowledge progress uses the rate captured from the current game data during qualifying rests.", 25),
+                Preset("Increased", "Increased", "2×", "Lectern Knowledge progress is earned at twice the current game rate during qualifying rests.", 50),
+                Preset("High", "High", "3×", "Lectern Knowledge progress is earned at three times the current game rate during qualifying rests.", 75),
+                Preset("VeryHigh", "Very High", "5×", "Lectern Knowledge progress is earned at five times the current game rate during qualifying rests.", 125)),
+
+            Definition(
+                ProgressionType.PositiveRandomTraits,
+                "Positive Random Traits",
+                "New random recruits and other eligible procedural units receive two positive traits instead of mixed or negative results. Existing units are unchanged.",
+                new[]
+                {
+                    Scalar("constant", "RandomTrait1Positive1Negative", "value"),
+                    Scalar("constant", "RandomTrait2Positive", "value"),
+                    Scalar("constant", "RandomTrait1Positive", "value")
+                },
+                Preset("Vanilla", "Vanilla", "Captured game settings", "Restores the random-trait probabilities captured from the current game data. Existing units are unchanged.", 0.25, 0.25, 0.25),
+                Preset("PositiveOnly", "Positive Only", "Two positive traits", "Future random recruits and other eligible procedural units use the game's two-positive-trait generation branch. Existing units are unchanged.", 0, 1, 0)),
+
+            Definition(
                 ProgressionType.RubySapphireValue,
                 "Ruby & Sapphire Value",
                 "Changes the base economy value of Ruby and Sapphire. Other valuables are unchanged.",

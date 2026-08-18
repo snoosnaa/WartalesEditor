@@ -4,7 +4,7 @@ Application Version: 0.10.0 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-08-16
+Last Updated: 2026-08-18
 
 Purpose
 
@@ -55,6 +55,87 @@ The editing platform and supporting architecture are considered stable.
 Future development is focused primarily on expanding gameplay tools andimproving the player experience.
 
 Current Milestone
+
+Final Feature Batch
+
+Current phase:
+
+The Final Feature Batch is implemented, verified, Engineering reviewed, Project
+Owner accepted, and documentation reconciled. Update Profile and corrected
+effective accounting passed Renewed Focused Engineering Review and Project
+Owner acceptance. Lectern Knowledge Gain and Positive Random Traits were each
+tested, confirmed working, and accepted by the Project Owner. Random Trait
+Exclusions passed renewed focused Engineering Review and Project Owner
+interactive acceptance, with additional positive runtime evidence.
+
+Lectern Knowledge Gain is available under Progression with 1×, 2×, 3×, and
+5× captured-baseline presets for `GainOnLecternRest`. Positive Random Traits is
+available under Party and atomically controls the three current random-trait
+probability bands; Positive Only uses `0 / 1 / 0` and affects only future
+eligible procedural generation. Profile Manager can explicitly update the
+selected managed profile by reconciling its prior effective-path records with
+the current intended project. Baseline-accepted records remain represented,
+intentional restoration to profile-stored originals removes obsolete records, and identity
+metadata plus original creation time are preserved. A staged candidate must
+reload and pass independent retained-history, current-delta, uniqueness,
+metadata, Gameplay Operation State, and additive-request invariants before
+atomic same-path replacement.
+
+Random Trait Exclusions is now available under Party. It dynamically discovers
+compatible Starting/Recruitment traits, groups them as Positive and Negative,
+and controls future random eligibility through `done=false` exclusions. Exact
+true, false, and absent baselines are retained; absent restoration uses the
+approved property-removal primitive. Operation state, atomic Undo/Redo,
+profiles, Update Profile reconciliation, update compatibility, and removal-only
+Review Changes truth are covered by repository-backed verification. The focused
+correction pass adds full connected-target preflight, explicit stable source-ID
+requirements, operation-specific persisted-state attribution, exact requested/
+result validation, and integrated same-file Update Profile replay. A subsequent
+focused correction fixes the real-data dialog-open failure by deriving trait
+groups from ordered sheet-level separator anchors rather than the unrelated
+optional numeric `gen` field. State fingerprints now retain actual separator
+group identity, and realistic coverage includes full mutation-free ViewModel
+construction plus malformed separator/candidate boundaries. No architecture
+changed. Project Owner runtime evidence for Random Trait Exclusions is positive:
+during an over-one-hour game session, no recruit received a trait that had been
+disabled. This observation supports the configured behavior but is not
+statistical proof that an excluded trait can never occur. Its renewed focused
+Engineering Review passed with non-blocking notes, and Project Owner interactive
+acceptance confirmed that the dialog opened, the feature applied, exactly five
+traits were unchecked, and exactly five changes were reported.
+
+Repository-backed verification covers gameplay baseline restoration, scaling,
+validation, idempotence, rollback, Undo/Redo, operation-state and profile/
+snapshot persistence, plus managed profile path enforcement, baseline-accepted
+profile reconciliation, metadata preservation, current-format rewriting,
+profile-relative reconciliation across save/reload, failed-validation
+preservation, shared modern/legacy path resolution, and unified live-leaf plus
+supported-removal accounting. Independent candidate validation no longer calls
+the high-level reconciliation path. Historical structural presence is distinct
+from JSON `null`, and gameplay-state compatibility is refreshed observationally
+before Update Profile capture. Update Profile uses the selected profile plus the
+current editing delta and does not require a pristine CDB. Arbitrary deletion of
+a previously existing property is not a profile capability. The build passes
+with zero warnings and zero errors. The Renewed Focused Engineering Review
+passed with non-blocking notes. Project Owner testing then applied a known
+non-damaged profile, saved and reloaded the CDB, made further changes, and
+updated the same profile successfully. Its effective count increased from 633
+to 636, and validation reported no issues.
+
+Review Changes displayed the correct result during that workflow. The prior
+six-change discrepancy for the distinct Firecamp, FirecampT2, and FirecampT3
+`tool.height`/`tool.width` paths was no longer present. The owner subsequently
+applied the full intended 645-effective-change configuration, saved a new
+profile, launched Wartales, started a game, and played for more than one hour
+without obvious instability attributable to the editor configuration.
+
+The Project Owner subsequently confirmed that Lectern Knowledge Gain and
+Positive Random Traits were tested, are working, and are accepted. The
+previously damaged approximately 554-change `All Mods.wtprofile` is not
+considered repaired; the 645-change configured state was saved as a new
+profile.
+
+Previous milestone:
 
 Class A Gameplay Expansion
 
@@ -285,11 +366,11 @@ Current Roadmap
 
 Immediate Priorities
 
-Lectern Knowledge Gain
+Final verification and commit/push checkpoint for the accepted Final Feature
+Batch
 
-Update Existing Profile
-
-Positive Random Traits
+Separate bounded Reset to Game Default authority investigation after that
+checkpoint
 
 Bounded QuickBMS/package-replacement experiments, followed by integrated
 Import / Install / Restore
@@ -400,9 +481,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Implement the next authorized feature batch: Lectern Knowledge Gain, Update
-Existing Profile, and Positive Random Traits. Integrated Import / Install /
-Restore investigation is complete, but QuickBMS experiments, integration, and
+Complete the final verification and commit/push checkpoint for the accepted and
+reconciled Final Feature Batch. The next authorized engineering activity after
+that checkpoint is the separate bounded Reset to Game Default authority
+investigation; it has not started. Integrated Import / Install / Restore and
 Update Survival have not started.
 
 Document Maintenance

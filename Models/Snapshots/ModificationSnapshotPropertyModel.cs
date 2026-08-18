@@ -10,6 +10,9 @@ public sealed class ModificationSnapshotPropertyModel
     public string PropertyPath { get; init; }
         = string.Empty;
 
+    public bool? OriginalPropertyExisted { get; init; }
+        = null;
+
     public JToken OriginalValue { get; init; }
         = JValue.CreateNull();
 

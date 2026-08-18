@@ -49,7 +49,7 @@ public sealed class ChangeSummaryViewModel :
         NavigateCommand =
             new RelayCommand(
                 _ => NavigateToSelectedItem(),
-                _ => SelectedItem != null);
+                _ => SelectedItem?.CanNavigate == true);
 
         Refresh(items);
     }

@@ -14,10 +14,17 @@ public sealed class ModProfileService
     private readonly ProfileOperationCaptureService
         operationCaptureService;
 
+    private readonly ProfileSnapshotReconciliationService
+        reconciliationService;
+
+    private readonly GameplayOperationStateService
+        gameplayOperationStateService = new();
+
     public ModProfileService()
         : this(
             new ModificationSnapshotService(),
-            CreateDefaultCaptureService())
+            ProfileOperationCaptureService.CreateDefault(),
+            new ProfileSnapshotReconciliationService())
     {
     }
 
@@ -25,7 +32,8 @@ public sealed class ModProfileService
         ModificationSnapshotService snapshotService)
         : this(
             snapshotService,
-            CreateDefaultCaptureService())
+            ProfileOperationCaptureService.CreateDefault(),
+            new ProfileSnapshotReconciliationService())
     {
     }
 
@@ -33,6 +41,17 @@ public sealed class ModProfileService
         ModificationSnapshotService snapshotService,
         ProfileOperationCaptureService
             operationCaptureService)
+        : this(
+            snapshotService,
+            operationCaptureService,
+            new ProfileSnapshotReconciliationService())
+    {
+    }
+
+    public ModProfileService(
+        ModificationSnapshotService snapshotService,
+        ProfileOperationCaptureService operationCaptureService,
+        ProfileSnapshotReconciliationService reconciliationService)
     {
         this.snapshotService =
             snapshotService
@@ -43,6 +62,11 @@ public sealed class ModProfileService
             operationCaptureService
             ?? throw new ArgumentNullException(
                 nameof(operationCaptureService));
+
+        this.reconciliationService =
+            reconciliationService
+            ?? throw new ArgumentNullException(
+                nameof(reconciliationService));
     }
 
     public ModProfileModel CreateProfile(
@@ -127,6 +151,57 @@ public sealed class ModProfileService
         return profile.Snapshot;
     }
 
+    public ModProfileModel CreateUpdatedProfile(
+        ProjectModel project,
+        ModProfileModel existingProfile,
+        string editorVersion = "")
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(existingProfile);
+
+        ModProfileMetadataModel existingMetadata =
+            existingProfile.Metadata
+            ?? throw new InvalidOperationException(
+                "The selected profile does not contain metadata.");
+
+        gameplayOperationStateService.ValidateProjectStates(project);
+
+        ModProfileModel captured = CreateProfile(
+            project,
+            existingMetadata.Name,
+            existingMetadata.Description,
+            existingMetadata.Author,
+            existingMetadata.ProfileVersion,
+            editorVersion);
+
+        reconciliationService.Reconcile(
+            project,
+            existingProfile.Snapshot,
+            captured.Snapshot);
+
+        DateTimeOffset modifiedAt = captured.Metadata.ModifiedAtUtc <
+            existingMetadata.CreatedAtUtc
+                ? existingMetadata.CreatedAtUtc
+                : captured.Metadata.ModifiedAtUtc;
+
+        return new ModProfileModel
+        {
+            FormatVersion = ModProfileFormat.CurrentVersion,
+            Metadata = new ModProfileMetadataModel
+            {
+                Name = existingMetadata.Name,
+                Description = existingMetadata.Description,
+                Author = existingMetadata.Author,
+                ProfileVersion = existingMetadata.ProfileVersion,
+                CreatedAtUtc = existingMetadata.CreatedAtUtc,
+                ModifiedAtUtc = modifiedAt,
+                Tags = new(existingMetadata.Tags)
+            },
+            Snapshot = captured.Snapshot,
+            OperationRequests = captured.OperationRequests
+        };
+    }
+
     public ModProfileModel
         UpdateMetadata(
             ModProfileModel profile,
@@ -201,20 +276,4 @@ public sealed class ModProfileService
         };
     }
 
-    private static ProfileOperationCaptureService
-        CreateDefaultCaptureService()
-    {
-        ProjectMutationService mutationService =
-            new();
-
-        ContentCreationService contentCreationService =
-            new(mutationService);
-
-        return new ProfileOperationCaptureService(
-            new OperationValidatorProvider(),
-            new AddCampFacilitiesOperation(
-                contentCreationService),
-            new UpgradeAllEquipmentOperation(
-                contentCreationService));
-    }
 }

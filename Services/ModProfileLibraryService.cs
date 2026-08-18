@@ -123,6 +123,88 @@ public sealed class ModProfileLibraryService
             destinationFile);
     }
 
+    public ModProfileModel LoadProfile(
+        ModProfileSummaryModel profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        string profileFile = GetValidatedLibraryProfilePath(profile);
+        if (!File.Exists(profileFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                profileFile);
+        }
+
+        return serializationService.Load(profileFile);
+    }
+
+    public ModProfileSummaryModel UpdateProfile(
+        ModProfileSummaryModel selectedProfile,
+        ModProfileModel updatedProfile)
+    {
+        ArgumentNullException.ThrowIfNull(selectedProfile);
+        ArgumentNullException.ThrowIfNull(updatedProfile);
+
+        throw new InvalidOperationException(
+            "Managed profile replacement requires semantic candidate " +
+            "validation through the profile workflow.");
+    }
+
+    public ModProfileSummaryModel UpdateProfile(
+        ModProfileSummaryModel selectedProfile,
+        ModProfileModel updatedProfile,
+        Action<ModProfileModel> validateCandidate)
+    {
+        ArgumentNullException.ThrowIfNull(selectedProfile);
+        ArgumentNullException.ThrowIfNull(updatedProfile);
+        ArgumentNullException.ThrowIfNull(validateCandidate);
+
+        string profileFile = GetValidatedLibraryProfilePath(selectedProfile);
+        if (!File.Exists(profileFile))
+        {
+            throw new FileNotFoundException(
+                "The selected profile file could not be found.",
+                profileFile);
+        }
+
+        if (!string.Equals(
+                selectedProfile.Name,
+                updatedProfile.Metadata.Name,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The updated profile must preserve the selected profile name.");
+        }
+
+        string candidateFile =
+            profileFile + ".update-" + Guid.NewGuid().ToString("N");
+
+        try
+        {
+            serializationService.Save(updatedProfile, candidateFile);
+            ModProfileModel reloadedCandidate =
+                serializationService.Load(candidateFile);
+
+            validateCandidate(reloadedCandidate);
+            ModProfileSummaryModel candidateSummary =
+                CreateSummary(reloadedCandidate, profileFile);
+
+            File.Replace(
+                candidateFile,
+                profileFile,
+                destinationBackupFileName: null,
+                ignoreMetadataErrors: true);
+
+            return candidateSummary;
+        }
+        finally
+        {
+            TryDeleteFile(candidateFile);
+            TryDeleteFile(candidateFile + ".tmp");
+        }
+    }
+
     public ModProfileSummaryModel RenameProfile(
         ModProfileSummaryModel profile,
         string newName,
@@ -621,6 +703,22 @@ public sealed class ModProfileLibraryService
                 $"Profile files must use the " +
                 $"'{ModProfileFormat.DefaultFileExtension}' " +
                 "file extension.");
+        }
+    }
+
+    private static void TryDeleteFile(
+        string fileName)
+    {
+        try
+        {
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+        }
+        catch
+        {
+            // Preserve the update or validation exception.
         }
     }
 

@@ -33,6 +33,10 @@ public sealed class ModProfileWorkflowService
         effectiveChangeCountService =
             new();
 
+    private readonly UpdatedProfileCandidateValidationService
+        updatedProfileCandidateValidationService =
+            new();
+
     public ModProfileWorkflowService()
         : this(
             new ModProfileService(),
@@ -116,6 +120,44 @@ public sealed class ModProfileWorkflowService
             author,
             profileVersion,
             editorVersion);
+    }
+
+    public ModProfileModel CreateUpdatedProfile(
+        ProjectModel project,
+        ModProfileModel existingProfile,
+        string editorVersion = "")
+    {
+        return profileService.CreateUpdatedProfile(
+            project,
+            existingProfile,
+            editorVersion);
+    }
+
+    public void ValidateUpdatedProfileCandidate(
+        ProjectModel intendedProject,
+        ModProfileModel candidate)
+    {
+        ArgumentNullException.ThrowIfNull(intendedProject);
+        ArgumentNullException.ThrowIfNull(candidate);
+
+        throw new InvalidOperationException(
+            "Update Profile validation requires the selected existing " +
+            "profile as reconciliation input.");
+    }
+
+    public void ValidateUpdatedProfileCandidate(
+        ProjectModel intendedProject,
+        ModProfileModel existingProfile,
+        ModProfileModel candidate)
+    {
+        ArgumentNullException.ThrowIfNull(intendedProject);
+        ArgumentNullException.ThrowIfNull(existingProfile);
+        ArgumentNullException.ThrowIfNull(candidate);
+
+        updatedProfileCandidateValidationService.Validate(
+            intendedProject,
+            existingProfile,
+            candidate);
     }
 
     public void Save(

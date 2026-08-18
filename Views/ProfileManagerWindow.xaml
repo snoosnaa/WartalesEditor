@@ -46,6 +46,11 @@
 
                 <Button Style="{StaticResource UtilityActionButtonStyle}"
                         Margin="8,0,0,0"
+                        Command="{Binding UpdateCommand}"
+                        Content="Update Profile"/>
+
+                <Button Style="{StaticResource UtilityActionButtonStyle}"
+                        Margin="8,0,0,0"
                         Command="{Binding RenameCommand}"
                         Content="Rename"/>
 

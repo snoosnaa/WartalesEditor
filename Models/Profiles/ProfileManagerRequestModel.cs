@@ -76,6 +76,7 @@ public sealed class ProfileManagerRequestModel
                 break;
 
             case ProfileManagerOperation.Apply:
+            case ProfileManagerOperation.Update:
                 ValidateSelectedProfile();
                 break;
 

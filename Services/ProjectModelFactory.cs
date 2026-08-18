@@ -241,11 +241,10 @@ public sealed class ProjectModelFactory
                     propertyPath,
 
                 SourceProperty =
-                    sourceProperty,
-
-                Value =
-                    sourceProperty.Value.ToString()
+                    sourceProperty
             };
+
+        propertyModel.InitializeValueFromSource();
 
         switch (creationMode)
         {

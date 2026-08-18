@@ -367,6 +367,162 @@ public sealed class ProjectMutationService
         return result;
     }
 
+    public ProjectMutationResult RemovePropertyByPath(
+        EntryModel entry,
+        string propertyPath)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(
+            propertyPath);
+
+        if (entry.SourceEntry == null)
+        {
+            throw new InvalidOperationException(
+                $"Entry '{entry.Id}' is not connected " +
+                "to a source JSON object.");
+        }
+
+        PropertyModel[] matchingProperties =
+            entry.Properties
+                .Where(property =>
+                    string.Equals(
+                        property.EffectivePropertyPath,
+                        propertyPath,
+                        StringComparison.Ordinal))
+                .ToArray();
+
+        if (matchingProperties.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{propertyPath}' was not found " +
+                $"on entry '{entry.Id}'.");
+        }
+
+        if (matchingProperties.Length > 1)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{propertyPath}' is ambiguous " +
+                $"on entry '{entry.Id}'.");
+        }
+
+        PropertyModel property =
+            matchingProperties[0];
+
+        if (property.SourceProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{propertyPath}' is not connected " +
+                "to a source JSON property.");
+        }
+
+        JProperty sourceProperty =
+            ResolveSourcePropertyByPath(
+                entry.SourceEntry,
+                propertyPath);
+
+        if (!ReferenceEquals(
+                property.SourceProperty,
+                sourceProperty))
+        {
+            throw new InvalidOperationException(
+                $"Property model '{propertyPath}' is not connected " +
+                "to the matching source JSON property.");
+        }
+
+        if (sourceProperty.Value.Type ==
+            JTokenType.Object)
+        {
+            throw new InvalidOperationException(
+                $"Property path '{propertyPath}' is an object " +
+                "container and cannot be removed by the " +
+                "known-property removal API.");
+        }
+
+        ProjectMutationResult result =
+            new();
+
+        result.AddRemovedProperty(
+            entry,
+            property);
+
+        int propertyIndex =
+            entry.Properties.IndexOf(property);
+
+        try
+        {
+            entry.Properties.RemoveAt(
+                propertyIndex);
+
+            sourceProperty.Remove();
+        }
+        catch
+        {
+            if (!entry.Properties.Contains(property))
+            {
+                entry.Properties.Insert(
+                    propertyIndex,
+                    property);
+            }
+
+            throw;
+        }
+
+        return result;
+    }
+
+    private static JProperty ResolveSourcePropertyByPath(
+        JObject sourceEntry,
+        string propertyPath)
+    {
+        string[] pathSegments =
+            propertyPath.Split(
+                '.',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        if (pathSegments.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "A property path must contain at least one path segment.");
+        }
+
+        JObject parentObject =
+            sourceEntry;
+
+        string currentPath =
+            string.Empty;
+
+        for (int index = 0;
+             index < pathSegments.Length - 1;
+             index++)
+        {
+            string segment =
+                pathSegments[index];
+
+            currentPath =
+                string.IsNullOrEmpty(currentPath)
+                    ? segment
+                    : $"{currentPath}.{segment}";
+
+            if (parentObject[segment] is not JObject nestedObject)
+            {
+                throw new InvalidOperationException(
+                    $"Property path '{propertyPath}' could not be " +
+                    $"resolved because '{currentPath}' is missing " +
+                    "or is not a JSON object.");
+            }
+
+            parentObject =
+                nestedObject;
+        }
+
+        return parentObject.Property(pathSegments[^1])
+            ?? throw new InvalidOperationException(
+                $"Source JSON property path '{propertyPath}' was " +
+                "not found.");
+    }
+
     private void ValidateObjectMutation(
         EntryModel entry,
         string[] pathSegments,

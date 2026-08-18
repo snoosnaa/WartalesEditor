@@ -225,6 +225,16 @@ public sealed class GameplayPresetService
                     values,
                     "The captured resource replenishment categories are not supported.");
                 break;
+            case ProgressionType.LecternKnowledgeGain:
+                RequireFinitePositive(
+                    values,
+                    "The captured Lectern Knowledge value is not supported.");
+                break;
+            case ProgressionType.PositiveRandomTraits:
+                ValidateTraitProbabilities(
+                    values,
+                    "The captured random-trait probabilities are not supported.");
+                break;
             case ProgressionType.BattleCameraZoom:
                 RequirePositive(values);
                 Require(
@@ -318,6 +328,16 @@ public sealed class GameplayPresetService
                 RequireFinitePositiveOrdered(
                     values,
                     "Resource replenishment categories must preserve their relative order.");
+                break;
+            case ProgressionType.LecternKnowledgeGain:
+                RequireFinitePositive(
+                    values,
+                    "Lectern Knowledge gain must remain finite and positive.");
+                break;
+            case ProgressionType.PositiveRandomTraits:
+                ValidateTraitProbabilities(
+                    values,
+                    "Random-trait probabilities must remain between 0 and 1 with a total no greater than 1.");
                 break;
             case ProgressionType.RubySapphireValue:
                 RequireIntegers(values, 0, 100000);
@@ -566,6 +586,20 @@ public sealed class GameplayPresetService
 
     private static void RequirePositive(IEnumerable<double> values) =>
         Require(values.All(x => x > 0), "Every selected value must be positive.");
+
+    private static void RequireFinitePositive(
+        IEnumerable<double> values,
+        string message) =>
+        Require(values.All(x => double.IsFinite(x) && x > 0), message);
+
+    private static void ValidateTraitProbabilities(
+        IReadOnlyList<double> values,
+        string message) =>
+        Require(
+            values.Count == 3 &&
+            values.All(x => double.IsFinite(x) && x >= 0 && x <= 1) &&
+            values.Sum() <= 1.0000001,
+            message);
 
     private static void RequireFinitePositiveOrdered(
         IReadOnlyList<double> values,

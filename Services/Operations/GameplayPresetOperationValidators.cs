@@ -120,6 +120,14 @@ internal sealed class ResourceReplenishmentOperationValidator
     : GameplayPresetOperationValidatorBase
 { protected override ProgressionType OperationType => ProgressionType.ResourceReplenishment; }
 
+internal sealed class LecternKnowledgeGainOperationValidator
+    : GameplayPresetOperationValidatorBase
+{ protected override ProgressionType OperationType => ProgressionType.LecternKnowledgeGain; }
+
+internal sealed class PositiveRandomTraitsOperationValidator
+    : GameplayPresetOperationValidatorBase
+{ protected override ProgressionType OperationType => ProgressionType.PositiveRandomTraits; }
+
 internal sealed class RubySapphireValueOperationValidator
     : GameplayPresetOperationValidatorBase
 { protected override ProgressionType OperationType => ProgressionType.RubySapphireValue; }

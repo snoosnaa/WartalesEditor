@@ -148,10 +148,66 @@ The architecture distinguishes between:
 
 - modified existing properties
 - newly created structural properties
+- removed known properties
 
 Existing properties continue to enforce compatible JSON token types.
 
 Structurally created properties are validated through operation validation and generic schema validation instead of original-value token comparison.
+
+Known scalar or array-valued properties may be removed only through
+`ProjectMutationService.RemovePropertyByPath`. The path must resolve to exactly
+one existing `PropertyModel`, and that model must reference the matching source
+`JProperty`. Object-valued properties are rejected explicitly before mutation;
+array elements are not addressable by this API. A removal retains the exact
+model, source property, parent object, model/source indices, effective path,
+and prior `IsModified` state.
+
+Rollback and Undo reattach the original instances at their original positions;
+Redo detaches those same instances again. Empty parent objects are preserved.
+This capability does not authorize object removal, array-element removal, entry
+removal, recursive pruning, or generalized JSON deletion.
+
+---
+
+# Profile Update Integrity
+
+Updating a managed profile reconciles the selected profile's prior snapshot
+with the current project by category, stable entry ID, and
+`EffectivePropertyPath`. `PropertyModel.IsModified` remains authoritative only
+for differences from the live project's current baseline; it is not treated as
+a complete replacement for prior profile content after save/baseline
+acceptance.
+
+Profile update starts with a fresh capture of the current editing delta, then
+reconciles every prior profile record against the current intended live value.
+Unchanged prior records are retained, changed prior records keep their stored
+historical original and receive the new intended value, and records restored to
+their own stored original are removed. New dirty targets come from normal
+snapshot capture. Historical structural presence is recorded independently of
+the original JSON token, so a present `null` value is never treated as proof of
+absence. Legacy null records without that evidence fail safely when a missing
+target makes the distinction necessary. Gameplay Operation State compatibility
+is observationally refreshed against the current project before state and
+additive requests are recaptured through their authoritative services.
+
+An updated candidate is serialized to an isolated sibling file and reloaded
+with the production profile loader. Workflow validation does not invoke profile
+construction or the high-level reconciliation service. It independently checks
+prior-record retention and reversion, current-delta coverage, preserved
+historical originals and structural presence, canonical uniqueness, refreshed
+Gameplay Operation State, additive requests, and identity metadata. The
+managed profile is replaced only after those checks and summary calculation
+succeed. Update Profile does not require a golden or pristine CDB reference.
+
+Player-facing change accounting uses distinct effective leaf identity. Updated
+and created live leaves count once; supported removal mutations count in apply
+feedback; state metadata does not add a second count for represented leaves;
+operation-only outcomes may use a synthetic row; and additive operation output
+is derived from its authoritative deterministic operation data with overlap
+removed. Profiles do not represent arbitrary deletion of historically existing
+properties, including properties whose historical value was JSON `null`.
+Current authorized removal restores a feature-created, explicitly
+absent-baseline scalar leaf to absence through Gameplay Operation State.
 
 ---
 
@@ -184,6 +240,7 @@ The following has been verified end-to-end:
 - Successful creation of new gameplay content
 - Upgrade All Equipment
 - Nested property mutation infrastructure
+- Known-property removal with exact rollback and deterministic Undo / Redo
 - Atomic operation history
 - Transaction framework integration
 

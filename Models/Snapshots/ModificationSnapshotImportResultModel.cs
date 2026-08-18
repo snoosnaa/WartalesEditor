@@ -75,11 +75,8 @@ public sealed class ModificationSnapshotImportResultModel
     public int EffectiveChangeCount { get; }
 
     public int AppliedEffectiveChangeCount =>
-        System.Linq.Enumerable.Count(
-            System.Linq.Enumerable.Distinct(
-                System.Linq.Enumerable.Concat(
-                    MutationResult.CreatedProperties,
-                    MutationResult.UpdatedProperties)));
+        new Services.EffectiveChangeCountService()
+            .Calculate(MutationResult);
 
     public int UnappliedEffectiveChangeCount =>
         UnmatchedCount +

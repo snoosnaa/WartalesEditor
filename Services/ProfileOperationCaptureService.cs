@@ -19,6 +19,17 @@ public sealed class ProfileOperationCaptureService
     private readonly UpgradeAllEquipmentOperation upgradeOperation;
     private readonly CampFacilityJsonBuilder campBuilder;
 
+    public static ProfileOperationCaptureService CreateDefault()
+    {
+        ProjectMutationService mutationService = new();
+        ContentCreationService contentCreationService = new(mutationService);
+
+        return new ProfileOperationCaptureService(
+            new OperationValidatorProvider(),
+            new AddCampFacilitiesOperation(contentCreationService),
+            new UpgradeAllEquipmentOperation(contentCreationService));
+    }
+
     public ProfileOperationCaptureService(
         IOperationValidatorProvider validatorProvider,
         AddCampFacilitiesOperation addCampOperation,
@@ -164,19 +175,20 @@ public sealed class ProfileOperationCaptureService
         AddNamedValues(
             builtProps,
             ownedValues,
+            "props",
             "model",
             "activity",
             "hideInCheatMenu",
             "bonuses");
-        AddLeafValues(tool, ownedValues);
-        AddLeafValues(icon, ownedValues);
+        AddLeafValues("tool", tool, ownedValues);
+        AddLeafValues("icon", icon, ownedValues);
 
         ModificationSnapshotSettingModel? setting =
             FindSetting(snapshot, "item", entryId);
 
         setting?.Properties.RemoveAll(property =>
             ownedValues.TryGetValue(
-                property.Name,
+                GetPropertyIdentity(property),
                 out JToken? expectedValue)
             &&
             JToken.DeepEquals(
@@ -185,6 +197,7 @@ public sealed class ProfileOperationCaptureService
     }
 
     private static void AddLeafValues(
+        string parentPath,
         JObject source,
         IDictionary<string, JToken> values)
     {
@@ -192,11 +205,14 @@ public sealed class ProfileOperationCaptureService
         {
             if (property.Value is JObject nested)
             {
-                AddLeafValues(nested, values);
+                AddLeafValues(
+                    $"{parentPath}.{property.Name}",
+                    nested,
+                    values);
                 continue;
             }
 
-            values[property.Name] =
+            values[$"{parentPath}.{property.Name}"] =
                 property.Value.DeepClone();
         }
     }
@@ -204,6 +220,7 @@ public sealed class ProfileOperationCaptureService
     private static void AddNamedValues(
         JObject source,
         IDictionary<string, JToken> values,
+        string parentPath,
         params string[] propertyNames)
     {
         foreach (string propertyName in propertyNames)
@@ -212,7 +229,7 @@ public sealed class ProfileOperationCaptureService
 
             if (value != null)
             {
-                values[propertyName] =
+                values[$"{parentPath}.{propertyName}"] =
                     value.DeepClone();
             }
         }
@@ -244,8 +261,8 @@ public sealed class ProfileOperationCaptureService
 
             setting.Properties.RemoveAll(property =>
                 string.Equals(
-                    property.Name,
-                    "flags",
+                    GetPropertyIdentity(property),
+                    "props.flags",
                     StringComparison.Ordinal)
                 &&
                 IsUpgradeOwnedFlagChange(property));
@@ -274,6 +291,12 @@ public sealed class ProfileOperationCaptureService
         return property.CurrentValue.Value<int>() ==
                (originalFlags | UpgradeableEquipmentFlag);
     }
+
+    private static string GetPropertyIdentity(
+        ModificationSnapshotPropertyModel property) =>
+        string.IsNullOrWhiteSpace(property.PropertyPath)
+            ? property.Name
+            : property.PropertyPath;
 
     private static ModificationSnapshotSettingModel? FindSetting(
         ModificationSnapshotModel snapshot,

@@ -15,6 +15,9 @@ public sealed class ProjectOperationHistoryAction :
     private readonly PropertyRollbackRecord[]
         propertyRollbackRecords;
 
+    private readonly RemovedPropertyRollbackRecord[]
+        removedPropertyRollbackRecords;
+
     private readonly CreatedPropertyRollbackRecord[]
         createdPropertyRollbackRecords;
 
@@ -78,6 +81,11 @@ public sealed class ProjectOperationHistoryAction :
                         .GetCurrentValueSnapshot())
                 .ToArray();
 
+        removedPropertyRollbackRecords =
+            mutationResult
+                .RemovedPropertyRollbackRecords
+                .ToArray();
+
         gameplayOperationStateRollbackRecords =
             mutationResult.GameplayOperationStateRollbackRecords
                 .ToArray();
@@ -89,6 +97,7 @@ public sealed class ProjectOperationHistoryAction :
     {
         transactionService.Rollback(
             propertyRollbackRecords,
+            removedPropertyRollbackRecords,
             createdPropertyRollbackRecords,
             createdJsonPropertyRollbackRecords,
             createdEntryRollbackRecords,
@@ -100,6 +109,7 @@ public sealed class ProjectOperationHistoryAction :
         transactionService.Replay(
             propertyRollbackRecords,
             updatedPropertyValues,
+            removedPropertyRollbackRecords,
             createdPropertyRollbackRecords,
             createdJsonPropertyRollbackRecords,
             createdEntryRollbackRecords,

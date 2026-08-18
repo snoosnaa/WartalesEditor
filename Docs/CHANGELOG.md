@@ -6,6 +6,183 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Random Trait Exclusions
+
+**Status:** Accepted; renewed focused Engineering Review and Project Owner
+interactive acceptance passed, with positive runtime evidence
+
+## Added
+
+- A Party Gameplay Tool with searchable Positive and Negative trait checklists,
+  Select All, Clear All, Restore Game Defaults, Apply, and shared feedback.
+- Dynamic candidate discovery for compatible Starting/Recruitment traits; no
+  trait identifiers or candidate counts are hard-coded.
+- Feature-specific operation state and validation for stable trait ownership,
+  exact Boolean/absent baselines, fingerprints, and update compatibility.
+- Candidate preflight now requires an explicit nonblank source `id`, exact
+  source/model identity, and connected `done` models before mutation begins.
+
+## Changed
+
+- Unchecked traits receive `done=false`; checked traits preserve an eligible
+  absent baseline or use `done=true` when explicitly enabling a pre-disabled
+  trait. Existing units are unchanged.
+- Restore Game Defaults uses the approved property-removal primitive to recover
+  an originally absent `done` leaf exactly.
+- Snapshot/profile application restores deterministic exclusion state before
+  ordinary property matching so absent-baseline leaves can be recreated safely
+  without a new profile format.
+- Review Changes shows a player-facing operation outcome when an exact
+  absent-baseline restore has no attached modified property row.
+- Review Changes now derives that fallback from the persisted/current Random
+  Trait Exclusions state specifically, so unrelated gameplay-state changes do
+  not create or count an exclusions outcome.
+- Operation validation now requires exact set equality between the requested
+  allowed traits, recorded allowed traits, and resolved owned candidates.
+
+## Verified
+
+- Dynamic grouping, true/false/absent baselines, mixed selections, Select All,
+  Clear All, exact restore, idempotence, validation rollback, Undo/Redo,
+  state persistence, snapshot/profile replay, update expansion, and independent
+  Positive Random Traits operation state.
+- Disconnected-target atomic preflight, stable source identity, cross-operation
+  Review Changes attribution, requested/result mismatch rollback, and complete
+  same-file Update Profile replay are covered by permanent smoke tests.
+- Direct Snapshot Preview remains read-only and may conservatively report a
+  missing absent-baseline leaf; profile application materializes exclusion state
+  before matching and is unaffected.
+- During an observed Project Owner session lasting more than one hour, no
+  recruit received a trait disabled by Random Trait Exclusions. This is positive
+  runtime behavioral evidence, not statistical proof that excluded traits can
+  never occur.
+- Renewed focused Engineering Review passed with non-blocking notes. Project
+  Owner interactive acceptance confirmed that the dialog opened, the feature
+  applied, exactly five traits were unchecked, and exactly five changes were
+  reported.
+
+---
+
+# Property Removal Mutation Primitive
+
+**Status:** Focused Engineering Review passed; approved for feature use
+
+## Added
+
+- `ProjectMutationService.RemovePropertyByPath` for strict removal of a known
+  project-model property and its connected source `JProperty`.
+- A dedicated removed-property rollback record preserving exact object identity,
+  parent, source/model ordering, effective path, and prior modification state.
+
+## Changed
+
+- Project mutation results, transaction rollback/replay, and operation history
+  now compose known-property removals with existing create and modify mutations.
+- The removal API now explicitly rejects object-valued properties before any
+  mutation or rollback record is created.
+
+## Verified
+
+- Nested removal, missing-target failure, exact rollback, repeated Undo / Redo,
+  source/model ordering, created-property symmetry, empty-parent preservation,
+  and forced validator rollback of modify/create/remove mutations.
+- Public-factory object rejection, ambiguous/disconnected targets,
+  same-property modify/remove, create/modify/remove, multiple-removal index
+  drift, and exact first/last restoration.
+- The capability remains limited to known properties. Random Trait Exclusions
+  now uses it only for scalar `done` restoration; generalized deletion remains
+  unsupported.
+
+---
+
+# Final Feature Batch
+
+**Status:** Accepted and reconciled; implementation, automated verification,
+Engineering Review, and Project Owner acceptance complete
+
+## Added
+
+- Lectern Knowledge Gain under Progression, using 1×, 2×, 3×, and 5×
+  captured-baseline presets for Lectern rest Knowledge only.
+- Positive Random Traits under Party. Positive Only selects the current
+  two-positive branch with `0 / 1 / 0` for future eligible procedural units;
+  existing units are unchanged.
+- Update Profile in Profile Manager for explicitly selected managed profiles.
+
+## Changed
+
+- Updating a profile now reconciles prior records with the current intended
+  project by stable effective path, preserving baseline-accepted content while
+  replacing changed targets and removing profile-relative restorations.
+- Updated candidates are staged and reloaded, then checked by an independent
+  invariant validator that does not invoke profile construction or high-level
+  reconciliation. It verifies retained history, current delta, reversions,
+  canonical uniqueness, metadata, refreshed Gameplay Operation State, and
+  additive requests before atomic same-path replacement. This preserves prior
+  profile history without requiring a separate pristine CDB. Failed validation
+  leaves the prior managed profile unchanged.
+- Snapshot properties now record historical structural presence independently
+  from their JSON value. Proven absent-to-created-to-absent restoration remains
+  supported, historically present `null` deletion is rejected, and ambiguous
+  legacy-null deletion fails safely.
+- Update Profile observationally revalidates Gameplay Operation State against
+  current live targets before capture, preventing stale cached compatibility
+  from entering a profile.
+- Main/project, Review Changes, profile, and apply-result accounting now share
+  effective-leaf semantics for updated and created live properties. Supported
+  removal mutations remain counted by apply feedback; arbitrary clean-baseline
+  deletion is not a profile capability. Additive output remains deterministic
+  and overlap-aware.
+- Review Changes resolves nested properties by `EffectivePropertyPath`, so
+  duplicate `height` and `width` leaves remain distinct.
+- Legacy pathless properties use one shared resolver. Unique matches upgrade to
+  canonical paths; ambiguity is surfaced and blocks profile replacement.
+- Additive profile filtering now uses canonical effective paths, preserving
+  unrelated same-leaf properties under different nested paths.
+- Pathless legacy `flags` records are no longer guessed to overlap canonical
+  Upgrade All Equipment `props.flags` output.
+
+## Verified
+
+- Preset scaling, exact Vanilla restoration, malformed-target rejection,
+  idempotence, Undo/Redo, operation state, snapshots, and profile round trips.
+- Managed profile selection/path safety, metadata preservation, baseline-
+  accepted reconciliation, current-format rewrite, semantic candidate replay,
+  failed-serialization/validation preservation, and no-change update safety.
+- Mixed profile apply/save/close-reload/update/replay covers ordinary and nested changes,
+  created and removed absent-baseline properties, Random Trait Exclusions,
+  Campfire Expansion, Add Camp Facilities, Upgrade All Equipment, duplicate
+  nested paths, additive overlap, and unified effective counts.
+- Candidate validation independently rejects incomplete and duplicate profiles
+  plus injected stale gameplay state after reopening the already modified source
+  CDB. Historical absence, present-null deletion, present-null value reversion,
+  and legacy-null ambiguity have dedicated coverage. Count regressions cover five added changes,
+  same-target replacement, one deliberate reversion, and no-new-change updates;
+  the no-validation replacement overload fails before touching managed bytes.
+- The Renewed Focused Engineering Review passed with non-blocking notes. Its
+  sequential main/test builds completed with zero warnings and zero errors, all
+  22 Class A compatibility groups passed, `git diff --check` passed, and no
+  profile-update temporary artifacts remained.
+- Project Owner testing applied a known non-damaged profile, saved and reloaded
+  its CDB, made further changes, and updated the same profile successfully. Its
+  effective count increased from 633 to 636 and validation reported no issues.
+- Review Changes displayed the correct result; the prior discrepancy involving
+  the six distinct Firecamp, FirecampT2, and FirecampT3
+  `tool.height`/`tool.width` paths was no longer present.
+- The full intended 645-effective-change configuration was applied, saved as a
+  new profile, and used to launch and play Wartales for more than one hour
+  without obvious instability attributable to the editor configuration.
+- Lectern Knowledge Gain and Positive Random Traits were each tested, confirmed
+  working, and accepted by the Project Owner. No additional test details are
+  inferred from those acceptance statements.
+- Random Trait Exclusions passed renewed focused Engineering Review and Project
+  Owner interactive acceptance. Its later runtime evidence remains positive.
+- The previously damaged approximately 554-change `All Mods.wtprofile` is not
+  considered repaired; the accepted 645-change configured state was saved as a
+  new profile.
+
+---
+
 # Class A Gameplay Expansion
 
 **Status:** Complete; focused compatibility corrections, Resource

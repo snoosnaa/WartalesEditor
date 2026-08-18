@@ -119,6 +119,33 @@ public sealed class GameplayOperationStateService
                 state.OperationType == progressionType);
     }
 
+    public bool IsStateModified(
+        ProjectModel project,
+        ProgressionType progressionType)
+    {
+        GameplayOperationStateModel? state =
+            FindState(project, progressionType);
+
+        return state != null &&
+               (string.IsNullOrEmpty(state.PersistedStateFingerprint) ||
+                !string.Equals(
+                    state.PersistedStateFingerprint,
+                    CreatePersistedStateFingerprint(state),
+                    StringComparison.Ordinal));
+    }
+
+    public void AcceptCurrentStates(ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        foreach (GameplayOperationStateModel state in
+                 project.GameplayOperationStates)
+        {
+            state.PersistedStateFingerprint =
+                CreatePersistedStateFingerprint(state);
+        }
+    }
+
     public void ReplaceState(
         ProjectModel project,
         GameplayOperationStateModel state,
@@ -129,6 +156,13 @@ public sealed class GameplayOperationStateService
 
         GameplayOperationStateModel? existing =
             FindState(project, state.OperationType);
+
+        if (markModified)
+        {
+            state.PersistedStateFingerprint =
+                existing?.PersistedStateFingerprint
+                ?? string.Empty;
+        }
 
         if (existing != null)
         {
@@ -173,6 +207,14 @@ public sealed class GameplayOperationStateService
         {
             ValidateState(project, state);
         }
+    }
+
+    private static string CreatePersistedStateFingerprint(
+        GameplayOperationStateModel state)
+    {
+        JObject serializedState = JObject.FromObject(state);
+        return GameplayOperationFingerprintService.CreateContentFingerprint(
+            serializedState);
     }
 
     public void RestoreSnapshotStates(
@@ -297,6 +339,13 @@ public sealed class GameplayOperationStateService
             ProgressionType.RainFrequency)
         {
             RainFrequencyService.ValidateState(project, state);
+            return;
+        }
+
+        if (state.OperationType ==
+            ProgressionType.RandomTraitExclusions)
+        {
+            RandomTraitExclusionsService.ValidateState(project, state);
             return;
         }
 
