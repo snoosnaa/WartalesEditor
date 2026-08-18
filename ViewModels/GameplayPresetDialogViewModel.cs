@@ -45,6 +45,8 @@ public sealed class GameplayPresetDialogViewModel : ObservableObject
     }
 
     public bool CanApply => SelectedPreset != null && currentStateText != "Unavailable";
+    public bool CanRestorePreviousValues =>
+        service.CanRestorePreviousValues(project, OperationType);
 
     public string PreviewText => SelectedPreset == null
         ? "Choose a preset to preview its gameplay effect."
@@ -73,5 +75,6 @@ public sealed class GameplayPresetDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedPreset));
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
 }

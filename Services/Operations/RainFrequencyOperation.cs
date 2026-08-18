@@ -11,13 +11,23 @@ public sealed class RainFrequencyOperation : IProjectOperation
     public RainFrequencyOperation(
         RainFrequencyService service,
         RainFrequencyPreset preset)
+        : this(service, preset, false)
+    {
+    }
+
+    public RainFrequencyOperation(
+        RainFrequencyService service,
+        RainFrequencyPreset preset,
+        bool restorePreviousValues)
     {
         this.service = service
             ?? throw new ArgumentNullException(nameof(service));
         Preset = preset;
+        RestorePreviousValues = restorePreviousValues;
     }
 
     public RainFrequencyPreset Preset { get; }
+    public bool RestorePreviousValues { get; }
 
     public string Name => "Rain Frequency";
 
@@ -30,14 +40,20 @@ public sealed class RainFrequencyOperation : IProjectOperation
     public ProjectOperationResult Execute(ProjectModel project)
     {
         ProjectMutationResult result =
-            service.Apply(project, Preset);
+            RestorePreviousValues
+                ? service.RestorePreviousValues(project)
+                : service.Apply(project, Preset);
         return ProjectOperationResult.Success(
             result,
             result.WasModified
-                ? "Rain Frequency was updated."
+                ? RestorePreviousValues
+                    ? "Previous rain values were restored."
+                    : "Rain Frequency was updated."
                 : "No changes were applied." +
                   Environment.NewLine +
                   Environment.NewLine +
-                  "This preset already matches the current project.");
+                  (RestorePreviousValues
+                      ? "The previous values already match the current project."
+                      : "This preset already matches the current project."));
     }
 }

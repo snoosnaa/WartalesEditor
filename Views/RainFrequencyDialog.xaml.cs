@@ -34,8 +34,15 @@ public partial class RainFrequencyDialog : Window
         object sender,
         RoutedEventArgs e)
     {
-        ((RainFrequencyDialogViewModel)DataContext)
-            .SelectVanilla();
+        if (DataContext is not RainFrequencyDialogViewModel viewModel ||
+            !viewModel.CanRestorePreviousValues)
+            return;
+
+        ApplyRequested?.Invoke(
+            this,
+            new RainFrequencyApplyEventArgs(
+                RainFrequencyPreset.Vanilla,
+                true));
     }
 
     private void CloseButton_Click(
@@ -72,9 +79,18 @@ public sealed class RainFrequencyApplyEventArgs : EventArgs
 {
     public RainFrequencyApplyEventArgs(
         RainFrequencyPreset preset)
+        : this(preset, false)
+    {
+    }
+
+    public RainFrequencyApplyEventArgs(
+        RainFrequencyPreset preset,
+        bool restorePreviousValues)
     {
         Preset = preset;
+        RestorePreviousValues = restorePreviousValues;
     }
 
     public RainFrequencyPreset Preset { get; }
+    public bool RestorePreviousValues { get; }
 }

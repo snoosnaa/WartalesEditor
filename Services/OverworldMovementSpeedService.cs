@@ -8,6 +8,7 @@ namespace WartalesEditor.Services;
 
 public sealed class OverworldMovementSpeedService
 {
+    private const string PreviousValuesSetting = "PreviousValues";
     public const string WalkEntryId = "PlayerBaseSpeed";
     public const string RunEntryId = "PlayerRunSpeed";
 
@@ -46,6 +47,53 @@ public sealed class OverworldMovementSpeedService
         {
             return OverworldMovementPreset.Unavailable;
         }
+    }
+
+    public bool CanRestorePreviousValues(ProjectModel project) =>
+        stateService.CanRestorePreviousValues(
+            project,
+            ProgressionType.OverworldMovementSpeed);
+
+    public ProjectMutationResult RestorePreviousValues(ProjectModel project)
+    {
+        GameplayOperationStateModel existing =
+            stateService.GetRequiredPreviousValuesState(
+                project,
+                ProgressionType.OverworldMovementSpeed);
+        (MovementTarget walk, MovementTarget run) = ResolveTargets(project);
+        JArray baseline = (JArray)existing.BaselineArray.DeepClone();
+        JArray current = CaptureTargets(walk, run);
+
+        if (JToken.DeepEquals(current, baseline) &&
+            string.Equals(
+                existing.GameplaySettings?.Value<string>("preset"),
+                PreviousValuesSetting,
+                StringComparison.Ordinal))
+        {
+            return new ProjectMutationResult();
+        }
+
+        ProjectMutationResult result = new();
+        if (!JToken.DeepEquals(current, baseline))
+        {
+            result.Merge(mutationService.EnsurePropertyByPath(
+                walk.Entry,
+                "value",
+                baseline[0]!["value"]!));
+            result.Merge(mutationService.EnsurePropertyByPath(
+                run.Entry,
+                "value",
+                baseline[1]!["value"]!));
+        }
+
+        GameplayOperationStateModel replacement =
+            CreateState(baseline, baseline, PreviousValuesSetting, null);
+        GameplayOperationStateModel previous = existing.DeepClone();
+        bool previousModified = project.IsGameplayOperationStateModified;
+        stateService.ReplaceState(project, replacement);
+        result.AddGameplayOperationState(
+            project, previous, replacement, previousModified);
+        return result;
     }
 
     public ProjectMutationResult Apply(
@@ -95,7 +143,11 @@ public sealed class OverworldMovementSpeedService
         }
 
         GameplayOperationStateModel replacement =
-            CreateState(baseline, expected, selection);
+            CreateState(
+                baseline,
+                expected,
+                selection.Preset.ToString(),
+                selection);
         GameplayOperationStateModel? previous = existing?.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
         stateService.ReplaceState(project, replacement);
@@ -111,12 +163,23 @@ public sealed class OverworldMovementSpeedService
         if (state.GameplaySettings == null)
             throw new InvalidOperationException("The selected movement preset is missing.");
         string presetName = state.GameplaySettings.Value<string>("preset") ?? string.Empty;
-        if (!Enum.TryParse(presetName, out OverworldMovementPreset preset))
-            throw new InvalidOperationException("The selected movement preset is invalid.");
-        OverworldMovementPresetOption selection = GetRequiredPreset(preset);
         (MovementTarget walk, MovementTarget run) = ResolveTargets(project);
         JArray current = CaptureTargets(walk, run);
-        JArray expected = BuildExpected(state.BaselineArray, selection);
+        JArray expected;
+        if (string.Equals(
+                presetName,
+                PreviousValuesSetting,
+                StringComparison.Ordinal))
+        {
+            expected = (JArray)state.BaselineArray.DeepClone();
+        }
+        else
+        {
+            if (!Enum.TryParse(presetName, out OverworldMovementPreset preset))
+                throw new InvalidOperationException("The selected movement preset is invalid.");
+            OverworldMovementPresetOption selection = GetRequiredPreset(preset);
+            expected = BuildExpected(state.BaselineArray, selection);
+        }
 
         if (state.ElementCount != 2 ||
             state.BaselineArray.Count != 2 ||
@@ -169,7 +232,7 @@ public sealed class OverworldMovementSpeedService
         return new MovementTarget(entry, property);
     }
 
-    private static JArray CaptureTargets(
+    internal static JArray CaptureTargets(
         MovementTarget walk,
         MovementTarget run) => new()
     {
@@ -212,28 +275,37 @@ public sealed class OverworldMovementSpeedService
     private static GameplayOperationStateModel CreateState(
         JArray baseline,
         JArray expected,
-        OverworldMovementPresetOption selection) => new()
+        string setting,
+        OverworldMovementPresetOption? selection)
     {
-        OperationType = ProgressionType.OverworldMovementSpeed,
-        TargetSheet = "constant,constant",
-        TargetEntry = $"{WalkEntryId},{RunEntryId}",
-        TargetPath = "value|value",
-        BaselineArray = (JArray)baseline.DeepClone(),
-        GameplaySettings = new JObject
+        JObject gameplaySettings = new()
         {
-            ["preset"] = selection.Preset.ToString(),
-            ["walkSpeed"] = selection.WalkSpeed,
-            ["runSpeed"] = selection.RunSpeed
-        },
-        BaselineFingerprint =
-            GameplayOperationFingerprintService.CreateContentFingerprint(baseline),
-        ExpectedCurrentFingerprint =
-            GameplayOperationFingerprintService.CreateContentFingerprint(expected),
-        ElementCount = 2,
-        ElementShapeFingerprint =
-            GameplayOperationFingerprintService.CreateShapeFingerprint(baseline),
-        IsCompatible = true
-    };
+            ["preset"] = setting
+        };
+        if (selection != null)
+        {
+            gameplaySettings["walkSpeed"] = selection.WalkSpeed;
+            gameplaySettings["runSpeed"] = selection.RunSpeed;
+        }
+
+        return new GameplayOperationStateModel
+        {
+            OperationType = ProgressionType.OverworldMovementSpeed,
+            TargetSheet = "constant,constant",
+            TargetEntry = $"{WalkEntryId},{RunEntryId}",
+            TargetPath = "value|value",
+            BaselineArray = (JArray)baseline.DeepClone(),
+            GameplaySettings = gameplaySettings,
+            BaselineFingerprint =
+                GameplayOperationFingerprintService.CreateContentFingerprint(baseline),
+            ExpectedCurrentFingerprint =
+                GameplayOperationFingerprintService.CreateContentFingerprint(expected),
+            ElementCount = 2,
+            ElementShapeFingerprint =
+                GameplayOperationFingerprintService.CreateShapeFingerprint(baseline),
+            IsCompatible = true
+        };
+    }
 
     private static OverworldMovementPresetOption GetRequiredPreset(
         OverworldMovementPreset preset) =>

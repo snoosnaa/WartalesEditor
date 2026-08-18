@@ -119,7 +119,7 @@ public sealed class EffectiveChangeCountService
     {
         ArgumentNullException.ThrowIfNull(project);
 
-        HashSet<string> modifiedProperties = project.Sheets
+        HashSet<string> effectiveChanges = project.Sheets
             .SelectMany(sheet => sheet.Entries.SelectMany(entry =>
                 entry.Properties
                     .Where(property => property.IsModified)
@@ -129,10 +129,11 @@ public sealed class EffectiveChangeCountService
                         property.EffectivePropertyPath))))
             .ToHashSet(StringComparer.Ordinal);
 
-        return modifiedProperties.Count +
-               (HasUnrepresentedRandomTraitExclusionChange(project)
-                   ? 1
-                   : 0);
+        AddCurrentRandomTraitExclusionChanges(
+            project,
+            effectiveChanges);
+
+        return effectiveChanges.Count;
     }
 
     public int Calculate(ProjectMutationResult mutationResult)
@@ -168,22 +169,66 @@ public sealed class EffectiveChangeCountService
             return false;
         }
 
-        HashSet<string> owned = state.BaselineArray
-            .OfType<JObject>()
-            .Select(record => record.Value<string>("id") ?? string.Empty)
-            .ToHashSet(StringComparer.Ordinal);
+        HashSet<string> changed =
+            RandomTraitExclusionsService.GetChangedTraitIds(
+                project,
+                state);
+        if (changed.Count == 0)
+        {
+            return false;
+        }
 
         SheetModel? traitSheet = project.Sheets.FirstOrDefault(sheet =>
             string.Equals(sheet.Name, "trait", StringComparison.Ordinal));
 
-        return traitSheet == null || !traitSheet.Entries.Any(entry =>
-            owned.Contains(entry.Id) &&
-            entry.Properties.Any(property =>
+        if (traitSheet == null)
+        {
+            return true;
+        }
+
+        HashSet<string> represented = traitSheet.Entries
+            .Where(entry => changed.Contains(entry.Id))
+            .Where(entry => entry.Properties.Any(property =>
                 string.Equals(
                     property.EffectivePropertyPath,
                     "done",
                     StringComparison.Ordinal) &&
-                property.IsModified));
+                property.IsModified))
+            .Select(entry => entry.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return changed.Except(represented).Any();
+    }
+
+    private static void AddCurrentRandomTraitExclusionChanges(
+        ProjectModel project,
+        ISet<string> effectiveChanges)
+    {
+        GameplayOperationStateService stateService = new();
+        if (!stateService.IsStateModified(
+                project,
+                ProgressionType.RandomTraitExclusions))
+        {
+            return;
+        }
+
+        GameplayOperationStateModel? state =
+            project.GameplayOperationStates.FirstOrDefault(candidate =>
+                candidate.OperationType ==
+                ProgressionType.RandomTraitExclusions);
+        if (state == null)
+        {
+            return;
+        }
+
+        foreach (string id in
+                 RandomTraitExclusionsService.GetChangedTraitIds(
+                     project,
+                     state))
+        {
+            effectiveChanges.Add(
+                CreateIdentity("trait", id, "done"));
+        }
     }
 
     private int CountCampSnapshotOverlap(

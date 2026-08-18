@@ -93,7 +93,10 @@
             </Border>
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <Button Content="Reset to Game Default" Margin="0,0,8,0"
+                    <Button Content="Restore Previous Values" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanRestorePreviousValues}"
+                            ToolTip="Restores the values from before this gameplay tool was first applied."
+                            ToolTipService.ShowOnDisabled="True"
                             Click="ResetButton_Click"/>
                     <Button Content="No Wages"
                             Visibility="{Binding IsVolunteer, Converter={StaticResource BoolVis}}"

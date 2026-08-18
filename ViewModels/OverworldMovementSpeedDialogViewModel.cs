@@ -46,6 +46,9 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
         detectedPreset != OverworldMovementPreset.Unavailable &&
         SelectedPreset != null;
 
+    public bool CanRestorePreviousValues =>
+        service.CanRestorePreviousValues(project);
+
     public string CurrentStateText => detectedPreset switch
     {
         OverworldMovementPreset.VeryFast => "Very Fast",
@@ -77,6 +80,7 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(CurrentStateText));
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
 
     private static OverworldMovementPresetOption FindPreset(

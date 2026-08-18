@@ -11,12 +11,22 @@ public sealed class OverworldMovementSpeedOperation : IProjectOperation
     public OverworldMovementSpeedOperation(
         OverworldMovementSpeedService service,
         OverworldMovementPreset preset)
+        : this(service, preset, false)
+    {
+    }
+
+    public OverworldMovementSpeedOperation(
+        OverworldMovementSpeedService service,
+        OverworldMovementPreset preset,
+        bool restorePreviousValues)
     {
         this.service = service ?? throw new ArgumentNullException(nameof(service));
         Preset = preset;
+        RestorePreviousValues = restorePreviousValues;
     }
 
     public OverworldMovementPreset Preset { get; }
+    public bool RestorePreviousValues { get; }
     public string Name => "Overworld Movement Speed";
     public string Description =>
         "Changes how quickly the player's party travels across the world map.";
@@ -24,13 +34,19 @@ public sealed class OverworldMovementSpeedOperation : IProjectOperation
 
     public ProjectOperationResult Execute(ProjectModel project)
     {
-        ProjectMutationResult result = service.Apply(project, Preset);
+        ProjectMutationResult result = RestorePreviousValues
+            ? service.RestorePreviousValues(project)
+            : service.Apply(project, Preset);
         return ProjectOperationResult.Success(
             result,
             result.WasModified
-                ? "Overworld Movement Speed was updated."
+                ? RestorePreviousValues
+                    ? "Previous movement values were restored."
+                    : "Overworld Movement Speed was updated."
                 : "No changes were applied." + Environment.NewLine +
                   Environment.NewLine +
-                  "This preset already matches the current project.");
+                  (RestorePreviousValues
+                      ? "The previous values already match the current project."
+                      : "This preset already matches the current project."));
     }
 }

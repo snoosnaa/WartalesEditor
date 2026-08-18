@@ -74,7 +74,10 @@
             </Border>
             <DockPanel LastChildFill="False">
                 <Button DockPanel.Dock="Left"
-                        Content="Reset to Game Default"
+                        Content="Restore Previous Values"
+                        IsEnabled="{Binding CanRestorePreviousValues}"
+                        ToolTip="Restores the values from before this gameplay tool was first applied."
+                        ToolTipService.ShowOnDisabled="True"
                         Click="ResetButton_Click"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Content="Apply"

@@ -103,6 +103,9 @@ public sealed class PartyEconomyDialogViewModel : ObservableObject
         inputBindingValid &&
         string.IsNullOrWhiteSpace(ValidationMessage);
 
+    public bool CanRestorePreviousValues =>
+        service.CanRestorePreviousValues(project, OperationType);
+
     public string PreviewText => OperationType switch
     {
         ProgressionType.VolunteerWages when VolunteerPercentage == 0 =>
@@ -143,12 +146,37 @@ public sealed class PartyEconomyDialogViewModel : ObservableObject
 
     public void ResetToGameDefaults()
     {
+        RestorePreviousValues();
+    }
+
+    public void RestorePreviousValues()
+    {
+        _ = TryRestorePreviousValues();
+    }
+
+    public bool TryRestorePreviousValues()
+    {
+        if (!CanRestorePreviousValues)
+        {
+            return false;
+        }
+
+        PartyEconomySettings baseline;
+        try
+        {
+            baseline = service.GetBaselineSettings(project, OperationType);
+        }
+        catch (InvalidOperationException)
+        {
+            OnPropertyChanged(nameof(CanRestorePreviousValues));
+            return false;
+        }
+
         ApplyFeedback.Clear();
-        Assign(
-            service.GetBaselineSettings(project, OperationType),
-            true);
+        Assign(baseline, true);
         Validate();
         NotifyAll();
+        return CanApply;
     }
 
     public void SetNoWages()
@@ -251,5 +279,6 @@ public sealed class PartyEconomyDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedHitchingPostPreset));
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
 }

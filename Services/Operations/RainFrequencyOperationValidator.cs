@@ -22,9 +22,11 @@ public sealed class RainFrequencyOperationValidator
         List<string> errors = new();
         try
         {
-            RainFrequencyPresetOption selection =
-                RainFrequencyService.Presets.Single(option =>
-                    option.Preset == rainOperation.Preset);
+            RainFrequencyPresetOption? selection =
+                rainOperation.RestorePreviousValues
+                    ? null
+                    : RainFrequencyService.Presets.Single(option =>
+                        option.Preset == rainOperation.Preset);
             IReadOnlyList<RainTarget> targets =
                 RainFrequencyService.ResolveTargets(project);
             GameplayOperationStateModel state =
@@ -55,9 +57,11 @@ public sealed class RainFrequencyOperationValidator
                 errors.Add(
                     "Rain Frequency changed too many regional values.");
 
-            JArray expected = RainFrequencyService.BuildExpected(
-                RainFrequencyService.CreateBaseline(),
-                selection);
+            JArray expected = rainOperation.RestorePreviousValues
+                ? (JArray)state.BaselineArray.DeepClone()
+                : RainFrequencyService.BuildExpected(
+                    RainFrequencyService.CreateBaseline(),
+                    selection!);
             for (int index = 0; index < targets.Count; index++)
             {
                 if (!JToken.DeepEquals(

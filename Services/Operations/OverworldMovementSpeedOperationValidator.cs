@@ -21,13 +21,16 @@ public sealed class OverworldMovementSpeedOperationValidator
                 "The movement validator received an unsupported operation.");
         try
         {
-            OverworldMovementPresetOption preset =
-                OverworldMovementSpeedService.Presets.Single(x =>
-                    x.Preset == movement.Preset);
-            if (preset.WalkSpeed <= 0 ||
-                preset.RunSpeed <= 0 ||
-                preset.WalkSpeed >= preset.RunSpeed)
-                errors.Add("The selected movement preset is invalid.");
+            if (!movement.RestorePreviousValues)
+            {
+                OverworldMovementPresetOption preset =
+                    OverworldMovementSpeedService.Presets.Single(x =>
+                        x.Preset == movement.Preset);
+                if (preset.WalkSpeed <= 0 ||
+                    preset.RunSpeed <= 0 ||
+                    preset.WalkSpeed >= preset.RunSpeed)
+                    errors.Add("The selected movement preset is invalid.");
+            }
 
             (MovementTarget walk, MovementTarget run) =
                 OverworldMovementSpeedService.ResolveTargets(project);
@@ -36,6 +39,14 @@ public sealed class OverworldMovementSpeedOperationValidator
                     x.OperationType ==
                     ProgressionType.OverworldMovementSpeed);
             OverworldMovementSpeedService.ValidateState(project, state);
+
+            if (movement.RestorePreviousValues)
+            {
+                JArray current =
+                    OverworldMovementSpeedService.CaptureTargets(walk, run);
+                if (!JToken.DeepEquals(current, state.BaselineArray))
+                    errors.Add("The previous movement values were not restored.");
+            }
 
             HashSet<PropertyModel> allowed = new() { walk.Property, run.Property };
             foreach (PropertyModel property in mutationResult.UpdatedProperties)

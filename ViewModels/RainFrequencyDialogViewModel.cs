@@ -50,6 +50,9 @@ public sealed class RainFrequencyDialogViewModel
         detectedPreset != RainFrequencyPreset.Unavailable &&
         SelectedPreset != null;
 
+    public bool CanRestorePreviousValues =>
+        service.CanRestorePreviousValues(project);
+
     public string CurrentStateText => detectedPreset switch
     {
         RainFrequencyPreset.LessRain => "Less Rain",
@@ -85,6 +88,7 @@ public sealed class RainFrequencyDialogViewModel
         OnPropertyChanged(nameof(CurrentStateText));
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
 
     private static RainFrequencyPresetOption FindPreset(

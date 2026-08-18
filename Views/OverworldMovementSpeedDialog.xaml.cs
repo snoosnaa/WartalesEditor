@@ -26,8 +26,18 @@ public partial class OverworldMovementSpeedDialog : Window
                 new OverworldMovementApplyEventArgs(vm.SelectedPreset.Preset));
     }
 
-    private void ResetButton_Click(object sender, RoutedEventArgs e) =>
-        ((OverworldMovementSpeedDialogViewModel)DataContext).SelectVanilla();
+    private void ResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not OverworldMovementSpeedDialogViewModel vm ||
+            !vm.CanRestorePreviousValues)
+            return;
+
+        ApplyRequested?.Invoke(
+            this,
+            new OverworldMovementApplyEventArgs(
+                OverworldMovementPreset.Vanilla,
+                true));
+    }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
@@ -57,5 +67,14 @@ public sealed class OverworldMovementApplyEventArgs : EventArgs
     public OverworldMovementApplyEventArgs(OverworldMovementPreset preset) =>
         Preset = preset;
 
+    public OverworldMovementApplyEventArgs(
+        OverworldMovementPreset preset,
+        bool restorePreviousValues)
+    {
+        Preset = preset;
+        RestorePreviousValues = restorePreviousValues;
+    }
+
     public OverworldMovementPreset Preset { get; }
+    public bool RestorePreviousValues { get; }
 }

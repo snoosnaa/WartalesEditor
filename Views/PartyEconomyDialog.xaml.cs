@@ -24,8 +24,20 @@ public partial class PartyEconomyDialog : Window
                 vm.OperationType, vm.CreateSettings()));
     }
 
-    private void ResetButton_Click(object sender, RoutedEventArgs e) =>
-        ((PartyEconomyDialogViewModel)DataContext).ResetToGameDefaults();
+    private void ResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PartyEconomyDialogViewModel vm ||
+            !vm.TryRestorePreviousValues() ||
+            !vm.CanApply)
+            return;
+
+        ApplyRequested?.Invoke(
+            this,
+            new PartyEconomyApplyEventArgs(
+                vm.OperationType,
+                vm.CreateSettings(),
+                true));
+    }
 
     private void NoWagesButton_Click(object sender, RoutedEventArgs e) =>
         ((PartyEconomyDialogViewModel)DataContext).SetNoWages();
@@ -71,10 +83,20 @@ public partial class PartyEconomyDialog : Window
 public sealed class PartyEconomyApplyEventArgs : EventArgs
 {
     public PartyEconomyApplyEventArgs(ProgressionType operationType, PartyEconomySettings settings)
+        : this(operationType, settings, false)
+    {
+    }
+
+    public PartyEconomyApplyEventArgs(
+        ProgressionType operationType,
+        PartyEconomySettings settings,
+        bool restorePreviousValues)
     {
         OperationType = operationType;
         Settings = settings.DeepClone();
+        RestorePreviousValues = restorePreviousValues;
     }
     public ProgressionType OperationType { get; }
     public PartyEconomySettings Settings { get; }
+    public bool RestorePreviousValues { get; }
 }

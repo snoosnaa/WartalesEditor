@@ -27,17 +27,21 @@ public partial class GameplayPresetDialog : Window
     private void ResetButton_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not GameplayPresetDialogViewModel vm) return;
+        if (!vm.CanRestorePreviousValues) return;
         vm.SelectVanilla();
         if (vm.CanApply && vm.SelectedPreset != null)
-            RequestApply(vm);
+            RequestApply(vm, true);
     }
 
-    private void RequestApply(GameplayPresetDialogViewModel vm) =>
+    private void RequestApply(
+        GameplayPresetDialogViewModel vm,
+        bool restorePreviousValues = false) =>
         ApplyRequested?.Invoke(
             this,
             new GameplayPresetApplyEventArgs(
                 vm.OperationType,
-                vm.SelectedPreset!.Key));
+                vm.SelectedPreset!.Key,
+                restorePreviousValues));
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
@@ -67,11 +71,21 @@ public sealed class GameplayPresetApplyEventArgs : EventArgs
     public GameplayPresetApplyEventArgs(
         ProgressionType operationType,
         string presetKey)
+        : this(operationType, presetKey, false)
+    {
+    }
+
+    public GameplayPresetApplyEventArgs(
+        ProgressionType operationType,
+        string presetKey,
+        bool restorePreviousValues)
     {
         OperationType = operationType;
         PresetKey = presetKey;
+        RestorePreviousValues = restorePreviousValues;
     }
 
     public ProgressionType OperationType { get; }
     public string PresetKey { get; }
+    public bool RestorePreviousValues { get; }
 }

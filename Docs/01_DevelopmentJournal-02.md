@@ -7,6 +7,60 @@
 
 ------------------------------------------------------------------------
 
+# 2026-08-18 — Restore Previous Values Implementation
+
+Standardized every gameplay reset control as **Restore Previous Values**. The
+single authority is the compatible pre-tool baseline retained in Gameplay
+Operation State and persisted by `.wtstate`; compatible Profiles transport the
+same history. Restore remains unavailable when that state is absent or
+incompatible, so current configured values are not adopted as invented prior
+history.
+
+The shared preset tools, Party Economy, and Random Trait Exclusions retain
+their exact captured-baseline behavior. Overworld Movement Speed now restores
+captured walk/run values rather than fixed 6/11, and Rain Frequency restores
+captured regional values rather than its fixed Vanilla table. Vanilla remains
+an ordinary selectable preset for both tools. Detailed Editor Reset Property,
+`PropertyModel.IsModified`, profile update, mutation ownership, and rollback
+were not changed. No Golden CDB infrastructure was introduced.
+
+Permanent compatibility coverage now includes non-catalog baselines, multiple
+preset changes, missing-history safety, sidecar reload, profile transport,
+exact Random Trait Exclusions presence restoration, Movement and Rain
+restoration, and coherent Undo/Redo.
+
+The focused Random Trait Exclusions lifecycle correction makes the modeless
+dialog re-check current compatible Gameplay Operation State when Restore is
+invoked. The dialog requests Apply only when that resolution succeeds, so an
+external Undo cannot turn stale checkbox selections into a new first-use
+operation. Compatible profile/state replacement becomes authoritative
+immediately, rather than leaving the dialog-open baseline in control. Permanent
+coverage reproduces both hostile lifecycles plus normal exact `true`, `false`,
+and absent restoration.
+
+The final consistency correction makes Restore Previous Values an immediate
+action for every gameplay dialog. The 17 shared presets, Party Economy, Random
+Trait Exclusions, Movement, and Rain all resolve compatible history and execute
+their normal validated operation in the same click; Apply remains for ordinary
+manual choices. RTE accounting now measures exact differences from its captured
+baseline, so historical baseline exclusions contribute zero and an exact
+Restore removes the synthetic Review Changes row. Detailed Editor Reset
+Property, `PropertyModel.IsModified`, Update Profile, and the absence of Golden
+CDB authority remain unchanged. Renewed review and final owner acceptance are
+complete. Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING
+NOTES**; automated tests exercise the production ViewModel, service, operation,
+mutation, validation, and history paths rather than synthesized WPF button
+clicks. Project Owner interactive testing supplied the runtime evidence. It
+successfully exercised Restore Previous Values across multiple gameplay
+features, including immediate Positive Random Traits restoration and exact RTE
+restoration. The testing identified the Party Economy second-Apply inconsistency
+and the RTE baseline-accounting discrepancy; after both corrections, the Project
+Owner explicitly returned **PASS**. Final sequential verification is 0 warnings,
+0 errors, the focused suite passing, and 25/25 Class A groups passing. Commit and
+push remain the final lifecycle checkpoint.
+
+------------------------------------------------------------------------
+
 # 2026-08-18 — Final Feature Batch Project Owner Runtime Evidence
 
 The final Update Profile correction passed Renewed Focused Engineering Review
@@ -35,7 +89,7 @@ accepted. No additional test details are inferred from those statements.
 The Final Feature Batch is accepted and documentation-reconciled for its final
 commit checkpoint. The previously damaged approximately 554-change
 `All Mods.wtprofile` is not considered repaired; the configured 645-change
-state was saved as a new profile. Reset to Game Default authority remains the
+state was saved as a new profile. Reset authority remained the
 next separate bounded investigation and has not started.
 
 ------------------------------------------------------------------------

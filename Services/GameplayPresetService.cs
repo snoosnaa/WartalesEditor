@@ -48,6 +48,19 @@ public sealed class GameplayPresetService
                 BuildExpected(current, definition, preset)));
     }
 
+    public bool CanRestorePreviousValues(
+        ProjectModel project,
+        ProgressionType type) =>
+        stateService.CanRestorePreviousValues(project, type);
+
+    public ProjectMutationResult RestorePreviousValues(
+        ProjectModel project,
+        ProgressionType type)
+    {
+        _ = stateService.GetRequiredPreviousValuesState(project, type);
+        return Apply(project, type, "Vanilla");
+    }
+
     public ProjectMutationResult Apply(
         ProjectModel project,
         ProgressionType type,

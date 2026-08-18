@@ -133,7 +133,7 @@ public sealed class ChangeSummaryService
             "Gameplay Tools",
             "Random Trait Exclusions",
             "Random eligibility",
-            "Game defaults",
+            "Previous values",
             $"{allowed:N0} of {state.ElementCount:N0} traits allowed"));
     }
 

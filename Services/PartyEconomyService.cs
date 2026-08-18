@@ -40,15 +40,19 @@ public sealed class PartyEconomyService
 
     public PartyEconomySettings GetBaselineSettings(ProjectModel project, ProgressionType type)
     {
-        GameplayOperationStateModel? state = stateService.FindState(project, type);
-        if (state == null)
-            return SettingsFromTargets(CaptureTargets(project, type), type);
+        GameplayOperationStateModel state =
+            stateService.GetRequiredPreviousValuesState(project, type);
         JArray baseline = ExpandLegacyBaseline(
             project,
             type,
             state.BaselineArray);
         return SettingsFromTargets(baseline, type);
     }
+
+    public bool CanRestorePreviousValues(
+        ProjectModel project,
+        ProgressionType type) =>
+        stateService.CanRestorePreviousValues(project, type);
 
     public ProjectMutationResult Apply(
         ProjectModel project,

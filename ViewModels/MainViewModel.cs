@@ -2385,21 +2385,25 @@ public class MainViewModel : ObservableObject
                 viewModel.RefreshFromProject();
                 if (result.MutationResult.WasModified)
                     viewModel.ApplyFeedback.ShowApplied(
-                        e.OperationType switch
-                        {
-                            ProgressionType.VolunteerWages => "Volunteer wage settings were updated.",
-                            ProgressionType.ValourPoints => "Valour Point settings were updated.",
-                            _ => "Carrying Capacity settings were updated."
-                        });
+                        e.RestorePreviousValues
+                            ? "Previous values were restored."
+                            : e.OperationType switch
+                            {
+                                ProgressionType.VolunteerWages => "Volunteer wage settings were updated.",
+                                ProgressionType.ValourPoints => "Valour Point settings were updated.",
+                                _ => "Carrying Capacity settings were updated."
+                            });
                 else
                     viewModel.ApplyFeedback.ShowAlreadyApplied();
             }
-            Status = e.OperationType switch
-            {
-                ProgressionType.VolunteerWages => "Volunteer Trait updated.",
-                ProgressionType.ValourPoints => "Valour Points updated.",
-                _ => "Carrying Capacity updated."
-            };
+            Status = e.RestorePreviousValues
+                ? $"{operation.Name} previous values restored."
+                : e.OperationType switch
+                {
+                    ProgressionType.VolunteerWages => "Volunteer Trait updated.",
+                    ProgressionType.ValourPoints => "Valour Points updated.",
+                    _ => "Carrying Capacity updated."
+                };
         }
         catch (Exception exception)
         {
@@ -2490,7 +2494,8 @@ public class MainViewModel : ObservableObject
         IProjectOperation operation = new GameplayPresetOperation(
             gameplayPresetService,
             e.OperationType,
-            e.PresetKey);
+            e.PresetKey,
+            e.RestorePreviousValues);
         try
         {
             ProjectOperationResult result;
@@ -2519,13 +2524,17 @@ public class MainViewModel : ObservableObject
                 viewModel.RefreshFromProject();
                 if (result.MutationResult.WasModified)
                     viewModel.ApplyFeedback.ShowApplied(
-                        $"{viewModel.Title} was updated.");
+                        e.RestorePreviousValues
+                            ? "Previous values were restored."
+                            : $"{viewModel.Title} was updated.");
                 else
                     viewModel.ApplyFeedback.ShowAlreadyApplied();
             }
 
             Status = result.MutationResult.WasModified
-                ? $"{operation.Name} updated."
+                ? e.RestorePreviousValues
+                    ? $"{operation.Name} previous values restored."
+                    : $"{operation.Name} updated."
                 : "No changes were applied. These settings already match the current project.";
         }
         catch (Exception exception)
@@ -2740,7 +2749,8 @@ public class MainViewModel : ObservableObject
         IProjectOperation operation =
             new OverworldMovementSpeedOperation(
                 overworldMovementSpeedService,
-                e.Preset);
+                e.Preset,
+                e.RestorePreviousValues);
         try
         {
             ProjectOperationResult result;
@@ -2750,7 +2760,9 @@ public class MainViewModel : ObservableObject
             {
                 RefreshAfterProjectOperation();
                 messageDialogService.ShowError(
-                    "The movement preset could not be applied." +
+                    (e.RestorePreviousValues
+                        ? "The previous movement values could not be restored."
+                        : "The movement preset could not be applied.") +
                     Environment.NewLine + Environment.NewLine +
                     "No changes were made.",
                     operation.Name);
@@ -2770,12 +2782,17 @@ public class MainViewModel : ObservableObject
             {
                 viewModel.RefreshFromProject();
                 if (result.MutationResult.WasModified)
-                    viewModel.ApplyFeedback.ShowApplied("Movement speed was updated.");
+                    viewModel.ApplyFeedback.ShowApplied(
+                        e.RestorePreviousValues
+                            ? "Previous values were restored."
+                            : "Movement speed was updated.");
                 else
                     viewModel.ApplyFeedback.ShowAlreadyApplied();
             }
             Status = result.MutationResult.WasModified
-                ? "Movement Speed updated."
+                ? e.RestorePreviousValues
+                    ? "Movement Speed previous values restored."
+                    : "Movement Speed updated."
                 : "Movement Speed already matched the selected setting.";
         }
         catch (Exception exception)
@@ -2783,7 +2800,9 @@ public class MainViewModel : ObservableObject
             Debug.WriteLine(exception);
             RefreshAfterProjectOperation();
             messageDialogService.ShowError(
-                "The movement preset could not be applied." +
+                (e.RestorePreviousValues
+                    ? "The previous movement values could not be restored."
+                    : "The movement preset could not be applied.") +
                 Environment.NewLine + Environment.NewLine +
                 "No changes were made.",
                 operation.Name);
@@ -2865,7 +2884,10 @@ public class MainViewModel : ObservableObject
             feedbackDialog.DataContext is RainFrequencyDialogViewModel feedbackViewModel)
             feedbackViewModel.ApplyFeedback.Clear();
         IProjectOperation operation =
-            new RainFrequencyOperation(rainFrequencyService, e.Preset);
+            new RainFrequencyOperation(
+                rainFrequencyService,
+                e.Preset,
+                e.RestorePreviousValues);
         try
         {
             ProjectOperationResult result;
@@ -2875,7 +2897,9 @@ public class MainViewModel : ObservableObject
             {
                 RefreshAfterProjectOperation();
                 messageDialogService.ShowError(
-                    "The rain preset could not be applied." +
+                    (e.RestorePreviousValues
+                        ? "The previous rain values could not be restored."
+                        : "The rain preset could not be applied.") +
                     Environment.NewLine + Environment.NewLine +
                     "No changes were made.",
                     operation.Name);
@@ -2894,12 +2918,17 @@ public class MainViewModel : ObservableObject
             {
                 viewModel.RefreshFromProject();
                 if (result.MutationResult.WasModified)
-                    viewModel.ApplyFeedback.ShowApplied("Rain frequency was updated.");
+                    viewModel.ApplyFeedback.ShowApplied(
+                        e.RestorePreviousValues
+                            ? "Previous values were restored."
+                            : "Rain frequency was updated.");
                 else
                     viewModel.ApplyFeedback.ShowAlreadyApplied();
             }
             Status = result.MutationResult.WasModified
-                ? "Rain Frequency updated."
+                ? e.RestorePreviousValues
+                    ? "Rain Frequency previous values restored."
+                    : "Rain Frequency updated."
                 : "Rain Frequency already matched the selected setting.";
         }
         catch (Exception exception)
@@ -2907,7 +2936,9 @@ public class MainViewModel : ObservableObject
             Debug.WriteLine(exception);
             RefreshAfterProjectOperation();
             messageDialogService.ShowError(
-                "The rain preset could not be applied." +
+                (e.RestorePreviousValues
+                    ? "The previous rain values could not be restored."
+                    : "The rain preset could not be applied.") +
                 Environment.NewLine + Environment.NewLine +
                 "No changes were made.",
                 operation.Name);

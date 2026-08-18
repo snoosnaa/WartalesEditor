@@ -8,6 +8,7 @@ namespace WartalesEditor.Services;
 
 public sealed class RainFrequencyService
 {
+    private const string PreviousValuesSetting = "PreviousValues";
     public const string PropertyPath =
         "props.meteo.rainDaysPerMonth";
 
@@ -87,6 +88,53 @@ public sealed class RainFrequencyService
         }
     }
 
+    public bool CanRestorePreviousValues(ProjectModel project) =>
+        stateService.CanRestorePreviousValues(
+            project,
+            ProgressionType.RainFrequency);
+
+    public ProjectMutationResult RestorePreviousValues(ProjectModel project)
+    {
+        GameplayOperationStateModel existing =
+            stateService.GetRequiredPreviousValuesState(
+                project,
+                ProgressionType.RainFrequency);
+        IReadOnlyList<RainTarget> targets = ResolveTargets(project);
+        JArray baseline = (JArray)existing.BaselineArray.DeepClone();
+        JArray current = Capture(targets);
+
+        if (JToken.DeepEquals(current, baseline) &&
+            string.Equals(
+                existing.GameplaySettings?.Value<string>("preset"),
+                PreviousValuesSetting,
+                StringComparison.Ordinal))
+        {
+            return new ProjectMutationResult();
+        }
+
+        ProjectMutationResult result = new();
+        for (int index = 0; index < targets.Count; index++)
+        {
+            result.Merge(
+                mutationService.EnsurePropertyByPath(
+                    targets[index].Entry,
+                    PropertyPath,
+                    baseline[index]!["value"]!));
+        }
+
+        GameplayOperationStateModel replacement =
+            CreateState(baseline, baseline, PreviousValuesSetting);
+        GameplayOperationStateModel previous = existing.DeepClone();
+        bool previousModified = project.IsGameplayOperationStateModified;
+        stateService.ReplaceState(project, replacement);
+        result.AddGameplayOperationState(
+            project,
+            previous,
+            replacement,
+            previousModified);
+        return result;
+    }
+
     public ProjectMutationResult Apply(
         ProjectModel project,
         RainFrequencyPreset preset)
@@ -95,8 +143,6 @@ public sealed class RainFrequencyService
             GetRequiredPreset(preset);
         IReadOnlyList<RainTarget> targets =
             ResolveTargets(project);
-        JArray baseline = CreateBaseline();
-        JArray expected = BuildExpected(baseline, selection);
         GameplayOperationStateModel? existing =
             stateService.FindState(
                 project,
@@ -104,6 +150,11 @@ public sealed class RainFrequencyService
 
         if (existing != null)
             stateService.ValidateState(project, existing);
+
+        JArray baseline = existing == null || !existing.IsCompatible
+            ? Capture(targets)
+            : (JArray)existing.BaselineArray.DeepClone();
+        JArray expected = BuildExpected(CreateBaseline(), selection);
 
         ProjectMutationResult result = new();
         for (int index = 0; index < targets.Count; index++)
@@ -127,7 +178,10 @@ public sealed class RainFrequencyService
         }
 
         GameplayOperationStateModel replacement =
-            CreateState(baseline, expected, selection);
+            CreateState(
+                baseline,
+                expected,
+                selection.Preset.ToString());
         GameplayOperationStateModel? previous =
             existing?.DeepClone();
         bool previousModified =
@@ -189,27 +243,34 @@ public sealed class RainFrequencyService
         ProjectModel project,
         GameplayOperationStateModel state)
     {
-        if (state.GameplaySettings == null ||
-            !Enum.TryParse(
-                state.GameplaySettings.Value<string>("preset"),
-                out RainFrequencyPreset preset))
+        if (state.GameplaySettings == null)
             throw new InvalidOperationException(
                 "The saved Rain Frequency preset is invalid.");
-
-        RainFrequencyPresetOption selection =
-            GetRequiredPreset(preset);
+        string setting =
+            state.GameplaySettings.Value<string>("preset") ?? string.Empty;
+        ValidateBaseline(state.BaselineArray);
         IReadOnlyList<RainTarget> targets =
             ResolveTargets(project);
-        JArray canonicalBaseline = CreateBaseline();
-        JArray expected =
-            BuildExpected(canonicalBaseline, selection);
+        JArray expected;
+        if (string.Equals(
+                setting,
+                PreviousValuesSetting,
+                StringComparison.Ordinal))
+        {
+            expected = (JArray)state.BaselineArray.DeepClone();
+        }
+        else
+        {
+            if (!Enum.TryParse(setting, out RainFrequencyPreset preset))
+                throw new InvalidOperationException(
+                    "The saved Rain Frequency preset is invalid.");
+            RainFrequencyPresetOption selection = GetRequiredPreset(preset);
+            expected = BuildExpected(CreateBaseline(), selection);
+        }
         JArray current = Capture(targets);
 
         if (state.ElementCount != Regions.Count ||
             state.BaselineArray.Count != Regions.Count ||
-            !JToken.DeepEquals(
-                state.BaselineArray,
-                canonicalBaseline) ||
             !string.Equals(
                 state.TargetSheet,
                 "region",
@@ -240,6 +301,38 @@ public sealed class RainFrequencyService
             !JToken.DeepEquals(current, expected))
             throw new InvalidOperationException(
                 "The saved Rain Frequency settings no longer match the loaded project.");
+    }
+
+    private static void ValidateBaseline(JArray baseline)
+    {
+        if (baseline.Count != Regions.Count)
+            throw new InvalidOperationException(
+                "The remembered regional rain baseline is incomplete.");
+
+        for (int index = 0; index < Regions.Count; index++)
+        {
+            RainRegionDefinition region = Regions[index];
+            if (baseline[index] is not JObject record ||
+                !string.Equals(
+                    record.Value<string>("sheet"),
+                    "region",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    record.Value<string>("entry"),
+                    region.EntryId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    record.Value<string>("path"),
+                    PropertyPath,
+                    StringComparison.Ordinal) ||
+                record["value"]?.Type is not
+                    (JTokenType.Integer or JTokenType.Float) ||
+                record["value"]!.Value<decimal>() < 0)
+            {
+                throw new InvalidOperationException(
+                    "The remembered regional rain baseline is invalid.");
+            }
+        }
     }
 
     internal static JArray BuildExpected(
@@ -310,7 +403,7 @@ public sealed class RainFrequencyService
     private static GameplayOperationStateModel CreateState(
         JArray baseline,
         JArray expected,
-        RainFrequencyPresetOption selection)
+        string setting)
     {
         return new GameplayOperationStateModel
         {
@@ -322,7 +415,7 @@ public sealed class RainFrequencyService
             BaselineArray = (JArray)baseline.DeepClone(),
             GameplaySettings = new JObject
             {
-                ["preset"] = selection.Preset.ToString()
+                ["preset"] = setting
             },
             BaselineFingerprint =
                 GameplayOperationFingerprintService

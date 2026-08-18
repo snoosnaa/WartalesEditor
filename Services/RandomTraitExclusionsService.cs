@@ -6,6 +6,27 @@ using WartalesEditor.Models;
 
 namespace WartalesEditor.Services;
 
+public enum RandomTraitExclusionRestoreStatus
+{
+    Succeeded,
+    Unavailable,
+    Failed
+}
+
+public sealed class RandomTraitExclusionRestoreSelectionResult
+{
+    public RandomTraitExclusionRestoreSelectionResult(
+        RandomTraitExclusionRestoreStatus status,
+        IReadOnlyCollection<string>? allowedTraitIds = null)
+    {
+        Status = status;
+        AllowedTraitIds = allowedTraitIds ?? Array.Empty<string>();
+    }
+
+    public RandomTraitExclusionRestoreStatus Status { get; }
+    public IReadOnlyCollection<string> AllowedTraitIds { get; }
+}
+
 public sealed class RandomTraitExclusionsService
 {
     private const string TraitSheetName = "trait";
@@ -63,6 +84,70 @@ public sealed class RandomTraitExclusionsService
                 IsAllowed = candidate.CurrentDone != RandomTraitDoneBaseline.False
             };
         }).ToArray();
+    }
+
+    public bool CanRestorePreviousValues(ProjectModel project) =>
+        stateService.CanRestorePreviousValues(
+            project,
+            ProgressionType.RandomTraitExclusions);
+
+    public IReadOnlyCollection<string> GetPreviousAllowedTraitIds(
+        ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        GameplayOperationStateModel state =
+            stateService.GetRequiredPreviousValuesState(
+                project,
+                ProgressionType.RandomTraitExclusions);
+        IReadOnlyList<ResolvedTrait> candidates =
+            ResolveCandidates(project);
+        Dictionary<string, RandomTraitDoneBaseline> baselines =
+            state.BaselineArray
+                .OfType<JObject>()
+                .ToDictionary(
+                    record => ReadRequiredString(record, "id"),
+                    ReadBaseline,
+                    StringComparer.Ordinal);
+
+        return candidates
+            .Where(candidate =>
+                (baselines.TryGetValue(
+                    candidate.Entry.Id,
+                    out RandomTraitDoneBaseline baseline)
+                        ? baseline
+                        : candidate.CurrentDone) != RandomTraitDoneBaseline.False)
+            .Select(candidate => candidate.Entry.Id)
+            .ToArray();
+    }
+
+    public RandomTraitExclusionRestoreSelectionResult
+        ResolvePreviousAllowedTraitIds(ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (!CanRestorePreviousValues(project))
+        {
+            return new RandomTraitExclusionRestoreSelectionResult(
+                RandomTraitExclusionRestoreStatus.Unavailable);
+        }
+
+        try
+        {
+            return new RandomTraitExclusionRestoreSelectionResult(
+                RandomTraitExclusionRestoreStatus.Succeeded,
+                GetPreviousAllowedTraitIds(project));
+        }
+        catch (InvalidOperationException)
+        {
+            return new RandomTraitExclusionRestoreSelectionResult(
+                RandomTraitExclusionRestoreStatus.Unavailable);
+        }
+        catch (Exception)
+        {
+            return new RandomTraitExclusionRestoreSelectionResult(
+                RandomTraitExclusionRestoreStatus.Failed);
+        }
     }
 
     public ProjectMutationResult Apply(
@@ -203,6 +288,26 @@ public sealed class RandomTraitExclusionsService
         ResolveCandidates(project)
             .Select(candidate => candidate.Entry.Id)
             .ToHashSet(StringComparer.Ordinal);
+
+    internal static HashSet<string> GetChangedTraitIds(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        ValidateStateCompatibility(project, state);
+        Dictionary<string, RandomTraitDoneBaseline> baselines =
+            state.BaselineArray
+                .OfType<JObject>()
+                .ToDictionary(
+                    record => ReadRequiredString(record, "id"),
+                    ReadBaseline,
+                    StringComparer.Ordinal);
+
+        return ResolveOwnedTraits(project, state)
+            .Where(candidate =>
+                candidate.CurrentDone != baselines[candidate.Entry.Id])
+            .Select(candidate => candidate.Entry.Id)
+            .ToHashSet(StringComparer.Ordinal);
+    }
 
     private ProjectMutationResult ApplyResolved(
         ProjectModel project,

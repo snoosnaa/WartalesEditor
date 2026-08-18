@@ -2,9 +2,49 @@
 
 ## Current Milestone
 
-Final Feature Batch Documentation Reconciliation
+Restore Previous Values correction
 
 ## Current Status
+
+The Project Owner standardized every gameplay reset control as **Restore
+Previous Values**. The implementation now uses compatible Gameplay Operation
+State as the single authority for the values captured before a gameplay tool
+first changed its targets. Restore remains unavailable when that history is
+missing, and an explicit restore request never adopts current configured values
+as fabricated history.
+
+The 17 shared preset tools, Party Economy, Random Trait Exclusions, Overworld
+Movement Speed, and Rain Frequency use the accepted contract. Movement and Rain
+retain Vanilla as ordinary selectable presets but no longer use those fixed
+values as reset authority. `.wtstate`, compatible profile state, mutation-based
+rollback, validation, and one-action Undo/Redo remain authoritative. Detailed
+Editor Reset Property and `PropertyModel.IsModified` are unchanged. No Golden
+CDB support was added.
+
+The focused Random Trait Exclusions correction rejects Restore at the
+execution boundary when compatible history has disappeared, without issuing an
+Apply request. Restore selections are resolved from current compatible Gameplay
+Operation State rather than immutable dialog-open candidate baselines, including
+after profile/state replacement. Candidate presentation metadata is refreshed
+after project operations.
+
+The final consistency correction establishes one interaction contract across
+all 23 gameplay entries: Restore Previous Values immediately applies the
+captured pre-tool values through the normal validated operation path. Apply
+remains available for ordinary manual configuration. Party Economy no longer
+requires a second Apply click. Exact RTE baseline equality contributes zero
+effective changes and produces no synthetic Review Changes row; additional
+exclusions retain per-trait accounting. Renewed Focused Engineering Review and
+final Project Owner acceptance are complete. The review returned **PASS WITH
+NON-BLOCKING NOTES**: automated coverage exercises production ViewModel,
+service, operation, mutation, validation, and history paths rather than
+synthesizing WPF button clicks. Project Owner interactive testing supplies the
+runtime evidence and concluded with an explicit **PASS** after the final
+corrections. Sequential application and test builds complete with zero warnings
+and zero errors, the focused suite passes, and all 25 Class A compatibility
+groups pass. Final commit and push are the remaining lifecycle checkpoint.
+
+Previous milestone context:
 
 Update Profile engineering implementation and its Renewed Focused Engineering
 Review are complete. The review returned **PASS WITH NON-BLOCKING NOTES — Ready
@@ -16,7 +56,7 @@ temporary artifacts remained.
 Random Trait Exclusions is implemented under Party with dynamically discovered,
 searchable Positive and Negative checklists. Checked traits remain eligible;
 unchecked traits receive `done=false`. Exact true, false, and absent baselines
-are preserved, and Restore Game Defaults uses the approved known-property
+are preserved, and Restore Previous Values uses the approved known-property
 removal primitive only for an originally absent scalar `done` leaf.
 
 The feature uses one atomic gameplay operation, mutation-based rollback, one
@@ -51,8 +91,8 @@ deletion of clean-baseline properties is outside the authorized profile scope;
 the supported removal case remains exact restoration of a feature-created
 absent-baseline scalar property.
 
-Reset to Game Default authority is explicitly outside this correction and
-remains a separate future investigation.
+The earlier reset-authority investigation was completed separately and led to
+the current Restore Previous Values contract.
 
 The focused correction pass now preflights every candidate before mutation,
 requires explicit stable source IDs, derives Review Changes from the persisted
@@ -117,10 +157,10 @@ configured 645-change state.
 
 Run the final verification and commit/push checkpoint for the accepted Final
 Feature Batch. After that checkpoint, the next authorized engineering activity
-is a separate bounded Reset to Game Default authority investigation.
+was a separate bounded reset-authority investigation.
 
 No commit or push has been performed.
 
-Do not begin Reset to Game Default investigation, QuickBMS integration,
+Do not begin QuickBMS integration,
 Integrated Import / Install / Restore, Update Survival, or release hardening
 during this boundary.

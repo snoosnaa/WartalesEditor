@@ -226,6 +226,48 @@ The following rules are considered architectural invariants and should not chang
 
 ---
 
+# Gameplay Previous-Value Restoration
+
+Gameplay tools expose one restoration contract: **Restore Previous Values**.
+The authority is the compatible pre-tool baseline captured in
+`GameplayOperationStateModel.BaselineArray` immediately before the tool first
+changes its managed targets. Later settings preserve that baseline. The
+`.wtstate` sidecar persists it across save/reload and compatible profile
+snapshots transport it between projects.
+
+Restore availability is determined centrally by `GameplayOperationStateService`.
+If compatible historical state is absent, restoration remains unavailable;
+current live values are not adopted by a restore request. Feature services
+execute restoration through their normal `ProjectMutationService` and
+transaction paths. Overworld Movement Speed and Rain Frequency use this same
+captured authority; their fixed Vanilla values remain ordinary selectable
+presets only.
+
+Modeless gameplay dialogs must re-check this authority when Restore executes;
+button enablement and dialog-open ViewModel data are presentation only. Random
+Trait Exclusions resolves its restore selection from the current compatible
+state through `RandomTraitExclusionsService`, then issues its normal Apply
+request only after successful resolution. This keeps profile-carried state
+replacement authoritative and makes stale-dialog rejection mutation- and
+history-free.
+
+Restore Previous Values is an immediate gameplay action. All shared preset,
+Party Economy, Random Trait Exclusions, Movement, and Rain dialogs dispatch the
+same validated operation path used by ordinary Apply during the Restore click;
+ordinary Apply remains available for later manual configuration. RTE effective
+accounting uses canonical per-trait `done` identities and exact current-versus-
+captured-baseline comparison. Gameplay Operation State presence alone is not an
+effective change, while changed leaves remain deduplicated from any synthetic
+summary representation.
+
+This contract is distinct from Detailed Editor Reset Property, whose authority
+is the current `PropertyModel` baseline. `PropertyModel.IsModified`, save-time
+baseline acceptance, profile reconciliation, mutation ownership, and rollback
+semantics are unchanged. The editor does not claim universal game-default
+restoration and has no Golden CDB dependency.
+
+---
+
 # Verified Architecture
 
 The following has been verified end-to-end:

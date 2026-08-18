@@ -119,6 +119,46 @@ public sealed class GameplayOperationStateService
                 state.OperationType == progressionType);
     }
 
+    public bool CanRestorePreviousValues(
+        ProjectModel project,
+        ProgressionType progressionType)
+    {
+        GameplayOperationStateModel? state =
+            FindState(project, progressionType);
+
+        if (state == null)
+        {
+            return false;
+        }
+
+        ValidateState(project, state);
+        return state.IsCompatible;
+    }
+
+    public GameplayOperationStateModel GetRequiredPreviousValuesState(
+        ProjectModel project,
+        ProgressionType progressionType)
+    {
+        GameplayOperationStateModel? state =
+            FindState(project, progressionType);
+
+        if (state == null)
+        {
+            throw new InvalidOperationException(
+                "No previous values are available for this gameplay tool.");
+        }
+
+        ValidateState(project, state);
+
+        if (!state.IsCompatible)
+        {
+            throw new InvalidOperationException(
+                "The saved previous values are not compatible with this project.");
+        }
+
+        return state;
+    }
+
     public bool IsStateModified(
         ProjectModel project,
         ProgressionType progressionType)

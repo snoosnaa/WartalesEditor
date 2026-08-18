@@ -7,6 +7,16 @@ using WartalesEditor.Services;
 using WartalesEditor.Services.Operations;
 using WartalesEditor.ViewModels;
 
+if (args.Contains(
+        "--restore-previous-values-only",
+        StringComparer.Ordinal))
+{
+    VerifyRestorePreviousValuesContract();
+    Console.WriteLine(
+        "ALL RESTORE PREVIOUS VALUES CHECKS PASSED");
+    return;
+}
+
 VerifyPropertyRemovalMutationPrimitive();
 VerifyPropertyRemovalBoundaryRejections();
 VerifyPropertyRemovalAdvancedTransactions();
@@ -29,8 +39,721 @@ VerifyLegacyProfileReconciliation();
 VerifyApplyFeedbackState();
 VerifyCatalogCoverage();
 VerifyMalformedTargets();
+VerifyRestorePreviousValuesContract();
 
 Console.WriteLine("ALL CLASS A COMPATIBILITY CHECKS PASSED");
+
+static void VerifyRestorePreviousValuesContract()
+{
+    VerifySharedPresetPreviousValues();
+    VerifyPartyEconomyPreviousValues();
+    VerifyMovementPreviousValues();
+    VerifyRainPreviousValues();
+    VerifyRandomTraitExclusionsRestoreLifecycle();
+    VerifyRteAccountingAndPartyImmediateRestore();
+    Console.WriteLine(
+        "PASS unified Restore Previous Values authority, persistence, profiles, and history");
+}
+
+static void VerifyRteAccountingAndPartyImmediateRestore()
+{
+    ProjectModel exclusionsProject = CreateRandomTraitExclusionProject();
+    ProjectMutationService exclusionsMutation = new();
+    GameplayOperationStateService exclusionsStates = new(exclusionsMutation);
+    RandomTraitExclusionsService exclusionsService = new(
+        exclusionsMutation,
+        exclusionsStates);
+    ProjectOperationService executor = new();
+    string[] baselineAllowed =
+    {
+        "PositiveTrue", "NegativeAbsent", "PositiveAbsent"
+    };
+    Check(executor.Execute(
+            new RandomTraitExclusionsOperation(
+                exclusionsService,
+                baselineAllowed),
+            exclusionsProject).Succeeded,
+        "RTE accounting fixture establishes captured previous values");
+    int preRteCount = new EffectiveChangeCountService().Calculate(exclusionsProject);
+    IReadOnlyList<ChangeSummaryItemModel> baselineSummary =
+        new ChangeSummaryService().BuildItems(
+            exclusionsProject,
+            new ModificationSnapshotService().CreateSnapshot(exclusionsProject),
+            new LocalizationService());
+    Check(preRteCount == 0 &&
+          new ProfileEffectiveChangeCountService().Calculate(
+              new ModProfileService().CreateProfile(
+                  exclusionsProject,
+                  "RTE captured baseline")) == 0 &&
+          baselineSummary.All(item =>
+              item.SettingName != "Random Trait Exclusions"),
+        "RTE captured baseline contributes zero project/profile changes and no synthetic summary row");
+
+    ProjectOperationResult threeExcluded = executor.Execute(
+        new RandomTraitExclusionsOperation(
+            exclusionsService,
+            Array.Empty<string>()),
+        exclusionsProject);
+    Check(threeExcluded.Succeeded &&
+          new EffectiveChangeCountService().Calculate(exclusionsProject) ==
+              preRteCount + 3 &&
+          new ProfileEffectiveChangeCountService().Calculate(
+              new ModProfileService().CreateProfile(
+                  exclusionsProject,
+                  "RTE three exclusions")) == 3,
+        "RTE three additional exclusions contribute exactly three project/profile changes");
+    IReadOnlyList<ChangeSummaryItemModel> threeExcludedSummary =
+        new ChangeSummaryService().BuildItems(
+            exclusionsProject,
+            new ModificationSnapshotService().CreateSnapshot(exclusionsProject),
+            new LocalizationService());
+    Check(threeExcludedSummary.Count(item =>
+              item.CategoryName == "trait" &&
+              item.PropertyName == "done") == 3 &&
+          threeExcludedSummary.All(item =>
+              item.SettingName != "Random Trait Exclusions"),
+        "RTE three additional exclusions produce three leaf rows without synthetic double counting");
+    string threeExcludedJson = Json(exclusionsProject);
+
+    RandomTraitExclusionsDialogViewModel exclusionsViewModel = new(
+        exclusionsProject,
+        exclusionsService,
+        new LocalizationService());
+    Check(exclusionsViewModel.TryRestorePreviousValues(),
+        "RTE immediate Restore resolves current captured authority");
+    ProjectOperationResult exclusionsRestore = executor.Execute(
+        new RandomTraitExclusionsOperation(
+            exclusionsService,
+            exclusionsViewModel.GetAllowedTraitIds()),
+        exclusionsProject);
+    Check(exclusionsRestore.Succeeded &&
+          Entry(exclusionsProject, "trait", "PositiveTrue").SourceEntry!["done"]!.Value<bool>() &&
+          Entry(exclusionsProject, "trait", "NegativeAbsent").SourceEntry!.Property("done") == null &&
+          Entry(exclusionsProject, "trait", "PositiveAbsent").SourceEntry!.Property("done") == null &&
+          Entry(exclusionsProject, "trait", "NegativeDisabled").SourceEntry!["done"]!.Value<bool>() == false &&
+          new EffectiveChangeCountService().Calculate(exclusionsProject) == preRteCount &&
+          new ProfileEffectiveChangeCountService().Calculate(
+              new ModProfileService().CreateProfile(
+                  exclusionsProject,
+                  "RTE restored baseline")) == 0,
+        "RTE immediate Restore returns exact true, false, and absent baseline at zero project/profile contribution");
+    IReadOnlyList<ChangeSummaryItemModel> restoredSummary =
+        new ChangeSummaryService().BuildItems(
+            exclusionsProject,
+            new ModificationSnapshotService().CreateSnapshot(exclusionsProject),
+            new LocalizationService());
+    Check(restoredSummary.All(item =>
+              item.SettingName != "Random Trait Exclusions"),
+        "RTE restored baseline has no synthetic Review Changes row");
+    string restoredJson = Json(exclusionsProject);
+    EditHistoryService exclusionsHistory = new();
+    exclusionsHistory.Record(new ProjectOperationHistoryAction(
+        "Random Trait Exclusions",
+        exclusionsRestore.MutationResult,
+        new ProjectOperationTransactionService()));
+    Check(exclusionsHistory.Undo() &&
+          Json(exclusionsProject) == threeExcludedJson &&
+          new EffectiveChangeCountService().Calculate(exclusionsProject) ==
+              preRteCount + 3,
+        "RTE Restore Undo returns to three effective exclusions");
+    Check(exclusionsHistory.Redo() &&
+          Json(exclusionsProject) == restoredJson &&
+          new EffectiveChangeCountService().Calculate(exclusionsProject) == preRteCount,
+        "RTE Restore Redo returns to zero effective exclusions");
+
+    VerifyPartyEconomyImmediateRestore(
+        ProgressionType.VolunteerWages,
+        CreateProject(
+            Sheet(
+                "trait",
+                new JObject
+                {
+                    ["id"] = "Volunteer",
+                    ["desc"] = "Volunteer",
+                    ["props"] = new JObject { ["value"] = 25 }
+                })),
+        new PartyEconomySettings { VolunteerPercentage = 75 });
+    VerifyPartyEconomyImmediateRestore(
+        ProgressionType.ValourPoints,
+        CreateValourProject(1, 2, 3),
+        new PartyEconomySettings
+        {
+            MaximumValour = 20,
+            RestoredValour = 5,
+            TentTier1Valour = 2,
+            TentTier2Valour = 3,
+            TentTier3Valour = 4
+        });
+    VerifyPartyEconomyImmediateRestore(
+        ProgressionType.CarryingCapacity,
+        CreateCarryingProject(10, 10, 10, 5, 10),
+        new PartyEconomySettings
+        {
+            SaddlebagCapacity = 20,
+            PonyStartingCapacity = 80,
+            HitchingPostTier1Base = 20,
+            HitchingPostTier2Base = 40,
+            HitchingPostTier3Base = 60,
+            HitchingPostTier1Trait = 0,
+            HitchingPostTier2Trait = 20,
+            HitchingPostTier3Trait = 30
+        });
+
+    Console.WriteLine(
+        "PASS RTE baseline accounting and universal Party Economy immediate restoration");
+}
+
+static void VerifyPartyEconomyImmediateRestore(
+    ProgressionType type,
+    ProjectModel project,
+    PartyEconomySettings modifiedSettings)
+{
+    string baselineJson = Json(project);
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    PartyEconomyService service = new(mutation, states);
+    PartyEconomyDialogViewModel viewModel = new(project, service, type);
+    string missingJson = Json(project);
+    Check(!viewModel.TryRestorePreviousValues() &&
+          Json(project) == missingJson &&
+          project.GameplayOperationStates.Count == 0,
+        $"{type} missing-history Restore does not apply or create state");
+
+    ProjectOperationResult modified = new ProjectOperationService().Execute(
+        new PartyEconomyOperation(service, type, modifiedSettings),
+        project);
+    Check(modified.Succeeded,
+        $"{type} immediate-Restore fixture applies modified settings");
+    string modifiedJson = Json(project);
+    viewModel.RefreshFromProject();
+    Check(viewModel.TryRestorePreviousValues(),
+        $"{type} Restore resolves and populates captured fields");
+    ProjectOperationResult restore = new ProjectOperationService().Execute(
+        new PartyEconomyOperation(service, type, viewModel.CreateSettings()),
+        project);
+    Check(restore.Succeeded && Json(project) == baselineJson,
+        $"{type} Restore applies immediately without a second Apply action");
+    VerifyUndoRedo(
+        $"{type} immediate previous values",
+        restore,
+        project,
+        modifiedJson,
+        baselineJson);
+}
+
+static void VerifyRandomTraitExclusionsRestoreLifecycle()
+{
+    string[] modifiedSelection =
+    {
+        "PositiveTrue", "PositiveAbsent", "NegativeDisabled"
+    };
+
+    ProjectModel staleDialogProject = CreateRandomTraitExclusionProject();
+    ProjectMutationService staleDialogMutation = new();
+    GameplayOperationStateService staleDialogStates = new(staleDialogMutation);
+    RandomTraitExclusionsService staleDialogService = new(
+        staleDialogMutation,
+        staleDialogStates);
+    RandomTraitExclusionsDialogViewModel staleDialogViewModel = new(
+        staleDialogProject,
+        staleDialogService,
+        new LocalizationService());
+    ProjectOperationResult staleDialogApply = new ProjectOperationService().Execute(
+        new RandomTraitExclusionsOperation(
+            staleDialogService,
+            modifiedSelection),
+        staleDialogProject);
+    Check(staleDialogApply.Succeeded &&
+          staleDialogProject.GameplayOperationStates.Count == 1,
+        "RTE stale-dialog fixture captures compatible operation state");
+    staleDialogViewModel.RefreshFromProject(
+        staleDialogProject,
+        staleDialogService);
+    EditHistoryService staleDialogHistory = new();
+    staleDialogHistory.Record(new ProjectOperationHistoryAction(
+        "Random Trait Exclusions",
+        staleDialogApply.MutationResult,
+        new ProjectOperationTransactionService()));
+    Check(staleDialogHistory.Undo() &&
+          staleDialogProject.GameplayOperationStates.Count == 0,
+        "RTE external Undo removes authoritative state while the dialog remains open");
+    string afterUndo = Json(staleDialogProject);
+    bool staleDialogApplyRequested = false;
+    if (staleDialogViewModel.TryRestorePreviousValues())
+        staleDialogApplyRequested = true;
+    Check(!staleDialogApplyRequested &&
+          staleDialogViewModel.LastRestoreStatus ==
+              RandomTraitExclusionRestoreStatus.Unavailable &&
+          Json(staleDialogProject) == afterUndo &&
+          staleDialogProject.GameplayOperationStates.Count == 0 &&
+          !staleDialogHistory.CanUndo &&
+          staleDialogHistory.CanRedo,
+        "RTE stale open-dialog Restore after Undo rejects without Apply, mutation, state, or history");
+
+    ProjectModel missingHistoryProject = CreateRandomTraitExclusionProject();
+    ProjectMutationService missingHistoryMutation = new();
+    RandomTraitExclusionsService missingHistoryService = new(
+        missingHistoryMutation,
+        new GameplayOperationStateService(missingHistoryMutation));
+    string missingHistoryJson = Json(missingHistoryProject);
+    CheckThrows<InvalidOperationException>(
+        () => missingHistoryService.GetPreviousAllowedTraitIds(missingHistoryProject),
+        "RTE direct previous-value resolution rejects missing history");
+    Check(Json(missingHistoryProject) == missingHistoryJson &&
+          missingHistoryProject.GameplayOperationStates.Count == 0 &&
+          !missingHistoryProject.Sheets.SelectMany(sheet => sheet.Entries)
+              .SelectMany(entry => entry.Properties).Any(property => property.IsModified),
+        "RTE direct missing-history rejection creates no mutation or baseline state");
+
+    ProjectModel replacementProject = CreateRandomTraitExclusionProject();
+    ProjectMutationService replacementMutation = new();
+    GameplayOperationStateService replacementStates = new(replacementMutation);
+    RandomTraitExclusionsService replacementService = new(
+        replacementMutation,
+        replacementStates);
+    Check(new ProjectOperationService().Execute(
+            new RandomTraitExclusionsOperation(
+                replacementService,
+                modifiedSelection),
+            replacementProject).Succeeded,
+        "RTE authoritative-state replacement fixture establishes baseline A");
+    RandomTraitExclusionsDialogViewModel replacementViewModel = new(
+        replacementProject,
+        replacementService,
+        new LocalizationService());
+    Check(replacementViewModel.PositiveTraits.Single(item =>
+              item.Id == "PositiveTrue").Candidate.BaselineDone ==
+          RandomTraitDoneBaseline.True,
+        "RTE open dialog initially caches baseline A presentation data");
+
+    ProjectModel baselineBProject = CreateRandomTraitExclusionProject(
+        positiveTrue: false,
+        negativeAbsent: true,
+        positiveAbsent: null,
+        negativeDisabled: true);
+    ProjectMutationService baselineBMutation = new();
+    GameplayOperationStateService baselineBStates = new(baselineBMutation);
+    RandomTraitExclusionsService baselineBService = new(
+        baselineBMutation,
+        baselineBStates);
+    Check(new ProjectOperationService().Execute(
+            new RandomTraitExclusionsOperation(
+                baselineBService,
+                modifiedSelection),
+            baselineBProject).Succeeded,
+        "RTE authoritative-state replacement fixture establishes compatible baseline B");
+    GameplayOperationStateModel baselineBState =
+        baselineBProject.GameplayOperationStates.Single().DeepClone();
+    ProjectMutationResult stateReplacement =
+        replacementStates.RestoreSnapshotStatesWithMutations(
+            replacementProject,
+            new[] { baselineBState });
+    Check(stateReplacement.GameplayOperationStateRollbackRecords.Count == 1 &&
+          replacementProject.GameplayOperationStates.Single().BaselineArray
+              .OfType<JObject>().Single(record =>
+                  record.Value<string>("id") == "PositiveTrue")
+              .Value<string>("doneState") == nameof(RandomTraitDoneBaseline.False),
+        "RTE production snapshot/profile state path replaces baseline A with baseline B");
+
+    Check(replacementViewModel.TryRestorePreviousValues() &&
+          replacementViewModel.LastRestoreStatus ==
+              RandomTraitExclusionRestoreStatus.Succeeded &&
+          !replacementViewModel.PositiveTraits.Single(item =>
+              item.Id == "PositiveTrue").IsAllowed &&
+          replacementViewModel.NegativeTraits.Single(item =>
+              item.Id == "NegativeAbsent").IsAllowed &&
+          replacementViewModel.PositiveTraits.Single(item =>
+              item.Id == "PositiveAbsent").IsAllowed &&
+          replacementViewModel.NegativeTraits.Single(item =>
+              item.Id == "NegativeDisabled").IsAllowed,
+        "RTE restore resolves baseline B at click time instead of cached baseline A");
+    string beforeReplacementRestore = Json(replacementProject);
+    ProjectOperationResult replacementRestore = new ProjectOperationService().Execute(
+        new RandomTraitExclusionsOperation(
+            replacementService,
+            replacementViewModel.GetAllowedTraitIds()),
+        replacementProject);
+    Check(replacementRestore.Succeeded &&
+          Entry(replacementProject, "trait", "PositiveTrue").SourceEntry!["done"]!.Value<bool>() == false &&
+          Entry(replacementProject, "trait", "NegativeAbsent").SourceEntry!["done"]!.Value<bool>() &&
+          Entry(replacementProject, "trait", "PositiveAbsent").SourceEntry!.Property("done") == null &&
+          Entry(replacementProject, "trait", "NegativeDisabled").SourceEntry!["done"]!.Value<bool>(),
+        "RTE state-replacement restore reproduces baseline B true, false, and absent semantics");
+    string afterReplacementRestore = Json(replacementProject);
+    VerifyUndoRedo(
+        "RTE baseline-B previous values",
+        replacementRestore,
+        replacementProject,
+        beforeReplacementRestore,
+        afterReplacementRestore);
+    replacementViewModel.RefreshFromProject(
+        replacementProject,
+        replacementService);
+    Check(replacementViewModel.PositiveTraits.Single(item =>
+              item.Id == "PositiveTrue").Candidate.BaselineDone ==
+          RandomTraitDoneBaseline.False,
+        "RTE candidate refresh replaces stale baseline presentation metadata");
+
+    ProjectModel normalProject = CreateRandomTraitExclusionProject();
+    ProjectMutationService normalMutation = new();
+    GameplayOperationStateService normalStates = new(normalMutation);
+    RandomTraitExclusionsService normalService = new(
+        normalMutation,
+        normalStates);
+    RandomTraitExclusionsDialogViewModel normalViewModel = new(
+        normalProject,
+        normalService,
+        new LocalizationService());
+    Check(new ProjectOperationService().Execute(
+            new RandomTraitExclusionsOperation(normalService, modifiedSelection),
+            normalProject).Succeeded &&
+          normalViewModel.TryRestorePreviousValues(),
+        "RTE normal open-dialog Restore resolves its captured previous values");
+    string beforeNormalRestore = Json(normalProject);
+    ProjectOperationResult normalRestore = new ProjectOperationService().Execute(
+        new RandomTraitExclusionsOperation(
+            normalService,
+            normalViewModel.GetAllowedTraitIds()),
+        normalProject);
+    Check(normalRestore.Succeeded &&
+          Entry(normalProject, "trait", "PositiveTrue").SourceEntry!["done"]!.Value<bool>() &&
+          Entry(normalProject, "trait", "NegativeAbsent").SourceEntry!.Property("done") == null &&
+          Entry(normalProject, "trait", "PositiveAbsent").SourceEntry!.Property("done") == null &&
+          Entry(normalProject, "trait", "NegativeDisabled").SourceEntry!["done"]!.Value<bool>() == false,
+        "RTE normal Restore reproduces exact true, false, and absent previous values");
+    string afterNormalRestore = Json(normalProject);
+    VerifyUndoRedo(
+        "RTE normal previous values",
+        normalRestore,
+        normalProject,
+        beforeNormalRestore,
+        afterNormalRestore);
+
+    Console.WriteLine(
+        "PASS Random Trait Exclusions execution-time restore authority and stale-dialog safety");
+}
+
+static void VerifyPartyEconomyPreviousValues()
+{
+    ProjectModel project = CreateProject(
+        Sheet(
+            "trait",
+            new JObject
+            {
+                ["id"] = "Volunteer",
+                ["desc"] = "Volunteer",
+                ["props"] = new JObject
+                {
+                    ["value"] = 25
+                }
+            }));
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    PartyEconomyService service = new(mutation, states);
+    PartyEconomyDialogViewModel viewModel = new(
+        project,
+        service,
+        ProgressionType.VolunteerWages);
+
+    Check(!viewModel.CanRestorePreviousValues,
+        "Party Economy restore is unavailable before captured history exists");
+    viewModel.RestorePreviousValues();
+    Check(viewModel.VolunteerPercentage == 25 &&
+          project.GameplayOperationStates.Count == 0,
+        "Party Economy missing-history restore does not fabricate state");
+
+    ProjectOperationResult apply = new ProjectOperationService().Execute(
+        new PartyEconomyOperation(
+            service,
+            ProgressionType.VolunteerWages,
+            new PartyEconomySettings
+            {
+                VolunteerPercentage = 50
+            }),
+        project);
+    Check(apply.Succeeded,
+        "Party Economy first application captures previous values");
+    viewModel.RefreshFromProject();
+    Check(viewModel.CanRestorePreviousValues,
+        "Party Economy restore becomes available after capture");
+    viewModel.RestorePreviousValues();
+    Check(viewModel.VolunteerPercentage == 25,
+        "Party Economy restore fills fields from captured previous values");
+    ProjectOperationResult restore = new ProjectOperationService().Execute(
+        new PartyEconomyOperation(
+            service,
+            ProgressionType.VolunteerWages,
+            viewModel.CreateSettings()),
+        project);
+    Check(restore.Succeeded,
+        "Party Economy applies captured previous values");
+    CheckNumber(project, "trait", "Volunteer", "props.value", 25);
+}
+
+static void VerifySharedPresetPreviousValues()
+{
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    GameplayPresetService service = new(mutation, states);
+    ProjectOperationService executor = new();
+    ProjectModel project = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "FishingDurationControl",
+                ["value"] = 7.5
+            }));
+
+    Check(!service.CanRestorePreviousValues(
+            project,
+            ProgressionType.FishingSpeed),
+        "shared preset restore is unavailable before the tool captures history");
+    string missingBaseline = Json(project);
+    ProjectOperationResult missing = executor.Execute(
+        new GameplayPresetOperation(
+            service,
+            ProgressionType.FishingSpeed,
+            "Vanilla",
+            true),
+        project);
+    Check(!missing.Succeeded &&
+          Json(project) == missingBaseline &&
+          project.GameplayOperationStates.Count == 0,
+        "missing shared-preset history fails without blessing current values");
+
+    Check(ApplyPreset(
+            executor,
+            service,
+            project,
+            ProgressionType.FishingSpeed,
+            "Faster").Succeeded,
+        "shared preset first change captures previous values");
+    Check(ApplyPreset(
+            executor,
+            service,
+            project,
+            ProgressionType.FishingSpeed,
+            "Fast").Succeeded,
+        "shared preset second change preserves the first baseline");
+    CheckTokenNumber(
+        project.GameplayOperationStates.Single().BaselineArray[0]!["value"]!,
+        7.5,
+        "shared preset retained first pre-tool value");
+    string beforeRestore = Json(project);
+    ProjectOperationResult restore = executor.Execute(
+        new GameplayPresetOperation(
+            service,
+            ProgressionType.FishingSpeed,
+            "Vanilla",
+            true),
+        project);
+    Check(restore.Succeeded,
+        "shared preset previous values restore succeeds");
+    CheckNumber(
+        project,
+        "constant",
+        "FishingDurationControl",
+        "value",
+        7.5);
+    VerifyUndoRedo(
+        "shared preset previous values",
+        restore,
+        project,
+        beforeRestore,
+        Json(project));
+
+    ProjectModel profileSource = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "FishingDurationControl",
+                ["value"] = 7.5
+            }));
+    ProjectMutationService profileMutation = new();
+    GameplayPresetService profileService = new(
+        profileMutation,
+        new GameplayOperationStateService(profileMutation));
+    Check(ApplyPreset(
+            executor,
+            profileService,
+            profileSource,
+            ProgressionType.FishingSpeed,
+            "Fast").Succeeded,
+        "profile source captures shared-preset previous values");
+    ModProfileModel profile = new ModProfileService().CreateProfile(
+        profileSource,
+        "Previous Values profile");
+    ProjectModel profileTarget = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "FishingDurationControl",
+                ["value"] = 7.5
+            }));
+    ModificationSnapshotImportResultModel profileResult =
+        new ModProfileWorkflowService().ApplyProfile(profileTarget, profile);
+    Check(!profileResult.HasFailures,
+        "profile transports compatible shared-preset operation state");
+    ProjectMutationService targetMutation = new();
+    GameplayPresetService targetService = new(
+        targetMutation,
+        new GameplayOperationStateService(targetMutation));
+    ProjectOperationResult profileRestore = executor.Execute(
+        new GameplayPresetOperation(
+            targetService,
+            ProgressionType.FishingSpeed,
+            "Vanilla",
+            true),
+        profileTarget);
+    Check(profileRestore.Succeeded,
+        "profile-transported previous values restore successfully");
+    CheckNumber(
+        profileTarget,
+        "constant",
+        "FishingDurationControl",
+        "value",
+        7.5);
+
+    ProjectModel reloadTarget = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "FishingDurationControl",
+                ["value"] = 2.0
+            }));
+    GameplayOperationStatePersistenceService persistence = new();
+    string cdbPath = Path.Combine(
+        Path.GetTempPath(),
+        $"wartales-restore-{Guid.NewGuid():N}.cdb");
+    try
+    {
+        persistence.Save(profileSource, cdbPath);
+        persistence.LoadIntoProject(reloadTarget, cdbPath);
+        ProjectMutationService reloadMutation = new();
+        GameplayPresetService reloadService = new(
+            reloadMutation,
+            new GameplayOperationStateService(reloadMutation));
+        ProjectOperationResult reloadRestore = executor.Execute(
+            new GameplayPresetOperation(
+                reloadService,
+                ProgressionType.FishingSpeed,
+                "Vanilla",
+                true),
+            reloadTarget);
+        Check(reloadRestore.Succeeded,
+            "sidecar-loaded previous values restore successfully");
+        CheckNumber(
+            reloadTarget,
+            "constant",
+            "FishingDurationControl",
+            "value",
+            7.5);
+    }
+    finally
+    {
+        string sidecar = persistence.GetSidecarPath(cdbPath);
+        if (File.Exists(sidecar)) File.Delete(sidecar);
+    }
+}
+
+static void VerifyMovementPreviousValues()
+{
+    ProjectModel project = CreateMovementProject(7, 12);
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    OverworldMovementSpeedService service = new(mutation, states);
+    ProjectOperationService executor = new();
+
+    Check(!service.CanRestorePreviousValues(project),
+        "movement restore is unavailable before captured history exists");
+    string before = Json(project);
+    ProjectOperationResult missing = executor.Execute(
+        new OverworldMovementSpeedOperation(
+            service,
+            OverworldMovementPreset.Vanilla,
+            true),
+        project);
+    Check(!missing.Succeeded && Json(project) == before,
+        "missing movement history fails without mutation");
+
+    Check(executor.Execute(
+            new OverworldMovementSpeedOperation(
+                service,
+                OverworldMovementPreset.Fast),
+            project).Succeeded,
+        "movement preset applies from non-catalog previous values");
+    string modified = Json(project);
+    ProjectOperationResult restore = executor.Execute(
+        new OverworldMovementSpeedOperation(
+            service,
+            OverworldMovementPreset.Vanilla,
+            true),
+        project);
+    Check(restore.Succeeded,
+        "movement previous values restore succeeds");
+    CheckNumber(project, "constant", "PlayerBaseSpeed", "value", 7);
+    CheckNumber(project, "constant", "PlayerRunSpeed", "value", 12);
+    VerifyUndoRedo(
+        "movement previous values",
+        restore,
+        project,
+        modified,
+        Json(project));
+}
+
+static void VerifyRainPreviousValues()
+{
+    ProjectModel project = CreateRainProject(1);
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    RainFrequencyService service = new(mutation, states);
+    ProjectOperationService executor = new();
+
+    Check(!service.CanRestorePreviousValues(project),
+        "rain restore is unavailable before captured history exists");
+    string before = Json(project);
+    ProjectOperationResult missing = executor.Execute(
+        new RainFrequencyOperation(
+            service,
+            RainFrequencyPreset.Vanilla,
+            true),
+        project);
+    Check(!missing.Succeeded && Json(project) == before,
+        "missing rain history fails without mutation");
+
+    Check(executor.Execute(
+            new RainFrequencyOperation(
+                service,
+                RainFrequencyPreset.LessRain),
+            project).Succeeded,
+        "rain preset captures intentionally non-canonical regional values");
+    string modified = Json(project);
+    ProjectOperationResult restore = executor.Execute(
+        new RainFrequencyOperation(
+            service,
+            RainFrequencyPreset.Vanilla,
+            true),
+        project);
+    Check(restore.Succeeded,
+        "rain previous values restore succeeds");
+    foreach (RainRegionDefinition region in RainFrequencyService.Regions)
+        CheckNumber(
+            project,
+            "region",
+            region.EntryId,
+            RainFrequencyService.PropertyPath,
+            region.VanillaValue + 1);
+    VerifyUndoRedo(
+        "rain previous values",
+        restore,
+        project,
+        modified,
+        Json(project));
+}
 
 static void VerifyPropertyRemovalMutationPrimitive()
 {
@@ -871,6 +1594,7 @@ static void VerifyRandomTraitExclusions()
               item.Id == "NegativeDisabled").IsAllowed &&
           Json(project) == openingJson &&
           project.GameplayOperationStates.Count == 0 &&
+          !dialogViewModel.CanRestorePreviousValues &&
           !project.Sheets.SelectMany(sheet => sheet.Entries)
               .SelectMany(entry => entry.Properties).Any(property => property.IsModified),
         "Random Trait Exclusions full ViewModel initialization uses realistic data without mutation");
@@ -889,6 +1613,9 @@ static void VerifyRandomTraitExclusions()
               record["generation"] == null &&
               record.Value<string>("group") is "Starting" or "Recruitment"),
         "Random Trait Exclusions state fingerprints separator groups instead of numeric gen");
+    dialogViewModel.RefreshFromProject(project, service);
+    Check(dialogViewModel.CanRestorePreviousValues,
+        "Random Trait Exclusions enables previous-value restoration after capture");
     Check(Entry(project, "trait", "NegativeAbsent").SourceEntry!["done"]!.Value<bool>() == false &&
           Entry(project, "trait", "NegativeDisabled").SourceEntry!["done"]!.Value<bool>(),
         "unchecked traits are disabled and checked pre-disabled traits are explicitly enabled");
@@ -966,7 +1693,7 @@ static void VerifyRandomTraitExclusions()
     Check(defaults.Succeeded && defaults.MutationResult.RemovedProperties.Count == 1 &&
           Entry(project, "trait", "NegativeAbsent").SourceEntry!.Property("done") == null &&
           Entry(project, "trait", "NegativeDisabled").SourceEntry!["done"]!.Value<bool>() == false,
-        "Restore defaults reproduces false and absent baselines exactly");
+        "Restore Previous Values reproduces false and absent baselines exactly");
     Check(project.GameplayOperationStates.Single().OperationType ==
               ProgressionType.RandomTraitExclusions &&
           project.IsGameplayOperationStateModified,
@@ -981,10 +1708,10 @@ static void VerifyRandomTraitExclusions()
             project,
             restoredSnapshot,
             new LocalizationService());
-    Check(restoredSummary.Any(item =>
-              item.SettingName == "Random Trait Exclusions" &&
-              !item.CanNavigate),
-        "Review Changes presents a truthful operation outcome when removed leaves have no property row");
+    Check(new EffectiveChangeCountService().Calculate(project) == 0 &&
+          restoredSummary.All(item =>
+              item.SettingName != "Random Trait Exclusions"),
+        "Review Changes omits RTE when exact captured previous values are restored");
 
     ProjectModel unrelatedDirty = CreateRandomTraitExclusionAndPositiveTraitProject();
     ProjectMutationService unrelatedMutation = new();
@@ -1044,9 +1771,10 @@ static void VerifyRandomTraitExclusions()
     Check(removalStateService.IsStateModified(
               removalOnly,
               ProgressionType.RandomTraitExclusions) &&
-          removalOnlySummary.Count(item =>
-              item.SettingName == "Random Trait Exclusions") == 1,
-        "removal-only exclusions dirty state produces exactly one fallback row and count");
+          new EffectiveChangeCountService().Calculate(removalOnly) == 0 &&
+          removalOnlySummary.All(item =>
+              item.SettingName != "Random Trait Exclusions"),
+        "removal-only return to captured RTE baseline contributes no fallback row or count");
 
     ProjectModel attachedChange = CreateRandomTraitExclusionProject();
     ProjectMutationService attachedMutation = new();
@@ -3726,12 +4454,16 @@ static ProjectModel CreateTraitProject(
                     StringComparison.Ordinal)).ToArray()));
 }
 
-static ProjectModel CreateRandomTraitExclusionProject() => CreateProject(
+static ProjectModel CreateRandomTraitExclusionProject(
+    bool? positiveTrue = true,
+    bool? negativeAbsent = null,
+    bool? positiveAbsent = null,
+    bool? negativeDisabled = false) => CreateProject(
     RandomTraitSheet(
         new[]
         {
-            RandomTraitEntry("PositiveTrue", 0, true),
-            RandomTraitEntry("NegativeAbsent", 1, null)
+            RandomTraitEntry("PositiveTrue", 0, positiveTrue),
+            RandomTraitEntry("NegativeAbsent", 1, negativeAbsent)
         },
         new[]
         {
@@ -3740,8 +4472,8 @@ static ProjectModel CreateRandomTraitExclusionProject() => CreateProject(
         new[]
         {
             RandomTraitEntry("RecruitmentWithoutPersonality", null, "unsupported"),
-            RandomTraitEntry("PositiveAbsent", 0, null, 2),
-            RandomTraitEntry("NegativeDisabled", 1, false)
+            RandomTraitEntry("PositiveAbsent", 0, positiveAbsent, 2),
+            RandomTraitEntry("NegativeDisabled", 1, negativeDisabled)
         },
         new[]
         {
@@ -4025,6 +4757,40 @@ static JObject Sheet(string name, params JObject[] entries) =>
         ["name"] = name,
         ["lines"] = new JArray(entries)
     };
+
+static ProjectModel CreateMovementProject(int walk, int run) =>
+    CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = OverworldMovementSpeedService.WalkEntryId,
+                ["value"] = walk
+            },
+            new JObject
+            {
+                ["id"] = OverworldMovementSpeedService.RunEntryId,
+                ["value"] = run
+            }));
+
+static ProjectModel CreateRainProject(int offset) =>
+    CreateProject(
+        Sheet(
+            "region",
+            RainFrequencyService.Regions
+                .Select(region => new JObject
+                {
+                    ["id"] = region.EntryId,
+                    ["props"] = new JObject
+                    {
+                        ["meteo"] = new JObject
+                        {
+                            ["rainDaysPerMonth"] =
+                                region.VanillaValue + offset
+                        }
+                    }
+                })
+                .ToArray()));
 
 static ProjectModel CreateProject(params JObject[] sheets)
 {

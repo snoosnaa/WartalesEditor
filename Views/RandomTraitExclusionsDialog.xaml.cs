@@ -26,8 +26,8 @@ public partial class RandomTraitExclusionsDialog : Window
 
     private void RestoreDefaultsButton_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel?.RestoreDefaults();
-        RequestApply();
+        if (ViewModel?.TryRestorePreviousValues() == true)
+            RequestApply();
     }
 
     private void RequestApply()

@@ -27,7 +27,7 @@ public sealed class RandomTraitExclusionItemViewModel : ObservableObject
     }
 
     private readonly Action selectionChanged;
-    public RandomTraitExclusionCandidate Candidate { get; }
+    public RandomTraitExclusionCandidate Candidate { get; private set; }
     public string Id => Candidate.Id;
     public string DisplayName { get; }
     public bool IsDisabledByGameData => Candidate.BaselineDone == RandomTraitDoneBaseline.False;
@@ -47,11 +47,31 @@ public sealed class RandomTraitExclusionItemViewModel : ObservableObject
 
     public void RestoreDefault() => IsAllowed =
         Candidate.BaselineDone != RandomTraitDoneBaseline.False;
+
+    public void Refresh(RandomTraitExclusionCandidate candidate)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        if (!string.Equals(candidate.Id, Id, StringComparison.Ordinal) ||
+            candidate.Personality != Candidate.Personality)
+        {
+            throw new InvalidOperationException(
+                "The refreshed random trait does not match this dialog item.");
+        }
+
+        Candidate = candidate;
+        IsAllowed = candidate.IsAllowed;
+        OnPropertyChanged(nameof(IsDisabledByGameData));
+        OnPropertyChanged(nameof(StatusNote));
+    }
 }
 
 public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
 {
+    private readonly ProjectModel project;
+    private readonly RandomTraitExclusionsService service;
     private string searchText = string.Empty;
+    private RandomTraitExclusionRestoreStatus lastRestoreStatus =
+        RandomTraitExclusionRestoreStatus.Unavailable;
 
     public RandomTraitExclusionsDialogViewModel(
         ProjectModel project,
@@ -61,6 +81,9 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(localizationService);
+
+        this.project = project;
+        this.service = service;
 
         IReadOnlyList<RandomTraitExclusionCandidate> candidates = service.Discover(project);
         PositiveTraits = new ObservableCollection<RandomTraitExclusionItemViewModel>(
@@ -81,6 +104,13 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
     public ICollectionView NegativeTraitsView { get; }
     public GameplayApplyFeedbackViewModel ApplyFeedback { get; } = new();
     public bool CanApply => PositiveTraits.Count + NegativeTraits.Count > 0;
+    public bool CanRestorePreviousValues =>
+        service.CanRestorePreviousValues(project);
+    public RandomTraitExclusionRestoreStatus LastRestoreStatus
+    {
+        get => lastRestoreStatus;
+        private set => SetProperty(ref lastRestoreStatus, value);
+    }
     public string PositiveHeading => $"Positive Traits ({PositiveTraits.Count})";
     public string NegativeHeading => $"Negative Traits ({NegativeTraits.Count})";
 
@@ -106,9 +136,32 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
 
     public void RestoreDefaults()
     {
+        RestorePreviousValues();
+    }
+
+    public void RestorePreviousValues()
+    {
+        _ = TryRestorePreviousValues();
+    }
+
+    public bool TryRestorePreviousValues()
+    {
+        RandomTraitExclusionRestoreSelectionResult resolution =
+            service.ResolvePreviousAllowedTraitIds(project);
+        LastRestoreStatus = resolution.Status;
+        if (resolution.Status != RandomTraitExclusionRestoreStatus.Succeeded)
+        {
+            OnPropertyChanged(nameof(CanRestorePreviousValues));
+            return false;
+        }
+
+        HashSet<string> allowed =
+            resolution.AllowedTraitIds.ToHashSet(StringComparer.Ordinal);
         foreach (RandomTraitExclusionItemViewModel item in PositiveTraits.Concat(NegativeTraits))
-            item.RestoreDefault();
+            item.IsAllowed = allowed.Contains(item.Id);
         ApplyFeedback.Clear();
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
+        return true;
     }
 
     public void RefreshFromProject(
@@ -119,7 +172,8 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
             service.Discover(project).ToDictionary(candidate => candidate.Id, StringComparer.Ordinal);
         foreach (RandomTraitExclusionItemViewModel item in PositiveTraits.Concat(NegativeTraits))
             if (current.TryGetValue(item.Id, out RandomTraitExclusionCandidate? candidate))
-                item.IsAllowed = candidate.IsAllowed;
+                item.Refresh(candidate);
+        OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
 
     private IEnumerable<RandomTraitExclusionItemViewModel> CreateItems(

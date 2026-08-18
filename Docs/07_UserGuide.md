@@ -27,10 +27,13 @@ trait incompatibility rules still apply.
 Random Trait Exclusions also appears under Party. Search the dynamically
 discovered Positive and Negative lists, leave a trait checked to allow it in
 future standard random generation, or uncheck it to exclude it. Select All and
-Clear All change the current selection; Restore Game Defaults restores the
-loaded game's exact eligibility, including traits disabled by game data and
-traits whose original `done` value was absent. Existing units and already
-generated recruits are unchanged.
+Clear All change the current selection. Restore Previous Values restores the
+exact eligibility captured before the tool was first applied, including
+`true`, `false`, and an originally absent `done` property. Existing units and
+already generated recruits are unchanged. If Undo or another project action
+removes the compatible remembered history while this modeless window is open,
+Restore Previous Values is safely rejected instead of applying stale checkbox
+choices. Compatible profile state becomes the current remembered authority.
 
 Profile Manager's Update Profile action replaces the explicitly selected
 managed profile with the current intended configuration. Existing profile
@@ -49,9 +52,9 @@ retains its prior history, while current `IsModified` properties contribute only
 the changes made relative to the loaded project baseline. Select a profile and
 open a project before choosing Update Profile.
 
-Reset to Game Default uses separate gameplay-tool behavior and is not part of
-Update Profile reconciliation. Its default-value authority will be reviewed in
-a separate investigation.
+Gameplay tools use Restore Previous Values independently of Update Profile
+reconciliation. The action restores the pre-tool baseline retained by Gameplay
+Operation State; it does not claim to know universal game defaults.
 
 # Class A Gameplay Tools
 
@@ -68,14 +71,31 @@ Expansion, Cooking Pot Food Reduction, Workshop Materials, and Ruby & Sapphire
 Value.
 
 Each new preset dialog shows the current detected preset, selected gameplay
-values, and a plain-language preview. Reset to Game Default immediately applies
-the exact baseline captured when the tool first took ownership; it is not
-necessary to click Apply afterward. Reset and Apply each record the complete
-tool as one Undo/Redo action. A successful reset reports Applied successfully;
-a project already at its baseline reports Already applied. Applying a matching
-preset safely produces no additional changes. If a legacy Valour or Carrying
+values, and a plain-language preview. Restore Previous Values applies the exact
+baseline captured before the tool first changed the project. It becomes
+available only while compatible captured history exists; missing history is
+never reconstructed from current values. Every gameplay Restore Previous Values
+button applies restoration immediately; no second Apply click is required.
+Party Economy fields and RTE selections update to the values that were applied.
+Apply remains available for later manual edits. Each completed restoration
+records the complete tool as one Undo/Redo action. A project already at its
+previous values safely produces no additional changes. RTE traits that were
+already excluded in the captured baseline are not counted as changes, and an
+exact restoration produces no RTE Review Changes entry.
+If a legacy Valour or Carrying
 project contains custom Tent or Hitching Post values, the dialog reports them as
 custom and requires an explicit preset selection before expanding ownership.
+
+Movement retains Vanilla as an ordinary fixed preset, but Restore Previous
+Values returns to the captured pre-tool movement values instead of fixed 6/11.
+Rain likewise retains its ordinary regional presets while restoration returns
+the exact captured regional values rather than fixed Vanilla values. Gameplay
+Operation State is saved in the `.wtstate` sidecar and compatible state is also
+transported by Profiles, so previous values survive supported save/reload and
+profile workflows.
+
+The Detailed Editor's Reset Property action is separate. It restores the
+current project's property baseline and does not use Gameplay Operation State.
 
 After Apply, the active gameplay dialog reports either Applied successfully or
 Already applied. Blocking failures continue to use the normal explicit error

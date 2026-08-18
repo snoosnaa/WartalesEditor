@@ -6,6 +6,63 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Restore Previous Values
+
+**Status:** Implemented, repository-verified, Renewed Focused Engineering
+Review passed with non-blocking notes, and Project Owner accepted; final commit
+and push pending
+
+## Changed
+
+- Standardized all gameplay reset controls as **Restore Previous Values**.
+- Compatible Gameplay Operation State now provides the single captured
+  pre-tool authority for the 17 shared preset tools, Party Economy, Random
+  Trait Exclusions, Overworld Movement Speed, and Rain Frequency.
+- Restore controls remain unavailable when compatible historical state is
+  absent, so current configured values are never fabricated as prior history.
+- Overworld Movement restoration now returns to captured walk/run values rather
+  than fixed 6/11. Vanilla remains an ordinary selectable movement preset.
+- Rain restoration now returns to captured regional values rather than fixed
+  Vanilla values. The existing regional presets remain selectable.
+- Random Trait Exclusions continues to restore exact `true`, `false`, and
+  absent `done` baselines.
+- Random Trait Exclusions now resolves that baseline from current compatible
+  Gameplay Operation State at click time. A stale modeless dialog cannot issue
+  Apply after Undo removes its history, and compatible profile/state replacement
+  supersedes cached dialog-open baseline data.
+- Every gameplay Restore Previous Values button now applies immediately through
+  its existing validated operation path. Party Economy fields update and apply
+  in the same click; Apply remains available for later manual edits.
+- Random Trait Exclusions effective accounting now compares exact current
+  `done` presence/value with the captured baseline. Baseline-existing exclusions
+  are not changes, and exact restoration removes the synthetic summary row.
+- Detailed Editor Reset Property and `PropertyModel.IsModified` are unchanged.
+
+## Verified
+
+- Non-catalog starting values, multiple preset changes, missing-state safety,
+  `.wtstate` reload, profile transport, exact trait restoration, Movement and
+  Rain captured baselines, and atomic Undo/Redo have permanent compatibility
+  coverage.
+- Permanent Random Trait Exclusions lifecycle coverage includes open-dialog
+  Undo rejection, authoritative state replacement, normal exact restoration,
+  direct missing-history safety, and Restore Undo/Redo.
+- Consistency coverage includes RTE `0 → 3 → 0 → 3 → 0` accounting across
+  Apply, Restore, Undo, and Redo, plus immediate Party Economy restoration for
+  Volunteer, Valour, and Carrying Capacity.
+- Sequential main/test builds complete with zero warnings and zero errors, the
+  focused Restore Previous Values suite passes, and all 25 Class A compatibility
+  groups pass.
+- Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING NOTES**.
+  The sole note is that automated coverage exercises production
+  ViewModel/service/operation paths instead of synthesizing WPF button clicks.
+- Project Owner interactive evidence covered multiple gameplay features,
+  immediate Positive Random Traits restoration, Party Economy consistency, and
+  exact Random Trait Exclusions restoration/accounting. After the final
+  corrections, the Project Owner explicitly returned **PASS**.
+
+---
+
 # Random Trait Exclusions
 
 **Status:** Accepted; renewed focused Engineering Review and Project Owner
@@ -14,7 +71,7 @@ interactive acceptance passed, with positive runtime evidence
 ## Added
 
 - A Party Gameplay Tool with searchable Positive and Negative trait checklists,
-  Select All, Clear All, Restore Game Defaults, Apply, and shared feedback.
+  Select All, Clear All, Restore Previous Values, Apply, and shared feedback.
 - Dynamic candidate discovery for compatible Starting/Recruitment traits; no
   trait identifiers or candidate counts are hard-coded.
 - Feature-specific operation state and validation for stable trait ownership,
@@ -27,7 +84,7 @@ interactive acceptance passed, with positive runtime evidence
 - Unchecked traits receive `done=false`; checked traits preserve an eligible
   absent baseline or use `done=true` when explicitly enabling a pre-disabled
   trait. Existing units are unchanged.
-- Restore Game Defaults uses the approved property-removal primitive to recover
+- Restore Previous Values uses the approved property-removal primitive to recover
   an originally absent `done` leaf exactly.
 - Snapshot/profile application restores deterministic exclusion state before
   ordinary property matching so absent-baseline leaves can be recreated safely
@@ -217,7 +274,7 @@ and final reconciliation verification passed
   paths retain their original leaf-name matching behavior.
 - Gameplay Tool dialogs show in-dialog Applied successfully or Already applied
   feedback, and feature windows explicitly restore their owner after closing.
-- Reset to Game Default now applies Vanilla through the shared operation
+- The shared restore action applies the captured baseline through the operation
   pipeline, restoring the exact captured baseline with normal operation state,
   Review Changes, and single-action Undo/Redo behavior.
 - Starting Resources and Party Economy clear stale success/no-op feedback when

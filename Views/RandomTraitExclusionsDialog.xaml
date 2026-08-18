@@ -76,7 +76,10 @@
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                     <Button Content="Select All" Click="SelectAllButton_Click"/>
                     <Button Content="Clear All" Margin="8,0,0,0" Click="ClearAllButton_Click"/>
-                    <Button Content="Restore Game Defaults" Margin="8,0,0,0"
+                    <Button Content="Restore Previous Values" Margin="8,0,0,0"
+                            IsEnabled="{Binding CanRestorePreviousValues}"
+                            ToolTip="Restores the trait choices from before this gameplay tool was first applied."
+                            ToolTipService.ShowOnDisabled="True"
                             Click="RestoreDefaultsButton_Click"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

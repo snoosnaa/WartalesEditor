@@ -56,9 +56,51 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-Final Feature Batch
+Restore Previous Values correction
 
 Current phase:
+
+Complete, repository-verified, Engineering reviewed, and Project Owner
+accepted. The Renewed Focused Engineering Review returned **PASS WITH
+NON-BLOCKING NOTES**; the note is limited to automated coverage exercising the
+production ViewModel/service/operation paths instead of synthesized WPF button
+clicks. Project Owner interactive testing supplied the runtime evidence and
+concluded with an explicit **PASS** after the final consistency corrections.
+Final commit and push are the remaining lifecycle checkpoint.
+
+All gameplay reset controls now use one player-facing contract: Restore
+Previous Values. Compatible Gameplay Operation State retains the target values
+captured before the tool first changed them, `.wtstate` preserves that history
+across save/reload, and Profiles transport compatible state. Restore is
+unavailable when that history is absent. Current configured values are not
+silently adopted by an explicit restore request.
+
+The 17 shared preset tools, Volunteer Wages, Valour Points, Carrying Capacity,
+Random Trait Exclusions, Overworld Movement Speed, and Rain Frequency share
+this authority. Movement no longer uses fixed 6/11 as reset authority and Rain
+no longer uses fixed regional Vanilla values as reset authority; those Vanilla
+choices remain ordinary presets. Detailed Editor Reset Property and
+`PropertyModel.IsModified` remain unchanged. No Golden CDB capability was
+introduced.
+
+Repository verification covers missing-history safety, deliberately
+non-catalog baselines, multiple preset changes, exact trait-property presence,
+Movement and Rain restoration, sidecar reload, profile transport, and atomic
+Undo/Redo. Random Trait Exclusions additionally resolves its historical
+selection from current compatible Gameplay Operation State when Restore is
+clicked. A stale modeless dialog therefore cannot apply cached selections after
+Undo, and profile/state replacement supersedes dialog-open baseline data. RTE
+effective accounting compares current exact trait presence/values with that
+captured baseline instead of treating operation-state existence as a change.
+Sequential main and test builds complete with zero warnings and zero errors,
+the focused Restore Previous Values suite passes, and all 25 Class A
+compatibility groups pass.
+
+Previous milestone:
+
+Final Feature Batch
+
+Final phase:
 
 The Final Feature Batch is implemented, verified, Engineering reviewed, Project
 Owner accepted, and documentation reconciled. Update Profile and corrected
@@ -167,7 +209,7 @@ state persistence, snapshot serialization, profile replay, and preservation of
 Gameplay feature windows now share explicit owner restoration after closing,
 and Apply actions show success or already-applied feedback inside the active
 dialog. Starting Resources, Movement Speed, and Battle Camera Zoom include the
-approved non-blocking visual notes. Reset to Game Default now executes the
+approved non-blocking visual notes. The shared restore action executes the
 shared operation pipeline and restores the exact captured baseline rather than
 only changing the selected preset. Invalid Starting Resources and Party Economy
 input clears stale success feedback.
@@ -369,8 +411,8 @@ Immediate Priorities
 Final verification and commit/push checkpoint for the accepted Final Feature
 Batch
 
-Separate bounded Reset to Game Default authority investigation after that
-checkpoint
+Completed bounded reset-authority investigation and Restore Previous Values
+correction
 
 Bounded QuickBMS/package-replacement experiments, followed by integrated
 Import / Install / Restore
@@ -483,8 +525,8 @@ Next Task
 
 Complete the final verification and commit/push checkpoint for the accepted and
 reconciled Final Feature Batch. The next authorized engineering activity after
-that checkpoint is the separate bounded Reset to Game Default authority
-investigation; it has not started. Integrated Import / Install / Restore and
+that checkpoint was the bounded reset-authority investigation, followed by the
+Restore Previous Values correction. Integrated Import / Install / Restore and
 Update Survival have not started.
 
 Document Maintenance
