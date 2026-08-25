@@ -1185,3 +1185,72 @@ an absent-baseline trait. Direct Snapshot Preview remains deliberately read-only
 and can conservatively report a missing absent-baseline leaf; profile application
 materializes exclusion state before matching. Renewed focused Engineering Review
 and Project Owner interactive/in-game acceptance remain pending.
+# 2026-08-25 — Generic Wartales Language Data Setup
+
+Implemented one-time, language-agnostic setup for Wartales export localization
+data. The selected file is validated from its `cdb`, `project`, and embedded
+`lang` content, copied to
+`<Documents>\Wartales Editor\Language Data\export.xml`, revalidated from stored
+bytes, and loaded automatically on later launches. Missing or invalid data is
+nonfatal and falls back to internal IDs.
+
+Localization is now application-level presentation state instead of part of
+project promotion. The Detailed Editor exposes setup only when needed, and
+**Tools → Language Data...** provides metadata and safe replacement. Runtime
+replacement refreshes current selection/search and Change Summary labels while
+already-open Random Trait Exclusions windows retain their labels until reopened.
+`texts_*.xml`, full application localization, and QuickBMS coupling remain
+excluded. Subsequent review, corrections, and acceptance are recorded below;
+zero-warning application/test builds, focused language-data coverage, the
+QuickBMS promotion suite, and all 25 Class A groups pass.
+
+# 2026-08-25 — Generic Language Data Focused Corrections
+
+The first Focused Engineering Review found that late replacement recovery could
+reapply prior in-memory state without proving that the prior canonical file had
+been restored. Recovery now validates and fingerprints the rollback before
+restoration, validates the restored canonical again, and only then republishes
+its prepared dictionary and metadata. Missing or unusable rollback data clears
+localization and publishes explicit invalid state.
+
+Rollback cleanup failure is no longer silent: the coherent new canonical and
+active state remain in use while the UI reports a cleanup warning, and a later
+transaction removes stale temporary ownership before proceeding. Player-facing
+messages now distinguish initial failure, proven rollback, unrecoverable
+recovery, and cleanup-only failure. Permanent tests force each production path,
+including fresh-service source independence and runtime search, selected-context,
+and open Change Summary refresh. The later Renewed Focused Engineering Review
+returned **PASS WITH NON-BLOCKING NOTES**, followed by Project Owner acceptance.
+
+# 2026-08-25 — Language Data Project Owner UX Corrections
+
+Reused `WartalesInstallationService` and the existing default QuickBMS Wartales
+installation path for user-initiated language setup and replacement. The picker
+now opens in the validated game root and preselects the first deterministically
+ordered `export_*.xml` candidate that passes the existing language-content
+validation. Multiple candidates remain selectable in that folder; missing
+candidates or failed installation detection retain manual selection.
+
+The detected export remains source-only: setup still copies and revalidates it
+at the canonical Documents path, and startup remains independent of the game
+file. Available Language Data now reuses the application green apply-success
+brushes; unavailable and invalid states retain the informational treatment.
+Focused discovery, fallback, source-independence, and structural styling tests
+pass. The Project Owner then interactively verified both corrections and
+returned **PASS**: “Pass. Both work well.”
+
+# 2026-08-25 — Generic Language Data Final Acceptance and Reconciliation
+
+The complete milestone lifecycle is closed: investigation, design/architecture
+review, implementation, focused review, recovery corrections, renewed focused
+review, initial Project Owner acceptance, final UX corrections, renewed Project
+Owner acceptance, and documentation reconciliation are complete. The Renewed
+Focused Engineering Review result is **PASS WITH NON-BLOCKING NOTES** and the
+final Project Owner Interactive Acceptance result is **PASS**.
+
+Accepted non-blocking notes remain bounded: Random Trait Exclusions refreshes
+localized labels on close/reopen; fingerprint-mismatch handling exists without
+a dedicated mutation-based mismatch fixture; persistent external file locks may
+prevent rollback cleanup while later attempts continue to fail safely; and the
+pre-existing QuickBMS symlink regression may skip without Windows symlink
+privilege. No subsequent milestone was started.

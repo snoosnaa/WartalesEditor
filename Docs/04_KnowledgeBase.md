@@ -203,17 +203,30 @@ Localization is intentionally implemented independently from any specific langua
 
 Current implementation:
 
-- LocalizationService
-- Import `export_en.xml`
-- English display names
+- `LocalizationService` owns localization lookup and parsing.
+- `LanguageDataService` owns one-time setup and durable application-level state.
+- The user may select any valid Wartales export localization XML file.
+- Embedded `lang` metadata is authoritative; the source filename is not.
+- One canonical copy is stored at
+  `<Documents>\Wartales Editor\Language Data\export.xml`.
+- The canonical copy loads automatically on future application launches.
+- Missing or invalid data falls back nonfatally to internal IDs.
+- The Detailed Editor exposes setup when needed; **Tools → Language Data...**
+  supports replacement.
+- Setup and replacement reuse the existing validated Wartales installation
+  context to open the source picker in the game root and preselect a valid
+  `export_*.xml` candidate. Detection or discovery failure retains manual
+  selection.
+- Available state uses the existing green success treatment; unavailable and
+  invalid states remain non-success states.
+- Replacement recovery restores active state only after the prior canonical
+  file is validated and fingerprint-proven. Unrecoverable recovery clears
+  localization, while cleanup-only failure retains the coherent new setup and
+  reports a warning.
 - Localization-aware searching
 
-Future implementation:
-
-- Import any `export_<language>.xml`
-- Remember selected language
-- Gracefully fall back to internal IDs
-- Display multiple languages if desired
+`texts_*.xml` is not used. Full application localization and simultaneous
+multiple-language storage are not implemented.
 
 The editor always treats internal IDs as authoritative.
 
@@ -225,7 +238,7 @@ Localization exists only to improve discoverability.
 
 ## Internal IDs remain authoritative
 
-Display English names whenever possible.
+Display localized Wartales names whenever possible.
 
 Always preserve internal IDs.
 

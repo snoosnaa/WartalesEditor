@@ -2,9 +2,40 @@
 
 ## Current Milestone
 
-QuickBMS Integration Milestone 1 — Safe CDB Import
+Generic Wartales Language Data Setup
 
 ## Current Status
+
+Complete, reviewed, accepted, and reconciled. The Renewed Focused Engineering
+Review returned **PASS WITH NON-BLOCKING NOTES**. Project Owner Interactive
+Acceptance and renewed acceptance after the final source-selection and success-
+styling corrections both returned **PASS**. The owner's final result was,
+“Pass. Both work well.”
+
+`LanguageDataService` owns a single application-level canonical file at
+`<Documents>\Wartales Editor\Language Data\export.xml`. Any valid Wartales export
+localization XML may be selected; embedded non-empty `lang` metadata is
+authoritative. Setup and replacement validate both the selected source and the
+stored temporary candidate before atomic promotion. A late publication failure
+either restores and revalidates the exact prior canonical bytes before restoring
+active state, or clears localization and reports an explicit recovery failure.
+Cleanup failures are reported without rolling back an otherwise coherent new
+setup. The original source file is not required after setup.
+
+Startup loads valid canonical data automatically. Missing or invalid canonical
+data clears active localization and falls back nonfatally to internal IDs. The
+Detailed Editor presents a compact setup action only when needed, and
+**Tools → Language Data...** provides status and replacement. Project Open and
+Import From Wartales no longer prepare localization during project promotion.
+Both setup entry points reuse the existing validated Wartales installation
+context, preselect a valid language-agnostic `export_*.xml` candidate when one
+is available, and retain the manual picker fallback. Ready state uses the
+existing green success treatment; missing and invalid states do not.
+
+`texts_*.xml`, full application localization, QuickBMS follow-on work, Update
+Survival, and all project/gameplay mutation state are outside this feature.
+
+Previous milestone status:
 
 QuickBMS Milestone 1 is complete and accepted. The Renewed Focused Engineering
 Review returned **PASS WITH NON-BLOCKING NOTES — Ready for Project Owner
@@ -39,13 +70,14 @@ uses controlled traversal that never descends through junctions. Candidate
 files are independently checked for containment, regular-file identity, and
 reparse status.
 
-Shared Open/Import promotion now prepares reference and localization data
-without mutating live state. Publication occurs only after preparation
-succeeds, with prior state retained for rollback if publication itself fails.
+Shared Open/Import promotion now prepares project-derived reference data without
+mutating live state. Application language data is initialized independently at
+startup. Publication occurs only after reference preparation succeeds, with
+prior state retained for rollback if publication itself fails.
 Production regressions cover Job Object containment of a real
 parent/child/grandchild tree during timeout/cancellation and when the root exits
 first, plus staging junctions, cleanup replacement, discovery escape, empty
-output, forced localization failure, and successful promotion. The final
+output, language-data independence, and successful promotion. The final
 Renewed Focused Engineering Review passed with non-blocking notes.
 
 The production path calculates SHA-256 identity for `res.pak`, QuickBMS, the
@@ -231,6 +263,6 @@ configured 645-change state.
 
 ## Next Required Step
 
-QuickBMS Integration Milestone 1 is closed. No subsequent QuickBMS milestone
-has begun. Reimport/install, package backup or replacement, Update Survival,
-Golden CDB, and release hardening remain outside this completed boundary.
+No subsequent milestone has been started. Await Project Owner direction.
+QuickBMS follow-on work, Update Survival, and full application localization
+remain outside this milestone.

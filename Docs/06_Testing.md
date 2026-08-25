@@ -134,14 +134,40 @@ Expected Result
 
 Verify:
 
-- `export_en.xml` loads
-- English names display
-- English names participate in searching
+- A valid Wartales export localization file can be selected regardless of its
+  filename.
+- A validated Wartales installation opens setup/replacement in the game root;
+  valid language-agnostic `export_*.xml` candidates are preselected, while no
+  candidate or failed detection safely retains manual selection.
+- Embedded `lang` metadata controls the active language code.
+- The canonical `<Documents>\Wartales Editor\Language Data\export.xml` loads
+  automatically after restart.
+- Localized names display and participate in searching.
 - Internal IDs remain available
+- Missing or invalid canonical data does not block startup or project loading.
+- Replacing language data refreshes current Detailed Editor presentation. A
+  late failure preserves the prior setup only when exact restoration is proven;
+  otherwise localization is cleared and invalid state is reported.
+- Forced post-promotion failures prove exact rollback restoration, missing and
+  locked rollback rejection, cleared invalid state after unrecoverable recovery,
+  explicit cleanup warnings, and safe removal of stale rollback ownership on a
+  later transaction.
+- Source-deletion coverage reloads through a fresh service; replacement coverage
+  verifies old/new/internal-ID search, selected-context notification, and open
+  Change Summary refresh.
+- `texts_*.xml` is neither requested nor required.
+- Available state structurally uses the shared green success brushes; missing
+  and invalid states retain the non-success informational treatment.
 
 Expected Result
 
-✅ Localization and searching remain synchronized.
+✅ Generic language data, fallback, replacement, and searching remain synchronized.
+
+Final evidence: main and test builds completed with zero warnings/errors; the
+focused language suite, real 10,534-entry English export validation, QuickBMS
+focused suite, and all 25 Class A groups passed. The Project Owner interactively
+passed setup, replacement, restart/persistence, detected source selection, and
+green success-state presentation. The renewed acceptance result was **PASS**.
 
 ---
 

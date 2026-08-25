@@ -6,6 +6,56 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Generic Wartales Language Data Setup
+
+**Status:** Complete, Renewed Focused Engineering Review passed with
+non-blocking notes, and Project Owner Interactive Acceptance passed
+
+## Added
+
+- One-time selection of any valid Wartales export localization XML file, with
+  embedded `lang` metadata as the language authority.
+- One canonical durable copy at
+  `<Documents>\Wartales Editor\Language Data\export.xml`.
+- Automatic nonfatal startup loading, raw-ID fallback, a Detailed Editor setup
+  state, and **Tools → Language Data...** status/replacement UI.
+- Failure-atomic source validation, stored-candidate revalidation, replacement,
+  and permanent language-data regression coverage.
+
+## Changed
+
+- Localization is application-level presentation state rather than part of CDB
+  project promotion.
+- Runtime setup/replacement refreshes Detailed Editor selection/search and open
+  Change Summary presentation.
+- Setup and replacement reuse the existing validated Wartales installation
+  context, preselect valid generic `export_*.xml` candidates, and preserve the
+  manual picker when detection or discovery is unavailable.
+- Available Language Data now uses the existing green success treatment;
+  missing and invalid states retain their non-success presentation.
+
+## Fixed
+
+- Late replacement failure now republishes prior state only after exact
+  fingerprint-verified canonical restoration. Missing or unusable rollback data
+  produces cleared invalid state instead of disk/memory incoherence.
+- Rollback cleanup failure is surfaced distinctly while preserving a coherent
+  successful replacement, and later transactions safely remove stale ownership.
+- Setup, restored-replacement, unrecoverable-recovery, and cleanup messages now
+  describe their actual outcomes.
+- Permanent regressions now force the production post-promotion path and cover
+  fresh-service reload plus runtime search, context, and Change Summary refresh.
+- Project Owner testing passed setup, canonical persistence, localized names,
+  restart behavior, replacement, detected source selection, and the green
+  success treatment. Renewed acceptance concluded: “Pass. Both work well.”
+
+## Excluded
+
+- `texts_*.xml`, full application localization, multiple stored languages,
+  QuickBMS coupling, and all project/gameplay mutation state.
+
+---
+
 # QuickBMS Integration Milestone 1 — Safe CDB Import
 
 **Status:** Complete and accepted; Renewed Focused Engineering Review passed
@@ -48,9 +98,10 @@ with non-blocking notes and Project Owner Interactive Acceptance passed
   exact workspace and refuses recursive deletion when any reparse entry exists.
 - CDB discovery now traverses directories explicitly, skips junctions, rejects
   reparse candidates, and independently verifies final containment.
-- Reference and localization state are prepared without live mutation before
-  shared Open/Import project publication, so preparation failure preserves the
-  prior project and application state.
+- Project-derived reference state is prepared without live mutation before
+  shared Open/Import project publication. Application language data is loaded
+  independently at startup, so unavailable localization cannot block a valid
+  project.
 
 ## Verified
 
@@ -66,8 +117,8 @@ with non-blocking notes and Project Owner Interactive Acceptance passed
   parent/child/grandchild Job Object tree and that root exit is not mistaken for
   complete-tree exit. Staging-root junctions are rejected, replaced
   session cleanup is refused safely, recursive discovery does not follow a
-  junction, empty CDB output is rejected, and forced localization failure is
-  promotion-atomic. File-symlink creation is unavailable under the current
+  junction, empty CDB output is rejected, and executable-adjacent localization
+  files have no project-promotion authority. File-symlink creation is unavailable under the current
   Windows test privilege; production rejection remains implemented.
 - Durable-promotion regressions cover first import, unapproved replacement,
   approved replacement, failed promotion, importing-artifact cleanup, durable

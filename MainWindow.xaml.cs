@@ -52,6 +52,14 @@ public partial class MainWindow : Window
         JsonDataService jsonDataService =
             new();
 
+        LocalizationService localizationService =
+            new();
+
+        LanguageDataService languageDataService =
+            new(localizationService);
+
+        languageDataService.LoadCanonical();
+
         ModificationSnapshotWorkflowService
             snapshotWorkflowService =
                 new();
@@ -112,7 +120,7 @@ public partial class MainWindow : Window
             new MainViewModel(
                 jsonDataService,
                 new SearchService(),
-                new LocalizationService(),
+                localizationService,
                 editHistoryService,
                 new ModificationSnapshotService(),
                 snapshotWorkflowService,
@@ -135,7 +143,8 @@ public partial class MainWindow : Window
                 addCampFacilitiesOperation,
                 upgradeAllEquipmentOperation,
                 new WpfFileDialogService(),
-                new WpfMessageDialogService());
+                new WpfMessageDialogService(),
+                languageDataService);
 
         InitializeComponent();
 

@@ -12,10 +12,28 @@ public sealed class WpfFileDialogService :
         string filter,
         string? initialFileName = null)
     {
+        return ShowOpenFileDialog(
+            filter,
+            initialFileName,
+            initialDirectory: null);
+    }
+
+    public string? ShowOpenFileDialog(
+        string filter,
+        string? initialFileName,
+        string? initialDirectory)
+    {
         OpenFileDialog dialog = new()
         {
             Filter = filter
         };
+
+        if (!string.IsNullOrWhiteSpace(
+                initialDirectory))
+        {
+            dialog.InitialDirectory =
+                initialDirectory;
+        }
 
         if (!string.IsNullOrWhiteSpace(
                 initialFileName))

@@ -1,6 +1,33 @@
 ﻿
 # Version 0.10.0 workflow terminology
 
+# Language Data
+
+The Detailed Editor can use localized Wartales names from a game export
+localization XML file. If language data is not set up, the editor remains fully
+available with internal IDs and displays a **Set Up Language Data** action.
+
+Select the Wartales export file for the language you want to use. The embedded
+language code controls the setup, even if the file has been renamed. The editor
+uses its detected Wartales installation to open the file picker in the game
+folder and preselect a valid `export_*.xml` file when available. If detection or
+candidate discovery is unavailable, normal manual selection remains available.
+The editor validates the file and stores one durable copy at
+`<Documents>\Wartales Editor\Language Data\export.xml`. The selected source file
+is not needed afterward, and the stored copy loads automatically on later
+launches.
+
+Use **Tools → Language Data...** to view the active language code or replace the
+stored data. Ready language data is shown with the editor's green success
+treatment. Missing or damaged language data falls back to internal IDs without
+blocking project loading. Wartales `texts_*.xml` files are not used, and this
+feature does not translate the application menus or dialogs.
+
+If replacement fails after it begins, the editor reports whether the previous
+language data was restored or whether it must be set up again. If the new data
+is active but an obsolete temporary recovery file cannot be removed, the editor
+keeps the new language active and displays a cleanup warning.
+
 # Import From Wartales
 
 Choose **File → Import From Wartales...** or **Import From Wartales** on the

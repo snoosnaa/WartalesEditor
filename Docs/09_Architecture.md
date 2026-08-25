@@ -25,6 +25,57 @@ Core principles:
 
 ---
 
+# Application Language Data
+
+Wartales export localization is application-level, read-only presentation
+state. It is not project state and does not participate in project mutation,
+transactions, Undo/Redo, profiles, snapshots, Gameplay Operation State, or
+QuickBMS transport.
+
+`LanguageDataService` owns validation, metadata, durable storage, startup load,
+and replacement of the single canonical file:
+
+```text
+<Documents>\Wartales Editor\Language Data\export.xml
+```
+
+The user-selected filename is not authoritative. Validation requires a
+well-formed unqualified `cdb` root, `project="Wartales"`, a non-empty embedded
+`lang`, a direct sheet, and a non-empty dictionary prepared by the existing
+`LocalizationService`. Version, revision, software version, and date remain
+diagnostic. The selected source is copied to same-directory temporary storage,
+reloaded and revalidated, then atomically promoted. One active canonical copy
+is retained.
+
+User-initiated setup and replacement reuse `WartalesInstallationService` and
+the default QuickBMS installation path context. Only top-level `export_*.xml`
+candidates that pass the same `LanguageDataService` content validation are
+preselected. No candidate or installation-detection failure falls back to the
+manual picker. The detected game file is source input only and never replaces
+the canonical authority.
+
+After promotion, publication has three explicit outcomes. Success retains the
+new canonical file and matching active state. A failed publication restores the
+prior rollback only after it validates and matches the fingerprint captured
+from the prior canonical, then republishes localization prepared from the
+restored file. If restoration cannot be proven, localization is cleared and
+state becomes invalid rather than combining old in-memory state with new disk
+data. Failure to remove obsolete rollback data leaves the coherent new setup
+active but is surfaced as a distinct cleanup failure; the next transaction must
+remove stale temporary ownership before it can proceed.
+
+`LocalizationService` remains the sole localization-entry parser and preserves
+its case-insensitive, global, later-key-wins lookup semantics. Startup failure
+clears active localization and falls back to internal IDs without blocking the
+application or project loading. Project promotion prepares only project-derived
+reference data; it neither reads nor publishes language data.
+
+The Detailed Editor exposes non-blocking setup when data is absent or invalid,
+and **Tools → Language Data...** provides quiet replacement. `texts_*.xml` is
+outside this subsystem. The application shell itself remains English.
+
+---
+
 # External Game Data Import
 
 QuickBMS integration is an auxiliary transport subsystem. It does not mutate
@@ -92,10 +143,11 @@ recursive enumeration. Reparse directories are skipped, reparse files are
 rejected, and the final regular file is independently checked against the exact
 session boundary before hashing/loading.
 
-Shared Open/Import promotion prepares reference and localization state without
-changing the live services. After preparation succeeds, the prepared services,
+Shared Open/Import promotion prepares project-derived reference data without
+changing the live service. After preparation succeeds, the prepared references,
 file identity, and candidate project are published coherently; publication
-failure restores the captured prior service/project state.
+failure restores the captured prior reference/project state. Application-level
+language data remains independent of promotion.
 
 Default path composition is isolated in `QuickBmsImportOptions`: it derives the
 current user's Desktop QuickBMS folder and the standard Program Files (x86)

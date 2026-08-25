@@ -241,6 +241,10 @@
                           Command="{Binding ShowProfileManagerCommand}"
                           ToolTip="Create, apply, import, and export profiles."/>
 
+                <MenuItem Header="_Language Data..."
+                          Command="{Binding ShowLanguageDataCommand}"
+                          ToolTip="Set up or replace localized Wartales names."/>
+
                 <Separator/>
 
                 <MenuItem Header="_Check Project"
@@ -594,11 +598,38 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
+        <!-- Language-data setup -->
+        <Border Grid.Row="0"
+                Margin="5"
+                Style="{StaticResource InformationalPanelStyle}"
+                Visibility="{Binding ShouldShowLanguageDataSetup,
+                                     Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding LanguageDataSetupMessage}"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"/>
+
+                <Button Grid.Column="1"
+                        Content="Set Up Language Data"
+                        Margin="12,0,0,0"
+                        MinWidth="155"
+                        Padding="10,5"
+                        Command="{Binding ShowLanguageDataCommand}"/>
+            </Grid>
+        </Border>
+
         <!-- Search -->
-        <Grid Grid.Row="0"
+        <Grid Grid.Row="1"
               Margin="5">
 
             <Grid.ColumnDefinitions>
@@ -659,7 +690,7 @@
         </Grid>
 
         <!-- Find Anything -->
-        <Grid Grid.Row="1"
+        <Grid Grid.Row="2"
               Margin="5,0,5,5"
               MaxHeight="160"
               Visibility="{Binding HasSearchText,
@@ -763,7 +794,7 @@
         </Grid>
 
         <!-- Main Area -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
 
             <Grid.ColumnDefinitions>
 

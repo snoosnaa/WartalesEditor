@@ -21,10 +21,17 @@ public class LocalizationService
     internal LocalizationPreparation Prepare(
         string fileName)
     {
+        return Prepare(
+            XDocument.Load(fileName));
+    }
+
+    internal LocalizationPreparation Prepare(
+        XDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
         Dictionary<string, string> preparedNames =
             new(StringComparer.OrdinalIgnoreCase);
-
-        XDocument document = XDocument.Load(fileName);
 
         XElement? root = document.Root;
 
@@ -117,6 +124,13 @@ public class LocalizationService
     {
         return !string.IsNullOrWhiteSpace(id) &&
                localizedNames.ContainsKey(id);
+    }
+
+    public void Clear()
+    {
+        localizedNames =
+            new Dictionary<string, string>(
+                StringComparer.OrdinalIgnoreCase);
     }
 }
 

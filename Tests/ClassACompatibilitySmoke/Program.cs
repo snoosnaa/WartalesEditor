@@ -189,6 +189,27 @@ if (args.Contains(
     return;
 }
 
+if (args.Contains(
+        "--language-data-only",
+        StringComparer.Ordinal))
+{
+    VerifyLanguageDataSetup();
+    Console.WriteLine(
+        "ALL LANGUAGE DATA CHECKS PASSED");
+    return;
+}
+
+if (args.Length >= 2 &&
+    string.Equals(
+        args[0],
+        "--language-data-real-file",
+        StringComparison.Ordinal))
+{
+    VerifyRealLanguageDataFile(
+        args[1]);
+    return;
+}
+
 VerifyPropertyRemovalMutationPrimitive();
 VerifyPropertyRemovalBoundaryRejections();
 VerifyPropertyRemovalAdvancedTransactions();
@@ -214,6 +235,1097 @@ VerifyMalformedTargets();
 VerifyRestorePreviousValuesContract();
 
 Console.WriteLine("ALL CLASS A COMPATIBILITY CHECKS PASSED");
+
+static void VerifyLanguageDataSetup()
+{
+    string root =
+        Path.Combine(
+            Path.GetTempPath(),
+            "WartalesEditorLanguageDataTests",
+            Guid.NewGuid().ToString("N"));
+
+    Directory.CreateDirectory(root);
+
+    try
+    {
+        string storage =
+            Path.Combine(root, "storage");
+        LocalizationService localization = new();
+        LanguageDataService service =
+            new(localization, storage);
+
+        LanguageDataState missing =
+            service.LoadCanonical();
+        Check(missing.Availability ==
+                  LanguageDataAvailability.Unavailable &&
+              localization.EntryCount == 0 &&
+              Path.GetFileName(service.GetCanonicalPath()) ==
+                  "export.xml",
+            "missing canonical language data is nonfatal and uses the generic canonical filename");
+
+        string invalidInitial =
+            Path.Combine(root, "invalid-initial.xml");
+        File.WriteAllText(
+            invalidInitial,
+            "<cdb");
+        CheckThrows<System.Xml.XmlException>(
+            () => service.Install(invalidInitial),
+            "malformed initial setup is rejected");
+        Check(!File.Exists(service.GetCanonicalPath()) &&
+              (!Directory.Exists(storage) ||
+               Directory.GetFiles(storage).Length == 0),
+            "failed initial setup leaves no canonical or temporary language-data file");
+
+        string englishSource =
+            Path.Combine(root, "renamed-language-file.xml");
+        WriteLanguageExport(
+            englishSource,
+            "en",
+            "ItemA",
+            "Localized Item A",
+            version: "143",
+            revision: "46573");
+
+        LanguageDataState english =
+            service.Install(englishSource);
+        string canonical =
+            service.GetCanonicalPath();
+        Check(english.IsAvailable &&
+              english.Metadata?.LanguageCode == "en" &&
+              english.Metadata.Version == "143" &&
+              english.Metadata.Revision == "46573" &&
+              english.MappingCount == 1 &&
+              localization.GetLocalizedName("ItemA") ==
+                  "Localized Item A" &&
+              File.Exists(canonical),
+            "valid renamed English export installs with embedded metadata authority");
+
+        File.Delete(englishSource);
+        LocalizationService reloadedLocalization =
+            new();
+        LanguageDataService reloadedService =
+            new(reloadedLocalization, storage);
+        LanguageDataState reloaded =
+            reloadedService.LoadCanonical();
+        Check(reloaded.IsAvailable &&
+              reloaded.Metadata?.LanguageCode == "en" &&
+              reloaded.MappingCount == 1 &&
+              reloadedLocalization.GetLocalizedName("ItemA") ==
+                  "Localized Item A" &&
+              !File.Exists(englishSource),
+            "a fresh service auto-loads canonical language data after the original source is deleted");
+
+        localization = reloadedLocalization;
+        service = reloadedService;
+
+        string russianNamedEnglish =
+            Path.Combine(root, "export_ru.xml");
+        WriteLanguageExport(
+            russianNamedEnglish,
+            "en",
+            "Mismatch",
+            "Embedded English");
+        LanguageDataState mismatch =
+            service.Install(russianNamedEnglish);
+        Check(mismatch.Metadata?.LanguageCode == "en" &&
+              localization.GetLocalizedName("Mismatch") ==
+                  "Embedded English",
+            "embedded language overrides a mismatched source filename");
+
+        string nonEnglishSource =
+            Path.Combine(root, "anything.xml");
+        WriteLanguageExport(
+            nonEnglishSource,
+            "ru",
+            "SharedKey",
+            "First value",
+            duplicateText: "Последнее значение");
+        LanguageDataState russian =
+            service.Install(nonEnglishSource);
+        Check(russian.Metadata?.LanguageCode == "ru" &&
+              russian.MappingCount == 1 &&
+              localization.GetLocalizedName("SharedKey") ==
+                  "Последнее значение",
+            "non-English embedded language and duplicate-key last-write semantics are preserved");
+
+        byte[] previousCanonical =
+            File.ReadAllBytes(canonical);
+        LanguageDataState previousState =
+            service.CurrentState;
+        string previousName =
+            localization.GetLocalizedName("SharedKey")!;
+
+        string invalidReplacement =
+            Path.Combine(root, "invalid.xml");
+        File.WriteAllText(
+            invalidReplacement,
+            "<cdb project=\"Other\" lang=\"fr\"><sheet><A><name>A</name></A></sheet></cdb>");
+        CheckThrows<InvalidDataException>(
+            () => service.Install(invalidReplacement),
+            "wrong-project replacement is rejected");
+        Check(File.ReadAllBytes(canonical)
+                  .SequenceEqual(previousCanonical) &&
+              ReferenceEquals(service.CurrentState, previousState) &&
+              localization.GetLocalizedName("SharedKey") ==
+                  previousName,
+            "failed replacement preserves canonical bytes, active dictionary, and metadata state");
+
+        VerifyRejectedLanguageDataFixtures(
+            service,
+            root);
+
+        string frenchSource =
+            Path.Combine(root, "export_en.xml");
+        WriteLanguageExport(
+            frenchSource,
+            "fr",
+            "ItemA",
+            "Objet localisé");
+        LanguageDataState french =
+            service.Install(frenchSource);
+        Check(french.Metadata?.LanguageCode == "fr" &&
+              localization.GetLocalizedName("ItemA") ==
+                  "Objet localisé" &&
+              localization.GetLocalizedName("SharedKey") == null,
+            "successful replacement publishes the stored candidate language and mappings");
+
+        string[] storedFiles =
+            Directory.GetFiles(storage);
+        Check(storedFiles.Length == 1 &&
+              string.Equals(
+                  storedFiles[0],
+                  canonical,
+                  StringComparison.OrdinalIgnoreCase),
+            "successful setup retains one canonical file without language, backup, or archive accumulation");
+
+        ProjectModel project =
+            CreateProject(
+                Sheet(
+                    "item",
+                    new JObject
+                    {
+                        ["id"] = "ItemA",
+                        ["price"] = 10
+                    }));
+        MainViewModel viewModel =
+            CreateMainViewModel(
+                localization,
+                ReferenceDataService.Instance,
+                languageDataService: service);
+        viewModel.Project = project;
+        viewModel.SelectedSheet =
+            project.Sheets.Single();
+        viewModel.SelectedEntry =
+            project.Sheets.Single().Entries.Single();
+        Check(viewModel.SelectedSettingTitle ==
+                  "Objet localisé" &&
+              viewModel.SelectedSettingContext ==
+                  "item · ItemA" &&
+              !viewModel.ShouldShowLanguageDataSetup &&
+              viewModel.LocalizationStatus ==
+                  "Language Data: fr",
+            "available setup supplies generic status and selected-setting presentation");
+
+        viewModel.SearchText =
+            "Objet localisé";
+        Check(viewModel.SearchResults.Count == 1,
+            "search fixture begins with the current localized name");
+
+        int selectedContextNotifications = 0;
+        viewModel.PropertyChanged += (_, eventArgs) =>
+        {
+            if (eventArgs.PropertyName ==
+                nameof(MainViewModel.SelectedSettingContext))
+            {
+                selectedContextNotifications++;
+            }
+        };
+
+        PropertyModel changedProperty =
+            project.Sheets.Single()
+                .Entries.Single()
+                .Properties.Single(property =>
+                    property.Name == "price");
+        changedProperty.Value = 20;
+
+        ChangeSummaryViewModel openSummary =
+            new(
+                [
+                    new ChangeSummaryItemModel(
+                        project.Sheets.Single(),
+                        project.Sheets.Single().Entries.Single(),
+                        changedProperty,
+                        "Objet localisé",
+                        "10",
+                        "20")
+                ],
+                _ => { });
+
+        typeof(MainViewModel)
+            .GetField(
+                "changeSummaryViewModel",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(
+                viewModel,
+                openSummary);
+
+        string germanSource =
+            Path.Combine(root, "localized.xml");
+        WriteLanguageExport(
+            germanSource,
+            "de",
+            "ItemA",
+            "German name");
+        viewModel.InstallLanguageData(
+            germanSource);
+        Check(viewModel.SelectedSettingTitle ==
+                  "German name" &&
+              viewModel.SelectedSettingContext ==
+                  "item · ItemA" &&
+              selectedContextNotifications > 0 &&
+              viewModel.SearchResults.Count == 0 &&
+              openSummary.Items.Count == 1 &&
+              openSummary.Items[0].SettingName ==
+                  "German name" &&
+              viewModel.LocalizationStatus ==
+                  "Language Data: de",
+            "runtime setup removes old localized search results and refreshes selection, context, status, and open Change Summary");
+
+        viewModel.SearchText =
+            "German name";
+        Check(viewModel.SearchResults.Count == 1,
+            "runtime setup adds the new localized search result");
+
+        viewModel.SearchText =
+            "ItemA";
+        Check(viewModel.SearchResults.Count == 1,
+            "internal-ID search remains available after language replacement");
+
+        File.WriteAllText(
+            canonical,
+            "<truncated");
+        LanguageDataState corrupt =
+            service.LoadCanonical();
+        Check(corrupt.Availability ==
+                  LanguageDataAvailability.Invalid &&
+              localization.EntryCount == 0 &&
+              localization.GetLocalizedName("ItemA") == null,
+            "invalid canonical startup state is nonfatal and clears stale localization");
+
+        MainViewModel fallbackViewModel =
+            CreateMainViewModel(
+                localization,
+                ReferenceDataService.Instance,
+                languageDataService: service);
+        fallbackViewModel.Project = project;
+        fallbackViewModel.SelectedSheet =
+            project.Sheets.Single();
+        fallbackViewModel.SelectedEntry =
+            project.Sheets.Single().Entries.Single();
+        Check(fallbackViewModel.SelectedSettingTitle == "ItemA" &&
+              fallbackViewModel.ShouldShowLanguageDataSetup &&
+              fallbackViewModel.LocalizationStatus ==
+                  "Language Data: invalid",
+            "Detailed Editor remains usable with raw IDs and setup visibility after invalid startup data");
+
+        File.Delete(canonical);
+        File.WriteAllText(
+            Path.Combine(storage, "texts_ru.xml"),
+            "<texts project=\"Wartales\" lang=\"ru\"/>");
+        LanguageDataState textsOnly =
+            service.LoadCanonical();
+        Check(textsOnly.Availability ==
+                  LanguageDataAvailability.Unavailable &&
+              localization.EntryCount == 0,
+            "texts files are ignored and never satisfy language-data setup");
+
+        VerifyLanguageDataRecovery(root);
+        VerifyLanguageDataSourceDiscovery(
+            root);
+        VerifyLanguageDataSuccessStyling();
+
+        Console.WriteLine(
+            "PASS generic one-time language-data setup, validation, source discovery, persistence, replacement, refresh, styling, and fallback");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(
+                root,
+                recursive: true);
+        }
+    }
+}
+
+static void VerifyLanguageDataSourceDiscovery(
+    string root)
+{
+    string installationDirectory =
+        Path.Combine(root, "detected-installation");
+    Directory.CreateDirectory(
+        installationDirectory);
+    File.WriteAllBytes(
+        Path.Combine(
+            installationDirectory,
+            "res.pak"),
+        [(byte)'P', (byte)'A', (byte)'K', 0, 1]);
+
+    string validFrench =
+        Path.Combine(
+            installationDirectory,
+            "export_ru.xml");
+    WriteLanguageExport(
+        validFrench,
+        "fr",
+        "DiscoveryKey",
+        "Nom français");
+
+    string validGerman =
+        Path.Combine(
+            installationDirectory,
+            "export_de.xml");
+    WriteLanguageExport(
+        validGerman,
+        "de",
+        "DiscoveryKey",
+        "Deutscher Name");
+
+    File.WriteAllText(
+        Path.Combine(
+            installationDirectory,
+            "export_invalid.xml"),
+        "<cdb project=\"Other\" lang=\"en\"><sheet/></cdb>");
+    WriteLanguageExport(
+        Path.Combine(
+            installationDirectory,
+            "localized.xml"),
+        "en",
+        "IgnoredKey",
+        "Ignored Name");
+
+    string storage =
+        Path.Combine(root, "discovery-storage");
+    LocalizationService localization = new();
+    LanguageDataService languageDataService =
+        new(localization, storage);
+
+    IReadOnlyList<string> candidates =
+        languageDataService.DiscoverValidSources(
+            installationDirectory);
+
+    Check(candidates.Count == 2 &&
+          string.Equals(
+              candidates[0],
+              validGerman,
+              StringComparison.OrdinalIgnoreCase) &&
+          candidates.Contains(
+              validFrench,
+              StringComparer.OrdinalIgnoreCase),
+        "source discovery validates generic export_*.xml files, ignores invalid/nonmatching files, and orders multiple choices deterministically");
+
+    TestFileDialogService detectedDialog =
+        new(validFrench);
+    MainViewModel detectedViewModel =
+        CreateMainViewModel(
+            localization,
+            ReferenceDataService.Instance,
+            fileDialogService: detectedDialog,
+            languageDataService: languageDataService,
+            wartalesInstallationService:
+                new WartalesInstallationService(),
+            quickBmsImportOptions:
+                new QuickBmsImportOptions
+                {
+                    WartalesInstallationDirectory =
+                        installationDirectory
+                });
+
+    InvokeLanguageDataSelection(
+        detectedViewModel);
+
+    Check(detectedDialog.OpenCallCount == 1 &&
+          string.Equals(
+              detectedDialog.LastOpenInitialDirectory,
+              installationDirectory,
+              StringComparison.OrdinalIgnoreCase) &&
+          string.Equals(
+              detectedDialog.LastOpenInitialFileName,
+              validGerman,
+              StringComparison.OrdinalIgnoreCase) &&
+          languageDataService.CurrentState.Metadata?.LanguageCode ==
+              "fr",
+        "validated Wartales installation context opens the picker in the game root with a validated candidate preselected and installs the user's selected valid source");
+
+    LanguageDataState installed =
+        languageDataService.CurrentState;
+    string canonical =
+        languageDataService.GetCanonicalPath();
+    File.Delete(validFrench);
+    LanguageDataState reloaded =
+        new LanguageDataService(
+                new LocalizationService(),
+                storage)
+            .LoadCanonical();
+
+    Check(installed.Metadata?.LanguageCode == "fr" &&
+          File.Exists(canonical) &&
+          !File.Exists(validFrench) &&
+          reloaded.Metadata?.LanguageCode == "fr",
+        "discovered source keeps embedded language authority and is copied to source-independent canonical storage");
+
+    File.Delete(validGerman);
+
+    TestFileDialogService noCandidateDialog =
+        new();
+    MainViewModel noCandidateViewModel =
+        CreateMainViewModel(
+            new LocalizationService(),
+            ReferenceDataService.Instance,
+            fileDialogService: noCandidateDialog,
+            languageDataService:
+                new LanguageDataService(
+                    new LocalizationService(),
+                    Path.Combine(root, "no-candidate-storage")),
+            wartalesInstallationService:
+                new WartalesInstallationService(),
+            quickBmsImportOptions:
+                new QuickBmsImportOptions
+                {
+                    WartalesInstallationDirectory =
+                        installationDirectory
+                });
+
+    InvokeLanguageDataSelection(
+        noCandidateViewModel);
+
+    Check(noCandidateDialog.OpenCallCount == 1 &&
+          noCandidateDialog.LastOpenInitialFileName == null &&
+          string.Equals(
+              noCandidateDialog.LastOpenInitialDirectory,
+              installationDirectory,
+              StringComparison.OrdinalIgnoreCase),
+        "an installation with no valid export candidate still opens manual selection in the detected game root");
+
+    TestFileDialogService detectionFailureDialog =
+        new();
+    MainViewModel detectionFailureViewModel =
+        CreateMainViewModel(
+            new LocalizationService(),
+            ReferenceDataService.Instance,
+            fileDialogService: detectionFailureDialog,
+            languageDataService:
+                new LanguageDataService(
+                    new LocalizationService(),
+                    Path.Combine(root, "detection-failure-storage")),
+            wartalesInstallationService:
+                new WartalesInstallationService(),
+            quickBmsImportOptions:
+                new QuickBmsImportOptions
+                {
+                    WartalesInstallationDirectory =
+                        Path.Combine(root, "missing-installation")
+                });
+
+    InvokeLanguageDataSelection(
+        detectionFailureViewModel);
+
+    Check(detectionFailureDialog.OpenCallCount == 1 &&
+          detectionFailureDialog.LastOpenInitialFileName == null &&
+          detectionFailureDialog.LastOpenInitialDirectory == null,
+        "installation detection failure preserves the generic manual picker fallback");
+}
+
+static void VerifyLanguageDataSuccessStyling()
+{
+    DirectoryInfo? directory =
+        new(AppContext.BaseDirectory);
+    string? dialogPath = null;
+
+    while (directory != null)
+    {
+        string candidate =
+            Path.Combine(
+                directory.FullName,
+                "Views",
+                "LanguageDataDialog.xaml");
+
+        if (File.Exists(candidate))
+        {
+            dialogPath = candidate;
+            break;
+        }
+
+        directory = directory.Parent;
+    }
+
+    Check(dialogPath != null,
+        "Language Data dialog XAML is available for structural style verification");
+
+    string xaml =
+        File.ReadAllText(dialogPath!);
+
+    Check(xaml.Contains(
+              "BasedOn=\"{StaticResource InformationalPanelStyle}\"",
+              StringComparison.Ordinal) &&
+          xaml.Contains(
+              "<DataTrigger Binding=\"{Binding IsAvailable}\"",
+              StringComparison.Ordinal) &&
+          xaml.Contains(
+              "Value=\"{StaticResource ApplyFeedbackBackgroundBrush}\"",
+              StringComparison.Ordinal) &&
+          xaml.Contains(
+              "Value=\"{StaticResource ApplyFeedbackBorderBrush}\"",
+              StringComparison.Ordinal),
+        "available Language Data uses existing success brushes while non-success states retain the informational base treatment");
+}
+
+static void VerifyRejectedLanguageDataFixtures(
+    LanguageDataService service,
+    string root)
+{
+    IReadOnlyList<(string Name, string Contents, Type ExceptionType)> fixtures =
+    [
+        ("missing-lang.xml",
+         "<cdb project=\"Wartales\"><sheet><A><name>A</name></A></sheet></cdb>",
+         typeof(InvalidDataException)),
+        ("empty-lang.xml",
+         "<cdb project=\"Wartales\" lang=\"   \"><sheet><A><name>A</name></A></sheet></cdb>",
+         typeof(InvalidDataException)),
+        ("wrong-root.xml",
+         "<root project=\"Wartales\" lang=\"en\"><sheet><A><name>A</name></A></sheet></root>",
+         typeof(InvalidDataException)),
+        ("no-sheet.xml",
+         "<cdb project=\"Wartales\" lang=\"en\"><A><name>A</name></A></cdb>",
+         typeof(InvalidDataException)),
+        ("zero-mappings.xml",
+         "<cdb project=\"Wartales\" lang=\"en\"><sheet name=\"empty\"><A/></sheet></cdb>",
+         typeof(InvalidDataException)),
+        ("malformed.xml",
+         "<cdb",
+         typeof(System.Xml.XmlException))
+    ];
+
+    foreach ((string name, string contents, Type exceptionType)
+             in fixtures)
+    {
+        string file =
+            Path.Combine(root, name);
+        File.WriteAllText(file, contents);
+
+        Exception? exception =
+            RecordException(
+                () => service.Install(file));
+        Check(exception != null &&
+              exceptionType.IsAssignableFrom(
+                  exception.GetType()),
+            $"{name} is rejected by production language-data validation");
+    }
+}
+
+static void VerifyLanguageDataRecovery(
+    string root)
+{
+    VerifySuccessfulLanguageDataRollback(root);
+    VerifyMissingLanguageDataRollback(root);
+    VerifyUnusableLanguageDataRollback(root);
+    VerifyLanguageDataCleanupFailure(root);
+    VerifyLanguageDataFailureMessages(root);
+}
+
+static void VerifySuccessfulLanguageDataRollback(
+    string root)
+{
+    string storage =
+        Path.Combine(root, "recovery-success");
+    string languageA =
+        Path.Combine(root, "recovery-a.xml");
+    string languageB =
+        Path.Combine(root, "recovery-b.xml");
+
+    WriteLanguageExport(
+        languageA,
+        "a",
+        "RecoveryKey",
+        "Language A");
+    WriteLanguageExport(
+        languageB,
+        "b",
+        "RecoveryKey",
+        "Language B");
+
+    LocalizationService seedLocalization = new();
+    LanguageDataService seedService =
+        new(seedLocalization, storage);
+    seedService.Install(languageA);
+    byte[] canonicalA =
+        File.ReadAllBytes(
+            seedService.GetCanonicalPath());
+
+    LocalizationService localization = new();
+    ThrowAfterPromotionHooks hooks = new();
+    LanguageDataService service =
+        new(localization, storage, hooks);
+    service.LoadCanonical();
+
+    Exception? failure =
+        RecordException(
+            () => service.Install(languageB));
+
+    Check(failure is LanguageDataInstallException
+          {
+              FailureKind:
+                  LanguageDataInstallFailureKind.PreviousSetupRestored
+          } &&
+          File.ReadAllBytes(service.GetCanonicalPath())
+              .SequenceEqual(canonicalA) &&
+          ReadEmbeddedLanguage(service.GetCanonicalPath()) == "a" &&
+          localization.GetLocalizedName("RecoveryKey") ==
+              "Language A" &&
+          service.CurrentState.IsAvailable &&
+          service.CurrentState.Metadata?.LanguageCode == "a" &&
+          !File.Exists(service.GetCanonicalPath() + ".tmp") &&
+          !File.Exists(service.GetCanonicalPath() + ".rollback.tmp"),
+        "post-promotion publication failure restores canonical bytes, active localization, metadata, and temporary-file cleanliness");
+}
+
+static void VerifyMissingLanguageDataRollback(
+    string root)
+{
+    string storage =
+        Path.Combine(root, "recovery-missing");
+    string languageA =
+        Path.Combine(root, "missing-a.xml");
+    string languageB =
+        Path.Combine(root, "missing-b.xml");
+
+    WriteLanguageExport(
+        languageA,
+        "a",
+        "RecoveryKey",
+        "Language A");
+    WriteLanguageExport(
+        languageB,
+        "b",
+        "RecoveryKey",
+        "Language B");
+
+    LocalizationService seedLocalization = new();
+    new LanguageDataService(seedLocalization, storage)
+        .Install(languageA);
+
+    LocalizationService localization = new();
+    MissingRollbackHooks hooks = new();
+    LanguageDataService service =
+        new(localization, storage, hooks);
+    service.LoadCanonical();
+
+    Exception? failure =
+        RecordException(
+            () => service.Install(languageB));
+
+    Check(failure is LanguageDataInstallException
+          {
+              FailureKind:
+                  LanguageDataInstallFailureKind.RecoveryFailed
+          } &&
+          ReadEmbeddedLanguage(service.GetCanonicalPath()) == "b" &&
+          localization.EntryCount == 0 &&
+          localization.GetLocalizedName("RecoveryKey") == null &&
+          service.CurrentState.Availability ==
+              LanguageDataAvailability.Invalid &&
+          service.CurrentState.Metadata == null &&
+          !File.Exists(service.GetCanonicalPath() + ".tmp") &&
+          !File.Exists(service.GetCanonicalPath() + ".rollback.tmp"),
+        "missing rollback produces explicit invalid cleared state instead of canonical B with active state A");
+}
+
+static void VerifyUnusableLanguageDataRollback(
+    string root)
+{
+    string storage =
+        Path.Combine(root, "recovery-unusable");
+    string languageA =
+        Path.Combine(root, "unusable-a.xml");
+    string languageB =
+        Path.Combine(root, "unusable-b.xml");
+
+    WriteLanguageExport(
+        languageA,
+        "a",
+        "RecoveryKey",
+        "Language A");
+    WriteLanguageExport(
+        languageB,
+        "b",
+        "RecoveryKey",
+        "Language B");
+
+    LocalizationService seedLocalization = new();
+    new LanguageDataService(seedLocalization, storage)
+        .Install(languageA);
+
+    LocalizationService localization = new();
+    using UnusableRollbackHooks hooks = new();
+    LanguageDataService service =
+        new(localization, storage, hooks);
+    service.LoadCanonical();
+
+    Exception? failure =
+        RecordException(
+            () => service.Install(languageB));
+
+    Check(failure is LanguageDataInstallException
+          {
+              FailureKind:
+                  LanguageDataInstallFailureKind.RecoveryFailed
+          } &&
+          ReadEmbeddedLanguage(service.GetCanonicalPath()) == "b" &&
+          localization.EntryCount == 0 &&
+          service.CurrentState.Availability ==
+              LanguageDataAvailability.Invalid &&
+          File.Exists(service.GetCanonicalPath() + ".rollback.tmp"),
+        "unusable rollback preserves the recovery file and produces explicit invalid cleared state without false coherence");
+}
+
+static void VerifyLanguageDataCleanupFailure(
+    string root)
+{
+    string storage =
+        Path.Combine(root, "cleanup-failure");
+    string languageA =
+        Path.Combine(root, "cleanup-a.xml");
+    string languageB =
+        Path.Combine(root, "cleanup-b.xml");
+    string languageC =
+        Path.Combine(root, "cleanup-c.xml");
+
+    WriteLanguageExport(
+        languageA,
+        "a",
+        "CleanupKey",
+        "Language A");
+    WriteLanguageExport(
+        languageB,
+        "b",
+        "CleanupKey",
+        "Language B");
+    WriteLanguageExport(
+        languageC,
+        "c",
+        "CleanupKey",
+        "Language C");
+
+    LocalizationService seedLocalization = new();
+    new LanguageDataService(seedLocalization, storage)
+        .Install(languageA);
+
+    LocalizationService localization = new();
+    CleanupFailureHooks hooks = new();
+    LanguageDataService service =
+        new(localization, storage, hooks);
+    service.LoadCanonical();
+
+    Exception? failure =
+        RecordException(
+            () => service.Install(languageB));
+
+    Check(failure is LanguageDataInstallException
+          {
+              FailureKind:
+                  LanguageDataInstallFailureKind.CleanupFailed
+          } &&
+          ReadEmbeddedLanguage(service.GetCanonicalPath()) == "b" &&
+          localization.GetLocalizedName("CleanupKey") ==
+              "Language B" &&
+          service.CurrentState.Metadata?.LanguageCode == "b" &&
+          File.Exists(service.GetCanonicalPath() + ".rollback.tmp"),
+        "rollback cleanup failure is explicit while coherent replacement B remains active");
+
+    LocalizationService retryLocalization = new();
+    LanguageDataService retryService =
+        new(retryLocalization, storage);
+    retryService.LoadCanonical();
+    LanguageDataState retryState =
+        retryService.Install(languageC);
+
+    string[] remainingFiles =
+        Directory.GetFiles(storage);
+
+    Check(retryState.Metadata?.LanguageCode == "c" &&
+          retryLocalization.GetLocalizedName("CleanupKey") ==
+              "Language C" &&
+          remainingFiles.Length == 1 &&
+          string.Equals(
+              remainingFiles[0],
+              retryService.GetCanonicalPath(),
+              StringComparison.OrdinalIgnoreCase),
+        "the next transaction removes stale rollback ownership before publishing one clean canonical file");
+}
+
+static void VerifyLanguageDataFailureMessages(
+    string root)
+{
+    string invalidSource =
+        Path.Combine(root, "message-invalid.xml");
+    File.WriteAllText(
+        invalidSource,
+        "<cdb");
+
+    string initialStorage =
+        Path.Combine(root, "message-initial");
+    LocalizationService initialLocalization = new();
+    LanguageDataService initialService =
+        new(initialLocalization, initialStorage);
+    TestFileDialogService initialFiles =
+        new(invalidSource);
+    TestMessageDialogService initialMessages =
+        new();
+    MainViewModel initialViewModel =
+        CreateMainViewModel(
+            initialLocalization,
+            ReferenceDataService.Instance,
+            initialMessages,
+            initialFiles,
+            initialService);
+
+    InvokeLanguageDataSelection(initialViewModel);
+
+    Check(initialMessages.LastError?.Contains(
+              "continue using internal IDs",
+              StringComparison.Ordinal) == true &&
+          initialMessages.LastError?.Contains(
+              "previous language data was preserved",
+              StringComparison.OrdinalIgnoreCase) == false,
+        "failed initial setup reports internal-ID fallback without claiming prior setup preservation");
+
+    string languageA =
+        Path.Combine(root, "message-a.xml");
+    string languageB =
+        Path.Combine(root, "message-b.xml");
+    WriteLanguageExport(
+        languageA,
+        "a",
+        "MessageKey",
+        "Language A");
+    WriteLanguageExport(
+        languageB,
+        "b",
+        "MessageKey",
+        "Language B");
+
+    string restoredStorage =
+        Path.Combine(root, "message-restored");
+    LocalizationService restoredSeed = new();
+    new LanguageDataService(restoredSeed, restoredStorage)
+        .Install(languageA);
+    LocalizationService restoredLocalization = new();
+    LanguageDataService restoredService =
+        new(
+            restoredLocalization,
+            restoredStorage,
+            new ThrowAfterPromotionHooks());
+    restoredService.LoadCanonical();
+    TestMessageDialogService restoredMessages =
+        new();
+    MainViewModel restoredViewModel =
+        CreateMainViewModel(
+            restoredLocalization,
+            ReferenceDataService.Instance,
+            restoredMessages,
+            new TestFileDialogService(languageB),
+            restoredService);
+
+    InvokeLanguageDataSelection(restoredViewModel);
+
+    Check(restoredMessages.LastError?.Contains(
+              "previous language data was restored",
+              StringComparison.OrdinalIgnoreCase) == true,
+        "failed replacement reports previous setup preservation only after proven rollback");
+
+    string failedStorage =
+        Path.Combine(root, "message-recovery-failed");
+    LocalizationService failedSeed = new();
+    new LanguageDataService(failedSeed, failedStorage)
+        .Install(languageA);
+    LocalizationService failedLocalization = new();
+    LanguageDataService failedService =
+        new(
+            failedLocalization,
+            failedStorage,
+            new MissingRollbackHooks());
+    failedService.LoadCanonical();
+    TestMessageDialogService failedMessages =
+        new();
+    MainViewModel failedViewModel =
+        CreateMainViewModel(
+            failedLocalization,
+            ReferenceDataService.Instance,
+            failedMessages,
+            new TestFileDialogService(languageB),
+            failedService);
+
+    InvokeLanguageDataSelection(failedViewModel);
+
+    Check(failedMessages.LastError?.Contains(
+              "previous setup could not be restored",
+              StringComparison.OrdinalIgnoreCase) == true &&
+          failedMessages.LastError?.Contains(
+              "previous language data was preserved",
+              StringComparison.OrdinalIgnoreCase) == false &&
+          failedService.CurrentState.Availability ==
+              LanguageDataAvailability.Invalid,
+        "unrecoverable replacement reports internal-ID fallback without a false preservation claim");
+
+    string cleanupStorage =
+        Path.Combine(root, "message-cleanup");
+    LocalizationService cleanupSeed = new();
+    new LanguageDataService(cleanupSeed, cleanupStorage)
+        .Install(languageA);
+    LocalizationService cleanupLocalization = new();
+    LanguageDataService cleanupService =
+        new(
+            cleanupLocalization,
+            cleanupStorage,
+            new CleanupFailureHooks());
+    cleanupService.LoadCanonical();
+    TestMessageDialogService cleanupMessages =
+        new();
+    MainViewModel cleanupViewModel =
+        CreateMainViewModel(
+            cleanupLocalization,
+            ReferenceDataService.Instance,
+            cleanupMessages,
+            new TestFileDialogService(languageB),
+            cleanupService);
+
+    InvokeLanguageDataSelection(cleanupViewModel);
+
+    Check(cleanupMessages.LastWarning?.Contains(
+              "new language data remains active",
+              StringComparison.OrdinalIgnoreCase) == true &&
+          cleanupMessages.LastError == null &&
+          cleanupService.CurrentState.Metadata?.LanguageCode == "b",
+        "cleanup-only failure reports coherent successful replacement with a bounded warning");
+}
+
+static void InvokeLanguageDataSelection(
+    MainViewModel viewModel)
+{
+    typeof(MainViewModel)
+        .GetMethod(
+            "OnLanguageDataSelectionRequested",
+            System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.NonPublic)!
+        .Invoke(
+            viewModel,
+            [null, EventArgs.Empty]);
+}
+
+static string ReadEmbeddedLanguage(
+    string fileName) =>
+    System.Xml.Linq.XDocument.Load(fileName)
+        .Root!
+        .Attribute("lang")!
+        .Value;
+
+static void WriteLanguageExport(
+    string fileName,
+    string languageCode,
+    string key,
+    string text,
+    string version = "",
+    string revision = "",
+    string? duplicateText = null)
+{
+    string diagnosticAttributes =
+        (string.IsNullOrWhiteSpace(version)
+            ? string.Empty
+            : $" version=\"{version}\"") +
+        (string.IsNullOrWhiteSpace(revision)
+            ? string.Empty
+            : $" revision=\"{revision}\"");
+    string duplicate =
+        duplicateText == null
+            ? string.Empty
+            : $"<sheet name=\"second\"><{key}><title>{duplicateText}</title></{key}></sheet>";
+
+    File.WriteAllText(
+        fileName,
+        $"<cdb project=\"Wartales\" lang=\"{languageCode}\"{diagnosticAttributes}>" +
+        $"<sheet name=\"first\"><{key}><name>{text}</name></{key}></sheet>" +
+        duplicate +
+        "</cdb>");
+}
+
+static Exception? RecordException(
+    Action action)
+{
+    try
+    {
+        action();
+        return null;
+    }
+    catch (Exception exception)
+    {
+        return exception;
+    }
+}
+
+static void VerifyRealLanguageDataFile(
+    string sourceFile)
+{
+    string root =
+        Path.Combine(
+            Path.GetTempPath(),
+            "WartalesEditorRealLanguageData",
+            Guid.NewGuid().ToString("N"));
+
+    try
+    {
+        LocalizationService localization = new();
+        LanguageDataService service =
+            new(localization, root);
+        LanguageDataState state =
+            service.Install(sourceFile);
+
+        KeyValuePair<string, string> sample =
+            localization.Capture()
+                .Names
+                .First();
+
+        LocalizationService reloadedLocalization =
+            new();
+        LanguageDataService reloadedService =
+            new(reloadedLocalization, root);
+        LanguageDataState reloaded =
+            reloadedService.LoadCanonical();
+
+        Check(state.IsAvailable &&
+              state.MappingCount > 0 &&
+              !string.IsNullOrWhiteSpace(
+                  state.Metadata?.LanguageCode) &&
+              File.Exists(service.GetCanonicalPath()) &&
+              reloaded.IsAvailable &&
+              reloaded.Metadata?.LanguageCode ==
+                  state.Metadata?.LanguageCode &&
+              reloaded.MappingCount == state.MappingCount &&
+              reloadedLocalization.GetLocalizedName(sample.Key) ==
+                  sample.Value,
+            "real Wartales export validates, installs, fresh-service reloads, and publishes localized lookup data");
+
+        Console.WriteLine(
+            $"PASS real Wartales language data: {state.Metadata!.LanguageCode}, {state.MappingCount:N0} localized names, reload and lookup {sample.Key}");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+}
 
 static void VerifyRestorePreviousValuesContract()
 {
@@ -5873,23 +6985,6 @@ static void VerifyProjectPromotionAtomicity(
             productionLocalization,
             "<invalid");
 
-        CheckThrows<System.Xml.XmlException>(
-            () => viewModel.PromoteLoadedProject(
-                projectB,
-                "ProjectB.cdb"),
-            "forced localization preparation failure is surfaced");
-        Check(ReferenceEquals(viewModel.Project, projectA) &&
-              viewModel.CurrentFile == "ProjectA.cdb" &&
-              references.GetValues("constant", "marker")
-                  .Any(value => value.Value == "A") &&
-              references.GetValues("constant", "marker")
-                  .All(value => value.Value != "B") &&
-              localization.Contains("ProjectA"),
-            "failed promotion preserves Project, CurrentFile, references, and localization");
-
-        File.WriteAllText(
-            productionLocalization,
-            "<root><sheet><ProjectB><name>Project B</name></ProjectB></sheet></root>");
         viewModel.PromoteLoadedProject(
             projectB,
             "ProjectB.cdb");
@@ -5897,8 +6992,25 @@ static void VerifyProjectPromotionAtomicity(
               viewModel.CurrentFile == "ProjectB.cdb" &&
               references.GetValues("constant", "marker")
                   .Any(value => value.Value == "B") &&
-              localization.Contains("ProjectB"),
-            "successful production promotion publishes coherent candidate state");
+              references.GetValues("constant", "marker")
+                  .All(value => value.Value != "A") &&
+              localization.Contains("ProjectA") &&
+              !localization.Contains("ProjectB"),
+            "malformed executable-adjacent localization cannot block project promotion or replace application language state");
+
+        File.WriteAllText(
+            productionLocalization,
+            "<root><sheet><ProjectB><name>Project B</name></ProjectB></sheet></root>");
+        viewModel.PromoteLoadedProject(
+            projectA,
+            "ProjectA.cdb");
+        Check(ReferenceEquals(viewModel.Project, projectA) &&
+              viewModel.CurrentFile == "ProjectA.cdb" &&
+              references.GetValues("constant", "marker")
+                  .Any(value => value.Value == "A") &&
+              localization.Contains("ProjectA") &&
+              !localization.Contains("ProjectB"),
+            "valid executable-adjacent localization is not a competing authority during project promotion");
     }
     finally
     {
@@ -5915,13 +7027,19 @@ static void VerifyProjectPromotionAtomicity(
     }
 
     Console.WriteLine(
-        "PASS production promotion prepares before publication and preserves prior state on failure");
+        "PASS production promotion remains coherent and independent of executable-adjacent language files");
 }
 
 static MainViewModel CreateMainViewModel(
     LocalizationService localization,
     ReferenceDataService references,
-    IMessageDialogService? messageDialogService = null)
+    IMessageDialogService? messageDialogService = null,
+    IFileDialogService? fileDialogService = null,
+    LanguageDataService? languageDataService = null,
+    WartalesInstallationService?
+        wartalesInstallationService = null,
+    QuickBmsImportOptions?
+        quickBmsImportOptions = null)
 {
     JsonDataService jsonDataService = new();
     ModificationSnapshotWorkflowService snapshotWorkflowService = new();
@@ -5951,6 +7069,15 @@ static MainViewModel CreateMainViewModel(
             new ModificationSnapshotService(),
             profileCaptureService);
 
+    LanguageDataService resolvedLanguageDataService =
+        languageDataService
+        ?? new LanguageDataService(
+            localization,
+            Path.Combine(
+                Path.GetTempPath(),
+                "WartalesEditorCompatibilityLanguageData",
+                Guid.NewGuid().ToString("N")));
+
     return new MainViewModel(
         jsonDataService,
         new SearchService(),
@@ -5976,9 +7103,15 @@ static MainViewModel CreateMainViewModel(
         transactionService,
         addCampFacilitiesOperation,
         upgradeAllEquipmentOperation,
-        new TestFileDialogService(),
+        fileDialogService
+        ?? new TestFileDialogService(),
         messageDialogService
-        ?? new TestMessageDialogService());
+        ?? new TestMessageDialogService(),
+        resolvedLanguageDataService,
+        wartalesInstallationService
+        ?? new WartalesInstallationService(),
+        quickBmsImportOptions
+        ?? QuickBmsImportOptions.CreateDefault());
 }
 
 static bool IsProcessAlive(
@@ -6118,6 +7251,99 @@ static void CheckThrows<TException>(
     throw new InvalidOperationException($"FAIL: {message}");
 }
 
+sealed class ThrowAfterPromotionHooks :
+    ILanguageDataOperationHooks
+{
+    public void AfterCanonicalPromotion(
+        string canonicalPath,
+        string rollbackPath)
+    {
+        throw new InvalidOperationException(
+            "Injected post-promotion publication failure.");
+    }
+
+    public void BeforeSuccessfulCleanup(
+        string candidatePath,
+        string rollbackPath)
+    {
+    }
+}
+
+sealed class MissingRollbackHooks :
+    ILanguageDataOperationHooks
+{
+    public void AfterCanonicalPromotion(
+        string canonicalPath,
+        string rollbackPath)
+    {
+        File.Delete(rollbackPath);
+
+        throw new InvalidOperationException(
+            "Injected publication failure after rollback removal.");
+    }
+
+    public void BeforeSuccessfulCleanup(
+        string candidatePath,
+        string rollbackPath)
+    {
+    }
+}
+
+sealed class UnusableRollbackHooks :
+    ILanguageDataOperationHooks,
+    IDisposable
+{
+    private FileStream? rollbackLock;
+
+    public void AfterCanonicalPromotion(
+        string canonicalPath,
+        string rollbackPath)
+    {
+        rollbackLock =
+            new FileStream(
+                rollbackPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.None);
+
+        throw new InvalidOperationException(
+            "Injected publication failure with an unusable rollback.");
+    }
+
+    public void BeforeSuccessfulCleanup(
+        string candidatePath,
+        string rollbackPath)
+    {
+    }
+
+    public void Dispose()
+    {
+        rollbackLock?.Dispose();
+        rollbackLock = null;
+    }
+}
+
+sealed class CleanupFailureHooks :
+    ILanguageDataOperationHooks
+{
+    public void AfterCanonicalPromotion(
+        string canonicalPath,
+        string rollbackPath)
+    {
+    }
+
+    public void BeforeSuccessfulCleanup(
+        string candidatePath,
+        string rollbackPath)
+    {
+        if (File.Exists(rollbackPath))
+        {
+            throw new IOException(
+                "Injected rollback cleanup failure.");
+        }
+    }
+}
+
 sealed class ValidatorMismatchCollection : IReadOnlyCollection<string>
 {
     private readonly string[] appliedValues;
@@ -6171,10 +7397,43 @@ sealed class FakeExternalProcessRunner : IExternalProcessRunner
 
 sealed class TestFileDialogService : IFileDialogService
 {
+    private readonly string? openFileName;
+
+    public TestFileDialogService(
+        string? openFileName = null)
+    {
+        this.openFileName = openFileName;
+    }
+
+    public int OpenCallCount { get; private set; }
+
+    public string? LastOpenInitialFileName { get; private set; }
+
+    public string? LastOpenInitialDirectory { get; private set; }
+
     public string? ShowOpenFileDialog(
         string filter,
-        string? initialFileName = null) =>
-        null;
+        string? initialFileName = null)
+    {
+        OpenCallCount++;
+        LastOpenInitialFileName =
+            initialFileName;
+        LastOpenInitialDirectory = null;
+        return openFileName;
+    }
+
+    public string? ShowOpenFileDialog(
+        string filter,
+        string? initialFileName,
+        string? initialDirectory)
+    {
+        OpenCallCount++;
+        LastOpenInitialFileName =
+            initialFileName;
+        LastOpenInitialDirectory =
+            initialDirectory;
+        return openFileName;
+    }
 
     public string? ShowSaveFileDialog(
         string filter,
@@ -6195,22 +7454,31 @@ sealed class TestMessageDialogService : IMessageDialogService
 
     public int ConfirmationCount { get; private set; }
 
+    public string? LastInformation { get; private set; }
+
+    public string? LastWarning { get; private set; }
+
+    public string? LastError { get; private set; }
+
     public void ShowInformation(
         string message,
         string title)
     {
+        LastInformation = message;
     }
 
     public void ShowWarning(
         string message,
         string title)
     {
+        LastWarning = message;
     }
 
     public void ShowError(
         string message,
         string title)
     {
+        LastError = message;
     }
 
     public bool ShowConfirmation(

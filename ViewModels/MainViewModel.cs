@@ -41,11 +41,18 @@ public class MainViewModel : ObservableObject
         "Wartales Snapshot Files (*.json)|*.json|" +
         "All Files (*.*)|*.*";
 
+    private const string LanguageDataFileFilter =
+        "Wartales Export Language Data (export_*.xml)|export_*.xml|" +
+        "XML Files (*.xml)|*.xml|" +
+        "All Files (*.*)|*.*";
+
     private readonly JsonDataService jsonDataService;
 
     private readonly SearchService searchService;
 
     private readonly LocalizationService localizationService;
+
+    private readonly LanguageDataService languageDataService;
 
     private readonly EditHistoryService editHistoryService;
 
@@ -112,6 +119,9 @@ public class MainViewModel : ObservableObject
 
     private readonly QuickBmsImportOptions quickBmsImportOptions;
 
+    private readonly WartalesInstallationService
+        wartalesInstallationService;
+
     private readonly HashSet<PropertyModel> trackedProperties =
         new();
 
@@ -125,6 +135,11 @@ public class MainViewModel : ObservableObject
     private ProfileManagerWindow? profileManagerWindow;
 
     private ProfileManagerViewModel? profileManagerViewModel;
+
+    private LanguageDataDialog? languageDataDialog;
+
+    private LanguageDataDialogViewModel?
+        languageDataDialogViewModel;
 
     private ValidationResultsWindow?
         validationResultsWindow;
@@ -559,7 +574,7 @@ public class MainViewModel : ObservableObject
         $"Search Results ({SearchResults.Count})";
 
     private string localizationStatus =
-        "English names not loaded";
+        "Language Data: unavailable";
 
     public string LocalizationStatus
     {
@@ -628,6 +643,15 @@ public class MainViewModel : ObservableObject
             RefreshCommandStates();
         }
     }
+
+    public bool ShouldShowLanguageDataSetup =>
+        !languageDataService.CurrentState.IsAvailable;
+
+    public string LanguageDataSetupMessage =>
+        languageDataService.CurrentState.Availability ==
+            LanguageDataAvailability.Invalid
+            ? "Stored language data could not be used. Internal IDs are still available."
+            : "Language data is not set up. Internal IDs are still available.";
 
     private string searchScope =
         "Settings";
@@ -870,6 +894,11 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ShowLanguageDataCommand
+    {
+        get;
+    }
+
     public RelayCommand ContentCreationCommand
     {
         get;
@@ -921,6 +950,111 @@ public class MainViewModel : ObservableObject
     UpgradeAllEquipmentOperation upgradeAllEquipmentOperation,
     IFileDialogService fileDialogService,
     IMessageDialogService messageDialogService)
+        : this(
+            jsonDataService,
+            searchService,
+            localizationService,
+            editHistoryService,
+            modificationSnapshotService,
+            modificationSnapshotWorkflowService,
+            changeSummaryService,
+            modProfileLibraryService,
+            modProfileWorkflowService,
+            referenceDataService,
+            validationWorkflowService,
+            validationPresentationService,
+            projectOperationService,
+            projectOperationTransactionService,
+            addCampFacilitiesOperation,
+            upgradeAllEquipmentOperation,
+            fileDialogService,
+            messageDialogService,
+            CreateDefaultLanguageDataService(
+                localizationService))
+    {
+    }
+
+    public MainViewModel(
+    JsonDataService jsonDataService,
+    SearchService searchService,
+    LocalizationService localizationService,
+    EditHistoryService editHistoryService,
+    ModificationSnapshotService
+        modificationSnapshotService,
+    ModificationSnapshotWorkflowService
+        modificationSnapshotWorkflowService,
+    ChangeSummaryService changeSummaryService,
+    ModProfileLibraryService
+        modProfileLibraryService,
+    ModProfileWorkflowService
+        modProfileWorkflowService,
+    ReferenceDataService referenceDataService,
+    ValidationWorkflowService
+        validationWorkflowService,
+    ValidationPresentationService
+        validationPresentationService,
+    ProjectOperationService projectOperationService,
+    ProjectOperationTransactionService
+        projectOperationTransactionService,
+    AddCampFacilitiesOperation addCampFacilitiesOperation,
+    UpgradeAllEquipmentOperation upgradeAllEquipmentOperation,
+    IFileDialogService fileDialogService,
+    IMessageDialogService messageDialogService,
+    LanguageDataService languageDataService)
+        : this(
+            jsonDataService,
+            searchService,
+            localizationService,
+            editHistoryService,
+            modificationSnapshotService,
+            modificationSnapshotWorkflowService,
+            changeSummaryService,
+            modProfileLibraryService,
+            modProfileWorkflowService,
+            referenceDataService,
+            validationWorkflowService,
+            validationPresentationService,
+            projectOperationService,
+            projectOperationTransactionService,
+            addCampFacilitiesOperation,
+            upgradeAllEquipmentOperation,
+            fileDialogService,
+            messageDialogService,
+            languageDataService,
+            new WartalesInstallationService(),
+            QuickBmsImportOptions.CreateDefault())
+    {
+    }
+
+    public MainViewModel(
+    JsonDataService jsonDataService,
+    SearchService searchService,
+    LocalizationService localizationService,
+    EditHistoryService editHistoryService,
+    ModificationSnapshotService
+        modificationSnapshotService,
+    ModificationSnapshotWorkflowService
+        modificationSnapshotWorkflowService,
+    ChangeSummaryService changeSummaryService,
+    ModProfileLibraryService
+        modProfileLibraryService,
+    ModProfileWorkflowService
+        modProfileWorkflowService,
+    ReferenceDataService referenceDataService,
+    ValidationWorkflowService
+        validationWorkflowService,
+    ValidationPresentationService
+        validationPresentationService,
+    ProjectOperationService projectOperationService,
+    ProjectOperationTransactionService
+        projectOperationTransactionService,
+    AddCampFacilitiesOperation addCampFacilitiesOperation,
+    UpgradeAllEquipmentOperation upgradeAllEquipmentOperation,
+    IFileDialogService fileDialogService,
+    IMessageDialogService messageDialogService,
+    LanguageDataService languageDataService,
+    WartalesInstallationService wartalesInstallationService,
+    QuickBmsImportOptions quickBmsImportOptions)
     {
         this.jsonDataService =
             jsonDataService
@@ -936,6 +1070,11 @@ public class MainViewModel : ObservableObject
             localizationService
             ?? throw new ArgumentNullException(
                 nameof(localizationService));
+
+        this.languageDataService =
+            languageDataService
+            ?? throw new ArgumentNullException(
+                nameof(languageDataService));
 
         this.editHistoryService =
             editHistoryService
@@ -1014,12 +1153,23 @@ public class MainViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(messageDialogService));
 
+        this.wartalesInstallationService =
+            wartalesInstallationService
+            ?? throw new ArgumentNullException(
+                nameof(wartalesInstallationService));
+
+        this.quickBmsImportOptions =
+            quickBmsImportOptions
+            ?? throw new ArgumentNullException(
+                nameof(quickBmsImportOptions));
+
+        localizationStatus =
+            CreateLanguageDataStatus(
+                this.languageDataService.CurrentState);
+
         quickBmsImportService =
             new QuickBmsImportService(
                 this.jsonDataService);
-
-        quickBmsImportOptions =
-            QuickBmsImportOptions.CreateDefault();
 
         ProjectMutationService progressionMutationService =
             new();
@@ -1160,6 +1310,10 @@ public class MainViewModel : ObservableObject
         ShowAboutCommand =
             new RelayCommand(
                 _ => ShowAbout());
+
+        ShowLanguageDataCommand =
+            new RelayCommand(
+                _ => ShowLanguageData());
 
         ContentCreationCommand =
             new RelayCommand(
@@ -2029,60 +2183,28 @@ public class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(loadedProject);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayFileName);
 
-        string localizationFile =
-            Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "export_en.xml");
-
         ReferenceDataPreparation preparedReferences =
             referenceDataService.Prepare(
                 loadedProject);
-        LocalizationPreparation? preparedLocalization =
-            File.Exists(localizationFile)
-                ? localizationService.Prepare(
-                    localizationFile)
-                : null;
-        string preparedLocalizationStatus =
-            preparedLocalization != null
-                ?
-                $"English names loaded " +
-                $"({preparedLocalization.Names.Count:N0})"
-                : "English names unavailable";
 
         ReferenceDataPreparation previousReferences =
             referenceDataService.Capture();
-        LocalizationPreparation previousLocalization =
-            localizationService.Capture();
         ProjectModel? previousProject = Project;
         string previousFile = CurrentFile;
-        string previousLocalizationStatus =
-            LocalizationStatus;
 
         try
         {
             referenceDataService.Apply(
                 preparedReferences);
 
-            if (preparedLocalization != null)
-            {
-                localizationService.Apply(
-                    preparedLocalization);
-            }
-
             CurrentFile = displayFileName;
-            LocalizationStatus =
-                preparedLocalizationStatus;
             Project = loadedProject;
         }
         catch
         {
             referenceDataService.Apply(
                 previousReferences);
-            localizationService.Apply(
-                previousLocalization);
             CurrentFile = previousFile;
-            LocalizationStatus =
-                previousLocalizationStatus;
 
             if (!ReferenceEquals(
                     Project,
@@ -3602,6 +3724,261 @@ public class MainViewModel : ObservableObject
         return message.ToString();
     }
 
+    private void ShowLanguageData()
+    {
+        if (languageDataDialog != null)
+        {
+            languageDataDialogViewModel?.Refresh(
+                languageDataService.CurrentState);
+
+            RestoreAndActivateWindow(
+                languageDataDialog);
+            return;
+        }
+
+        languageDataDialogViewModel =
+            new LanguageDataDialogViewModel(
+                languageDataService.CurrentState);
+
+        languageDataDialog =
+            new LanguageDataDialog
+            {
+                Owner =
+                    GetMainWindowOwner(),
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner,
+                DataContext =
+                    languageDataDialogViewModel
+            };
+
+        languageDataDialog.SelectionRequested +=
+            OnLanguageDataSelectionRequested;
+        languageDataDialog.Closed +=
+            OnLanguageDataDialogClosed;
+
+        ShowFeatureWindow(
+            languageDataDialog);
+    }
+
+    private void OnLanguageDataSelectionRequested(
+        object? sender,
+        EventArgs e)
+    {
+        (string? initialFileName,
+         string? initialDirectory) =
+            ResolveLanguageDataSourceContext();
+
+        string? sourceFile =
+            fileDialogService.ShowOpenFileDialog(
+                LanguageDataFileFilter,
+                initialFileName,
+                initialDirectory);
+
+        if (string.IsNullOrWhiteSpace(
+                sourceFile))
+        {
+            return;
+        }
+
+        bool hadPreviousSetup =
+            languageDataService.CurrentState.IsAvailable;
+
+        try
+        {
+            LanguageDataState state =
+                InstallLanguageData(
+                    sourceFile);
+
+            languageDataDialogViewModel?.Refresh(
+                state);
+
+            Status =
+                $"Language data ({state.Metadata!.LanguageCode}) is ready.";
+        }
+        catch (LanguageDataInstallException exception)
+        {
+            RefreshLanguageDataPresentation();
+
+            languageDataDialogViewModel?.Refresh(
+                languageDataService.CurrentState);
+
+            ShowLanguageDataInstallFailure(
+                exception);
+        }
+        catch (Exception exception)
+        {
+            RefreshLanguageDataPresentation();
+
+            languageDataDialogViewModel?.Refresh(
+                languageDataService.CurrentState);
+
+            messageDialogService.ShowError(
+                hadPreviousSetup
+                    ? "Language data could not be replaced. Your previous language data was preserved." +
+                      Environment.NewLine + Environment.NewLine +
+                      $"Details: {exception.Message}"
+                    : "Language data could not be set up. The editor will continue using internal IDs." +
+                      Environment.NewLine + Environment.NewLine +
+                      $"Details: {exception.Message}",
+                "Language Data");
+
+            Status =
+                hadPreviousSetup
+                    ? "Language data was not replaced."
+                    : "Language data was not set up.";
+        }
+    }
+
+    private (string? InitialFileName,
+             string? InitialDirectory)
+        ResolveLanguageDataSourceContext()
+    {
+        try
+        {
+            WartalesPackageInfo installation =
+                wartalesInstallationService.Validate(
+                    quickBmsImportOptions
+                        .WartalesInstallationDirectory);
+
+            IReadOnlyList<string> candidates =
+                languageDataService.DiscoverValidSources(
+                    installation.InstallationDirectory);
+
+            return (
+                candidates.FirstOrDefault(),
+                installation.InstallationDirectory);
+        }
+        catch (Exception exception)
+            when (exception is QuickBmsImportException
+                  or IOException
+                  or UnauthorizedAccessException
+                  or ArgumentException
+                  or NotSupportedException
+                  or System.Security.SecurityException)
+        {
+            return (null, null);
+        }
+    }
+
+    private void ShowLanguageDataInstallFailure(
+        LanguageDataInstallException exception)
+    {
+        switch (exception.FailureKind)
+        {
+            case LanguageDataInstallFailureKind.CleanupFailed:
+                messageDialogService.ShowWarning(
+                    "Language data is ready, but a temporary recovery file could not be removed. The new language data remains active. The editor will retry cleanup the next time language data is changed.",
+                    "Language Data");
+
+                Status =
+                    "Language data is ready; temporary cleanup is still required.";
+                break;
+
+            case LanguageDataInstallFailureKind.PreviousSetupRestored:
+                messageDialogService.ShowError(
+                    "Language data could not be replaced. Your previous language data was restored.",
+                    "Language Data");
+
+                Status =
+                    "Language data was not replaced.";
+                break;
+
+            case LanguageDataInstallFailureKind.RecoveryFailed:
+                messageDialogService.ShowError(
+                    "Language data replacement failed and the previous setup could not be restored. The editor will continue using internal IDs until language data is set up again.",
+                    "Language Data");
+
+                Status =
+                    "Language data must be set up again.";
+                break;
+
+            default:
+                messageDialogService.ShowError(
+                    "Language data could not be set up. The editor will continue using internal IDs.",
+                    "Language Data");
+
+                Status =
+                    "Language data was not set up.";
+                break;
+        }
+    }
+
+    internal LanguageDataState InstallLanguageData(
+        string sourceFile)
+    {
+        LanguageDataState state =
+            languageDataService.Install(
+                sourceFile);
+
+        RefreshLanguageDataPresentation();
+
+        return state;
+    }
+
+    private void OnLanguageDataDialogClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (languageDataDialog != null)
+        {
+            languageDataDialog.SelectionRequested -=
+                OnLanguageDataSelectionRequested;
+            languageDataDialog.Closed -=
+                OnLanguageDataDialogClosed;
+        }
+
+        languageDataDialog = null;
+        languageDataDialogViewModel = null;
+    }
+
+    private void RefreshLanguageDataPresentation()
+    {
+        LocalizationStatus =
+            CreateLanguageDataStatus(
+                languageDataService.CurrentState);
+
+        OnPropertyChanged(
+            nameof(ShouldShowLanguageDataSetup));
+        OnPropertyChanged(
+            nameof(LanguageDataSetupMessage));
+        OnPropertyChanged(
+            nameof(Entries));
+        OnPropertyChanged(
+            nameof(HasVisibleSettings));
+
+        NotifySelectedSettingPresentationChanged();
+        RefreshSearchResults();
+        RefreshChangeSummaryViewModel();
+    }
+
+    private static string CreateLanguageDataStatus(
+        LanguageDataState state)
+    {
+        if (state.IsAvailable)
+        {
+            return
+                $"Language Data: " +
+                $"{state.Metadata!.LanguageCode}";
+        }
+
+        return state.Availability ==
+            LanguageDataAvailability.Invalid
+            ? "Language Data: invalid"
+            : "Language Data: unavailable";
+    }
+
+    private static LanguageDataService
+        CreateDefaultLanguageDataService(
+            LocalizationService localizationService)
+    {
+        LanguageDataService service =
+            new(localizationService);
+
+        service.LoadCanonical();
+
+        return service;
+    }
+
     private void ShowAbout()
     {
         messageDialogService.ShowInformation(
@@ -3834,6 +4211,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         ShowProfileManagerCommand?
+            .NotifyCanExecuteChanged();
+
+        ShowLanguageDataCommand?
             .NotifyCanExecuteChanged();
 
         ExportSnapshotCommand?

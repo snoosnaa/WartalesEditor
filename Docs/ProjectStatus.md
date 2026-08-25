@@ -56,9 +56,49 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-QuickBMS Integration Milestone 1 — Safe CDB Import
+Generic Wartales Language Data Setup
 
 Current phase:
+
+Complete, reviewed, accepted, and reconciled. The Renewed Focused Engineering
+Review returned **PASS WITH NON-BLOCKING NOTES**. Project Owner Interactive
+Acceptance and the renewed acceptance after the final UX corrections both
+returned **PASS**; the owner's final result was, “Pass. Both work well.”
+
+The user can select any valid Wartales export localization XML file. Embedded
+`lang` metadata is authoritative, and one canonical copy is retained at
+`<Documents>\Wartales Editor\Language Data\export.xml`. It loads automatically
+at application startup. Missing or invalid data clears active localization and
+falls back to internal IDs without blocking the application, Detailed Editor,
+normal Open, or Import From Wartales. The Detailed Editor supplies a compact
+setup action, while **Tools → Language Data...** shows status and supports safe
+replacement. Setup and replacement reuse the validated Wartales installation
+context to preselect a valid `export_*.xml` source or open its folder; detection
+and candidate failures retain the manual picker fallback. The source remains
+non-authoritative after copying. Available state uses the application's existing
+green success treatment, while missing and invalid states remain distinct.
+Runtime replacement refreshes current Detailed Editor/search and
+Change Summary presentation; already-open Random Trait Exclusions dialogs use
+their existing labels until reopened. Late publication recovery validates and
+fingerprint-proves prior canonical restoration before republishing its state;
+unrecoverable recovery clears localization and reports invalid state. Cleanup
+failure preserves a coherent new setup and is surfaced as a warning.
+
+Language data is application-level read-only presentation state. It is not
+project, mutation, gameplay, profile, snapshot, transaction, or QuickBMS state.
+`texts_*.xml` and full application localization are excluded.
+
+Accepted non-blocking notes remain: Random Trait Exclusions refreshes localized
+labels after close/reopen; fingerprint-mismatch behavior is implemented without
+a dedicated mutation-based mismatch fixture; persistent external locks may
+prevent rollback cleanup but later attempts fail safely; and the pre-existing
+QuickBMS symlink regression may skip when Windows symlink privilege is absent.
+
+Previous milestone:
+
+QuickBMS Integration Milestone 1 — Safe CDB Import
+
+Previous phase:
 
 Complete and accepted. Renewed Focused Engineering Review passed with
 non-blocking notes, and Project Owner Interactive Acceptance passed.
@@ -71,8 +111,8 @@ job reports zero active processes. Timeout/cancellation terminates the job and
 uses the same bounded zero-count proof; failure remains fatal without
 post-hashing, cleanup, or promotion. Staging creation/use/cleanup rejects junction and
 reparse redirection; CDB discovery uses controlled contained traversal; and
-shared project promotion prepares reference/localization state before
-publication. The first Project Owner interactive acceptance then identified
+shared project promotion prepares project-derived reference state before
+publication. Application language data is now owned independently. The first Project Owner interactive acceptance then identified
 that the opened project had no durable file identity. That bounded defect is
 corrected. Renewed Engineering Review confirmed the correction and all prior
 safety blockers remain closed.
@@ -571,9 +611,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-QuickBMS Integration Milestone 1 is closed. No subsequent QuickBMS milestone
-has started. Package backup/reimport/install, Restore Original Game File,
-Update Survival, and Golden CDB remain deferred.
+No subsequent milestone has been started. Await Project Owner direction.
+QuickBMS follow-on work, Update Survival, and full application localization
+remain deferred.
 
 Document Maintenance
 
