@@ -158,7 +158,7 @@
 
     </Window.Resources>
 
-    <Grid>
+    <Grid IsEnabled="{Binding IsEditorInteractionEnabled}">
 
         <Grid.RowDefinitions>
 
@@ -176,6 +176,11 @@
         <Menu Grid.Row="0">
 
             <MenuItem Header="_File">
+
+                <MenuItem Header="_Import From Wartales..."
+                          Command="{Binding ImportFromWartalesCommand}"/>
+
+                <Separator/>
 
                 <MenuItem Header="_Open Wartales File..."
                           Command="{Binding OpenCommand}"
@@ -369,8 +374,13 @@
                 <StackPanel Margin="0,20,0,0"
                             HorizontalAlignment="Center"
                             Orientation="Horizontal">
-                    <Button Content="Open"
+                    <Button Content="Import From Wartales"
                             Style="{StaticResource UtilityActionButtonStyle}"
+                            Command="{Binding ImportFromWartalesCommand}"/>
+                    <Button Content="Open Extracted File"
+                            Width="150"
+                            Margin="8,0,0,0"
+                            Padding="10,5"
                             Command="{Binding OpenCommand}"/>
                     <Button Content="Profiles"
                             Width="130"

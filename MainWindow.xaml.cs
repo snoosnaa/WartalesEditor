@@ -778,7 +778,7 @@ public partial class MainWindow : Window
     System.ComponentModel.CancelEventArgs e)
     {
         if (!ViewModel
-                .ConfirmAbandonUnsavedChanges())
+                .ConfirmApplicationClose())
         {
             e.Cancel = true;
         }

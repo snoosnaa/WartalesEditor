@@ -6,6 +6,84 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# QuickBMS Integration Milestone 1 — Safe CDB Import
+
+**Status:** Complete and accepted; Renewed Focused Engineering Review passed
+with non-blocking notes and Project Owner Interactive Acceptance passed
+
+## Added
+
+- **Import From Wartales** in the File menu and welcome workspace.
+- Separate owners for Wartales package validation, external QuickBMS toolchain
+  validation, argument-safe process execution, unique temporary staging,
+  SHA-256 fingerprinting, and extraction/import orchestration.
+- Direct invocation of external `quickbms.exe` and the Shiro Games PAK script
+  with absolute script, `res.pak`, and staging paths.
+- Durable promotion of the validated CDB to
+  `<Wartales installation>\Extracted\data.cdb`, providing the imported project
+  with a stable file identity for existing adjacent state persistence.
+- Permanent fake-runner coverage for validation, start/timeout/exit failures,
+  missing/ambiguous/invalid output, source identity drift, staging freshness and
+  cleanup, production loading, and failure-safe promotion.
+
+## Safety
+
+- The milestone exposes no write or reimport flags and never uses batch files.
+- Every attempt starts in an empty unique temporary directory; output is never
+  reused from an earlier run.
+- Project promotion occurs only after QuickBMS succeeds, one non-empty
+  `data.cdb` is found, its hash is recorded, and `JsonDataService.LoadProject`
+  constructs a non-empty project.
+- Existing unsaved-project protection remains authoritative.
+- Existing `Extracted\data.cdb` requires player confirmation before extraction;
+  the service independently rejects an unapproved replacement. Promotion uses
+  a fingerprint-verified `data.cdb.importing` file and publishes no project on
+  failure.
+- QuickBMS is launched suspended, assigned to an editor-owned Windows Job
+  Object, and resumed only after containment. Descendants inherit the job.
+  Normal completion, timeout, and cancellation require a bounded query to reach
+  zero active job processes. Unproven termination blocks post-hashing,
+  promotion, and cleanup, retaining staging for safety.
+- Staging root/session components reject reparse points. Cleanup validates the
+  exact workspace and refuses recursive deletion when any reparse entry exists.
+- CDB discovery now traverses directories explicitly, skips junctions, rejects
+  reparse candidates, and independently verifies final containment.
+- Reference and localization state are prepared without live mutation before
+  shared Open/Import project publication, so preparation failure preserves the
+  prior project and application state.
+
+## Verified
+
+- The exact supplied external QuickBMS tool and script extracted the exact live
+  Wartales `res.pak` with exit code 0.
+- Extracted `data.cdb`: 6,691,681 bytes, SHA-256
+  `29BE149FD1AD68D849FA498F671A8E71868117EB3AA15B25643D86C647E76576`,
+  loaded through the production path as 395 sheets.
+- Live `res.pak`: 791,334,661 bytes and SHA-256
+  `665BAF4E4240D8822178D634D8A8CD830B961781D77B1687B9CF24052D95CAC9`
+  both before and after extraction.
+- Production-path regressions prove timeout and cancellation remove a harmless
+  parent/child/grandchild Job Object tree and that root exit is not mistaken for
+  complete-tree exit. Staging-root junctions are rejected, replaced
+  session cleanup is refused safely, recursive discovery does not follow a
+  junction, empty CDB output is rejected, and forced localization failure is
+  promotion-atomic. File-symlink creation is unavailable under the current
+  Windows test privilege; production rejection remains implemented.
+- Durable-promotion regressions cover first import, unapproved replacement,
+  approved replacement, failed promotion, importing-artifact cleanup, durable
+  project identity, and `.wtstate` creation beside the promoted CDB.
+- The post-correction real extraction promoted the same 395-sheet,
+  6,691,681-byte CDB to `Extracted\data.cdb`; a stateful Starting Resources
+  operation and `.wtstate` creation succeeded, staging cleaned, and `res.pak`
+  retained its exact size and SHA-256.
+- Project Owner interactive testing confirmed successful Import From Wartales,
+  the durable `Wartales\Extracted\data.cdb`, its adjacent `data.cdb.wtstate`, and
+  Starting Resources operation without the former missing-file-path failure.
+- Reimport/install, package backup/replacement, Update Survival, Golden CDB,
+  and QuickBMS/script redistribution remain explicitly deferred.
+
+---
+
 # Restore Previous Values
 
 **Status:** Implemented, repository-verified, Renewed Focused Engineering

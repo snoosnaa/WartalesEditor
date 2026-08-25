@@ -25,6 +25,90 @@ Core principles:
 
 ---
 
+# External Game Data Import
+
+QuickBMS integration is an auxiliary transport subsystem. It does not mutate
+`ProjectModel` and is not part of the Project Mutation, gameplay operation,
+transaction, profile, snapshot, or Gameplay Operation State architectures.
+
+```text
+MainViewModel
+        │
+        ▼
+QuickBmsImportService
+        ├── WartalesInstallationService
+        ├── QuickBmsToolchainService
+        ├── ExtractionWorkspaceService
+        ├── IExternalProcessRunner
+        └── FileFingerprintService
+        │
+        ▼
+Temporary staging validation
+        │
+        ▼
+<Wartales installation>\Extracted\data.cdb
+        │
+        ▼
+JsonDataService.LoadProject (durable file)
+        │
+        ▼
+Normal MainViewModel project promotion
+```
+
+Milestone 1 treats live `res.pak` as read-only input. The orchestrator passes
+only the absolute script, package, and fresh staging directory to
+`quickbms.exe`; no write/reimport flag or batch-file path exists in production.
+It requires the script-confirmed `PAK\0` signature, records SHA-256 identities,
+verifies the source package after extraction, requires exactly one non-empty
+`data.cdb`, and validates it with the production JSON/project-model loader.
+Only a validated staging CDB may be copied through the deterministic
+`Extracted\data.cdb.importing` path, fingerprint-verified, moved to
+`<Wartales installation>\Extracted\data.cdb`, and loaded again from that durable
+identity. A failed attempt returns no project, so `MainViewModel` cannot replace
+the current project. Per-attempt staging is never reused.
+
+An existing durable CDB requires explicit player confirmation before QuickBMS
+runs. The service independently refuses an unapproved replacement, including a
+file that appears after the UI check. Promotion failure leaves the active
+project unpublished; importing artifacts are removed when safe. The durable
+project path enables existing adjacent-file workflows such as Gameplay
+Operation State persistence without changing their semantics.
+
+`ExternalProcessRunner` launches QuickBMS suspended through the Windows native
+process API, assigns it to an editor-owned Job Object, and only then resumes its
+primary thread. Descendants inherit the same job, closing the pre-assignment
+spawn race. Normal completion, timeout, and cancellation poll the job's active
+process count with a bounded delay; completion is accepted only at zero.
+Timeout/cancellation terminates the Job Object before the bounded zero-count
+wait. Failure to prove zero contained processes is a separate fatal state and
+leaves staging untouched without post-hashing or project promotion. Staging
+creation and use validate existing path components and the GUID session against
+reparse-point redirection. Cleanup additionally refuses any tree containing a
+reparse entry. These repeated checks materially constrain junction replacement;
+they do not claim impossible race-proof filesystem security.
+
+Extracted-CDB discovery controls directory descent instead of using unrestricted
+recursive enumeration. Reparse directories are skipped, reparse files are
+rejected, and the final regular file is independently checked against the exact
+session boundary before hashing/loading.
+
+Shared Open/Import promotion prepares reference and localization state without
+changing the live services. After preparation succeeds, the prepared services,
+file identity, and candidate project are published coherently; publication
+failure restores the captured prior service/project state.
+
+Default path composition is isolated in `QuickBmsImportOptions`: it derives the
+current user's Desktop QuickBMS folder and the standard Program Files (x86)
+Steam Wartales location. Services accept explicit options and a process-runner
+abstraction for deterministic testing and later settings UI without embedding
+a user-specific absolute path in core logic.
+
+Backup, reimport, candidate package construction, live replacement, Restore
+Original Game File, Update Survival, Golden CDB, and external-tool packaging are
+outside this architecture milestone.
+
+---
+
 # Core Architectural Subsystems
 
 The editor now consists of eight primary reusable subsystems:

@@ -15,7 +15,7 @@ public sealed class ReferenceDataService
         fallbackValues =
             new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly Dictionary<string, IReadOnlyList<ReferenceValueModel>>
+    private Dictionary<string, IReadOnlyList<ReferenceValueModel>>
         discoveredValues =
             new(StringComparer.OrdinalIgnoreCase);
 
@@ -27,10 +27,21 @@ public sealed class ReferenceDataService
 
     public void Initialize(ProjectModel? project)
     {
-        discoveredValues.Clear();
+        Apply(
+            Prepare(project));
+    }
+
+    internal ReferenceDataPreparation Prepare(
+        ProjectModel? project)
+    {
+        Dictionary<string, IReadOnlyList<ReferenceValueModel>> preparedValues =
+            new(StringComparer.OrdinalIgnoreCase);
 
         if (project == null)
-            return;
+        {
+            return new ReferenceDataPreparation(
+                preparedValues);
+        }
 
         Dictionary<string, HashSet<string>> collectedValues =
             new(StringComparer.OrdinalIgnoreCase);
@@ -77,7 +88,7 @@ public sealed class ReferenceDataService
         foreach ((string referenceKey, HashSet<string> values)
                  in collectedValues)
         {
-            discoveredValues[referenceKey] = values
+            preparedValues[referenceKey] = values
                 .OrderBy(
                     value => value,
                     StringComparer.OrdinalIgnoreCase)
@@ -85,6 +96,24 @@ public sealed class ReferenceDataService
                     new ReferenceValueModel(value))
                 .ToArray();
         }
+
+        return new ReferenceDataPreparation(
+            preparedValues);
+    }
+
+    internal ReferenceDataPreparation Capture()
+    {
+        return new ReferenceDataPreparation(
+            new Dictionary<string, IReadOnlyList<ReferenceValueModel>>(
+                discoveredValues,
+                StringComparer.OrdinalIgnoreCase));
+    }
+
+    internal void Apply(
+        ReferenceDataPreparation preparation)
+    {
+        ArgumentNullException.ThrowIfNull(preparation);
+        discoveredValues = preparation.Values;
     }
 
     public IReadOnlyList<ReferenceValueModel> GetValues(
@@ -165,5 +194,19 @@ public sealed class ReferenceDataService
 
             _ => value.Value.ToString() ?? string.Empty
         };
+    }
+}
+
+internal sealed class ReferenceDataPreparation
+{
+    internal ReferenceDataPreparation(
+        Dictionary<string, IReadOnlyList<ReferenceValueModel>> values)
+    {
+        Values = values;
+    }
+
+    internal Dictionary<string, IReadOnlyList<ReferenceValueModel>> Values
+    {
+        get;
     }
 }

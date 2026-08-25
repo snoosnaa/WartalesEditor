@@ -2,9 +2,85 @@
 
 ## Current Milestone
 
-Restore Previous Values correction
+QuickBMS Integration Milestone 1 — Safe CDB Import
 
 ## Current Status
+
+QuickBMS Milestone 1 is complete and accepted. The Renewed Focused Engineering
+Review returned **PASS WITH NON-BLOCKING NOTES — Ready for Project Owner
+Interactive Acceptance**, and Project Owner Interactive Acceptance returned
+**PASS**.
+
+The durable extracted-CDB correction is implemented and repository-verified.
+**Import From
+Wartales** validates the installed game and external QuickBMS toolchain, creates
+a unique editor-owned temporary workspace, invokes `quickbms.exe` with the
+Shiro Games PAK script in read-only extraction form, discovers exactly one
+`data.cdb`, validates it through `JsonDataService.LoadProject`, promotes it
+through `Extracted\data.cdb.importing` to
+`<Wartales installation>\Extracted\data.cdb`, and opens the durable file before
+replacing the editor's current project.
+
+If that durable file already exists, the player must confirm replacement before
+QuickBMS runs. Cancel preserves the file and current project. The service also
+refuses any unapproved replacement at promotion time. Promotion failure returns
+no candidate project, and successful imported projects have a stable file path
+for existing `.wtstate` persistence.
+
+The final process-lifetime correction launches QuickBMS suspended, assigns it
+to an editor-owned Windows Job Object, and resumes it only after containment is
+established. Descendants inherit the job. Normal completion,
+timeout/cancellation, and bounded termination now require the job's active
+process count to reach zero before post-hashing or cleanup. An unproven
+termination produces a distinct fatal result and deliberately retains staging.
+Staging root/session components are rejected when they contain
+reparse points, cleanup refuses any reparse-bearing tree, and CDB discovery
+uses controlled traversal that never descends through junctions. Candidate
+files are independently checked for containment, regular-file identity, and
+reparse status.
+
+Shared Open/Import promotion now prepares reference and localization data
+without mutating live state. Publication occurs only after preparation
+succeeds, with prior state retained for rollback if publication itself fails.
+Production regressions cover Job Object containment of a real
+parent/child/grandchild tree during timeout/cancellation and when the root exits
+first, plus staging junctions, cleanup replacement, discovery escape, empty
+output, forced localization failure, and successful promotion. The final
+Renewed Focused Engineering Review passed with non-blocking notes.
+
+The production path calculates SHA-256 identity for `res.pak`, QuickBMS, the
+script, and extracted CDB. It verifies the source package again after process
+completion, rejects start/timeout/exit failures and missing, ambiguous, empty,
+or invalid CDB output, and cleans per-attempt staging. The game package must
+have the `PAK\0` signature required by the supplied script. The supplied fresh
+installation was exercised directly: QuickBMS exited 0, the 6,691,681-byte
+`data.cdb` loaded as 395 sheets, and the 791,334,661-byte `res.pak` retained
+SHA-256 `665BAF4E4240D8822178D634D8A8CD830B961781D77B1687B9CF24052D95CAC9`
+before and after extraction. The post-correction real run promoted that CDB to
+`Extracted\data.cdb`, assigned the durable path to the project, proved
+a stateful Starting Resources operation and `.wtstate` creation, cleaned
+staging, and left no importing artifact.
+
+Project Owner interactive testing confirmed that Import From Wartales succeeds,
+the durable project exists at
+`C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb`,
+the adjacent `data.cdb.wtstate` file is created, and Starting Resources no
+longer reports that the project lacks a file path.
+
+The integration is transport infrastructure only. Gameplay mutation,
+transactions, Undo/Redo, profiles, snapshots, Restore Previous Values,
+Gameplay Operation State, and `.wtstate` semantics are unchanged. Reimport,
+package backup/replacement, Restore Original Game File, Update Survival, Golden
+CDB, and redistribution of QuickBMS or the Shiro script are not implemented.
+
+Documentation reconciliation, final verification, the single milestone commit,
+and normal push to `origin/main` complete this accepted milestone.
+
+Previous milestone:
+
+Restore Previous Values correction
+
+Previous milestone status:
 
 The Project Owner standardized every gameplay reset control as **Restore
 Previous Values**. The implementation now uses compatible Gameplay Operation
@@ -42,7 +118,7 @@ synthesizing WPF button clicks. Project Owner interactive testing supplies the
 runtime evidence and concluded with an explicit **PASS** after the final
 corrections. Sequential application and test builds complete with zero warnings
 and zero errors, the focused suite passes, and all 25 Class A compatibility
-groups pass. Final commit and push are the remaining lifecycle checkpoint.
+groups pass. Its final commit and push checkpoint is complete.
 
 Previous milestone context:
 
@@ -155,12 +231,6 @@ configured 645-change state.
 
 ## Next Required Step
 
-Run the final verification and commit/push checkpoint for the accepted Final
-Feature Batch. After that checkpoint, the next authorized engineering activity
-was a separate bounded reset-authority investigation.
-
-No commit or push has been performed.
-
-Do not begin QuickBMS integration,
-Integrated Import / Install / Restore, Update Survival, or release hardening
-during this boundary.
+QuickBMS Integration Milestone 1 is closed. No subsequent QuickBMS milestone
+has begun. Reimport/install, package backup or replacement, Update Survival,
+Golden CDB, and release hardening remain outside this completed boundary.

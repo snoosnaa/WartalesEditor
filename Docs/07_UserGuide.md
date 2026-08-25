@@ -1,6 +1,34 @@
 ﻿
 # Version 0.10.0 workflow terminology
 
+# Import From Wartales
+
+Choose **File → Import From Wartales...** or **Import From Wartales** on the
+welcome screen to extract and open the installed game's current `data.cdb`.
+The editor checks the standard Steam Wartales installation and the external
+QuickBMS folder on the current user's Desktop, performs extraction in a fresh
+temporary folder, validates the result with the normal project loader, promotes
+it to `<Wartales installation>\Extracted\data.cdb`, and opens that durable file
+as the current project. Temporary extraction staging is disposable.
+
+If `Extracted\data.cdb` already exists, the editor warns before extraction and
+replaces it only when the player chooses to continue. Cancel preserves the
+existing file and current project. The Extracted folder represents the current
+extracted CDB; import does not create numbered copies, archives, or backups.
+
+The live `res.pak` is read-only during this workflow. Import does not install a
+modded CDB, replace a game file, create a game-package backup, or perform
+reimport. Existing unsaved changes receive the same Save/Discard/Cancel prompt
+used when opening another CDB. A failed import preserves the current project
+and reports whether the installation, package, tool, script, process, or
+extracted CDB prevented import.
+
+The editor refuses temporary extraction paths redirected through Windows
+junctions or other reparse points. QuickBMS and any processes it starts are
+contained together by Windows while import runs. If that contained process tree
+cannot be confirmed completely stopped, no project is loaded and its temporary
+folder is retained instead of being deleted while it may still be in use.
+
 The main player workflows are:
 
 - Gameplay Tools for guided gameplay changes.

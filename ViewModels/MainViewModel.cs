@@ -108,6 +108,10 @@ public class MainViewModel : ObservableObject
 
     private readonly IMessageDialogService messageDialogService;
 
+    private readonly QuickBmsImportService quickBmsImportService;
+
+    private readonly QuickBmsImportOptions quickBmsImportOptions;
+
     private readonly HashSet<PropertyModel> trackedProperties =
         new();
 
@@ -152,6 +156,8 @@ public class MainViewModel : ObservableObject
         randomTraitExclusionsDialog;
 
     private ProjectModel? project;
+
+    private bool isImportInProgress;
 
     private MainWorkspace activeWorkspace =
         MainWorkspace.GameplayTools;
@@ -678,6 +684,27 @@ public class MainViewModel : ObservableObject
             value);
     }
 
+    public bool IsImportInProgress
+    {
+        get => isImportInProgress;
+        private set
+        {
+            if (!SetProperty(
+                    ref isImportInProgress,
+                    value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(
+                nameof(IsEditorInteractionEnabled));
+            RefreshCommandStates();
+        }
+    }
+
+    public bool IsEditorInteractionEnabled =>
+        !IsImportInProgress;
+
     private int modifiedPropertyCount;
 
     public int ModifiedPropertyCount
@@ -774,6 +801,8 @@ public class MainViewModel : ObservableObject
             : "Nothing to redo";
 
     public RelayCommand OpenCommand { get; }
+
+    public RelayCommand ImportFromWartalesCommand { get; }
 
     public RelayCommand SaveCommand { get; }
 
@@ -985,6 +1014,13 @@ public class MainViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(messageDialogService));
 
+        quickBmsImportService =
+            new QuickBmsImportService(
+                this.jsonDataService);
+
+        quickBmsImportOptions =
+            QuickBmsImportOptions.CreateDefault();
+
         ProjectMutationService progressionMutationService =
             new();
 
@@ -1032,7 +1068,13 @@ public class MainViewModel : ObservableObject
 
         OpenCommand =
             new RelayCommand(
-                _ => OpenProject());
+                _ => OpenProject(),
+                _ => !IsImportInProgress);
+
+        ImportFromWartalesCommand =
+            new RelayCommand(
+                _ => ImportFromWartales(),
+                _ => !IsImportInProgress);
 
         SaveCommand =
             new RelayCommand(
@@ -1186,39 +1228,9 @@ public class MainViewModel : ObservableObject
                 jsonDataService.LoadProject(
                     fileName);
 
-            referenceDataService.Initialize(
-                loadedProject);
-
-            CurrentFile =
-                fileName;
-
-            Project =
-                loadedProject;
-
-            string localizationFile =
-                Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory,
-                    "export_en.xml");
-
-            if (File.Exists(
-                    localizationFile))
-            {
-                localizationService.Load(
-                    localizationFile);
-
-                LocalizationStatus =
-                    $"English names loaded " +
-                    $"({localizationService.EntryCount:N0})";
-            }
-            else
-            {
-                LocalizationStatus =
-                    "English names unavailable";
-            }
-
-            RefreshSearchResults();
-            RefreshChangeSummaryViewModel();
-            RefreshCommandStates();
+            PromoteLoadedProject(
+                loadedProject,
+                fileName);
 
             Status =
                 $"Opened: " +
@@ -1906,6 +1918,180 @@ public class MainViewModel : ObservableObject
         {
             Trace.WriteLine(
                 "XP Progression: command handler finally path.");
+        }
+    }
+
+    public bool ConfirmApplicationClose()
+    {
+        if (IsImportInProgress)
+        {
+            messageDialogService.ShowWarning(
+                "Wartales data is still being imported. Wait for the import to finish before closing the editor.",
+                "Import In Progress");
+
+            return false;
+        }
+
+        return ConfirmAbandonUnsavedChanges();
+    }
+
+    private async void ImportFromWartales()
+    {
+        if (IsImportInProgress
+            ||
+            !ConfirmAbandonUnsavedChanges())
+        {
+            return;
+        }
+
+        IsImportInProgress = true;
+
+        try
+        {
+            string promotedCdbPath =
+                quickBmsImportService.GetPromotedCdbPath(
+                    quickBmsImportOptions);
+            bool replaceExistingExtractedCdb =
+                File.Exists(promotedCdbPath);
+
+            if (replaceExistingExtractedCdb
+                &&
+                !ConfirmReplaceExistingExtractedCdb())
+            {
+                Status =
+                    "Wartales import cancelled. The existing extracted data file was preserved.";
+                return;
+            }
+
+            Status =
+                "Importing Wartales data safely. The game package will not be changed...";
+
+            QuickBmsImportResult result =
+                await quickBmsImportService.ImportAsync(
+                    quickBmsImportOptions,
+                    replaceExistingExtractedCdb);
+
+            PromoteLoadedProject(
+                result.Project,
+                result.ExtractedCdbPath);
+
+            Status =
+                $"Imported Wartales data ({result.Project.Sheets.Count:N0} sheets).";
+
+            string cleanupNote =
+                result.StagingCleaned
+                    ? string.Empty
+                    : Environment.NewLine + Environment.NewLine +
+                      "The temporary extraction folder could not be removed automatically.";
+
+            messageDialogService.ShowInformation(
+                "Wartales data was imported successfully and opened from the game's Extracted folder. The original game package was not changed." +
+                cleanupNote,
+                "Import From Wartales");
+        }
+        catch (QuickBmsImportException exception)
+        {
+            messageDialogService.ShowError(
+                exception.Message,
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                "Wartales data could not be imported. No project was replaced." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+        }
+        finally
+        {
+            IsImportInProgress = false;
+        }
+    }
+
+    internal bool ConfirmReplaceExistingExtractedCdb()
+    {
+        return messageDialogService.ShowConfirmation(
+            "An existing extracted data file was found. The editor cannot guarantee that this file is a fresh extraction from the current Wartales installation. Continuing will replace it with a new extraction.",
+            "Replace Existing Extracted Data?");
+    }
+
+    internal void PromoteLoadedProject(
+        ProjectModel loadedProject,
+        string displayFileName)
+    {
+        ArgumentNullException.ThrowIfNull(loadedProject);
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayFileName);
+
+        string localizationFile =
+            Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "export_en.xml");
+
+        ReferenceDataPreparation preparedReferences =
+            referenceDataService.Prepare(
+                loadedProject);
+        LocalizationPreparation? preparedLocalization =
+            File.Exists(localizationFile)
+                ? localizationService.Prepare(
+                    localizationFile)
+                : null;
+        string preparedLocalizationStatus =
+            preparedLocalization != null
+                ?
+                $"English names loaded " +
+                $"({preparedLocalization.Names.Count:N0})"
+                : "English names unavailable";
+
+        ReferenceDataPreparation previousReferences =
+            referenceDataService.Capture();
+        LocalizationPreparation previousLocalization =
+            localizationService.Capture();
+        ProjectModel? previousProject = Project;
+        string previousFile = CurrentFile;
+        string previousLocalizationStatus =
+            LocalizationStatus;
+
+        try
+        {
+            referenceDataService.Apply(
+                preparedReferences);
+
+            if (preparedLocalization != null)
+            {
+                localizationService.Apply(
+                    preparedLocalization);
+            }
+
+            CurrentFile = displayFileName;
+            LocalizationStatus =
+                preparedLocalizationStatus;
+            Project = loadedProject;
+        }
+        catch
+        {
+            referenceDataService.Apply(
+                previousReferences);
+            localizationService.Apply(
+                previousLocalization);
+            CurrentFile = previousFile;
+            LocalizationStatus =
+                previousLocalizationStatus;
+
+            if (!ReferenceEquals(
+                    Project,
+                    previousProject))
+            {
+                Project = previousProject;
+            }
+
+            throw;
         }
     }
 
@@ -3628,6 +3814,8 @@ public class MainViewModel : ObservableObject
     private void RefreshCommandStates()
     {
         OpenCommand?.NotifyCanExecuteChanged();
+        ImportFromWartalesCommand?
+            .NotifyCanExecuteChanged();
         SaveCommand?.NotifyCanExecuteChanged();
 
         NavigateSearchResultCommand?

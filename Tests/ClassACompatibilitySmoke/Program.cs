@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Operations;
@@ -5,7 +6,178 @@ using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
 using WartalesEditor.Services;
 using WartalesEditor.Services.Operations;
+using WartalesEditor.Services.Validation;
 using WartalesEditor.ViewModels;
+
+if (args.Length >= 1 &&
+    string.Equals(
+        args[0],
+        "--quickbms-process-tree-grandchild",
+        StringComparison.Ordinal))
+{
+    await Task.Delay(
+        TimeSpan.FromSeconds(30));
+    return;
+}
+
+if (args.Length >= 2 &&
+    string.Equals(
+        args[0],
+        "--quickbms-process-tree-child",
+        StringComparison.Ordinal))
+{
+    string selfExecutable =
+        Path.ChangeExtension(
+            System.Reflection.Assembly
+                .GetExecutingAssembly()
+                .Location,
+            ".exe");
+    ProcessStartInfo grandchildStart =
+        new()
+        {
+            FileName = selfExecutable,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+    grandchildStart.ArgumentList.Add(
+        "--quickbms-process-tree-grandchild");
+    using Process grandchild =
+        Process.Start(grandchildStart)
+        ?? throw new InvalidOperationException(
+            "The process-tree grandchild did not start.");
+    File.WriteAllText(
+        args[1],
+        grandchild.Id.ToString(
+            System.Globalization.CultureInfo.InvariantCulture));
+
+    try
+    {
+        await Task.Delay(
+            TimeSpan.FromSeconds(30));
+    }
+    finally
+    {
+        if (!grandchild.HasExited)
+        {
+            grandchild.Kill();
+        }
+    }
+
+    return;
+}
+
+if (args.Length >= 3 &&
+    string.Equals(
+        args[0],
+        "--quickbms-process-tree-parent",
+        StringComparison.Ordinal))
+{
+    string selfExecutable =
+        Path.ChangeExtension(
+            System.Reflection.Assembly
+                .GetExecutingAssembly()
+                .Location,
+            ".exe");
+    ProcessStartInfo childStart =
+        new()
+        {
+            FileName = selfExecutable,
+            UseShellExecute = false,
+            CreateNoWindow = true
+    };
+    childStart.ArgumentList.Add(
+        "--quickbms-process-tree-child");
+    childStart.ArgumentList.Add(args[2]);
+    using Process child =
+        Process.Start(childStart)
+        ?? throw new InvalidOperationException(
+            "The process-tree child did not start.");
+    File.WriteAllText(
+        args[1],
+        child.Id.ToString(
+            System.Globalization.CultureInfo.InvariantCulture));
+
+    try
+    {
+        await Task.Delay(
+            TimeSpan.FromSeconds(30));
+    }
+    finally
+    {
+        if (!child.HasExited)
+        {
+            child.Kill();
+        }
+    }
+
+    return;
+}
+
+if (args.Length >= 3 &&
+    string.Equals(
+        args[0],
+        "--quickbms-root-exits-first",
+        StringComparison.Ordinal))
+{
+    string selfExecutable =
+        Path.ChangeExtension(
+            System.Reflection.Assembly
+                .GetExecutingAssembly()
+                .Location,
+            ".exe");
+    ProcessStartInfo childStart =
+        new()
+        {
+            FileName = selfExecutable,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+    childStart.ArgumentList.Add(
+        "--quickbms-process-tree-child");
+    childStart.ArgumentList.Add(args[2]);
+    using Process child =
+        Process.Start(childStart)
+        ?? throw new InvalidOperationException(
+            "The independent process-tree child did not start.");
+    File.WriteAllText(
+        args[1],
+        child.Id.ToString(
+            System.Globalization.CultureInfo.InvariantCulture));
+
+    Stopwatch markerWait = Stopwatch.StartNew();
+
+    while (!File.Exists(args[2])
+           && markerWait.Elapsed < TimeSpan.FromSeconds(5))
+    {
+        await Task.Delay(25);
+    }
+
+    if (!File.Exists(args[2]))
+    {
+        throw new InvalidOperationException(
+            "The process-tree grandchild marker was not created.");
+    }
+
+    return;
+}
+
+if (args.Contains(
+        "--quickbms-real-import",
+        StringComparer.Ordinal))
+{
+    await VerifyRealQuickBmsImport();
+    return;
+}
+
+if (args.Contains(
+        "--quickbms-import-only",
+        StringComparer.Ordinal))
+{
+    await VerifyQuickBmsImport();
+    Console.WriteLine(
+        "ALL QUICKBMS IMPORT CHECKS PASSED");
+    return;
+}
 
 if (args.Contains(
         "--restore-previous-values-only",
@@ -4868,6 +5040,1061 @@ static ModificationSnapshotModel SnapshotProperty(
 static string Json(ProjectModel project) =>
     project.RootDocument.ToString(Newtonsoft.Json.Formatting.None);
 
+static async Task VerifyQuickBmsImport()
+{
+    string root = Path.Combine(
+        Path.GetTempPath(),
+        "WartalesEditorQuickBmsTests",
+        Guid.NewGuid().ToString("N"));
+    string installation = Path.Combine(root, "Wartales");
+    string package = Path.Combine(installation, "res.pak");
+    string tools = Path.Combine(root, "quickbms");
+    string executable = Path.Combine(tools, "quickbms.exe");
+    string script = Path.Combine(tools, "Shiro_Games_PAK_script.bms");
+    string stagingRoot = Path.Combine(root, "staging");
+    string validCdb =
+        "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"Fixture\",\"value\":1}]}]}";
+
+    Directory.CreateDirectory(installation);
+    Directory.CreateDirectory(tools);
+    File.WriteAllBytes(
+        package,
+        new byte[]
+        {
+            (byte)'P', (byte)'A', (byte)'K', 0,
+            1, 2, 3, 4
+        });
+    File.WriteAllText(executable, "fixture executable");
+    File.WriteAllText(script, "fixture script");
+
+    QuickBmsImportOptions options = new()
+    {
+        WartalesInstallationDirectory = installation,
+        QuickBmsExecutablePath = executable,
+        ShiroScriptPath = script,
+        StagingRootDirectory = stagingRoot,
+        ProcessTimeout = TimeSpan.FromSeconds(10)
+    };
+
+    try
+    {
+        await VerifyExternalProcessTermination();
+        VerifyStagingReparseSafety(root);
+
+        WartalesPackageInfo packageInfo =
+            new WartalesInstallationService().Validate(installation);
+        Check(packageInfo.PackagePath == Path.GetFullPath(package),
+            "Wartales validation resolves the expected package");
+
+        QuickBmsToolchainInfo toolchainInfo =
+            new QuickBmsToolchainService().Validate(executable, script);
+        Check(toolchainInfo.ExecutablePath == Path.GetFullPath(executable) &&
+              toolchainInfo.ScriptPath == Path.GetFullPath(script),
+            "toolchain validation resolves the supplied executable and script");
+
+        CheckImportFailure(
+            () => new WartalesInstallationService().Validate(
+                Path.Combine(root, "missing-install")),
+            QuickBmsImportFailureKind.WartalesInstallationInvalid,
+            "missing Wartales installation is rejected");
+
+        string missingPackageInstall = Path.Combine(root, "missing-package");
+        Directory.CreateDirectory(missingPackageInstall);
+        CheckImportFailure(
+            () => new WartalesInstallationService().Validate(missingPackageInstall),
+            QuickBmsImportFailureKind.PackageMissing,
+            "missing res.pak is rejected");
+
+        string invalidInstall = Path.Combine(root, "invalid-package");
+        Directory.CreateDirectory(invalidInstall);
+        File.WriteAllText(Path.Combine(invalidInstall, "res.pak"), "invalid");
+        CheckImportFailure(
+            () => new WartalesInstallationService().Validate(invalidInstall),
+            QuickBmsImportFailureKind.PackageInvalid,
+            "invalid package signature is rejected");
+
+        CheckImportFailure(
+            () => new QuickBmsToolchainService().Validate(
+                Path.Combine(root, "missing.exe"), script),
+            QuickBmsImportFailureKind.QuickBmsExecutableMissing,
+            "missing QuickBMS executable is rejected");
+        CheckImportFailure(
+            () => new QuickBmsToolchainService().Validate(
+                executable, Path.Combine(root, "missing.bms")),
+            QuickBmsImportFailureKind.ShiroScriptMissing,
+            "missing Shiro script is rejected");
+
+        FileFingerprintService fingerprints = new();
+        FileFingerprint firstFingerprint = fingerprints.Calculate(package);
+        FileFingerprint secondFingerprint = fingerprints.Calculate(package);
+        Check(firstFingerprint == secondFingerprint,
+            "identical package bytes produce a deterministic fingerprint");
+        File.AppendAllText(package, "changed");
+        FileFingerprint changedFingerprint = fingerprints.Calculate(package);
+        Check(firstFingerprint != changedFingerprint,
+            "changed package bytes produce a changed fingerprint");
+        File.WriteAllBytes(
+            package,
+            new byte[]
+            {
+                (byte)'P', (byte)'A', (byte)'K', 0,
+                1, 2, 3, 4
+            });
+
+        QuickBmsImportOptions unsafeStagingOptions = new()
+        {
+            WartalesInstallationDirectory = installation,
+            QuickBmsExecutablePath = executable,
+            ShiroScriptPath = script,
+            StagingRootDirectory = Path.Combine(installation, "Extracted"),
+            ProcessTimeout = TimeSpan.FromSeconds(10)
+        };
+        FakeExternalProcessRunner unsafeStagingRunner = new(_ =>
+            new ExternalProcessResult { Started = true, ExitCode = 0 });
+        await CheckImportFailureAsync(
+            unsafeStagingOptions,
+            unsafeStagingRunner,
+            QuickBmsImportFailureKind.StagingFailed,
+            "staging inside the live installation is rejected before process execution");
+        Check(unsafeStagingRunner.Requests.Count == 0,
+            "unsafe live-install staging never reaches process execution");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(_ =>
+                new ExternalProcessResult
+                {
+                    StartError = "forced start failure"
+                }),
+            QuickBmsImportFailureKind.ProcessStartFailed,
+            "process start failure preserves the current project");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(_ =>
+                new ExternalProcessResult
+                {
+                    Started = true,
+                    TimedOut = true
+                }),
+            QuickBmsImportFailureKind.ProcessTimedOut,
+            "process timeout is rejected without promotion");
+
+        string? retainedTerminationSession = null;
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(request =>
+            {
+                retainedTerminationSession =
+                    request.Arguments[2];
+                return new ExternalProcessResult
+                {
+                    Started = true,
+                    ProcessId = 12345,
+                    TerminationFailed = true
+                };
+            }),
+            QuickBmsImportFailureKind.ProcessTerminationFailed,
+            "unproven process termination blocks hashing, promotion, and cleanup");
+        Check(!string.IsNullOrWhiteSpace(retainedTerminationSession) &&
+              Directory.Exists(retainedTerminationSession),
+            "termination failure retains staging because the process may still own it");
+        Directory.Delete(
+            retainedTerminationSession!,
+            recursive: true);
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(_ =>
+                new ExternalProcessResult
+                {
+                    Started = true,
+                    ExitCode = 7,
+                    StandardError = "forced extraction failure"
+                }),
+            QuickBmsImportFailureKind.ProcessFailed,
+            "non-success process exit is rejected");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(_ =>
+                new ExternalProcessResult
+                {
+                    Started = true,
+                    ExitCode = 0
+                }),
+            QuickBmsImportFailureKind.ExtractedCdbMissing,
+            "successful exit without data.cdb is rejected");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(request =>
+            {
+                string output = request.Arguments[2];
+                Directory.CreateDirectory(Path.Combine(output, "a"));
+                Directory.CreateDirectory(Path.Combine(output, "b"));
+                File.WriteAllText(Path.Combine(output, "a", "data.cdb"), validCdb);
+                File.WriteAllText(Path.Combine(output, "b", "data.cdb"), validCdb);
+                return new ExternalProcessResult { Started = true, ExitCode = 0 };
+            }),
+            QuickBmsImportFailureKind.ExtractedCdbAmbiguous,
+            "ambiguous data.cdb output is rejected");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(request =>
+            {
+                File.WriteAllText(
+                    Path.Combine(request.Arguments[2], "data.cdb"),
+                    "not json");
+                return new ExternalProcessResult { Started = true, ExitCode = 0 };
+            }),
+            QuickBmsImportFailureKind.ExtractedCdbInvalid,
+            "invalid data.cdb is rejected by the production loader");
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(request =>
+            {
+                File.WriteAllBytes(
+                    Path.Combine(request.Arguments[2], "data.cdb"),
+                    Array.Empty<byte>());
+                return new ExternalProcessResult { Started = true, ExitCode = 0 };
+            }),
+            QuickBmsImportFailureKind.ExtractedCdbInvalid,
+            "empty data.cdb is rejected explicitly");
+
+        string outsideDiscovery =
+            Path.Combine(root, "outside-discovery");
+        Directory.CreateDirectory(outsideDiscovery);
+        File.WriteAllText(
+            Path.Combine(outsideDiscovery, "data.cdb"),
+            validCdb);
+        string? junctionSession = null;
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(request =>
+            {
+                junctionSession = request.Arguments[2];
+                CreateDirectoryJunction(
+                    Path.Combine(junctionSession, "external-link"),
+                    outsideDiscovery);
+                return new ExternalProcessResult { Started = true, ExitCode = 0 };
+            }),
+            QuickBmsImportFailureKind.ExtractedCdbMissing,
+            "recursive discovery ignores data.cdb behind a directory junction");
+        Check(File.Exists(Path.Combine(outsideDiscovery, "data.cdb")),
+            "junction discovery and cleanup do not touch the external target");
+        CleanRetainedReparseSession(junctionSession, "external-link");
+
+        string outsideFile =
+            Path.Combine(root, "outside-file.cdb");
+        File.WriteAllText(outsideFile, validCdb);
+        string? symlinkSession = null;
+        bool fileSymlinkCreated = false;
+
+        try
+        {
+            await CheckImportFailureAsync(
+                options,
+                new FakeExternalProcessRunner(request =>
+                {
+                    symlinkSession = request.Arguments[2];
+                    File.CreateSymbolicLink(
+                        Path.Combine(symlinkSession, "data.cdb"),
+                        outsideFile);
+                    fileSymlinkCreated = true;
+                    return new ExternalProcessResult { Started = true, ExitCode = 0 };
+                }),
+                QuickBmsImportFailureKind.ExtractedCdbInvalid,
+                "data.cdb file symlink is rejected");
+        }
+        catch (Exception exception)
+            when (!fileSymlinkCreated
+                  &&
+                  exception is UnauthorizedAccessException or IOException)
+        {
+            Console.WriteLine(
+                "SKIP file-symlink regression: Windows symlink privilege is unavailable");
+        }
+
+        if (fileSymlinkCreated)
+        {
+            Check(File.Exists(outsideFile),
+                "file-symlink rejection does not touch the external target");
+            CleanRetainedReparseSession(symlinkSession, "data.cdb");
+        }
+
+        await CheckImportFailureAsync(
+            options,
+            new FakeExternalProcessRunner(_ =>
+            {
+                File.AppendAllText(package, "unexpected package change");
+                return new ExternalProcessResult { Started = true, ExitCode = 0 };
+            }),
+            QuickBmsImportFailureKind.SourcePackageChanged,
+            "a source-package identity change blocks promotion");
+        File.WriteAllBytes(
+            package,
+            new byte[]
+            {
+                (byte)'P', (byte)'A', (byte)'K', 0,
+                1, 2, 3, 4
+            });
+
+        string currentSuccessfulCdb = validCdb;
+        bool stagingCdbWasCreated = false;
+        FakeExternalProcessRunner successfulRunner = new(request =>
+        {
+            string nested = Path.Combine(request.Arguments[2], "content", "db");
+            Directory.CreateDirectory(nested);
+            string stagedCdb =
+                Path.Combine(nested, "data.cdb");
+            File.WriteAllText(stagedCdb, currentSuccessfulCdb);
+            stagingCdbWasCreated =
+                File.Exists(stagedCdb);
+            return new ExternalProcessResult { Started = true, ExitCode = 0 };
+        });
+        QuickBmsImportService service = CreateImportService(successfulRunner);
+        QuickBmsImportResult first = await service.ImportAsync(options);
+        string promotedCdb =
+            Path.Combine(
+                installation,
+                "Extracted",
+                "data.cdb");
+        FileFingerprint promotedFingerprint =
+            new FileFingerprintService().Calculate(
+                promotedCdb);
+        int requestsBeforeExistingFileRefusal =
+            successfulRunner.Requests.Count;
+
+        await CheckImportFailureAsync(
+            options,
+            successfulRunner,
+            QuickBmsImportFailureKind.ExtractedCdbAlreadyExists,
+            "an existing durable extraction is not replaced without explicit approval");
+        Check(successfulRunner.Requests.Count == requestsBeforeExistingFileRefusal &&
+              new FileFingerprintService().Calculate(promotedCdb) == promotedFingerprint,
+            "cancelling replacement preserves the existing extracted file without running QuickBMS");
+
+        currentSuccessfulCdb =
+            "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"Fixture\",\"value\":2}]}]}";
+        QuickBmsImportResult second =
+            await service.ImportAsync(
+                options,
+                replaceExistingExtractedCdb: true);
+
+        Check(first.Project.Sheets.Count == 1 &&
+              first.Project.Sheets[0].Name == "constant",
+            "valid extracted data uses the production project loader");
+        Check(first.ExtractedCdbPath == Path.GetFullPath(promotedCdb) &&
+              File.Exists(promotedCdb) &&
+              first.Project.FileName == Path.GetFullPath(promotedCdb),
+            "validated staging is promoted to the durable Extracted data.cdb and opened from that path");
+        Check(first.ExtractedCdbFingerprint == promotedFingerprint,
+            "the durable extracted CDB retains the validated staging fingerprint");
+        Check(stagingCdbWasCreated &&
+              second.ExtractedCdbFingerprint != promotedFingerprint &&
+              second.Project.Sheets[0].Entries[0].SourceEntry?["value"]?.Value<int>() == 2,
+            "approved replacement promotes the newly validated staging CDB over the existing durable file");
+        Check(first.StagingDirectory != second.StagingDirectory &&
+              first.SessionId != second.SessionId,
+            "every import uses a unique staging workspace");
+        Check(first.StagingCleaned && second.StagingCleaned &&
+              !Directory.Exists(first.StagingDirectory) &&
+              !Directory.Exists(second.StagingDirectory),
+            "successful staging workspaces are cleaned");
+        Check(successfulRunner.Requests.All(request =>
+              request.Arguments.Count == 3 &&
+              request.Arguments[0] == Path.GetFullPath(script) &&
+              request.Arguments[1] == Path.GetFullPath(package) &&
+              Path.IsPathFullyQualified(request.Arguments[2]) &&
+              request.Arguments.All(argument =>
+                  argument != "-w" && argument != "-r")),
+            "process requests use exact absolute inputs without write or reimport flags");
+        Check(first.SourcePackageFingerprint ==
+              new FileFingerprintService().Calculate(package),
+            "safe import leaves the source package unchanged");
+        Check(Directory.Exists(stagingRoot) &&
+              !Directory.EnumerateFileSystemEntries(stagingRoot).Any(),
+            "failed and successful imports leave no stale staging output");
+        Check(!File.Exists(promotedCdb + ".importing"),
+            "successful promotion leaves no importing artifact");
+
+        JsonDataService statePersistence = new();
+        statePersistence.SaveGameplayOperationState(second.Project);
+        string statePath =
+            promotedCdb +
+            GameplayOperationStatePersistenceService.SidecarExtension;
+        Check(File.Exists(statePath),
+            "a project imported from Wartales can persist gameplay-operation state beside its durable CDB");
+        File.Delete(statePath);
+
+        string blockedInstallation =
+            Path.Combine(root, "promotion-blocked");
+        Directory.CreateDirectory(blockedInstallation);
+        File.Copy(
+            package,
+            Path.Combine(blockedInstallation, "res.pak"));
+        File.WriteAllText(
+            Path.Combine(blockedInstallation, "Extracted"),
+            "blocks directory creation");
+        QuickBmsImportOptions blockedOptions = new()
+        {
+            WartalesInstallationDirectory = blockedInstallation,
+            QuickBmsExecutablePath = executable,
+            ShiroScriptPath = script,
+            StagingRootDirectory = stagingRoot,
+            ProcessTimeout = TimeSpan.FromSeconds(10)
+        };
+        ProjectModel activeProject = CreateProject(
+            Sheet("constant", new JObject { ["id"] = "Active", ["value"] = 7 }));
+        ProjectModel publishedProject = activeProject;
+
+        try
+        {
+            QuickBmsImportResult blockedResult =
+                await service.ImportAsync(blockedOptions);
+            publishedProject = blockedResult.Project;
+            throw new InvalidOperationException(
+                "FAIL: a durable-promotion failure is surfaced");
+        }
+        catch (QuickBmsImportException exception)
+        {
+            Check(exception.FailureKind == QuickBmsImportFailureKind.PromotionFailed &&
+                  ReferenceEquals(publishedProject, activeProject),
+                "failed durable promotion leaves the active project unpublished and unchanged");
+        }
+
+        VerifyProjectPromotionAtomicity(root);
+
+        Console.WriteLine(
+            "PASS QuickBMS validation, process safety, durable promotion, replacement protection, state persistence, and production publication");
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    QuickBmsImportService CreateImportService(
+        IExternalProcessRunner runner) =>
+        new(
+            new JsonDataService(),
+            new WartalesInstallationService(),
+            new QuickBmsToolchainService(),
+            runner,
+            new ExtractionWorkspaceService(),
+            new FileFingerprintService());
+
+    async Task CheckImportFailureAsync(
+        QuickBmsImportOptions testOptions,
+        IExternalProcessRunner runner,
+        QuickBmsImportFailureKind expectedKind,
+        string message)
+    {
+        ProjectModel currentProject = CreateProject(
+            Sheet("constant", new JObject { ["id"] = "Current", ["value"] = 9 }));
+        ProjectModel promotedProject = currentProject;
+
+        try
+        {
+            QuickBmsImportResult result =
+                await CreateImportService(runner).ImportAsync(testOptions);
+            promotedProject = result.Project;
+        }
+        catch (QuickBmsImportException exception)
+        {
+            Check(exception.FailureKind == expectedKind &&
+                  ReferenceEquals(promotedProject, currentProject),
+                message);
+            return;
+        }
+
+        throw new InvalidOperationException($"FAIL: {message}");
+    }
+}
+
+static async Task VerifyRealQuickBmsImport()
+{
+    QuickBmsImportOptions options =
+        QuickBmsImportOptions.CreateDefault();
+    string packagePath =
+        Path.Combine(
+            options.WartalesInstallationDirectory,
+            "res.pak");
+    string expectedPromotedCdb =
+        Path.Combine(
+            options.WartalesInstallationDirectory,
+            "Extracted",
+            "data.cdb");
+    FileFingerprintService fingerprints = new();
+    FileFingerprint before = fingerprints.Calculate(packagePath);
+    QuickBmsImportResult result =
+        await new QuickBmsImportService(
+            new JsonDataService()).ImportAsync(
+                options,
+                replaceExistingExtractedCdb:
+                    File.Exists(expectedPromotedCdb));
+    FileFingerprint after = fingerprints.Calculate(packagePath);
+
+    Check(before == after,
+        "real extraction leaves res.pak byte-identical");
+    Check(result.Project.Sheets.Count > 0,
+        "real extracted CDB loads through the production loader");
+    Check(result.ExtractedCdbPath == Path.GetFullPath(expectedPromotedCdb) &&
+          result.Project.FileName == Path.GetFullPath(expectedPromotedCdb) &&
+          File.Exists(expectedPromotedCdb),
+        "real extraction is promoted and opened with a durable project identity");
+    Check(!File.Exists(expectedPromotedCdb + ".importing"),
+        "real promotion leaves no importing artifact");
+
+    ProjectMutationService mutationService = new();
+    GameplayOperationStateService stateService =
+        new(mutationService);
+    StartingResourcesService startingResources =
+        new(mutationService, stateService);
+    startingResources.Initialize(result.Project);
+    ProjectMutationResult operationResult =
+        startingResources.Apply(
+            result.Project,
+            new StartingResourcesSettings
+            {
+                Krowns = 1
+            });
+    Check(operationResult.WasModified &&
+          result.Project.GameplayOperationStates.Any(state =>
+              state.OperationType == ProgressionType.StartingResources),
+        "a stateful gameplay operation executes on the real imported project");
+
+    JsonDataService statePersistence = new();
+    statePersistence.SaveGameplayOperationState(result.Project);
+    string statePath =
+        expectedPromotedCdb +
+        GameplayOperationStatePersistenceService.SidecarExtension;
+    Check(File.Exists(statePath),
+        "real imported project can persist gameplay-operation state");
+    File.Delete(statePath);
+
+    Console.WriteLine($"SESSION={result.SessionId}");
+    Console.WriteLine($"QUICKBMS={result.QuickBmsExecutablePath}");
+    Console.WriteLine($"QUICKBMS_SIZE={result.QuickBmsExecutableFingerprint.Size}");
+    Console.WriteLine($"QUICKBMS_SHA256={result.QuickBmsExecutableFingerprint.Sha256}");
+    Console.WriteLine($"SCRIPT={result.ShiroScriptPath}");
+    Console.WriteLine($"SCRIPT_SIZE={result.ShiroScriptFingerprint.Size}");
+    Console.WriteLine($"SCRIPT_SHA256={result.ShiroScriptFingerprint.Sha256}");
+    Console.WriteLine($"SOURCE={result.SourcePackagePath}");
+    Console.WriteLine($"SOURCE_SIZE_BEFORE={before.Size}");
+    Console.WriteLine($"SOURCE_SHA256_BEFORE={before.Sha256}");
+    Console.WriteLine($"EXIT_CODE={result.ProcessExitCode}");
+    Console.WriteLine($"CONTAINED_PROCESS_COUNT={result.ContainedProcessCount}");
+    Console.WriteLine($"EXTRACTED_CDB={result.ExtractedCdbPath}");
+    Console.WriteLine($"EXTRACTED_CDB_SIZE={result.ExtractedCdbFingerprint.Size}");
+    Console.WriteLine($"EXTRACTED_CDB_SHA256={result.ExtractedCdbFingerprint.Sha256}");
+    Console.WriteLine($"PROJECT_SHEETS={result.Project.Sheets.Count}");
+    Console.WriteLine(
+        $"PROJECT_SHEET_SAMPLE={string.Join(",", result.Project.Sheets.Take(10).Select(sheet => sheet.Name))}");
+    Console.WriteLine($"SOURCE_SIZE_AFTER={after.Size}");
+    Console.WriteLine($"SOURCE_SHA256_AFTER={after.Sha256}");
+    Console.WriteLine($"STAGING={result.StagingDirectory}");
+    Console.WriteLine($"STAGING_CLEANED={result.StagingCleaned}");
+    Console.WriteLine($"PROJECT_FILE={result.Project.FileName}");
+    Console.WriteLine($"GAMEPLAY_STATE_PERSISTENCE=PASSED");
+    Console.WriteLine("REAL QUICKBMS IMPORT CHECK PASSED");
+}
+
+static async Task VerifyExternalProcessTermination()
+{
+    string selfExecutable =
+        Path.ChangeExtension(
+            System.Reflection.Assembly
+                .GetExecutingAssembly()
+                .Location,
+            ".exe");
+    ExternalProcessRunner runner = new();
+    string markerRoot =
+        Path.Combine(
+            Path.GetTempPath(),
+            $"WartalesEditor-process-tree-{Guid.NewGuid():N}");
+    string timeoutChildIdFile = markerRoot + "-timeout-child.txt";
+    string timeoutGrandchildIdFile = markerRoot + "-timeout-grandchild.txt";
+    string cancellationChildIdFile = markerRoot + "-cancel-child.txt";
+    string cancellationGrandchildIdFile = markerRoot + "-cancel-grandchild.txt";
+    string rootExitChildIdFile = markerRoot + "-root-exit-child.txt";
+    string rootExitGrandchildIdFile = markerRoot + "-root-exit-grandchild.txt";
+    string[] markerFiles =
+    {
+        timeoutChildIdFile,
+        timeoutGrandchildIdFile,
+        cancellationChildIdFile,
+        cancellationGrandchildIdFile,
+        rootExitChildIdFile,
+        rootExitGrandchildIdFile
+    };
+
+    try
+    {
+        Stopwatch timer = Stopwatch.StartNew();
+        ExternalProcessResult timedOut =
+            await runner.RunAsync(
+                new ExternalProcessRequest
+                {
+                    ExecutablePath = selfExecutable,
+                    Arguments = new[]
+                    {
+                        "--quickbms-process-tree-parent",
+                        timeoutChildIdFile,
+                        timeoutGrandchildIdFile
+                    },
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                    Timeout = TimeSpan.FromSeconds(2)
+                });
+        timer.Stop();
+
+        Check(
+            timedOut.Started,
+            $"production contained process starts successfully: {timedOut.StartError}");
+        int timeoutChildId = ReadRecordedProcessId(timeoutChildIdFile);
+        int timeoutGrandchildId = ReadRecordedProcessId(timeoutGrandchildIdFile);
+
+        Check(timedOut.TimedOut &&
+              !timedOut.TerminationFailed &&
+              timedOut.ContainedProcessCount == 0 &&
+              timedOut.ProcessId > 0 &&
+              !IsProcessAlive(timedOut.ProcessId) &&
+              !IsProcessAlive(timeoutChildId) &&
+              !IsProcessAlive(timeoutGrandchildId) &&
+              timer.Elapsed < TimeSpan.FromSeconds(15),
+            "production timeout proves the contained parent, child, and grandchild exited within the bound");
+
+        using CancellationTokenSource cancellation = new();
+        cancellation.CancelAfter(TimeSpan.FromSeconds(2));
+        ExternalProcessResult cancelled =
+            await runner.RunAsync(
+                new ExternalProcessRequest
+                {
+                    ExecutablePath = selfExecutable,
+                    Arguments = new[]
+                    {
+                        "--quickbms-process-tree-parent",
+                        cancellationChildIdFile,
+                        cancellationGrandchildIdFile
+                    },
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                    Timeout = TimeSpan.FromSeconds(30)
+                },
+                cancellation.Token);
+        int cancellationChildId = ReadRecordedProcessId(cancellationChildIdFile);
+        int cancellationGrandchildId =
+            ReadRecordedProcessId(cancellationGrandchildIdFile);
+
+        Check(cancelled.Started &&
+              cancelled.Cancelled &&
+              !cancelled.TerminationFailed &&
+              cancelled.ContainedProcessCount == 0 &&
+              cancelled.ProcessId > 0 &&
+              !IsProcessAlive(cancelled.ProcessId) &&
+              !IsProcessAlive(cancellationChildId) &&
+              !IsProcessAlive(cancellationGrandchildId),
+            "production cancellation proves the contained parent, child, and grandchild exited");
+
+        Stopwatch rootExitTimer = Stopwatch.StartNew();
+        ExternalProcessResult rootExitedFirst =
+            await runner.RunAsync(
+                new ExternalProcessRequest
+                {
+                    ExecutablePath = selfExecutable,
+                    Arguments = new[]
+                    {
+                        "--quickbms-root-exits-first",
+                        rootExitChildIdFile,
+                        rootExitGrandchildIdFile
+                    },
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                    Timeout = TimeSpan.FromSeconds(2)
+                });
+        rootExitTimer.Stop();
+        int rootExitChildId = ReadRecordedProcessId(rootExitChildIdFile);
+        int rootExitGrandchildId =
+            ReadRecordedProcessId(rootExitGrandchildIdFile);
+
+        Check(rootExitedFirst.Started &&
+              rootExitedFirst.TimedOut &&
+              !rootExitedFirst.TerminationFailed &&
+              rootExitedFirst.ContainedProcessCount == 0 &&
+              !IsProcessAlive(rootExitedFirst.ProcessId) &&
+              !IsProcessAlive(rootExitChildId) &&
+              !IsProcessAlive(rootExitGrandchildId) &&
+              rootExitTimer.Elapsed >= TimeSpan.FromSeconds(1.5) &&
+              rootExitTimer.Elapsed < TimeSpan.FromSeconds(15),
+            "root exit is not mistaken for complete contained-tree exit");
+
+        await CheckThrowsAsync<ArgumentOutOfRangeException>(
+            () => runner.RunAsync(
+                new ExternalProcessRequest
+                {
+                    ExecutablePath = selfExecutable,
+                    Arguments = Array.Empty<string>(),
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                    Timeout = TimeSpan.Zero
+                }),
+            "invalid process timeout is rejected before process start");
+
+        Console.WriteLine(
+            "PASS production Job Object containment proves zero active parent/child/grandchild processes after timeout, cancellation, and root-first exit");
+    }
+    finally
+    {
+        foreach (string markerFile in markerFiles)
+        {
+            File.Delete(markerFile);
+        }
+    }
+}
+
+static int ReadRecordedProcessId(
+    string filePath)
+{
+    Check(File.Exists(filePath),
+        "process-tree helper recorded its child process ID");
+
+    return int.Parse(
+        File.ReadAllText(filePath),
+        System.Globalization.CultureInfo.InvariantCulture);
+}
+
+static void VerifyStagingReparseSafety(
+    string testRoot)
+{
+    ExtractionWorkspaceService service = new();
+    string junctionTarget =
+        Path.Combine(testRoot, "staging-junction-target");
+    string stagingJunction =
+        Path.Combine(testRoot, "staging-junction");
+    Directory.CreateDirectory(junctionTarget);
+    CreateDirectoryJunction(
+        stagingJunction,
+        junctionTarget);
+
+    CheckImportFailure(
+        () => service.Create(stagingJunction),
+        QuickBmsImportFailureKind.StagingFailed,
+        "staging root junction is rejected");
+    Check(!Directory.EnumerateFileSystemEntries(junctionTarget).Any(),
+        "staging root junction rejection creates no target session");
+    Directory.Delete(stagingJunction);
+
+    string safeRoot =
+        Path.Combine(testRoot, "cleanup-reparse-root");
+    ExtractionWorkspace workspace =
+        service.Create(safeRoot);
+    Directory.Delete(workspace.DirectoryPath);
+
+    string cleanupTarget =
+        Path.Combine(testRoot, "cleanup-reparse-target");
+    Directory.CreateDirectory(cleanupTarget);
+    string sentinel =
+        Path.Combine(cleanupTarget, "sentinel.txt");
+    File.WriteAllText(sentinel, "preserve");
+    CreateDirectoryJunction(
+        workspace.DirectoryPath,
+        cleanupTarget);
+
+    Check(!service.TryClean(workspace) &&
+          File.Exists(sentinel),
+        "cleanup refuses a replaced session junction and preserves its target");
+
+    Directory.Delete(workspace.DirectoryPath);
+
+    Console.WriteLine(
+        "PASS staging root and cleanup reject junction/reparse redirection");
+}
+
+static void VerifyProjectPromotionAtomicity(
+    string testRoot)
+{
+    LocalizationService localization = new();
+    ReferenceDataService references =
+        ReferenceDataService.Instance;
+    MainViewModel viewModel =
+        CreateMainViewModel(
+            localization,
+            references);
+    TestMessageDialogService cancelReplacementDialog =
+        new(showConfirmationResult: false);
+    MainViewModel cancelReplacementViewModel =
+        CreateMainViewModel(
+            new LocalizationService(),
+            references,
+            cancelReplacementDialog);
+    Check(!cancelReplacementViewModel.ConfirmReplaceExistingExtractedCdb() &&
+          cancelReplacementDialog.ConfirmationCount == 1,
+        "the existing Extracted file warning supports cancellation before import");
+    ProjectModel projectA = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "ProjectA",
+                ["marker"] = "A"
+            }));
+    ProjectModel projectB = CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "ProjectB",
+                ["marker"] = "B"
+            }));
+    string baselineLocalization =
+        Path.Combine(testRoot, "baseline-localization.xml");
+    File.WriteAllText(
+        baselineLocalization,
+        "<root><sheet><ProjectA><name>Project A</name></ProjectA></sheet></root>");
+    localization.Load(baselineLocalization);
+    references.Initialize(projectA);
+    viewModel.Project = projectA;
+    viewModel.CurrentFile = "ProjectA.cdb";
+
+    string productionLocalization =
+        Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "export_en.xml");
+    byte[]? previousLocalizationFile =
+        File.Exists(productionLocalization)
+            ? File.ReadAllBytes(productionLocalization)
+            : null;
+
+    try
+    {
+        File.WriteAllText(
+            productionLocalization,
+            "<invalid");
+
+        CheckThrows<System.Xml.XmlException>(
+            () => viewModel.PromoteLoadedProject(
+                projectB,
+                "ProjectB.cdb"),
+            "forced localization preparation failure is surfaced");
+        Check(ReferenceEquals(viewModel.Project, projectA) &&
+              viewModel.CurrentFile == "ProjectA.cdb" &&
+              references.GetValues("constant", "marker")
+                  .Any(value => value.Value == "A") &&
+              references.GetValues("constant", "marker")
+                  .All(value => value.Value != "B") &&
+              localization.Contains("ProjectA"),
+            "failed promotion preserves Project, CurrentFile, references, and localization");
+
+        File.WriteAllText(
+            productionLocalization,
+            "<root><sheet><ProjectB><name>Project B</name></ProjectB></sheet></root>");
+        viewModel.PromoteLoadedProject(
+            projectB,
+            "ProjectB.cdb");
+        Check(ReferenceEquals(viewModel.Project, projectB) &&
+              viewModel.CurrentFile == "ProjectB.cdb" &&
+              references.GetValues("constant", "marker")
+                  .Any(value => value.Value == "B") &&
+              localization.Contains("ProjectB"),
+            "successful production promotion publishes coherent candidate state");
+    }
+    finally
+    {
+        if (previousLocalizationFile == null)
+        {
+            File.Delete(productionLocalization);
+        }
+        else
+        {
+            File.WriteAllBytes(
+                productionLocalization,
+                previousLocalizationFile);
+        }
+    }
+
+    Console.WriteLine(
+        "PASS production promotion prepares before publication and preserves prior state on failure");
+}
+
+static MainViewModel CreateMainViewModel(
+    LocalizationService localization,
+    ReferenceDataService references,
+    IMessageDialogService? messageDialogService = null)
+{
+    JsonDataService jsonDataService = new();
+    ModificationSnapshotWorkflowService snapshotWorkflowService = new();
+    ValidationService validationService =
+        new(jsonDataService);
+    ValidationWorkflowService validationWorkflowService =
+        new(validationService);
+    ProjectMutationService projectMutationService = new();
+    ContentCreationService contentCreationService =
+        new(projectMutationService);
+    AddCampFacilitiesOperation addCampFacilitiesOperation =
+        new(contentCreationService);
+    UpgradeAllEquipmentOperation upgradeAllEquipmentOperation =
+        new(contentCreationService);
+    ProjectOperationTransactionService transactionService = new();
+    ProjectOperationService operationService =
+        new(
+            new OperationValidatorProvider(),
+            transactionService);
+    ProfileOperationCaptureService profileCaptureService =
+        new(
+            new OperationValidatorProvider(),
+            addCampFacilitiesOperation,
+            upgradeAllEquipmentOperation);
+    ModProfileService profileService =
+        new(
+            new ModificationSnapshotService(),
+            profileCaptureService);
+
+    return new MainViewModel(
+        jsonDataService,
+        new SearchService(),
+        localization,
+        new EditHistoryService(),
+        new ModificationSnapshotService(),
+        snapshotWorkflowService,
+        new ChangeSummaryService(),
+        new ModProfileLibraryService(),
+        new ModProfileWorkflowService(
+            profileService,
+            new ModProfileSerializationService(),
+            snapshotWorkflowService,
+            new ProfileOperationResolver(
+                addCampFacilitiesOperation,
+                upgradeAllEquipmentOperation),
+            operationService,
+            transactionService),
+        references,
+        validationWorkflowService,
+        new ValidationPresentationService(),
+        operationService,
+        transactionService,
+        addCampFacilitiesOperation,
+        upgradeAllEquipmentOperation,
+        new TestFileDialogService(),
+        messageDialogService
+        ?? new TestMessageDialogService());
+}
+
+static bool IsProcessAlive(
+    int processId)
+{
+    try
+    {
+        using Process process =
+            Process.GetProcessById(processId);
+        return !process.HasExited;
+    }
+    catch (ArgumentException)
+    {
+        return false;
+    }
+}
+
+static async Task CheckThrowsAsync<TException>(
+    Func<Task> action,
+    string message)
+    where TException : Exception
+{
+    try
+    {
+        await action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+
+    throw new InvalidOperationException($"FAIL: {message}");
+}
+
+static void CreateDirectoryJunction(
+    string linkPath,
+    string targetPath)
+{
+    ProcessStartInfo startInfo =
+        new()
+        {
+            FileName = Path.Combine(
+                Environment.SystemDirectory,
+                "cmd.exe"),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+    startInfo.ArgumentList.Add("/d");
+    startInfo.ArgumentList.Add("/c");
+    startInfo.ArgumentList.Add("mklink");
+    startInfo.ArgumentList.Add("/J");
+    startInfo.ArgumentList.Add(linkPath);
+    startInfo.ArgumentList.Add(targetPath);
+
+    using Process process =
+        Process.Start(startInfo)
+        ?? throw new InvalidOperationException(
+            "The junction helper did not start.");
+    string standardError =
+        process.StandardError.ReadToEnd();
+    process.WaitForExit();
+
+    if (process.ExitCode != 0)
+    {
+        throw new InvalidOperationException(
+            $"The junction helper failed: {standardError}");
+    }
+}
+
+static void CleanRetainedReparseSession(
+    string? sessionDirectory,
+    string reparseEntryName)
+{
+    Check(!string.IsNullOrWhiteSpace(sessionDirectory),
+        "retained reparse session path was recorded");
+    string entry =
+        Path.Combine(
+            sessionDirectory!,
+            reparseEntryName);
+    FileAttributes attributes =
+        File.GetAttributes(entry);
+
+    if ((attributes & FileAttributes.Directory) != 0)
+    {
+        Directory.Delete(entry);
+    }
+    else
+    {
+        File.Delete(entry);
+    }
+
+    Directory.Delete(
+        sessionDirectory!,
+        recursive: true);
+}
+
+static void CheckImportFailure(
+    Action action,
+    QuickBmsImportFailureKind expectedKind,
+    string message)
+{
+    try
+    {
+        action();
+    }
+    catch (QuickBmsImportException exception)
+    {
+        Check(exception.FailureKind == expectedKind, message);
+        return;
+    }
+
+    throw new InvalidOperationException($"FAIL: {message}");
+}
+
 static void Check(bool condition, string message)
 {
     if (!condition)
@@ -4919,6 +6146,85 @@ sealed class ValidatorMismatchCollection : IReadOnlyCollection<string>
 
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() =>
         GetEnumerator();
+}
+
+sealed class FakeExternalProcessRunner : IExternalProcessRunner
+{
+    private readonly Func<ExternalProcessRequest, ExternalProcessResult> run;
+
+    public FakeExternalProcessRunner(
+        Func<ExternalProcessRequest, ExternalProcessResult> run)
+    {
+        this.run = run;
+    }
+
+    public List<ExternalProcessRequest> Requests { get; } = new();
+
+    public Task<ExternalProcessResult> RunAsync(
+        ExternalProcessRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        Requests.Add(request);
+        return Task.FromResult(run(request));
+    }
+}
+
+sealed class TestFileDialogService : IFileDialogService
+{
+    public string? ShowOpenFileDialog(
+        string filter,
+        string? initialFileName = null) =>
+        null;
+
+    public string? ShowSaveFileDialog(
+        string filter,
+        string? initialFileName = null) =>
+        null;
+}
+
+sealed class TestMessageDialogService : IMessageDialogService
+{
+    private readonly bool showConfirmationResult;
+
+    public TestMessageDialogService(
+        bool showConfirmationResult = true)
+    {
+        this.showConfirmationResult =
+            showConfirmationResult;
+    }
+
+    public int ConfirmationCount { get; private set; }
+
+    public void ShowInformation(
+        string message,
+        string title)
+    {
+    }
+
+    public void ShowWarning(
+        string message,
+        string title)
+    {
+    }
+
+    public void ShowError(
+        string message,
+        string title)
+    {
+    }
+
+    public bool ShowConfirmation(
+        string message,
+        string title)
+    {
+        ConfirmationCount++;
+        return showConfirmationResult;
+    }
+
+    public UnsavedChangesResult ShowUnsavedChanges(
+        string message,
+        string title) =>
+        UnsavedChangesResult.Discard;
 }
 
 sealed class MixedPropertyRemovalTestOperation : IProjectOperation

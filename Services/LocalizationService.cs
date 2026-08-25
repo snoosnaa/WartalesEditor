@@ -7,21 +7,30 @@ namespace WartalesEditor.Services;
 
 public class LocalizationService
 {
-    private readonly Dictionary<string, string> localizedNames =
+    private Dictionary<string, string> localizedNames =
         new(StringComparer.OrdinalIgnoreCase);
 
     public int EntryCount => localizedNames.Count;
 
     public void Load(string fileName)
     {
-        localizedNames.Clear();
+        Apply(
+            Prepare(fileName));
+    }
+
+    internal LocalizationPreparation Prepare(
+        string fileName)
+    {
+        Dictionary<string, string> preparedNames =
+            new(StringComparer.OrdinalIgnoreCase);
 
         XDocument document = XDocument.Load(fileName);
 
         XElement? root = document.Root;
 
         if (root == null)
-            return;
+            return new LocalizationPreparation(
+                preparedNames);
 
         foreach (XElement sheet in root.Elements("sheet"))
         {
@@ -71,9 +80,27 @@ public class LocalizationService
                     continue;
                 }
 
-                localizedNames[id] = localizedText;
+                preparedNames[id] = localizedText;
             }
         }
+
+        return new LocalizationPreparation(
+            preparedNames);
+    }
+
+    internal LocalizationPreparation Capture()
+    {
+        return new LocalizationPreparation(
+            new Dictionary<string, string>(
+                localizedNames,
+                StringComparer.OrdinalIgnoreCase));
+    }
+
+    internal void Apply(
+        LocalizationPreparation preparation)
+    {
+        ArgumentNullException.ThrowIfNull(preparation);
+        localizedNames = preparation.Names;
     }
 
     public string? GetLocalizedName(string id)
@@ -91,4 +118,15 @@ public class LocalizationService
         return !string.IsNullOrWhiteSpace(id) &&
                localizedNames.ContainsKey(id);
     }
+}
+
+internal sealed class LocalizationPreparation
+{
+    internal LocalizationPreparation(
+        Dictionary<string, string> names)
+    {
+        Names = names;
+    }
+
+    internal Dictionary<string, string> Names { get; }
 }

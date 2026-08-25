@@ -2,8 +2,128 @@
 
 **Version:** 0.9\
 **Status:** Active\
-**Last Updated:** 2026-08-18\
+**Last Updated:** 2026-08-25\
 **Applies To:** Entire Project
+
+------------------------------------------------------------------------
+
+# 2026-08-25 — QuickBMS Milestone 1 Acceptance and Closure
+
+The Renewed Focused Engineering Review of durable Extracted CDB promotion
+returned **PASS WITH NON-BLOCKING NOTES — Ready for Project Owner Interactive
+Acceptance**. All prior process-tree, staging, discovery, publication, live
+package, and durable-identity blockers remained closed. The remaining notes
+were non-blocking and did not reopen implementation.
+
+Project Owner Interactive Acceptance then returned **PASS**. The accepted
+evidence confirms successful Import From Wartales, durable project data at
+`C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb`,
+adjacent `data.cdb.wtstate` persistence, and successful Starting Resources use
+without the former missing-file-path error.
+
+Final documentation reconciliation, zero-warning builds, focused QuickBMS
+coverage, all 25 Class A groups, artifact and write-mode audits, one milestone
+commit, and a normal `origin/main` push close QuickBMS Milestone 1. Reimport,
+package backup/replacement, Restore Original Game File, Modded workflows,
+Update Survival, Golden CDB, and third-party redistribution remain deferred.
+
+------------------------------------------------------------------------
+
+# 2026-08-20 — QuickBMS Durable Extracted CDB Promotion Correction
+
+Project Owner testing found that the validated project was loaded from
+disposable staging and then assigned an empty file identity. Gameplay Operation
+State correctly rejected sidecar persistence because there was no stable CDB
+path. The transport workflow now validates staging first, copies through a
+fingerprint-verified `Extracted\data.cdb.importing` file, atomically promotes to
+`<Wartales installation>\Extracted\data.cdb`, and loads that durable file before
+normal MainViewModel publication.
+
+An existing Extracted CDB now requires confirmation before QuickBMS runs, and
+the service refuses unapproved replacement independently. Permanent regressions
+cover durable identity, cancel/continue replacement behavior, failed promotion,
+temporary-artifact cleanup, and `.wtstate` creation after import. Reimport,
+package writing/replacement, Modded workflows, Update Survival, and Golden CDB
+remain outside scope. The authorized real run promoted the same 395-sheet,
+6,691,681-byte CDB, applied a stateful Starting Resources operation, proved
+`.wtstate` creation, cleaned staging, and preserved the exact `res.pak` hash.
+Renewed Focused Engineering Review and Project Owner acceptance subsequently
+passed; the 2026-08-25 closure entry records the final lifecycle result.
+
+------------------------------------------------------------------------
+
+# 2026-08-19 — QuickBMS Final Process-Tree Safety Correction
+
+The Renewed Focused Engineering Review identified that `Kill(true)` followed by
+root `WaitForExit`/`HasExited` did not prove descendant exit. The production
+runner now creates a Windows Job Object, launches QuickBMS suspended, assigns
+the process before it can spawn descendants, and resumes only after successful
+containment. Normal completion, timeout, and cancellation require a bounded
+job active-process query to reach zero. Failure to prove zero retains staging
+and blocks post-hashing and promotion.
+
+Permanent production regressions now contain a parent, child, and grandchild;
+exercise timeout and cancellation; and separately prove that root exit while
+descendants remain is not accepted as complete execution. Renewed Focused
+Engineering Review and Project Owner acceptance remain pending. Milestone 1 is
+still read-only and no commit or push was performed.
+
+------------------------------------------------------------------------
+
+# 2026-08-18 — QuickBMS Milestone 1 Focused Safety Corrections
+
+Corrected the four blockers from the first Focused Engineering Review.
+`ExternalProcessRunner` validated timeouts before launch and added bounded
+root-process termination checking. The later Renewed Focused Engineering Review
+correctly found that root exit alone did not prove descendant exit; the final
+Job Object correction above supersedes that incomplete guarantee. A distinct
+termination-failure result already prevented post-hashing and deliberately left
+staging untouched when exit could not be proven.
+
+Staging now validates existing path components, root, and GUID session against
+reparse-point redirection before creation/use and again before cleanup. Cleanup
+refuses any reparse-bearing tree. CDB discovery uses controlled traversal,
+skips junction directories, rejects reparse candidates, and independently
+checks final containment and regular-file identity.
+
+Shared Open/Import promotion now prepares reference and localization data
+without mutating live services. Forced localization failure therefore leaves
+the prior Project, CurrentFile, reference values, and localization intact;
+successful promotion publishes coherent candidate state.
+
+At this stage permanent tests exercised a real harmless parent/child process
+tree for timeout and cancellation, staging-root and replacement junctions, discovery escape,
+explicit empty output, localization failure, and successful promotion. File
+symlink creation was unavailable under the current Windows privilege, while
+production reparse-file rejection remains enforced. The post-correction real
+QuickBMS extraction again produced the same 395-sheet CDB and preserved the
+live package's exact size and SHA-256. Renewed Focused Engineering Review and
+Project Owner acceptance remain pending. No commit or push was performed.
+
+------------------------------------------------------------------------
+
+# 2026-08-18 — QuickBMS Integration Milestone 1
+
+Implemented the bounded safe-import milestone. Import From Wartales validates
+the supplied fresh installation and external QuickBMS/Shiro files, uses a fresh
+temporary directory for every attempt, invokes the executable directly with
+three absolute arguments and no write/reimport flags, and requires exactly one
+valid `data.cdb` before normal project promotion. Existing unsaved-change and
+production project-load behavior remain authoritative.
+
+Separate services now own package validation (`PAK\0` confirmed by the supplied
+script), toolchain validation, external process execution, staging, SHA-256
+fingerprinting, and orchestration. Permanent fake-runner tests cover every
+bounded failure and safety path. The real authorized run returned exit 0,
+produced a 6,691,681-byte CDB that loaded as 395 sheets, cleaned staging, and
+left the 791,334,661-byte source package unchanged at SHA-256
+`665BAF4E4240D8822178D634D8A8CD830B961781D77B1687B9CF24052D95CAC9`.
+
+No QuickBMS or script file was copied into the repository. Reimport, backup,
+candidate/live package replacement, Restore Original Game File, Update
+Survival, Golden CDB, and redistribution review remain deferred. Focused
+Engineering Review and Project Owner acceptance are pending. No commit or push
+was performed.
 
 ------------------------------------------------------------------------
 
