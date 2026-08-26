@@ -4,7 +4,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class PartyEconomyOperation : IProjectOperation
+public sealed class PartyEconomyOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly PartyEconomyService service;
 
@@ -42,6 +42,22 @@ public sealed class PartyEconomyOperation : IProjectOperation
                 ? $"{Name} settings were updated."
                 : "No changes were applied." + Environment.NewLine +
                   Environment.NewLine +
+                  "These settings already match the current project.");
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = PartyEconomyService.ResolveTargets(project, OperationType);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = service.Apply(
+            project, OperationType, Settings, context);
+        return ProjectOperationResult.Success(result,
+            result.WasModified
+                ? $"{Name} settings were updated."
+                : "No changes were applied." + Environment.NewLine + Environment.NewLine +
                   "These settings already match the current project.");
     }
 }

@@ -4,7 +4,7 @@ public static class ModProfileFormat
 {
     public const int LegacyVersion = 1;
 
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public const string DefaultFileExtension =
         ".wtprofile";

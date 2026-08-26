@@ -2,6 +2,7 @@
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -184,8 +185,10 @@ public sealed class ProjectMutationService
         ProjectMutationResult result =
             new();
 
-        JObject parentObject =
-            entry.SourceEntry;
+        try
+        {
+            JObject parentObject =
+                entry.SourceEntry;
 
         string currentPath =
             string.Empty;
@@ -265,9 +268,12 @@ public sealed class ProjectMutationService
             entry.Properties.Add(
                 propertyModel);
 
-            return UpdateExistingProperty(
-                propertyModel,
-                propertyValue);
+            result.Merge(
+                UpdateExistingProperty(
+                    propertyModel,
+                    propertyValue));
+
+            return result;
         }
 
         string sheetName =
@@ -304,7 +310,13 @@ public sealed class ProjectMutationService
             entry,
             createdProperty);
 
-        return result;
+            return result;
+        }
+        catch (Exception mutationException)
+        {
+            RollbackLocal(result, mutationException);
+            throw;
+        }
     }
 
     public ProjectMutationResult EnsureObjectByPath(
@@ -350,21 +362,58 @@ public sealed class ProjectMutationService
         ProjectMutationResult result =
             new();
 
-        JObject targetObject =
-            EnsureObjectPath(
+        try
+        {
+            JObject targetObject =
+                EnsureObjectPath(
+                    entry,
+                    pathSegments,
+                    propertyPath,
+                    result);
+
+            MergeObjectMembers(
                 entry,
-                pathSegments,
+                targetObject,
                 propertyPath,
+                objectValue,
                 result);
 
-        MergeObjectMembers(
-            entry,
-            targetObject,
-            propertyPath,
-            objectValue,
-            result);
+            return result;
+        }
+        catch (Exception mutationException)
+        {
+            RollbackLocal(result, mutationException);
+            throw;
+        }
+    }
 
-        return result;
+    internal void ValidateObjectByPath(
+        EntryModel entry,
+        string propertyPath,
+        JObject objectValue)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyPath);
+        ArgumentNullException.ThrowIfNull(objectValue);
+
+        if (entry.SourceEntry == null)
+        {
+            throw new InvalidOperationException(
+                $"Entry '{entry.Id}' is not connected to a source JSON object.");
+        }
+
+        string[] pathSegments = propertyPath.Split(
+            '.',
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+
+        if (pathSegments.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "An object property path must contain at least one path segment.");
+        }
+
+        ValidateObjectMutation(entry, pathSegments, propertyPath, objectValue);
     }
 
     public ProjectMutationResult RemovePropertyByPath(
@@ -914,6 +963,26 @@ public sealed class ProjectMutationService
             "could not be resolved.");
     }
 
+    private static void RollbackLocal(
+        ProjectMutationResult result,
+        Exception mutationException)
+    {
+        if (!result.WasModified)
+            return;
+
+        try
+        {
+            new ProjectOperationTransactionService().Rollback(result);
+        }
+        catch (Exception rollbackException)
+        {
+            throw new AggregateException(
+                "A project mutation failed and its internal changes could not be fully rolled back.",
+                mutationException,
+                rollbackException);
+        }
+    }
+
     public ProjectMutationResult CreateProperty(
         string sheetName,
         EntryModel entry,
@@ -1065,65 +1134,9 @@ public sealed class ProjectMutationService
         ArgumentNullException.ThrowIfNull(
             sourceEntry);
 
-        if (sheet.SourceSheet == null)
-        {
-            throw new InvalidOperationException(
-                $"Sheet '{sheet.Name}' is not connected " +
-                "to a source JSON object.");
-        }
-
-        JToken? sourceLinesToken =
-            sheet.SourceSheet["lines"];
-
-        if (sourceLinesToken is not JArray sourceLines)
-        {
-            throw new InvalidOperationException(
-                $"Sheet '{sheet.Name}' does not contain " +
-                "a valid source 'lines' array.");
-        }
-
         JObject clonedSourceEntry =
             (JObject)sourceEntry.DeepClone();
-
-        string sourceIdentifier =
-            clonedSourceEntry["id"]?.ToString()
-            ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(
-                sourceIdentifier))
-        {
-            bool modelDuplicate =
-                sheet.Entries.Any(
-                    entry =>
-                        string.Equals(
-                            entry.Id,
-                            sourceIdentifier,
-                            StringComparison.Ordinal));
-
-            if (modelDuplicate)
-            {
-                throw new InvalidOperationException(
-                    $"Entry '{sourceIdentifier}' already exists " +
-                    $"in sheet '{sheet.Name}'.");
-            }
-
-            bool sourceDuplicate =
-                sourceLines
-                    .OfType<JObject>()
-                    .Any(
-                        entry =>
-                            string.Equals(
-                                entry["id"]?.ToString(),
-                                sourceIdentifier,
-                                StringComparison.Ordinal));
-
-            if (sourceDuplicate)
-            {
-                throw new InvalidOperationException(
-                    $"Source JSON entry '{sourceIdentifier}' " +
-                    $"already exists in sheet '{sheet.Name}'.");
-            }
-        }
+        JArray sourceLines = ValidateEntryCreationCore(sheet, clonedSourceEntry);
 
         int entryNumber =
             sourceLines.Count + 1;
@@ -1156,5 +1169,58 @@ public sealed class ProjectMutationService
             entryModel);
 
         return result;
+    }
+
+    internal void ValidateEntryCreation(
+        SheetModel sheet,
+        JObject sourceEntry)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        ArgumentNullException.ThrowIfNull(sourceEntry);
+        _ = ValidateEntryCreationCore(sheet, sourceEntry);
+    }
+
+    private static JArray ValidateEntryCreationCore(
+        SheetModel sheet,
+        JObject sourceEntry)
+    {
+        if (sheet.SourceSheet == null)
+        {
+            throw new InvalidOperationException(
+                $"Sheet '{sheet.Name}' is not connected " +
+                "to a source JSON object.");
+        }
+
+        if (sheet.SourceSheet["lines"] is not JArray sourceLines)
+        {
+            throw new InvalidOperationException(
+                $"Sheet '{sheet.Name}' does not contain " +
+                "a valid source 'lines' array.");
+        }
+
+        string sourceIdentifier = sourceEntry["id"]?.ToString()
+            ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(sourceIdentifier))
+            return sourceLines;
+
+        if (sheet.Entries.Any(entry => string.Equals(
+                entry.Id, sourceIdentifier, StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException(
+                $"Entry '{sourceIdentifier}' already exists " +
+                $"in sheet '{sheet.Name}'.");
+        }
+
+        if (sourceLines.OfType<JObject>().Any(entry => string.Equals(
+                entry["id"]?.ToString(),
+                sourceIdentifier,
+                StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException(
+                $"Source JSON entry '{sourceIdentifier}' " +
+                $"already exists in sheet '{sheet.Name}'.");
+        }
+
+        return sourceLines;
     }
 }

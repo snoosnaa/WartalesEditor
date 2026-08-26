@@ -327,8 +327,17 @@ public sealed class ModProfileSerializationService
     {
         try
         {
-            snapshotSerializationService.Serialize(
-                profile.Snapshot);
+            if (profile.FormatVersion <
+                ModProfileFormat.CurrentVersion)
+            {
+                snapshotSerializationService.ValidateCompatibleSnapshot(
+                    profile.Snapshot);
+            }
+            else
+            {
+                snapshotSerializationService.Serialize(
+                    profile.Snapshot);
+            }
         }
         catch (
             ModificationSnapshotSerializationException

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -59,6 +60,25 @@ public sealed class PartyEconomyService
         ProgressionType type,
         PartyEconomySettings settings)
     {
+        return ApplyCore(project, type, settings, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        ProgressionType type,
+        PartyEconomySettings settings,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, type, settings, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        ProgressionType type,
+        PartyEconomySettings settings,
+        ProjectMutationResult result)
+    {
         settings.Validate(type);
         GameplayOperationStateModel? existing = stateService.FindState(project, type);
         JArray baseline;
@@ -83,16 +103,15 @@ public sealed class PartyEconomyService
         if (existing != null &&
             JToken.DeepEquals(current, expected) &&
             JToken.DeepEquals(existing.GameplaySettings, selectedSettings))
-            return new ProjectMutationResult();
+            return result;
 
-        ProjectMutationResult result = new();
         if (!JToken.DeepEquals(current, expected))
             ApplyExpected(project, expected, result);
 
         GameplayOperationStateModel replacement = CreateState(type, baseline, expected, settings);
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(project, previousState, replacement, previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 

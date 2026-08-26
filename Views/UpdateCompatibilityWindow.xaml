@@ -1,0 +1,88 @@
+<Window x:Class="WartalesEditor.Views.UpdateCompatibilityWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Compatibility Check"
+        Width="820" Height="560" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="True">
+    <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Compatibility Check"
+                   Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
+        <StackPanel Grid.Row="2">
+            <TextBlock Text="{Binding ResultSummary}"
+                       FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasNoIssues}" Value="True">
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource ValidationSuccessTextBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <TextBlock Margin="0,4,0,0" Text="{Binding ResultDetail}"
+                       TextWrapping="Wrap" Style="{StaticResource SupportingTextStyle}"/>
+        </StackPanel>
+        <Grid Grid.Row="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+                <DataGrid Grid.Row="0" ItemsSource="{Binding ProblematicGameplayTools}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" HeadersVisibility="Column">
+                    <DataGrid.Style>
+                        <Style TargetType="DataGrid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasGameplayIssues}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Style>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Gameplay Feature" Binding="{Binding ToolName}" Width="2*"/>
+                        <DataGridTextColumn Header="What needs attention" Binding="{Binding DisplayStatus}" Width="2*"/>
+                        <DataGridTextColumn Header="Details" Binding="{Binding Message}" Width="3*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <ItemsControl Grid.Row="1" Margin="0,12,0,0"
+                              ItemsSource="{Binding PlayerWarnings}">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasProjectWarnings}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Margin="0,0,0,6" Text="{Binding}"
+                                       TextWrapping="Wrap"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+        </Grid>
+        <DockPanel Grid.Row="6">
+            <TextBlock Text="Unknown game data remains preserved. Compatible profile changes can still be reviewed and applied."
+                       VerticalAlignment="Center" TextWrapping="Wrap"
+                       Style="{StaticResource SupportingTextStyle}"/>
+            <Button Content="Close" Width="90" Margin="12,0,0,0"
+                    HorizontalAlignment="Right" Click="OnCloseButtonClick"/>
+        </DockPanel>
+    </Grid>
+</Window>

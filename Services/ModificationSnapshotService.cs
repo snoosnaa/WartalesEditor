@@ -18,7 +18,9 @@ public sealed class ModificationSnapshotService
             CreatedAtUtc = DateTimeOffset.UtcNow,
             EditorVersion = editorVersion,
             SourceFileName =
-                GetSourceFileName(project)
+                GetSourceFileName(project),
+            SourceCdbGenerationIdentity =
+                project.SourceCdbGenerationIdentity
         };
 
         snapshot.GameplayOperationStates.AddRange(

@@ -5,7 +5,7 @@ using WartalesEditor.Models.Operations;
 namespace WartalesEditor.Services.Operations;
 
 public sealed class UpgradeAllEquipmentOperation :
-    IProjectOperation
+    IProjectOperation, IContextualProjectOperation
 {
     private readonly ContentCreationService
         contentCreationService;
@@ -53,5 +53,26 @@ public sealed class UpgradeAllEquipmentOperation :
         return ProjectOperationResult.Success(
             mutationResult,
             message);
+    }
+
+    public void Preflight(ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        contentCreationService.ValidateUpgradeAllEquipmentCompatibility(project);
+    }
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(context);
+        ProjectMutationResult mutationResult =
+            contentCreationService.UpgradeAllEquipment(project, context);
+        return ProjectOperationResult.Success(
+            mutationResult,
+            mutationResult.WasModified
+                ? "Eligible equipment was made upgradeable."
+                : "All eligible equipment was already upgradeable.");
     }
 }

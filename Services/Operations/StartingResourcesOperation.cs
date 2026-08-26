@@ -4,7 +4,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class StartingResourcesOperation : IProjectOperation
+public sealed class StartingResourcesOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly StartingResourcesService service;
 
@@ -33,6 +33,20 @@ public sealed class StartingResourcesOperation : IProjectOperation
         ProjectMutationResult result = service.Apply(project, Settings);
         return ProjectOperationResult.Success(
             result,
+            result.WasModified
+                ? "Starting Resources were updated."
+                : "Starting Resources already match the selected extras.");
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = StartingResourcesService.ResolveTargets(project);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = service.Apply(project, Settings, context);
+        return ProjectOperationResult.Success(result,
             result.WasModified
                 ? "Starting Resources were updated."
                 : "Starting Resources already match the selected extras.");

@@ -52,6 +52,46 @@ Property edits flow upward through the editing pipeline to update the original J
 
 # Data Model
 
+## CDB Identity
+
+`SourceCdbGenerationIdentity` is the SHA-256 identity of pristine Wartales CDB
+bytes established by validated QuickBMS import. `CurrentCdbContentIdentity` is
+the SHA-256 identity of the exact persisted project revision. Source identity
+is generation authority; current identity is adjacent-manifest binding. Save
+changes only the latter.
+
+The Version 2 `.wtstate` file stores both identities, active gameplay state, and
+bounded history. A matching current-content binding is necessary but not
+sufficient for verified source provenance: the manifest must also contain a
+valid source identity. Version 1, mismatched, null-source, malformed, and
+unreadable state has unknown provenance. Unknown history has no actionable
+source identity and cannot later reactivate; verified history may reactivate
+only after exact-source return and full validation.
+
+An active record must agree with the verified manifest source before it can be
+treated as verified. Missing, invalid, or contradictory record provenance is
+scrubbed when the record is retained as unknown history. This does not affect
+legitimate historical records whose source was established by an earlier
+verified import transition.
+
+Portable gameplay state additionally requires a current provenance-aware
+profile/snapshot, a valid root source identity, the same valid identity on the
+embedded record, and a verified matching target project. Ordinary compatible
+property changes remain backward compatible when this gameplay-state gate is
+not met.
+
+Compatibility probes and Update Compatibility reports are observational. Raw
+unknown JSON remains preserved by the authoritative `RootDocument` even when a
+sheet or tool target cannot be modeled.
+
+Background provenance and state-trust checks run automatically, but project
+publication does not open the full compatibility report. **Check Compatibility**
+explicitly rebuilds the report from the active in-memory project. Internal
+assessment retains compatible results for diagnostics; the default window
+filters them out, reports only issues and warnings, and supplies an all-clear
+state when no attention is required. Repeated checks replace prior results, and
+a project switch closes the modeless window and discards the old report.
+
 The primary object hierarchy is:
 
 - ProjectModel

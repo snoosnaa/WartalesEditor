@@ -530,6 +530,9 @@ internal static class UpgradeAllEquipmentTargetCatalog
     public static int Count =>
         TargetEntryIds.Count;
 
+    public static IReadOnlyCollection<string> EntryIds =>
+        TargetEntryIds;
+
     public static bool Contains(
         string entryId)
     {

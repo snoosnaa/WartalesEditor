@@ -185,6 +185,10 @@ public sealed class ProjectMutationResult
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(replacementState);
 
+        replacementState.ProjectCompatibilityIdentity =
+            project.SourceCdbGenerationIdentity
+            ?? string.Empty;
+
         gameplayOperationStateRollbackRecords.Add(
             new GameplayOperationStateRollbackRecord(
                 project,

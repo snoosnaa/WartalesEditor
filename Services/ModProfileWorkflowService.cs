@@ -253,7 +253,9 @@ public sealed class ModProfileWorkflowService
                     snapshotWorkflowService.ApplySafely(
                         targetProject,
                         snapshot,
-                        profile.Metadata.Name);
+                        profile.Metadata.Name,
+                        profile.SourceCdbGenerationIdentity,
+                        profile.FormatVersion == ModProfileFormat.CurrentVersion);
 
             mutationResult.Merge(
                 snapshotResult.MutationResult);

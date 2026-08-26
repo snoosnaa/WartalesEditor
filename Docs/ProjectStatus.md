@@ -4,7 +4,7 @@ Application Version: 0.10.0 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-08-25
+Last Updated: 2026-08-26
 
 Purpose
 
@@ -56,9 +56,70 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-Generic Wartales Language Data Setup
+Update Survival
 
 Current phase:
+
+Complete, reviewed, accepted, and reconciled. Final Renewed Focused Engineering
+Review: **PASS WITH NON-BLOCKING NOTES**. Final Project Owner Interactive
+Acceptance: **PASS**.
+
+Update Survival now distinguishes the immutable pristine-source identity from
+the current persisted CDB revision. QuickBMS import establishes authoritative
+`SourceCdbGenerationIdentity` provenance, normal Save preserves it while
+advancing `CurrentCdbContentIdentity`, and ordinary Open trusts source
+provenance only when the adjacent Version 2 `.wtstate` current-content binding
+matches the exact bytes parsed and the manifest also contains a valid source
+identity. A valid byte binding with an unknown source remains unknown source
+provenance. Missing, legacy, malformed, unreadable, or mismatched state never
+fabricates Restore Previous Values authority.
+
+Version 2 `.wtstate` retains one active record and at most one historical record
+per gameplay operation. Verified cross-generation history retains source
+authority for exact-source revalidation; unknown or untrusted history has its
+actionable provenance scrubbed and cannot reactivate. Profiles Version 3 and
+snapshots Version 2 carry source identity diagnostically and on portable
+gameplay state. Portable state activates only when current-format root, record,
+and verified target provenance agree; ordinary profile three-way comparison
+remains independent. A modeless Update Compatibility
+report observationally assesses shipped tools without mutating project data.
+Every shipped operation now uses an explicit execution mutation journal so
+execution exceptions and validator failures share mutation-based rollback, and
+a failed rollback is surfaced after its single attempted inverse application.
+Add Camp Facilities preflights its full object/craft scope, while Upgrade All
+Equipment requires exactly one target for every approved catalog ID.
+
+Active records must also agree with the verified manifest source. Contradictory
+record identities are retained only as scrubbed unknown history. Add Camp
+preflight includes the backing craft source and `lines` array required for new
+recipe insertion. Compatibility classifications are covered through real Add
+Camp and Upgrade assessment fixtures.
+
+Repository verification currently includes 180 focused Update Survival checks,
+all 25 Class A compatibility groups, the QuickBMS process/promotion suite, and
+zero-warning builds. The current real canonical CDB was inspected read-only at
+6,691,681 bytes, SHA-256
+`29BE149FD1AD68D849FA498F671A8E71868117EB3AA15B25643D86C647E76576`,
+with 395 sheets. Golden CDB, Steam APIs, heuristic target migration, and a
+mandatory migration wizard remain excluded.
+
+The final Renewed Focused Engineering Review passed with non-blocking notes.
+Project Owner testing established and accepted the intended workflow: import a
+fresh CDB, apply the desired profile, and explicitly choose **Tools → Check
+Compatibility**. Background provenance safety remains automatic, but the full
+window no longer opens during project publication. Explicit checks use current
+in-memory data, replace prior results, hide compatible rows, and show an
+all-clear result when no issues exist. The window now matches the established
+owned modeless/taskbar behavior. Renewed testing confirmed no automatic popup,
+explicit checking, issue-only/all-clear presentation, minimize/restore,
+close/reopen/re-run, and Restore Previous Values across multiple gameplay
+features. General gameplay tools, modifications, and profiles remained stable.
+
+Previous milestone:
+
+Generic Wartales Language Data Setup
+
+Previous phase:
 
 Complete, reviewed, accepted, and reconciled. The Renewed Focused Engineering
 Review returned **PASS WITH NON-BLOCKING NOTES**. Project Owner Interactive
@@ -505,13 +566,13 @@ correction
 Completed QuickBMS safe-import milestone, followed by separately authorized
 package backup/reimport/install/restore milestones
 
-Update Survival after the integrated package workflow
+Completed, reviewed, and Project Owner accepted Update Survival
 
 Roadmap priorities may continue evolving as additional game systems areinvestigated.
 
 High-Priority Technical Work
 
-Update Survival
+Optional future migration UX beyond the accepted conservative compatibility model
 
 Update Existing Profile
 
@@ -612,8 +673,8 @@ When available, PlayerFirstDesign.md should be added to this list.
 Next Task
 
 No subsequent milestone has been started. Await Project Owner direction.
-QuickBMS follow-on work, Update Survival, and full application localization
-remain deferred.
+Golden CDB and other optional post-Update-Survival work remain separate and
+unstarted.
 
 Document Maintenance
 

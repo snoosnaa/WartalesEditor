@@ -4,7 +4,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class GameplayPresetOperation : IProjectOperation
+public sealed class GameplayPresetOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly GameplayPresetService service;
 
@@ -43,6 +43,27 @@ public sealed class GameplayPresetOperation : IProjectOperation
             : service.Apply(project, OperationType, PresetKey);
         return ProjectOperationResult.Success(
             result,
+            result.WasModified
+                ? RestorePreviousValues
+                    ? $"{Name} previous values were restored."
+                    : $"{Name} was updated."
+                : "No changes were applied." + Environment.NewLine + Environment.NewLine +
+                  (RestorePreviousValues
+                      ? "The previous values already match the current project."
+                      : "This preset already matches the current project."));
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = GameplayPresetService.ResolveTargets(project, OperationType);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = RestorePreviousValues
+            ? service.RestorePreviousValues(project, OperationType, context)
+            : service.Apply(project, OperationType, PresetKey, context);
+        return ProjectOperationResult.Success(result,
             result.WasModified
                 ? RestorePreviousValues
                     ? $"{Name} previous values were restored."

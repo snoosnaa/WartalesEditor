@@ -103,6 +103,9 @@ public sealed class ModProfileService
 
         return new ModProfileModel
         {
+            SourceCdbGenerationIdentity =
+                project.SourceCdbGenerationIdentity,
+
             Metadata =
                 new ModProfileMetadataModel
                 {
@@ -187,6 +190,8 @@ public sealed class ModProfileService
         return new ModProfileModel
         {
             FormatVersion = ModProfileFormat.CurrentVersion,
+            SourceCdbGenerationIdentity =
+                captured.SourceCdbGenerationIdentity,
             Metadata = new ModProfileMetadataModel
             {
                 Name = existingMetadata.Name,
@@ -223,6 +228,9 @@ public sealed class ModProfileService
 
             Snapshot =
                 profile.Snapshot,
+
+            SourceCdbGenerationIdentity =
+                profile.SourceCdbGenerationIdentity,
 
             OperationRequests =
                 System.Linq.Enumerable.ToList(

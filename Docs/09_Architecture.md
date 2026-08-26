@@ -163,6 +163,74 @@ outside this architecture milestone.
 
 # Core Architectural Subsystems
 
+## Update Survival Identity and Compatibility
+
+`ProjectModel` owns two production-read-only exact-byte identities.
+`SourceCdbGenerationIdentity` identifies the pristine QuickBMS-extracted source
+generation and remains stable through editing and Save. It is unknown for an
+ordinary Open unless a Version 2 `.wtstate` manifest is bound to the exact
+current file bytes. `CurrentCdbContentIdentity` identifies the persisted disk
+revision and advances after successful Save. Neither identity participates in
+`PropertyModel.IsModified`.
+
+`JsonDataService` reads exact bytes once, hashes that buffer, and parses the
+same buffer. `GameplayOperationStatePersistenceService` owns the adjacent
+Version 2 manifest, active state, and bounded latest historical state per
+operation type. Exact current-content binding and verified source provenance are
+separate trust facts: source provenance is verified only when the manifest both
+binds to the parsed bytes and contains a valid source identity. A bound
+null/invalid source, legacy manifest, content mismatch, malformed manifest, or
+unreadable manifest remains unknown provenance. Unknown/untrusted history has
+actionable source authority scrubbed and cannot reactivate. Verified history may
+reactivate only on exact verified source return plus full target/content
+validation. Restore Previous Values additionally requires exact source
+provenance plus all existing target, shape, settings, and current-value checks.
+Save never turns current edited content into a new source generation.
+
+An active record in a verified manifest is authoritative only when its record
+source equals the verified manifest source. A missing, invalid, or contradictory
+active-record identity is downgraded to unknown history with its actionable
+identity cleared. Legitimate verified cross-generation history retains its
+source identity and remains eligible for exact-source revalidation.
+
+QuickBMS validated extraction is the authoritative source boundary. It captures
+the prior bound manifest before replacement, promotes the validated candidate,
+classifies source-to-source transition, revalidates compatible state, persists
+the new manifest, and publishes an observational compatibility report. The
+report and its gameplay probes own no mutations and never authorize renamed or
+moved targets.
+
+Provenance, content-binding, and gameplay-state trust classification remain
+automatic during Open and QuickBMS import. The full report window is a separate
+player-invoked workflow: **Tools → Check Compatibility** reassesses the active
+in-memory `ProjectModel`, replaces its previous observational report, and opens
+or focuses one modeless utility window. Compatible assessments remain available
+internally, while normal presentation shows only problematic tool results and
+project warnings, or a concise all-clear state. Project publication never opens
+the full window automatically.
+
+Profiles Version 3 and snapshots Version 2 carry source generation only as
+portable diagnostics and gameplay-state provenance. Current-content identity
+is not portable intent. Portable gameplay state becomes active only when the
+container format is provenance-aware, root and record source identities are
+valid and equal, and the verified target source matches them. Legacy or
+inconsistent portable provenance skips gameplay-state transfer while compatible
+ordinary properties retain three-way comparison.
+
+`ProjectOperationExecutionContext` owns the live mutation aggregate for every
+shipped gameplay operation. Mutations and gameplay-state replacements are
+journaled as they succeed. Execution exceptions and validator failures roll
+back through `ProjectOperationTransactionService`; a rollback attempt is never
+repeated after it succeeds or fails, and rollback failure is fatal. Rollback
+remains mutation-based and never reconstructs the project. Content-creation
+preflight is observational: Add Camp Facilities resolves its complete unique
+item/object/craft scope, including the craft sheet's connected source object and
+`lines` array whenever recipe creation is required. Upgrade All Equipment
+resolves exactly one entry for every approved catalog ID before the first
+mutation.
+
+---
+
 The editor now consists of eight primary reusable subsystems:
 
 - Editing

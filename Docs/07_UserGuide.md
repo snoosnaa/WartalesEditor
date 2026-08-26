@@ -56,6 +56,44 @@ contained together by Windows while import runs. If that contained process tree
 cannot be confirmed completely stopped, no project is loaded and its temporary
 folder is retained instead of being deleted while it may still be in use.
 
+# Update Compatibility
+
+Import From Wartales remembers which pristine game-data generation a project
+came from. Normal Save preserves that origin while recording the exact saved
+file revision. Automatic background checks continue protecting provenance,
+state-file trust, and Restore Previous Values, but opening or importing a CDB
+does not automatically open the full compatibility window.
+
+After a Wartales update, import the fresh CDB, apply the profile you want, then
+choose **Tools → Check Compatibility**. The check evaluates the currently
+loaded project, including current in-memory profile changes, without changing
+project data or creating Undo history. Run it again after further changes to
+replace the previous result. The report lists only gameplay features or
+warnings that need attention. If none exist, it displays **No compatibility
+issues detected.** rather than a table of compatible features.
+
+Previous values from another or unverified game-data generation remain
+non-restorable. Compatible ordinary profile changes remain available for normal
+review. Restore Previous Values still requires verified QuickBMS source
+provenance and compatible captured history.
+
+Project Owner acceptance verified this workflow in the running editor,
+including normal compatibility-window minimize/restore and repeated checks.
+Restore Previous Values was also verified on multiple gameplay features and
+remained available after closing and reopening their feature windows within the
+same project session.
+
+An adjacent state file can be tied to the current saved CDB without proving
+which pristine Wartales generation produced it. Ordinary Open treats that state
+as unverified and grants no restoration authority; it does not show a separate
+notice solely for this bound null-source condition. Import From Wartales reports
+that the previous generation could not be verified. Damaged or unreadable prior
+state is handled the same conservative way after a successful import.
+
+Opening a CDB without trusted adjacent provenance remains supported. Editing
+and ordinary profile comparison work, but generation-sensitive Restore Previous
+Values is unavailable until provenance is established by authoritative import.
+
 The main player workflows are:
 
 - Gameplay Tools for guided gameplay changes.
@@ -148,6 +186,12 @@ the exact captured regional values rather than fixed Vanilla values. Gameplay
 Operation State is saved in the `.wtstate` sidecar and compatible state is also
 transported by Profiles, so previous values survive supported save/reload and
 profile workflows.
+
+Gameplay previous-value history is transferred from a profile or snapshot only
+when its current-format file provenance, embedded history provenance, and the
+open project's verified source generation all agree. Older portable files still
+apply compatible ordinary changes, but do not activate embedded previous-value
+history solely because a stored identity string matches.
 
 The Detailed Editor's Reset Property action is separate. It restores the
 current project's property baseline and does not use Gameplay Operation State.

@@ -406,6 +406,13 @@ The intent is to continue expanding the editor based on actual gameplay experien
 Version 0.9.8 — Update Survival & Migration
 Objective
 
+Status: the conservative Update Survival foundation is complete, reviewed, and
+Project Owner accepted. The implemented scope includes exact source/current
+identity separation, provenance-safe Restore history, partial profile behavior,
+observational compatibility checks, and the explicit issue-focused player
+workflow. Heuristic renamed-target migration and the advanced migration ideas
+below remain optional future work rather than part of the accepted milestone.
+
 Enable users to continue using their preferred gameplay modifications across future Wartales updates with minimal manual work.
 
 This is considered one of the defining capabilities of Wartales Editor.

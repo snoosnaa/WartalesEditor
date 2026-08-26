@@ -7,6 +7,18 @@ namespace WartalesEditor.Services;
 public sealed class FileFingerprintService
 {
     public FileFingerprint Calculate(
+        ReadOnlySpan<byte> content)
+    {
+        string hash =
+            Convert.ToHexString(
+                SHA256.HashData(content));
+
+        return new FileFingerprint(
+            content.Length,
+            hash);
+    }
+
+    public FileFingerprint Calculate(
         string filePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);

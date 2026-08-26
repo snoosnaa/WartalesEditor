@@ -4,7 +4,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class RainFrequencyOperation : IProjectOperation
+public sealed class RainFrequencyOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly RainFrequencyService service;
 
@@ -52,6 +52,27 @@ public sealed class RainFrequencyOperation : IProjectOperation
                 : "No changes were applied." +
                   Environment.NewLine +
                   Environment.NewLine +
+                  (RestorePreviousValues
+                      ? "The previous values already match the current project."
+                      : "This preset already matches the current project."));
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = RainFrequencyService.ResolveTargets(project);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = RestorePreviousValues
+            ? service.RestorePreviousValues(project, context)
+            : service.Apply(project, Preset, context);
+        return ProjectOperationResult.Success(result,
+            result.WasModified
+                ? RestorePreviousValues
+                    ? "Previous rain values were restored."
+                    : "Rain Frequency was updated."
+                : "No changes were applied." + Environment.NewLine + Environment.NewLine +
                   (RestorePreviousValues
                       ? "The previous values already match the current project."
                       : "This preset already matches the current project."));

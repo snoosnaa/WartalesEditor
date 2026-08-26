@@ -5,7 +5,7 @@ using WartalesEditor.Models.Operations;
 namespace WartalesEditor.Services.Operations;
 
 public sealed class CharacterXpRequirementsOperation :
-    IProjectOperation
+    IProjectOperation, IContextualProjectOperation
 {
     private readonly ProgressionScalingService
         progressionScalingService;
@@ -54,6 +54,22 @@ public sealed class CharacterXpRequirementsOperation :
         return ProjectOperationResult.Success(
             mutationResult,
             mutationResult.WasModified
+                ? $"Character XP requirements were set to {Percentage}%."
+                : "Character XP requirements already match the requested percentage.");
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = progressionScalingService.ResolveProgressionTable(
+            project, ProgressionType.Character);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = progressionScalingService.Scale(
+            project, ProgressionType.Character, Percentage, context);
+        return ProjectOperationResult.Success(result,
+            result.WasModified
                 ? $"Character XP requirements were set to {Percentage}%."
                 : "Character XP requirements already match the requested percentage.");
     }

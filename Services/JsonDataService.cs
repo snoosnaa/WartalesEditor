@@ -17,6 +17,9 @@ public class JsonDataService
     private readonly GameplayOperationStatePersistenceService
         gameplayOperationStatePersistenceService;
 
+    private readonly CdbGenerationIdentityService
+        cdbGenerationIdentityService;
+
     public JsonDataService()
         : this(
             new ProjectModelFactory(),
@@ -46,6 +49,9 @@ public class JsonDataService
             gameplayOperationStatePersistenceService
             ?? throw new ArgumentNullException(
                 nameof(gameplayOperationStatePersistenceService));
+
+        cdbGenerationIdentityService =
+            new CdbGenerationIdentityService();
     }
 
     public string Load(
@@ -113,6 +119,14 @@ public class JsonDataService
             SerializeProject(
                 project);
 
+        byte[] persistedBytes =
+            new UTF8Encoding(false).GetBytes(
+                serializedProject);
+
+        string targetContentIdentity =
+            cdbGenerationIdentityService.Calculate(
+                persistedBytes);
+
         string fullFileName =
             Path.GetFullPath(fileName);
 
@@ -134,16 +148,16 @@ public class JsonDataService
 
         try
         {
-            File.WriteAllText(
+            File.WriteAllBytes(
                 cdbTemporaryFile,
-                serializedProject,
-                new UTF8Encoding(false));
+                persistedBytes);
 
             sidecarTemporaryFile =
                 gameplayOperationStatePersistenceService
                     .WriteTemporary(
                         project,
-                        fullFileName);
+                        fullFileName,
+                        targetContentIdentity);
 
             File.Move(
                 cdbTemporaryFile,
@@ -160,6 +174,9 @@ public class JsonDataService
 
             gameplayOperationStatePersistenceService
                 .AcceptCurrentStates(project);
+
+            project.AdvanceCurrentContentIdentity(
+                targetContentIdentity);
         }
         catch (Exception exception)
         {
@@ -343,21 +360,108 @@ public class JsonDataService
     public ProjectModel LoadProject(
         string fileName)
     {
-        string json =
-            Load(
+        byte[] exactBytes =
+            File.ReadAllBytes(
                 fileName);
+
+        string currentContentIdentity =
+            cdbGenerationIdentityService.Calculate(
+                exactBytes);
+
+        string json;
+        using (MemoryStream stream = new(exactBytes, writable: false))
+        using (StreamReader reader = new(
+                   stream,
+                   Encoding.UTF8,
+                   detectEncodingFromByteOrderMarks: true))
+        {
+            json = reader.ReadToEnd();
+        }
 
         ProjectModel project =
             CreateProjectFromJson(
                 json,
                 fileName);
 
+        if (project.Sheets.Count == 0)
+        {
+            throw new InvalidDataException(
+                "The data file does not contain any usable project sheets.");
+        }
+
+        project.EstablishPersistedIdentity(
+            currentContentIdentity,
+            null,
+            SourceProvenanceStatus.Unknown);
+
         gameplayOperationStatePersistenceService
             .LoadIntoProject(
                 project,
                 fileName);
 
+        if (project.SourceProvenanceStatus ==
+            SourceProvenanceStatus.ContentMismatch)
+        {
+            project.SetUpdateCompatibilityReport(
+                new UpdateCompatibilityReportService().Create(
+                    project,
+                    SourceGenerationTransition.ExternalContentMismatch));
+        }
+        else if (project.RequiresGameplayStateManifestMigration)
+        {
+            project.SetUpdateCompatibilityReport(
+                new UpdateCompatibilityReportService().Create(
+                    project,
+                    SourceGenerationTransition.PreviousSourceGenerationUnknown));
+        }
+        else if (project.RequiresUnverifiedGameplayStateNotice)
+        {
+            project.SetUpdateCompatibilityReport(
+                new UpdateCompatibilityReportService().Create(
+                    project,
+                    SourceGenerationTransition.PreviousSourceGenerationUnknown));
+        }
+
         return project;
+    }
+
+    internal GameplayStateManifestSnapshot CaptureGameplayStateForReplacement(
+        string cdbFileName)
+    {
+        return gameplayOperationStatePersistenceService
+            .CaptureForReplacement(cdbFileName);
+    }
+
+    internal void ApplyAuthoritativeImportIdentity(
+        ProjectModel project,
+        string sourceIdentity,
+        GameplayStateManifestSnapshot previousState)
+    {
+        gameplayOperationStatePersistenceService.ApplyAuthoritativeImport(
+            project,
+            sourceIdentity,
+            previousState);
+    }
+
+    internal void PersistImportedGameplayState(ProjectModel project)
+    {
+        gameplayOperationStatePersistenceService.Save(
+            project,
+            project.FileName);
+    }
+
+    public void CompletePostPublicationMigration(ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        if (!project.RequiresGameplayStateManifestMigration ||
+            string.IsNullOrWhiteSpace(project.FileName))
+        {
+            return;
+        }
+
+        gameplayOperationStatePersistenceService.Save(
+            project,
+            project.FileName);
     }
 
     internal ProjectModel CreateProjectFromJson(
@@ -392,25 +496,37 @@ public class JsonDataService
             return project;
         }
 
-        foreach (JObject sourceSheet in
-                 sourceSheets.OfType<JObject>())
+        foreach (JToken sourceSheetToken in sourceSheets)
         {
+            if (sourceSheetToken is not JObject sourceSheet)
+            {
+                project.ProjectLoadWarnings.Add(
+                    "A raw sheet record uses an unsupported structure and remains preserved without editor modeling.");
+                continue;
+            }
+
             string? sheetName =
                 sourceSheet["name"]?.ToString();
 
             if (string.IsNullOrWhiteSpace(
                     sheetName))
             {
+                project.ProjectLoadWarnings.Add(
+                    "A raw sheet without a usable name remains preserved without editor modeling.");
                 continue;
             }
 
-            SheetModel sheetModel =
-                projectModelFactory
-                    .CreateSheetModel(
-                        sourceSheet);
-
-            project.Sheets.Add(
-                sheetModel);
+            try
+            {
+                SheetModel sheetModel =
+                    projectModelFactory.CreateSheetModel(sourceSheet);
+                project.Sheets.Add(sheetModel);
+            }
+            catch (Exception exception)
+            {
+                project.ProjectLoadWarnings.Add(
+                    $"Sheet '{sheetName}' could not be modeled and remains preserved in raw project data: {exception.Message}");
+            }
         }
 
         project.IsModified =

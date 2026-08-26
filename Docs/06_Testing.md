@@ -76,6 +76,47 @@ Expected Result
 
 # Project Loading
 
+## Update Survival Regression Contract
+
+Permanent automated coverage distinguishes pristine source generation from the
+current saved revision. It covers exact-byte hashing, manifest binding,
+missing/legacy/malformed/unreadable state, null-source bound manifests, Save and
+Save As, same-source and changed-source QuickBMS re-import, actionable-provenance
+scrubbing, exact-source verified history reactivation, legacy/current portable
+profile and snapshot trust gates, mutation-free compatibility probes, complete
+Add Camp and exact-ID Upgrade preflight, expanded serialized unknown-data
+preservation, and single-attempt operation exception/validator rollback.
+
+Production-path fixtures include verified-manifest/active-record source
+contradictions, populated content mismatches, later-source non-reactivation,
+missing and wrong-type craft `lines`, real Add Camp and Upgrade compatibility
+classification, report-level `AssessmentFailed`, and explicit empty-Undo checks
+after rollback failure.
+
+Current repository evidence is 180 focused Update Survival checks, all 25 Class A
+compatibility groups, and the QuickBMS process/promotion suite. Builds are run
+sequentially because the WPF projects share generated intermediate output.
+The symlink regression may report its established environment-dependent skip
+when Windows symlink privilege is unavailable.
+
+The real canonical CDB may be inspected read-only. All mutation, Save, and
+re-import tests use isolated deterministic synthetic files.
+
+Compatibility workflow coverage verifies that shared ordinary/QuickBMS project
+publication retains background transition evidence without opening the report,
+the command requires a loaded project, repeated checks replace results using
+current in-memory content, compatible rows are filtered from normal
+presentation, zero/one/multiple issue summaries are correct, project switching
+clears stale state, assessment creates no gameplay state or Undo history, and
+the window uses the established owned modeless `ShowInTaskbar="True"` pattern.
+
+Final Project Owner runtime acceptance confirmed the full WPF behavior that
+structural automation cannot prove: no automatic popup, explicit current-
+project Check Compatibility, issue-only and all-clear presentation, normal
+minimize/restore, close/reopen/re-run, and one-window behavior. The owner also
+verified Restore Previous Values across multiple gameplay features and after
+closing/reopening feature windows within the same project session.
+
 Verify:
 
 - Open original `data.cdb`

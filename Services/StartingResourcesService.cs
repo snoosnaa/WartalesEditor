@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -46,6 +47,23 @@ public sealed class StartingResourcesService
         ProjectModel project,
         StartingResourcesSettings settings)
     {
+        return ApplyCore(project, settings, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        StartingResourcesSettings settings,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, settings, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        StartingResourcesSettings settings,
+        ProjectMutationResult result)
+    {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(settings);
         settings.Validate();
@@ -67,21 +85,20 @@ public sealed class StartingResourcesService
         if (JToken.DeepEquals(CaptureCurrentTargets(project), expected) &&
             SettingsEqual(previousState.StartingResources, settings))
         {
-            return new ProjectMutationResult();
+            return result;
         }
 
-        ProjectMutationResult result = new();
         ApplyExpectedTargets(project, expected, result);
 
         GameplayOperationStateModel replacement =
             CreateState(previousState.BaselineArray, settings, expected);
 
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project,
             previousState,
             replacement,
             previousStateWasModified);
+        stateService.ReplaceState(project, replacement);
 
         return result;
     }

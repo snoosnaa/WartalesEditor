@@ -19,6 +19,8 @@ public sealed class ModProfileModel
         init;
     } = new();
 
+    public string? SourceCdbGenerationIdentity { get; init; }
+
     public System.Collections.Generic.List<
         ProfileOperationRequestModel> OperationRequests
     {

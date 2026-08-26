@@ -1,6 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -70,8 +71,26 @@ public sealed class ContentCreationService
     public ProjectMutationResult AddCampFacilities(
         ProjectModel project)
     {
+        ProjectMutationResult result = new();
+        return AddCampFacilitiesCore(project, result);
+    }
+
+    internal ProjectMutationResult AddCampFacilities(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return AddCampFacilitiesCore(project, context.MutationResult);
+    }
+
+    private ProjectMutationResult AddCampFacilitiesCore(
+        ProjectModel project,
+        ProjectMutationResult result)
+    {
         ArgumentNullException.ThrowIfNull(
             project);
+
+        ValidateAddCampFacilitiesCompatibility(project);
 
         SheetModel itemSheet =
             FindRequiredSheet(
@@ -86,12 +105,12 @@ public sealed class ContentCreationService
                 "Add Camp Facilities");
 
         EntryModel anvilEntry =
-            FindRequiredEntry(
+            FindRequiredUniqueEntry(
                 itemSheet,
                 AnvilEntryId);
 
         EntryModel apothecaryEntry =
-            FindRequiredEntry(
+            FindRequiredUniqueEntry(
                 itemSheet,
                 ApothecaryTableEntryId);
 
@@ -107,58 +126,67 @@ public sealed class ContentCreationService
                 PropsPropertyName,
                 "Add Camp Facilities");
 
-        ProjectMutationResult result =
-            new();
+        JObject anvilProps =
+            campFacilityJsonBuilder.BuildAnvilProps(existingAnvilProps);
+        JObject anvilTool = campFacilityJsonBuilder.BuildAnvilTool();
+        JObject anvilIcon = campFacilityJsonBuilder.BuildAnvilIcon();
+        JObject apothecaryProps =
+            campFacilityJsonBuilder.BuildApothecaryProps(existingApothecaryProps);
+        JObject apothecaryTool = campFacilityJsonBuilder.BuildApothecaryTool();
+        JObject apothecaryIcon = campFacilityJsonBuilder.BuildApothecaryIcon();
+        JObject anvilCraft = campFacilityJsonBuilder.BuildAnvilCraftEntry();
+        JObject apothecaryCraft = campFacilityJsonBuilder.BuildApothecaryCraftEntry();
+        EntryModel? existingAnvilCraft = FindUniqueCraftEntry(craftSheet, AnvilEntryId);
+        EntryModel? existingApothecaryCraft =
+            FindUniqueCraftEntry(craftSheet, ApothecaryTableEntryId);
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 PropsPropertyName,
-                campFacilityJsonBuilder.BuildAnvilProps(
-                    existingAnvilProps)));
+                anvilProps));
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 ToolPropertyName,
-                campFacilityJsonBuilder.BuildAnvilTool()));
+                anvilTool));
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 anvilEntry,
                 IconPropertyName,
-                campFacilityJsonBuilder.BuildAnvilIcon()));
+                anvilIcon));
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 PropsPropertyName,
-                campFacilityJsonBuilder.BuildApothecaryProps(
-                    existingApothecaryProps)));
+                apothecaryProps));
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 ToolPropertyName,
-                campFacilityJsonBuilder.BuildApothecaryTool()));
+                apothecaryTool));
 
         result.Merge(
             projectMutationService.EnsureObjectByPath(
                 apothecaryEntry,
                 IconPropertyName,
-                campFacilityJsonBuilder.BuildApothecaryIcon()));
+                apothecaryIcon));
 
         result.Merge(
             EnsureCraftEntry(
                 craftSheet,
-                AnvilEntryId,
-                campFacilityJsonBuilder.BuildAnvilCraftEntry()));
+                existingAnvilCraft,
+                anvilCraft));
 
         result.Merge(
             EnsureCraftEntry(
                 craftSheet,
-                ApothecaryTableEntryId,
-                campFacilityJsonBuilder.BuildApothecaryCraftEntry()));
+                existingApothecaryCraft,
+                apothecaryCraft));
 
         return result;
     }
@@ -166,8 +194,26 @@ public sealed class ContentCreationService
     public ProjectMutationResult UpgradeAllEquipment(
         ProjectModel project)
     {
+        ProjectMutationResult result = new();
+        return UpgradeAllEquipmentCore(project, result);
+    }
+
+    internal ProjectMutationResult UpgradeAllEquipment(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return UpgradeAllEquipmentCore(project, context.MutationResult);
+    }
+
+    private ProjectMutationResult UpgradeAllEquipmentCore(
+        ProjectModel project,
+        ProjectMutationResult result)
+    {
         ArgumentNullException.ThrowIfNull(
             project);
+
+        ValidateUpgradeAllEquipmentCompatibility(project);
 
         SheetModel itemSheet =
             FindRequiredSheet(
@@ -175,7 +221,7 @@ public sealed class ContentCreationService
                 ItemSheetName,
                 "Upgrade All Equipment");
 
-        ProjectMutationResult result =
+        List<(EntryModel Entry, int UpdatedFlags)> plannedChanges =
             new();
 
         const string flagsPropertyPath =
@@ -222,11 +268,14 @@ public sealed class ContentCreationService
                 existingFlags |
                 UpgradeableEquipmentFlag;
 
-            if (updatedFlags == existingFlags)
+            if (updatedFlags != existingFlags)
             {
-                continue;
+                plannedChanges.Add((entry, updatedFlags));
             }
+        }
 
+        foreach ((EntryModel entry, int updatedFlags) in plannedChanges)
+        {
             result.Merge(
                 projectMutationService.EnsurePropertyByPath(
                     entry,
@@ -238,26 +287,158 @@ public sealed class ContentCreationService
         return result;
     }
 
+    internal void ValidateAddCampFacilitiesCompatibility(
+        ProjectModel project)
+    {
+        SheetModel itemSheet = FindRequiredSheet(
+            project, ItemSheetName, "Add Camp Facilities");
+        SheetModel craftSheet = FindRequiredSheet(
+            project, CraftSheetName, "Add Camp Facilities");
+        EntryModel anvil = FindRequiredUniqueEntry(itemSheet, AnvilEntryId);
+        EntryModel apothecary = FindRequiredUniqueEntry(itemSheet, ApothecaryTableEntryId);
+        JObject anvilProps = RequireObjectProperty(
+            anvil, PropsPropertyName, "Add Camp Facilities");
+        JObject apothecaryProps = RequireObjectProperty(
+            apothecary, PropsPropertyName, "Add Camp Facilities");
+
+        JObject anvilPropsValue = campFacilityJsonBuilder.BuildAnvilProps(anvilProps);
+        JObject anvilTool = campFacilityJsonBuilder.BuildAnvilTool();
+        JObject anvilIcon = campFacilityJsonBuilder.BuildAnvilIcon();
+        JObject apothecaryPropsValue = campFacilityJsonBuilder.BuildApothecaryProps(apothecaryProps);
+        JObject apothecaryTool = campFacilityJsonBuilder.BuildApothecaryTool();
+        JObject apothecaryIcon = campFacilityJsonBuilder.BuildApothecaryIcon();
+        JObject anvilCraftValue = campFacilityJsonBuilder.BuildAnvilCraftEntry();
+        JObject apothecaryCraftValue = campFacilityJsonBuilder.BuildApothecaryCraftEntry();
+
+        ValidateObjectMerge(anvil, PropsPropertyName, anvilPropsValue);
+        ValidateObjectMerge(anvil, ToolPropertyName, anvilTool);
+        ValidateObjectMerge(anvil, IconPropertyName, anvilIcon);
+        ValidateObjectMerge(apothecary, PropsPropertyName, apothecaryPropsValue);
+        ValidateObjectMerge(apothecary, ToolPropertyName, apothecaryTool);
+        ValidateObjectMerge(apothecary, IconPropertyName, apothecaryIcon);
+
+        EntryModel? anvilCraft = FindUniqueCraftEntry(craftSheet, AnvilEntryId);
+        EntryModel? apothecaryCraft = FindUniqueCraftEntry(craftSheet, ApothecaryTableEntryId);
+        if (anvilCraft != null)
+            ValidateExistingCraftEntry(anvilCraft, anvilCraftValue, AnvilEntryId);
+        else
+            ValidateCraftEntryCreation(craftSheet, anvilCraftValue);
+        if (apothecaryCraft != null)
+            ValidateExistingCraftEntry(apothecaryCraft, apothecaryCraftValue, ApothecaryTableEntryId);
+        else
+            ValidateCraftEntryCreation(craftSheet, apothecaryCraftValue);
+    }
+
+    internal void ValidateUpgradeAllEquipmentCompatibility(
+        ProjectModel project)
+    {
+        SheetModel itemSheet = FindRequiredSheet(
+            project, ItemSheetName, "Upgrade All Equipment");
+        foreach (string targetId in UpgradeAllEquipmentTargetCatalog.EntryIds)
+        {
+            EntryModel[] matches = itemSheet.Entries
+                .Where(entry => string.Equals(entry.Id, targetId, StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length == 0)
+                throw new GameplayCompatibilityException(
+                    GameplayCompatibilityStatus.PartiallyOutdated,
+                    "Some supported equipment is no longer available in this game-data version.",
+                    $"Target item '{targetId}' is missing from the equipment catalog.");
+            if (matches.Length > 1)
+                throw new GameplayCompatibilityException(
+                    GameplayCompatibilityStatus.AmbiguousTarget,
+                    "A supported equipment target is duplicated and cannot be selected safely.",
+                    $"Target item '{targetId}' occurs {matches.Length} times.");
+
+            EntryModel entry = matches[0];
+            if (entry.SourceEntry?[PropsPropertyName] is not JObject props)
+                throw new GameplayCompatibilityException(
+                    GameplayCompatibilityStatus.StructureChanged,
+                    "A supported equipment target has an incompatible structure.",
+                    $"Target item '{entry.Id}' does not contain a valid props object.");
+            JToken? flags = props[FlagsPropertyName];
+            if (flags != null && flags.Type != JTokenType.Integer)
+                throw new GameplayCompatibilityException(
+                    GameplayCompatibilityStatus.TypeChanged,
+                    "A supported equipment target uses an incompatible value type.",
+                    $"Target item '{entry.Id}' contains a changed props.flags type.");
+        }
+    }
+
+    private void ValidateObjectMerge(
+        EntryModel entry,
+        string propertyPath,
+        JObject value)
+    {
+        try
+        {
+            projectMutationService.ValidateObjectByPath(entry, propertyPath, value);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.StructureChanged,
+                "A camp-facility target has an incompatible structure.",
+                exception.Message);
+        }
+    }
+
+    private void ValidateCraftEntryCreation(
+        SheetModel craftSheet,
+        JObject craftEntry)
+    {
+        try
+        {
+            projectMutationService.ValidateEntryCreation(craftSheet, craftEntry);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.StructureChanged,
+                "The crafting data cannot accept a camp-facility recipe.",
+                exception.Message);
+        }
+    }
+
+    private static void ValidateExistingCraftEntry(
+        EntryModel entry,
+        JObject expected,
+        string itemId)
+    {
+        if (entry.SourceEntry == null)
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.StructureChanged,
+                "An existing camp-facility recipe has an incompatible structure.");
+
+        foreach (JProperty expectedProperty in expected.Properties())
+        {
+            JToken? actual = entry.SourceEntry[expectedProperty.Name];
+            if (actual == null || actual.Type != expectedProperty.Value.Type)
+                throw new GameplayCompatibilityException(
+                    GameplayCompatibilityStatus.StructureChanged,
+                    "An existing camp-facility recipe has an incompatible structure.",
+                    $"Craft entry '{itemId}' has an invalid '{expectedProperty.Name}' value.");
+        }
+
+        if (!string.Equals(entry.SourceEntry[CraftItemPropertyName]?.Value<string>(), itemId, StringComparison.Ordinal) ||
+            !string.Equals(entry.SourceEntry[ToolPropertyName]?.Value<string>(), "Workshop", StringComparison.Ordinal))
+        {
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.StructureChanged,
+                "An existing camp-facility recipe has an incompatible identity.");
+        }
+    }
+
     private ProjectMutationResult EnsureCraftEntry(
         SheetModel craftSheet,
-        string itemId,
+        EntryModel? existingEntry,
         JObject craftEntry)
     {
         ArgumentNullException.ThrowIfNull(
             craftSheet);
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(
-            itemId);
-
         ArgumentNullException.ThrowIfNull(
             craftEntry);
-
-        EntryModel? existingEntry =
-            projectMutationService.FindEntryByProperty(
-                craftSheet,
-                CraftItemPropertyName,
-                new JValue(
-                    itemId));
 
         if (existingEntry != null)
         {
@@ -267,6 +448,26 @@ public sealed class ContentCreationService
         return projectMutationService.CreateEntry(
             craftSheet,
             craftEntry);
+    }
+
+    private EntryModel? FindUniqueCraftEntry(
+        SheetModel craftSheet,
+        string itemId)
+    {
+        EntryModel[] matches = craftSheet.Entries
+            .Where(entry => string.Equals(
+                entry.SourceEntry?[CraftItemPropertyName]?.Value<string>(),
+                itemId,
+                StringComparison.Ordinal))
+            .ToArray();
+
+        if (matches.Length > 1)
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.AmbiguousTarget,
+                "A camp-facility crafting recipe is duplicated and cannot be selected safely.",
+                $"Craft item '{itemId}' occurs {matches.Length} times.");
+
+        return matches.SingleOrDefault();
     }
 
     private static JObject RequireObjectProperty(
@@ -331,7 +532,7 @@ public sealed class ContentCreationService
         }
     }
 
-    private EntryModel FindRequiredEntry(
+    private EntryModel FindRequiredUniqueEntry(
         SheetModel sheet,
         string entryId)
     {
@@ -341,20 +542,21 @@ public sealed class ContentCreationService
         ArgumentException.ThrowIfNullOrWhiteSpace(
             entryId);
 
-        try
-        {
-            return projectMutationService.FindEntry(
-                sheet,
-                entryId);
-        }
-        catch (InvalidOperationException exception)
-        {
-            throw new InvalidOperationException(
-                "Add Camp Facilities cannot continue because " +
-                $"the required entry '{entryId}' was not found " +
-                $"in the '{sheet.Name}' sheet. " +
-                "The loaded CDB may be incompatible with this tool.",
-                exception);
-        }
+        EntryModel[] matches = sheet.Entries
+            .Where(entry => string.Equals(entry.Id, entryId, StringComparison.Ordinal))
+            .ToArray();
+
+        if (matches.Length == 0)
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.MissingTarget,
+                "A required camp-facility target is missing.",
+                $"Required entry '{entryId}' was not found in sheet '{sheet.Name}'.");
+        if (matches.Length > 1)
+            throw new GameplayCompatibilityException(
+                GameplayCompatibilityStatus.AmbiguousTarget,
+                "A required camp-facility target is duplicated and cannot be selected safely.",
+                $"Required entry '{entryId}' occurs {matches.Length} times in sheet '{sheet.Name}'.");
+
+        return matches[0];
     }
 }

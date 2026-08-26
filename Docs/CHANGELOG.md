@@ -6,6 +6,66 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Update Survival
+
+**Status:** Complete; final Renewed Focused Engineering Review passed with
+non-blocking notes and final Project Owner Interactive Acceptance passed
+
+## Added
+
+- Separate exact-byte source-generation and current-content CDB identities.
+- Version 2 `.wtstate` provenance manifest with bounded historical gameplay
+  state and conservative Version 1 migration.
+- Profile Version 3 and snapshot Version 2 source-generation diagnostics.
+- Mutation-free gameplay compatibility assessment and a modeless, reopenable
+  Update Compatibility report.
+- Explicit gameplay-operation execution journals with exception rollback.
+- 180 focused permanent Update Survival checks, including the provenance,
+  portable-state, rollback, preflight, compatibility, history, and unknown-data
+  regressions required by the first Focused Engineering Review.
+
+## Changed
+
+- QuickBMS is the authoritative pristine-source boundary and now classifies
+  first, same-source, changed-source, and unknown-prior imports.
+- Ordinary Open trusts source provenance only when manifest current-content
+  identity matches the exact parsed file bytes.
+- Save and Save As preserve verified source identity while advancing the
+  current-content binding.
+- Cross-generation or unknown gameplay state remains non-restorable history;
+  compatible ordinary profile changes continue independently.
+- Exact current-content binding and verified source provenance are represented
+  separately. Unknown/untrusted history loses actionable source authority;
+  malformed and unreadable prior sidecars remain explicit conservative states.
+- Portable gameplay state requires a current provenance-aware container and
+  matching valid root, record, and verified target source identities.
+- Rollback is attempted once and fails fatally if restoration cannot complete.
+  Add Camp Facilities preflights its complete merge/craft scope, and Upgrade All
+  Equipment requires exactly one entry per approved catalog ID.
+- Source-inconsistent active records are downgraded to scrubbed unknown history,
+  including later-source non-reactivation. Add Camp recipe creation now validates
+  its backing craft source and `lines` array before mutation. Compatibility
+  categories are exercised through real Add Camp and Upgrade assessment paths,
+  with report-level `AssessmentFailed` coverage.
+- Background provenance safety remains automatic, while the full compatibility
+  window is opened only through **Tools → Check Compatibility**. The command
+  reassesses current in-memory project data and replaces prior results.
+- Normal presentation hides compatible rows, shows only affected features and
+  warnings, and provides a concise all-clear state. The window uses the same
+  owned, taskbar-visible modeless pattern as the working utility windows.
+- Project Owner acceptance confirmed no automatic popup, explicit current-
+  project checking, issue-only/all-clear presentation, normal minimize/restore,
+  close/reopen/re-run behavior, and Restore Previous Values across multiple
+  tested gameplay features. General gameplay tools, modifications, and profiles
+  remained stable.
+
+## Excluded
+
+- Golden CDB, Steam APIs, heuristic target migration, mandatory migration UI,
+  package writing, and project reconstruction rollback.
+
+---
+
 # Generic Wartales Language Data Setup
 
 **Status:** Complete, Renewed Focused Engineering Review passed with

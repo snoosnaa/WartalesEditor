@@ -251,6 +251,10 @@
                           Command="{Binding ValidateProjectCommand}"
                           ToolTip="Check whether the current project is ready to save."/>
 
+                <MenuItem Header="_Check Compatibility"
+                          Command="{Binding CheckCompatibilityCommand}"
+                          ToolTip="Check gameplay features against the currently loaded game data."/>
+
             </MenuItem>
 
             <MenuItem Header="_Help">

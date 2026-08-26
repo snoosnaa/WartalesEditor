@@ -18,7 +18,7 @@ public sealed class ModificationSnapshotSerializationService
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        ValidateForSerialization(snapshot);
+        ValidateSnapshot(snapshot, allowLegacyVersion: false);
 
         try
         {
@@ -189,11 +189,16 @@ public sealed class ModificationSnapshotSerializationService
         };
     }
 
-    private static void ValidateForSerialization(
-        ModificationSnapshotModel snapshot)
+    private static void ValidateSnapshot(
+        ModificationSnapshotModel snapshot,
+        bool allowLegacyVersion)
     {
-        if (snapshot.FormatVersion !=
-            ModificationSnapshotFormat.CurrentVersion)
+        if (snapshot.FormatVersion >
+                ModificationSnapshotFormat.CurrentVersion ||
+            snapshot.FormatVersion <
+                (allowLegacyVersion
+                    ? ModificationSnapshotFormat.LegacyVersion
+                    : ModificationSnapshotFormat.CurrentVersion))
         {
             throw new ModificationSnapshotSerializationException(
                 $"Snapshot format version " +
@@ -323,17 +328,14 @@ public sealed class ModificationSnapshotSerializationService
                 $"'{ModificationSnapshotFormat.CurrentVersion}'.");
         }
 
-        if (snapshot.FormatVersion <
-            ModificationSnapshotFormat.CurrentVersion)
-        {
-            throw new ModificationSnapshotSerializationException(
-                $"Snapshot format version " +
-                $"'{snapshot.FormatVersion}' is no longer supported. " +
-                $"The supported version is " +
-                $"'{ModificationSnapshotFormat.CurrentVersion}'.");
-        }
+        ValidateSnapshot(snapshot, allowLegacyVersion: true);
+    }
 
-        ValidateForSerialization(snapshot);
+    internal void ValidateCompatibleSnapshot(
+        ModificationSnapshotModel snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ValidateSnapshot(snapshot, allowLegacyVersion: true);
     }
 
     private static void TryDeleteTemporaryFile(

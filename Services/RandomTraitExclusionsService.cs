@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -154,6 +155,23 @@ public sealed class RandomTraitExclusionsService
         ProjectModel project,
         IReadOnlyCollection<string> allowedTraitIds)
     {
+        return ApplyCore(project, allowedTraitIds, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        IReadOnlyCollection<string> allowedTraitIds,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, allowedTraitIds, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        IReadOnlyCollection<string> allowedTraitIds,
+        ProjectMutationResult result)
+    {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(allowedTraitIds);
 
@@ -188,9 +206,9 @@ public sealed class RandomTraitExclusionsService
                 StringComparison.Ordinal) &&
             JToken.DeepEquals(existing.BaselineArray, replacement.BaselineArray) &&
             JToken.DeepEquals(existing.GameplaySettings, replacement.GameplaySettings))
-            return new ProjectMutationResult();
+            return result;
 
-        return ApplyResolved(project, candidates, expected, existing, replacement);
+        return ApplyResolved(project, candidates, expected, existing, replacement, result);
     }
 
     public ProjectMutationResult RestoreState(
@@ -215,7 +233,9 @@ public sealed class RandomTraitExclusionsService
             JToken.DeepEquals(CaptureCurrent(candidates), expected))
             return new ProjectMutationResult();
 
-        return ApplyResolved(project, candidates, expected, existing, state);
+        return ApplyResolved(
+            project, candidates, expected, existing, state,
+            new ProjectMutationResult());
     }
 
     internal static void ValidateState(
@@ -314,13 +334,12 @@ public sealed class RandomTraitExclusionsService
         IReadOnlyList<ResolvedTrait> candidates,
         JArray expected,
         GameplayOperationStateModel? existing,
-        GameplayOperationStateModel replacement)
+        GameplayOperationStateModel replacement,
+        ProjectMutationResult result)
     {
         Dictionary<string, JObject> expectedById = expected.OfType<JObject>()
             .ToDictionary(record => ReadRequiredString(record, "id"), StringComparer.Ordinal);
         ValidateMutationTargets(candidates, expectedById);
-        ProjectMutationResult result = new();
-
         foreach (ResolvedTrait candidate in candidates)
         {
             RandomTraitDoneBaseline target = ReadBaseline(expectedById[candidate.Entry.Id]);
@@ -336,8 +355,8 @@ public sealed class RandomTraitExclusionsService
 
         GameplayOperationStateModel? previous = existing?.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(project, previous, replacement, previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 

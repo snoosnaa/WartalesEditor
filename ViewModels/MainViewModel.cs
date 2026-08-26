@@ -170,6 +170,9 @@ public class MainViewModel : ObservableObject
     private RandomTraitExclusionsDialog?
         randomTraitExclusionsDialog;
 
+    private UpdateCompatibilityWindow?
+        updateCompatibilityWindow;
+
     private ProjectModel? project;
 
     private bool isImportInProgress;
@@ -244,6 +247,7 @@ public class MainViewModel : ObservableObject
             foreach (GameplayPresetDialog dialog in gameplayPresetDialogs.Values.ToArray())
                 dialog.Close();
             randomTraitExclusionsDialog?.Close();
+            updateCompatibilityWindow?.Close();
 
             StopTrackingProjectProperties();
             editHistoryService.Clear();
@@ -864,6 +868,14 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand CheckCompatibilityCommand
+    {
+        get;
+    }
+
+    public RelayCommand ReviewUpdateCompatibilityCommand =>
+        CheckCompatibilityCommand;
+
     public RelayCommand ShowProfileManagerCommand
     {
         get;
@@ -1281,6 +1293,11 @@ public class MainViewModel : ObservableObject
         ShowChangeSummaryCommand =
             new RelayCommand(
                 _ => ShowChangeSummary(),
+                _ => Project != null);
+
+        CheckCompatibilityCommand =
+            new RelayCommand(
+                _ => CheckCompatibility(),
                 _ => Project != null);
 
         ShowProfileManagerCommand =
@@ -2199,6 +2216,10 @@ public class MainViewModel : ObservableObject
 
             CurrentFile = displayFileName;
             Project = loadedProject;
+
+            jsonDataService.CompletePostPublicationMigration(
+                loadedProject);
+
         }
         catch
         {
@@ -4210,6 +4231,9 @@ public class MainViewModel : ObservableObject
         ShowChangeSummaryCommand?
             .NotifyCanExecuteChanged();
 
+        CheckCompatibilityCommand?
+            .NotifyCanExecuteChanged();
+
         ShowProfileManagerCommand?
             .NotifyCanExecuteChanged();
 
@@ -4279,6 +4303,75 @@ public class MainViewModel : ObservableObject
 
         changeSummaryViewModel.Refresh(
             BuildChangeSummaryItems());
+    }
+
+    internal bool IsUpdateCompatibilityWindowOpen =>
+        updateCompatibilityWindow != null;
+
+    internal UpdateCompatibilityReport CheckCurrentProjectCompatibility()
+    {
+        ProjectModel currentProject = Project
+            ?? throw new InvalidOperationException(
+                "A project must be loaded before compatibility can be checked.");
+
+        SourceGenerationTransition transition =
+            currentProject.UpdateCompatibilityReport?.Transition
+            ?? currentProject.SourceProvenanceStatus switch
+            {
+                SourceProvenanceStatus.ContentMismatch =>
+                    SourceGenerationTransition.ExternalContentMismatch,
+                SourceProvenanceStatus.Unknown =>
+                    SourceGenerationTransition.CurrentSourceGenerationUnknown,
+                _ => SourceGenerationTransition.SameSourceGeneration
+            };
+
+        UpdateCompatibilityReport report =
+            new UpdateCompatibilityReportService().Create(
+                currentProject,
+                transition);
+
+        currentProject.SetUpdateCompatibilityReport(report);
+        return report;
+    }
+
+    private void CheckCompatibility()
+    {
+        UpdateCompatibilityReport report =
+            CheckCurrentProjectCompatibility();
+
+        ShowUpdateCompatibility(report);
+        Status = report.HasIssues
+            ? $"Compatibility check completed: {report.ResultSummary}"
+            : "Compatibility check completed. No issues were detected.";
+    }
+
+    private void ShowUpdateCompatibility(
+        UpdateCompatibilityReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        if (updateCompatibilityWindow != null)
+        {
+            updateCompatibilityWindow.DataContext = report;
+            RestoreAndActivateWindow(updateCompatibilityWindow);
+            return;
+        }
+
+        updateCompatibilityWindow = new UpdateCompatibilityWindow
+        {
+            Owner = GetMainWindowOwner(),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            DataContext = report
+        };
+        updateCompatibilityWindow.Closed += OnUpdateCompatibilityClosed;
+        ShowFeatureWindow(updateCompatibilityWindow);
+    }
+
+    private void OnUpdateCompatibilityClosed(object? sender, EventArgs e)
+    {
+        if (updateCompatibilityWindow != null)
+            updateCompatibilityWindow.Closed -= OnUpdateCompatibilityClosed;
+        updateCompatibilityWindow = null;
     }
 
     private void ShowChangeSummary()

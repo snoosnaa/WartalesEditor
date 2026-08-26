@@ -2,9 +2,64 @@
 
 ## Current Milestone
 
-Generic Wartales Language Data Setup
+Update Survival
 
 ## Current Status
+
+Update Survival is complete, reviewed, and accepted. The final Renewed Focused
+Engineering Review returned **PASS WITH NON-BLOCKING NOTES**. Project Owner
+Interactive Acceptance and renewed acceptance after the compatibility UX
+corrections both returned **PASS**. Final documentation reconciliation is
+complete; this milestone closure commit and normal push are the remaining
+lifecycle actions.
+
+The implementation uses two exact-byte identities. The pristine QuickBMS
+candidate establishes `SourceCdbGenerationIdentity`; ordinary Save never
+changes it. `CurrentCdbContentIdentity` binds the adjacent Version 2 `.wtstate`
+to the exact persisted revision and advances only after successful Save.
+Ordinary Open does not infer pristine provenance from current file bytes.
+
+Version 2 state separates exact current-content binding from verified source
+provenance. Unknown, legacy, mismatched, malformed, and unreadable prior state
+cannot supply Restore authority; unknown history has actionable identity
+scrubbed, while verified history may reactivate only after exact-source return
+and full validation. Profile Version 3 and snapshot Version 2 require trusted,
+agreeing root, record, and target source provenance before portable gameplay
+state activates, without changing ordinary three-way apply behavior. QuickBMS
+distinguishes verified, unknown-source, malformed, unreadable, and absent prior
+state. Background compatibility evidence remains available without opening a
+window. **Tools → Check Compatibility** explicitly reassesses the current
+in-memory project, replaces the prior report, and opens or focuses one modeless
+issue-focused window.
+
+Every shipped gameplay operation now executes with an explicit live mutation
+journal. Successful project and gameplay-state mutations are recorded before
+later work can fail; execution exceptions and validator failures roll back the
+same aggregate. Rollback is attempted at most once; rollback failure is reported
+as fatal. Add Camp Facilities performs complete target/object/craft preflight,
+including recipe-creation source and `lines` validation. Upgrade All Equipment
+resolves exactly one entry per approved catalog ID. Source-inconsistent active
+records are scrubbed into unknown history and cannot later reactivate.
+Unknown raw JSON remains authoritative in `RootDocument`.
+
+The full report does not auto-open during ordinary Open, QuickBMS publication,
+changed-generation publication, or unknown-provenance publication. Compatible
+rows are hidden by default and a concise all-clear is shown when appropriate.
+The window follows the working owned, taskbar-visible modeless utility pattern.
+Project Owner testing confirmed normal minimize/restore, close/reopen/re-run,
+and Restore Previous Values across multiple gameplay features, including after
+closing and reopening a feature window in the same project session.
+
+Verification: application and both test projects build with zero warnings and
+zero errors; 180 focused Update Survival checks, all 25 Class A groups, and the
+QuickBMS and Language Data suites pass. Final Project Owner acceptance is
+**PASS**. No subsequent milestone has started.
+
+Previous milestone:
+
+Generic Wartales Language Data Setup
+
+Previous milestone status:
 
 Complete, reviewed, accepted, and reconciled. The Renewed Focused Engineering
 Review returned **PASS WITH NON-BLOCKING NOTES**. Project Owner Interactive

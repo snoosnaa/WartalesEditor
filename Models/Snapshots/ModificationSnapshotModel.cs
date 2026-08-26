@@ -6,7 +6,8 @@ namespace WartalesEditor.Models.Snapshots;
 
 public sealed class ModificationSnapshotModel
 {
-    public int FormatVersion { get; init; } = 1;
+    public int FormatVersion { get; init; } =
+        ModificationSnapshotFormat.CurrentVersion;
 
     public DateTimeOffset CreatedAtUtc { get; init; }
         = DateTimeOffset.UtcNow;
@@ -19,6 +20,8 @@ public sealed class ModificationSnapshotModel
 
     public string GameVersion { get; init; }
         = string.Empty;
+
+    public string? SourceCdbGenerationIdentity { get; init; }
 
     public List<ModificationSnapshotCategoryModel> Categories
     {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -95,6 +96,21 @@ public sealed class RainFrequencyService
 
     public ProjectMutationResult RestorePreviousValues(ProjectModel project)
     {
+        return RestorePreviousValuesCore(project, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult RestorePreviousValues(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return RestorePreviousValuesCore(project, context.MutationResult);
+    }
+
+    private ProjectMutationResult RestorePreviousValuesCore(
+        ProjectModel project,
+        ProjectMutationResult result)
+    {
         GameplayOperationStateModel existing =
             stateService.GetRequiredPreviousValuesState(
                 project,
@@ -109,10 +125,9 @@ public sealed class RainFrequencyService
                 PreviousValuesSetting,
                 StringComparison.Ordinal))
         {
-            return new ProjectMutationResult();
+            return result;
         }
 
-        ProjectMutationResult result = new();
         for (int index = 0; index < targets.Count; index++)
         {
             result.Merge(
@@ -126,18 +141,35 @@ public sealed class RainFrequencyService
             CreateState(baseline, baseline, PreviousValuesSetting);
         GameplayOperationStateModel previous = existing.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project,
             previous,
             replacement,
             previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 
     public ProjectMutationResult Apply(
         ProjectModel project,
         RainFrequencyPreset preset)
+    {
+        return ApplyCore(project, preset, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        RainFrequencyPreset preset,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, preset, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        RainFrequencyPreset preset,
+        ProjectMutationResult result)
     {
         RainFrequencyPresetOption selection =
             GetRequiredPreset(preset);
@@ -156,7 +188,6 @@ public sealed class RainFrequencyService
             : (JArray)existing.BaselineArray.DeepClone();
         JArray expected = BuildExpected(CreateBaseline(), selection);
 
-        ProjectMutationResult result = new();
         for (int index = 0; index < targets.Count; index++)
         {
             result.Merge(
@@ -186,12 +217,12 @@ public sealed class RainFrequencyService
             existing?.DeepClone();
         bool previousModified =
             project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project,
             previous,
             replacement,
             previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 

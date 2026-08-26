@@ -177,6 +177,22 @@ public sealed class ModificationSnapshotWorkflowService
             ModificationSnapshotModel snapshot,
             string sourceName = "")
     {
+        return ApplySafely(
+            targetProject,
+            snapshot,
+            sourceName,
+            snapshot.SourceCdbGenerationIdentity,
+            snapshot.FormatVersion == ModificationSnapshotFormat.CurrentVersion);
+    }
+
+    internal ModificationSnapshotImportResultModel
+        ApplySafely(
+            ProjectModel targetProject,
+            ModificationSnapshotModel snapshot,
+            string sourceName,
+            string? portableRootSourceIdentity,
+            bool portableFormatSupportsProvenance)
+    {
         ArgumentNullException.ThrowIfNull(
             targetProject);
 
@@ -188,23 +204,42 @@ public sealed class ModificationSnapshotWorkflowService
 
         try
         {
-            GameplayOperationStateModel? randomTraitState =
+            GameplayOperationStateModel[] portableStates =
                 snapshot.GameplayOperationStates
+                    .Where(state =>
+                        CanTransportGameplayState(
+                            targetProject,
+                            snapshot,
+                            portableRootSourceIdentity,
+                            portableFormatSupportsProvenance,
+                            state))
+                    .ToArray();
+
+            GameplayOperationStateModel? randomTraitState =
+                portableStates
                     .SingleOrDefault(state =>
                         state.OperationType ==
                         ProgressionType.RandomTraitExclusions);
 
             if (randomTraitState != null)
             {
-                RandomTraitExclusionsService exclusionsService =
-                    new(
-                        new ProjectMutationService(),
-                        gameplayOperationStateService);
+                try
+                {
+                    RandomTraitExclusionsService exclusionsService =
+                        new(
+                            new ProjectMutationService(),
+                            gameplayOperationStateService);
 
-                mutationResult.Merge(
-                    exclusionsService.RestoreState(
-                        targetProject,
-                        randomTraitState));
+                    mutationResult.Merge(
+                        exclusionsService.RestoreState(
+                            targetProject,
+                            randomTraitState));
+                }
+                catch (InvalidOperationException)
+                {
+                    // Portable previous-value history is optional. Ordinary
+                    // snapshot changes remain independently reviewable.
+                }
             }
 
             ModificationMatchResultModel matchResult =
@@ -223,10 +258,10 @@ public sealed class ModificationSnapshotWorkflowService
             mutationResult.Merge(
                 applyResult.MutationResult);
 
-            if (snapshot.GameplayOperationStates.Count > 0)
+            if (portableStates.Length > 0)
             {
                 GameplayOperationStateModel[] remainingStates =
-                    snapshot.GameplayOperationStates
+                    portableStates
                         .Where(state =>
                             state.OperationType !=
                             ProgressionType.RandomTraitExclusions)
@@ -234,11 +269,19 @@ public sealed class ModificationSnapshotWorkflowService
 
                 if (remainingStates.Length > 0)
                 {
-                    mutationResult.Merge(
-                        gameplayOperationStateService
-                            .RestoreSnapshotStatesWithMutations(
-                                targetProject,
-                                remainingStates));
+                    try
+                    {
+                        mutationResult.Merge(
+                            gameplayOperationStateService
+                                .RestoreSnapshotStatesWithMutations(
+                                    targetProject,
+                                    remainingStates));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Do not make optional previous-value transport an
+                        // all-or-nothing gate for ordinary profile changes.
+                    }
                 }
             }
             else
@@ -268,6 +311,37 @@ public sealed class ModificationSnapshotWorkflowService
 
             throw;
         }
+    }
+
+    private bool CanTransportGameplayState(
+        ProjectModel targetProject,
+        ModificationSnapshotModel snapshot,
+        string? portableRootSourceIdentity,
+        bool portableFormatSupportsProvenance,
+        GameplayOperationStateModel state)
+    {
+        CdbGenerationIdentityService identities = new();
+
+        if (!portableFormatSupportsProvenance ||
+            snapshot.FormatVersion != ModificationSnapshotFormat.CurrentVersion ||
+            !identities.IsValid(portableRootSourceIdentity) ||
+            !identities.AreEqual(
+                portableRootSourceIdentity,
+                snapshot.SourceCdbGenerationIdentity) ||
+            !identities.IsValid(state.ProjectCompatibilityIdentity) ||
+            !identities.AreEqual(
+                portableRootSourceIdentity,
+                state.ProjectCompatibilityIdentity) ||
+            targetProject.SourceProvenanceStatus !=
+                SourceProvenanceStatus.Verified ||
+            !identities.AreEqual(
+                targetProject.SourceCdbGenerationIdentity,
+                portableRootSourceIdentity))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public ModificationSnapshotImportResultModel

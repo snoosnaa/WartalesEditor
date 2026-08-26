@@ -131,6 +131,11 @@ public sealed class GameplayOperationStateService
             return false;
         }
 
+        if (!HasRestoreProvenance(project, state))
+        {
+            return false;
+        }
+
         ValidateState(project, state);
         return state.IsCompatible;
     }
@@ -146,6 +151,13 @@ public sealed class GameplayOperationStateService
         {
             throw new InvalidOperationException(
                 "No previous values are available for this gameplay tool.");
+        }
+
+
+        if (!HasRestoreProvenance(project, state))
+        {
+            throw new InvalidOperationException(
+                "The saved previous values cannot be verified for this game-data version.");
         }
 
         ValidateState(project, state);
@@ -193,6 +205,10 @@ public sealed class GameplayOperationStateService
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(state);
+
+        state.ProjectCompatibilityIdentity =
+            project.SourceCdbGenerationIdentity
+            ?? string.Empty;
 
         GameplayOperationStateModel? existing =
             FindState(project, state.OperationType);
@@ -534,5 +550,19 @@ public sealed class GameplayOperationStateService
                 GameplayPresetCatalog.Get(progressionType).Title,
             _ => "gameplay operation"
         };
+    }
+
+    private static bool HasRestoreProvenance(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        return project.SourceProvenanceStatus ==
+                   SourceProvenanceStatus.Verified &&
+               !string.IsNullOrWhiteSpace(
+                   project.SourceCdbGenerationIdentity) &&
+               string.Equals(
+                   project.SourceCdbGenerationIdentity,
+                   state.ProjectCompatibilityIdentity,
+                   StringComparison.Ordinal);
     }
 }

@@ -5,7 +5,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class RandomTraitExclusionsOperation : IProjectOperation
+public sealed class RandomTraitExclusionsOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly RandomTraitExclusionsService service;
 
@@ -33,6 +33,21 @@ public sealed class RandomTraitExclusionsOperation : IProjectOperation
         ProjectMutationResult result = service.Apply(project, AllowedTraitIds);
         return ProjectOperationResult.Success(
             result,
+            result.WasModified
+                ? "Random trait exclusions were updated."
+                : "No changes were applied." + Environment.NewLine + Environment.NewLine +
+                  "The current project already matches this setting.");
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = RandomTraitExclusionsService.ResolveCandidateIds(project);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = service.Apply(project, AllowedTraitIds, context);
+        return ProjectOperationResult.Success(result,
             result.WasModified
                 ? "Random trait exclusions were updated."
                 : "No changes were applied." + Environment.NewLine + Environment.NewLine +

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -56,6 +57,21 @@ public sealed class OverworldMovementSpeedService
 
     public ProjectMutationResult RestorePreviousValues(ProjectModel project)
     {
+        return RestorePreviousValuesCore(project, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult RestorePreviousValues(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return RestorePreviousValuesCore(project, context.MutationResult);
+    }
+
+    private ProjectMutationResult RestorePreviousValuesCore(
+        ProjectModel project,
+        ProjectMutationResult result)
+    {
         GameplayOperationStateModel existing =
             stateService.GetRequiredPreviousValuesState(
                 project,
@@ -70,10 +86,9 @@ public sealed class OverworldMovementSpeedService
                 PreviousValuesSetting,
                 StringComparison.Ordinal))
         {
-            return new ProjectMutationResult();
+            return result;
         }
 
-        ProjectMutationResult result = new();
         if (!JToken.DeepEquals(current, baseline))
         {
             result.Merge(mutationService.EnsurePropertyByPath(
@@ -90,15 +105,32 @@ public sealed class OverworldMovementSpeedService
             CreateState(baseline, baseline, PreviousValuesSetting, null);
         GameplayOperationStateModel previous = existing.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project, previous, replacement, previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 
     public ProjectMutationResult Apply(
         ProjectModel project,
         OverworldMovementPreset preset)
+    {
+        return ApplyCore(project, preset, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        OverworldMovementPreset preset,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, preset, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        OverworldMovementPreset preset,
+        ProjectMutationResult result)
     {
         OverworldMovementPresetOption selection = GetRequiredPreset(preset);
         ValidatePair(selection.WalkSpeed, selection.RunSpeed);
@@ -123,9 +155,8 @@ public sealed class OverworldMovementSpeedService
                 existing.GameplaySettings?.Value<string>("preset"),
                 preset.ToString(),
                 StringComparison.Ordinal))
-            return new ProjectMutationResult();
+            return result;
 
-        ProjectMutationResult result = new();
         if (!JToken.DeepEquals(current, expected))
         {
             result.Merge(mutationService.EnsurePropertyByPath(
@@ -150,9 +181,9 @@ public sealed class OverworldMovementSpeedService
                 selection);
         GameplayOperationStateModel? previous = existing?.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project, previous, replacement, previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 

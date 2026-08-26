@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -82,6 +83,25 @@ public sealed class ProgressionScalingService
         ProgressionType progressionType,
         int percentage)
     {
+        return ScaleCore(project, progressionType, percentage, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Scale(
+        ProjectModel project,
+        ProgressionType progressionType,
+        int percentage,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ScaleCore(project, progressionType, percentage, context.MutationResult);
+    }
+
+    private ProjectMutationResult ScaleCore(
+        ProjectModel project,
+        ProgressionType progressionType,
+        int percentage,
+        ProjectMutationResult journal)
+    {
         ArgumentNullException.ThrowIfNull(project);
         ValidatePercentage(percentage);
 
@@ -116,7 +136,7 @@ public sealed class ProgressionScalingService
                 binding.ArrayProperty.SourceProperty!.Value,
                 scaledArray))
         {
-            return new ProjectMutationResult();
+            return journal;
         }
 
         GameplayOperationStateModel replacementState =
@@ -126,23 +146,25 @@ public sealed class ProgressionScalingService
                 percentage,
                 scaledArray);
 
-        ProjectMutationResult result =
+        ProjectMutationResult propertyMutation =
             projectMutationService.EnsurePropertyByPath(
                 binding.Entry,
                 binding.ArrayPropertyPath,
                 scaledArray);
 
-        stateService.ReplaceState(
-            project,
-            replacementState);
+        journal.Merge(propertyMutation);
 
-        result.AddGameplayOperationState(
+        journal.AddGameplayOperationState(
             project,
             previousState,
             replacementState,
             previousStateWasModified);
 
-        return result;
+        stateService.ReplaceState(
+            project,
+            replacementState);
+
+        return journal;
     }
 
     internal ProgressionTableBinding ResolveProgressionTable(

@@ -4,7 +4,7 @@ using WartalesEditor.Models.Operations;
 
 namespace WartalesEditor.Services.Operations;
 
-public sealed class OverworldMovementSpeedOperation : IProjectOperation
+public sealed class OverworldMovementSpeedOperation : IProjectOperation, IContextualProjectOperation
 {
     private readonly OverworldMovementSpeedService service;
 
@@ -45,6 +45,27 @@ public sealed class OverworldMovementSpeedOperation : IProjectOperation
                     : "Overworld Movement Speed was updated."
                 : "No changes were applied." + Environment.NewLine +
                   Environment.NewLine +
+                  (RestorePreviousValues
+                      ? "The previous values already match the current project."
+                      : "This preset already matches the current project."));
+    }
+
+    public void Preflight(ProjectModel project) =>
+        _ = OverworldMovementSpeedService.ResolveTargets(project);
+
+    public ProjectOperationResult Execute(
+        ProjectModel project,
+        ProjectOperationExecutionContext context)
+    {
+        ProjectMutationResult result = RestorePreviousValues
+            ? service.RestorePreviousValues(project, context)
+            : service.Apply(project, Preset, context);
+        return ProjectOperationResult.Success(result,
+            result.WasModified
+                ? RestorePreviousValues
+                    ? "Previous movement values were restored."
+                    : "Overworld Movement Speed was updated."
+                : "No changes were applied." + Environment.NewLine + Environment.NewLine +
                   (RestorePreviousValues
                       ? "The previous values already match the current project."
                       : "This preset already matches the current project."));

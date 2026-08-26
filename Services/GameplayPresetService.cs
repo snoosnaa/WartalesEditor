@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
@@ -61,10 +62,38 @@ public sealed class GameplayPresetService
         return Apply(project, type, "Vanilla");
     }
 
+    internal ProjectMutationResult RestorePreviousValues(
+        ProjectModel project,
+        ProgressionType type,
+        ProjectOperationExecutionContext context)
+    {
+        _ = stateService.GetRequiredPreviousValuesState(project, type);
+        return Apply(project, type, "Vanilla", context);
+    }
+
     public ProjectMutationResult Apply(
         ProjectModel project,
         ProgressionType type,
         string presetKey)
+    {
+        return ApplyCore(project, type, presetKey, new ProjectMutationResult());
+    }
+
+    internal ProjectMutationResult Apply(
+        ProjectModel project,
+        ProgressionType type,
+        string presetKey,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(project, type, presetKey, context.MutationResult);
+    }
+
+    private ProjectMutationResult ApplyCore(
+        ProjectModel project,
+        ProgressionType type,
+        string presetKey,
+        ProjectMutationResult result)
     {
         ArgumentNullException.ThrowIfNull(project);
         GameplayPresetDefinition definition = GameplayPresetCatalog.Get(type);
@@ -97,9 +126,8 @@ public sealed class GameplayPresetService
                 existing.GameplaySettings?.Value<string>("preset"),
                 preset.Key,
                 StringComparison.Ordinal))
-            return new ProjectMutationResult();
+            return result;
 
-        ProjectMutationResult result = new();
         if (!JToken.DeepEquals(current, expected))
             ApplyExpected(project, expected, result);
 
@@ -107,12 +135,12 @@ public sealed class GameplayPresetService
             CreateState(definition, baseline, expected, preset);
         GameplayOperationStateModel? previous = existing?.DeepClone();
         bool previousModified = project.IsGameplayOperationStateModified;
-        stateService.ReplaceState(project, replacement);
         result.AddGameplayOperationState(
             project,
             previous,
             replacement,
             previousModified);
+        stateService.ReplaceState(project, replacement);
         return result;
     }
 

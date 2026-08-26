@@ -2,8 +2,40 @@
 
 **Version:** 0.9\
 **Status:** Active\
-**Last Updated:** 2026-08-25\
+**Last Updated:** 2026-08-26\
 **Applies To:** Entire Project
+
+------------------------------------------------------------------------
+
+# 2026-08-26 — Update Compatibility Project Owner UX Corrections
+
+The final Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING
+NOTES — Ready for Project Owner Interactive Acceptance**. Initial owner testing
+then clarified that compatibility review is an explicit post-profile workflow,
+not an automatic full-window interruption during project publication.
+
+Ordinary Open and QuickBMS publication now retain automatic provenance,
+content-binding, state-history, and Restore safety without opening the report.
+**Tools → Check Compatibility** rebuilds the observational report from the
+active in-memory project, replaces stale results, and opens or focuses one
+modeless window. Normal presentation hides compatible rows, lists only issues
+and warnings, and shows **No compatibility issues detected.** when clear. The
+window now matches other owned utility windows with taskbar-visible normal
+minimize/restore behavior.
+
+Permanent focused coverage increased to 180 checks and includes current-project
+reassessment, refresh, issue filtering, all-clear, no-auto-publication,
+project-switch, mutation-neutrality, no-Undo, and window-configuration checks.
+Restore Previous Values safety was not changed.
+
+Renewed Project Owner Interactive Acceptance subsequently returned **PASS**.
+The owner confirmed no automatic report popup, explicit current-project Check
+Compatibility, issue-only/all-clear presentation, normal minimize/restore,
+close/reopen/re-run behavior, and Restore Previous Values across multiple
+tested gameplay features, including after closing and reopening their windows
+within the same project session. General modifications, gameplay features, and
+profiles remained stable. Final reconciliation and the single Update Survival
+milestone commit/push close the lifecycle; no subsequent milestone was started.
 
 ------------------------------------------------------------------------
 
@@ -1254,3 +1286,74 @@ a dedicated mutation-based mismatch fixture; persistent external file locks may
 prevent rollback cleanup while later attempts continue to fail safely; and the
 pre-existing QuickBMS symlink regression may skip without Windows symlink
 privilege. No subsequent milestone was started.
+
+# 2026-08-25 — Update Survival Implementation
+
+Implemented the accepted two-identity architecture. Exact pristine QuickBMS CDB
+bytes establish stable source-generation provenance, while the exact persisted
+revision owns current-content binding. `JsonDataService` hashes the same byte
+buffer it parses. Version 2 `.wtstate` retains active state and bounded latest
+history per operation type; legacy state is retained with unknown provenance
+and cannot authorize Restore Previous Values.
+
+QuickBMS now captures bound prior provenance before replacement and classifies
+same-source, changed-source, and unknown-prior imports. Profiles advance to
+Version 3 and snapshots to Version 2 with portable source diagnostics but no
+current-content identity. Cross-generation gameplay state is skipped while
+ordinary three-way changes remain independent. A modeless Update Compatibility
+report uses mutation-free production target resolution.
+
+All shipped gameplay operations now execute through an explicit mutation
+journal. Project and gameplay-state changes share the same rollback aggregate;
+execution exceptions, validator failures, and rollback failures have distinct
+truthful outcomes. Content-creation operations preflight their known late-
+failure paths, and multi-edit mutation primitives locally roll back recorded
+internal work.
+
+Sequential application/test builds complete with zero warnings and zero errors.
+Eighty-two focused Update Survival checks, all 25 Class A compatibility groups,
+and the QuickBMS suite pass. The current 6,691,681-byte, 395-sheet canonical CDB
+was inspected read-only and retains SHA-256
+`29BE149FD1AD68D849FA498F671A8E71868117EB3AA15B25643D86C647E76576`.
+The initial implementation was complete; Focused Engineering Review and Project
+Owner Interactive Acceptance remained pending. No commit or push was performed.
+
+# 2026-08-25 — Update Survival Focused Review Corrections
+
+Corrected all eight blocking findings from the first Focused Engineering Review.
+Current-content binding is now distinct from verified source provenance;
+unknown-source Version 2, legacy, mismatched, malformed, and unreadable prior
+state remains explicitly unverified. Untrusted history has actionable identity
+scrubbed, while verified history can reactivate only on exact-source return and
+full validation. Portable gameplay state now requires current-format and
+agreeing root, record, and verified target provenance.
+
+Operation rollback is a single-attempt state flow, including validator rejection
+when rollback itself fails. Add Camp Facilities now preflights unique item and
+craft targets plus object merge shape. Upgrade All Equipment resolves exactly
+one entry per approved ID. Typed compatibility failures cover the corrected
+operation paths, including `AssessmentFailed`, without mutation.
+
+Permanent focused coverage initially expanded from 82 to 137 checks. It
+exercises the reviewed provenance, history, portable-state, rollback, content preflight,
+compatibility, project-switch, production Undo/Redo, and serialized future-data
+contracts. Implementation corrections are complete; Renewed Focused Engineering
+Review and Project Owner Interactive Acceptance remain pending. No commit or
+push was performed.
+
+# 2026-08-25 — Update Survival Final Focused Corrections
+
+Closed the three remaining findings from Renewed Focused Engineering Review.
+Active records whose source identity is missing, invalid, or inconsistent with
+their verified manifest are now scrubbed into unknown history and cannot later
+reactivate. Legitimate verified history remains eligible for exact-source return
+only after full validation.
+
+Add Camp Facilities now preflights the connected craft source and its `lines`
+array whenever recipe creation is required. Permanent coverage expanded to 170
+focused checks with populated mismatch and legacy later-source cases, malformed
+craft substrates, production Add Camp/Upgrade compatibility classifications,
+report-level `AssessmentFailed`, and explicit rollback-attempt/Undo assertions.
+Implementation corrections are complete; Renewed Focused Engineering Review and
+Project Owner Interactive Acceptance remain pending. No commit or push was
+performed.

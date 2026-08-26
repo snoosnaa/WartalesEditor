@@ -38,7 +38,7 @@ public sealed class GameplayOperationStateModel
     public string ElementShapeFingerprint { get; init; } =
         string.Empty;
 
-    public string ProjectCompatibilityIdentity { get; init; } =
+    public string ProjectCompatibilityIdentity { get; set; } =
         string.Empty;
 
     public StartingResourcesSettings? StartingResources { get; init; }

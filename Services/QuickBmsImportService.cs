@@ -11,6 +11,7 @@ public sealed class QuickBmsImportService
     private readonly IExternalProcessRunner processRunner;
     private readonly ExtractionWorkspaceService workspaceService;
     private readonly FileFingerprintService fingerprintService;
+    private readonly CdbGenerationIdentityService identityService;
 
     public QuickBmsImportService(
         JsonDataService jsonDataService)
@@ -50,6 +51,8 @@ public sealed class QuickBmsImportService
         this.fingerprintService =
             fingerprintService
             ?? throw new ArgumentNullException(nameof(fingerprintService));
+        identityService =
+            new CdbGenerationIdentityService(fingerprintService);
     }
 
     public async Task<QuickBmsImportResult> ImportAsync(
@@ -84,6 +87,12 @@ public sealed class QuickBmsImportService
                 QuickBmsImportFailureKind.ExtractedCdbAlreadyExists,
                 "An existing extracted data file was found. Import was cancelled before extraction so the file was not replaced.");
         }
+
+        GameplayStateManifestSnapshot previousState =
+            replaceExistingExtractedCdb
+                ? jsonDataService.CaptureGameplayStateForReplacement(
+                    promotedCdbPath)
+                : GameplayStateManifestSnapshot.NoPriorCanonical;
 
         QuickBmsToolchainInfo toolchain =
             toolchainService.Validate(
@@ -195,7 +204,8 @@ public sealed class QuickBmsImportService
                     extractedCdb,
                     promotedCdbPath,
                     cdbFingerprint,
-                    replaceExistingExtractedCdb);
+                    replaceExistingExtractedCdb,
+                    previousState);
             FileFingerprint promotedCdbFingerprint =
                 fingerprintService.Calculate(
                     promotedCdbPath);
@@ -250,7 +260,8 @@ public sealed class QuickBmsImportService
         string extractedCdb,
         string promotedCdbPath,
         FileFingerprint expectedFingerprint,
-        bool replaceExistingExtractedCdb)
+        bool replaceExistingExtractedCdb,
+        GameplayStateManifestSnapshot previousState)
     {
         string extractedDirectory =
             Path.GetDirectoryName(promotedCdbPath)
@@ -332,6 +343,41 @@ public sealed class QuickBmsImportService
             }
 
             project.FileName = promotedCdbPath;
+
+            string sourceIdentity =
+                identityService.Normalize(
+                    promotedFingerprint.Sha256);
+
+            jsonDataService.ApplyAuthoritativeImportIdentity(
+                project,
+                sourceIdentity,
+                previousState);
+
+            SourceGenerationTransition transition =
+                !previousState.HadPriorCanonical
+                    ? SourceGenerationTransition.NoPreviousGeneration
+                    : previousState.HasVerifiedSourceProvenance &&
+                      identityService.AreEqual(
+                          previousState.SourceIdentity,
+                          sourceIdentity)
+                        ? SourceGenerationTransition.SameSourceGeneration
+                        : previousState.HasVerifiedSourceProvenance
+                            ? SourceGenerationTransition.ChangedSourceGeneration
+                            : SourceGenerationTransition.PreviousSourceGenerationUnknown;
+
+            if (transition is
+                SourceGenerationTransition.ChangedSourceGeneration or
+                SourceGenerationTransition.PreviousSourceGenerationUnknown)
+            {
+                project.SetUpdateCompatibilityReport(
+                    new UpdateCompatibilityReportService().Create(
+                        project,
+                        transition));
+            }
+
+            jsonDataService.PersistImportedGameplayState(
+                project);
+
             return project;
         }
         catch (QuickBmsImportException)

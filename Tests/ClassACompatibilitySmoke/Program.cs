@@ -1915,8 +1915,9 @@ static void VerifySharedPresetPreviousValues()
         $"wartales-restore-{Guid.NewGuid():N}.cdb");
     try
     {
-        persistence.Save(profileSource, cdbPath);
-        persistence.LoadIntoProject(reloadTarget, cdbPath);
+        JsonDataService dataService = new();
+        dataService.SaveProject(profileSource, cdbPath);
+        reloadTarget = dataService.LoadProject(cdbPath);
         ProjectMutationService reloadMutation = new();
         GameplayPresetService reloadService = new(
             reloadMutation,
@@ -1941,6 +1942,7 @@ static void VerifySharedPresetPreviousValues()
     {
         string sidecar = persistence.GetSidecarPath(cdbPath);
         if (File.Exists(sidecar)) File.Delete(sidecar);
+        if (File.Exists(cdbPath)) File.Delete(cdbPath);
     }
 }
 
@@ -5216,6 +5218,131 @@ static void VerifyApplyFeedbackState()
     partyEconomy.SetInputBindingValid(false);
     Check(!partyEconomy.ApplyFeedback.IsVisible,
         "Party Economy clears stale feedback for invalid input");
+
+    LocalizationService localization = new();
+    ReferenceDataService references = ReferenceDataService.Instance;
+    MainViewModel main = CreateMainViewModel(localization, references);
+    ProjectModel reportProject = CreateProject(
+        Sheet("constant", ScalarEntry("FishingDurationControl", "invalid")));
+    reportProject.SetUpdateCompatibilityReport(
+        new UpdateCompatibilityReportService().Create(
+            reportProject,
+            SourceGenerationTransition.ChangedSourceGeneration));
+    main.Project = reportProject;
+    Check(main.CheckCompatibilityCommand.CanExecute(null) &&
+          main.ReviewUpdateCompatibilityCommand.CanExecute(null),
+        "loaded project enables explicit compatibility check command");
+    UpdateCompatibilityReport firstCheck =
+        main.CheckCurrentProjectCompatibility();
+    Check(firstCheck.ProblematicGameplayTools.Any(item =>
+              item.ToolName == "Fishing Speed" &&
+              item.Status == GameplayCompatibilityStatus.TypeChanged) &&
+          !main.IsUpdateCompatibilityWindowOpen,
+        "explicit compatibility check assesses current project without implicitly opening a window");
+    new ProjectMutationService().EnsurePropertyByPath(
+        reportProject.Sheets.Single().Entries.Single(),
+        "value",
+        new JValue(10));
+    UpdateCompatibilityReport secondCheck =
+        main.CheckCurrentProjectCompatibility();
+    Check(!ReferenceEquals(firstCheck, secondCheck) &&
+          ReferenceEquals(reportProject.UpdateCompatibilityReport, secondCheck) &&
+          secondCheck.GameplayTools.Any(item =>
+              item.ToolName == "Fishing Speed" &&
+              item.Status == GameplayCompatibilityStatus.Compatible) &&
+          secondCheck.ProblematicGameplayTools.All(item =>
+              item.ToolName != "Fishing Speed"),
+        "repeated compatibility check replaces stale results using current in-memory content");
+
+    ProjectModel automaticallyReportedProject = CreateProject(
+        Sheet("constant", ScalarEntry("ReplacementFixture", 2)));
+    automaticallyReportedProject.SetUpdateCompatibilityReport(
+        new UpdateCompatibilityReportService().Create(
+            automaticallyReportedProject,
+            SourceGenerationTransition.ChangedSourceGeneration));
+    main.PromoteLoadedProject(
+        automaticallyReportedProject,
+        "automatic-publication-test.cdb");
+    Check(!main.IsUpdateCompatibilityWindowOpen &&
+          automaticallyReportedProject.UpdateCompatibilityReport != null,
+        "ordinary and QuickBMS shared changed-source publication retains background report data without auto-opening the full window");
+
+    ProjectModel unknownProvenanceProject = CreateProject(
+        Sheet("constant", ScalarEntry("UnknownFixture", 3)));
+    unknownProvenanceProject.SetUpdateCompatibilityReport(
+        new UpdateCompatibilityReportService().Create(
+            unknownProvenanceProject,
+            SourceGenerationTransition.CurrentSourceGenerationUnknown));
+    main.PromoteLoadedProject(
+        unknownProvenanceProject,
+        "unknown-publication-test.cdb");
+    Check(!main.IsUpdateCompatibilityWindowOpen &&
+          unknownProvenanceProject.UpdateCompatibilityReport?.Transition ==
+              SourceGenerationTransition.CurrentSourceGenerationUnknown,
+        "unknown-provenance publication retains background evidence without auto-opening the full window");
+
+    ProjectModel replacementProject = CreateProject(
+        Sheet("constant", ScalarEntry("ReplacementFixture", 2)));
+    main.Project = replacementProject;
+    Check(main.CheckCompatibilityCommand.CanExecute(null) &&
+          replacementProject.UpdateCompatibilityReport == null &&
+          !main.IsUpdateCompatibilityWindowOpen,
+        "project switch clears stale compatibility report and window state while keeping explicit check available");
+
+    MainViewModel emptyMain = CreateMainViewModel(localization, references);
+    Check(!emptyMain.CheckCompatibilityCommand.CanExecute(null),
+        "compatibility check command is disabled without a loaded project");
+
+    DirectoryInfo? sourceDirectory = new(AppContext.BaseDirectory);
+    string? compatibilityWindowPath = null;
+    string? mainWindowPath = null;
+    string? mainViewModelPath = null;
+    while (sourceDirectory != null &&
+           (compatibilityWindowPath == null ||
+            mainWindowPath == null ||
+            mainViewModelPath == null))
+    {
+        string compatibilityCandidate = Path.Combine(
+            sourceDirectory.FullName,
+            "Views",
+            "UpdateCompatibilityWindow.xaml");
+        string mainCandidate = Path.Combine(
+            sourceDirectory.FullName,
+            "MainWindow.xaml");
+        string mainViewModelCandidate = Path.Combine(
+            sourceDirectory.FullName,
+            "ViewModels",
+            "MainViewModel.cs");
+        if (File.Exists(compatibilityCandidate))
+            compatibilityWindowPath = compatibilityCandidate;
+        if (File.Exists(mainCandidate))
+            mainWindowPath = mainCandidate;
+        if (File.Exists(mainViewModelCandidate))
+            mainViewModelPath = mainViewModelCandidate;
+        sourceDirectory = sourceDirectory.Parent;
+    }
+    Check(compatibilityWindowPath != null &&
+          mainWindowPath != null &&
+          mainViewModelPath != null,
+        "compatibility workflow XAML is available for structural verification");
+    string compatibilityXaml = File.ReadAllText(compatibilityWindowPath!);
+    string mainXaml = File.ReadAllText(mainWindowPath!);
+    string mainViewModelSource = File.ReadAllText(mainViewModelPath!);
+    Check(compatibilityXaml.Contains("ShowInTaskbar=\"True\"", StringComparison.Ordinal) &&
+          compatibilityXaml.Contains("WindowStartupLocation=\"CenterOwner\"", StringComparison.Ordinal) &&
+          mainXaml.Contains("Header=\"_Check Compatibility\"", StringComparison.Ordinal) &&
+          mainXaml.Contains("Command=\"{Binding CheckCompatibilityCommand}\"", StringComparison.Ordinal),
+        "compatibility window and command use the established modeless utility-window configuration");
+    Check(mainViewModelSource.Contains(
+              "Owner = GetMainWindowOwner()",
+              StringComparison.Ordinal) &&
+          mainViewModelSource.Contains(
+              "updateCompatibilityWindow.DataContext = report;",
+              StringComparison.Ordinal) &&
+          mainViewModelSource.Contains(
+              "RestoreAndActivateWindow(updateCompatibilityWindow);",
+              StringComparison.Ordinal),
+        "compatibility window reuses one owned instance and refreshes it before focus");
     Console.WriteLine("PASS shared Apply feedback state");
 }
 
@@ -5505,6 +5632,19 @@ static void VerifyGameplayStateFileRoundTrip(
     GameplayOperationStatePersistenceService persistence = new();
     try
     {
+        byte[] cdbBytes = new System.Text.UTF8Encoding(false).GetBytes(
+            source.RootDocument.ToString(Newtonsoft.Json.Formatting.Indented));
+        File.WriteAllBytes(cdbPath, cdbBytes);
+        string identity = new CdbGenerationIdentityService().Calculate(cdbBytes);
+        source.EstablishPersistedIdentity(
+            identity, identity, SourceProvenanceStatus.Verified);
+        target.EstablishPersistedIdentity(
+            identity, identity, SourceProvenanceStatus.Verified);
+        foreach (GameplayOperationStateModel operationState in
+                 source.GameplayOperationStates)
+        {
+            operationState.ProjectCompatibilityIdentity = identity;
+        }
         persistence.Save(source, cdbPath);
         target.GameplayOperationStates.Clear();
         target.GameplayOperationStateWarnings.Clear();
@@ -5521,6 +5661,8 @@ static void VerifyGameplayStateFileRoundTrip(
         string sidecar = persistence.GetSidecarPath(cdbPath);
         if (File.Exists(sidecar))
             File.Delete(sidecar);
+        if (File.Exists(cdbPath))
+            File.Delete(cdbPath);
     }
 }
 
@@ -5544,7 +5686,8 @@ static void CheckPartyValues(
     int[] actual = current.Skip(2)
         .Select(record => record!["value"]!.Value<int>())
         .ToArray();
-    Check(actual.SequenceEqual(expected), $"{type} current expanded values");
+    Check(actual.SequenceEqual(expected),
+        $"{type} current expanded values: expected [{string.Join(",", expected)}], actual [{string.Join(",", actual)}]");
 }
 
 static void CheckPartyBaseline(
@@ -6088,6 +6231,12 @@ static ProjectModel CreateProject(params JObject[] sheets)
     ProjectModelFactory factory = new();
     foreach (JObject sheet in sheets)
         project.Sheets.Add(factory.CreateSheetModel(sheet));
+    string identity = new CdbGenerationIdentityService().Calculate(
+        new System.Text.UTF8Encoding(false).GetBytes(project.OriginalJson));
+    project.EstablishPersistedIdentity(
+        identity,
+        identity,
+        SourceProvenanceStatus.Verified);
     return project;
 }
 
@@ -6456,8 +6605,11 @@ static async Task VerifyQuickBmsImport()
 
         string currentSuccessfulCdb = validCdb;
         bool stagingCdbWasCreated = false;
+        Action? beforeSuccessfulExtraction = null;
         FakeExternalProcessRunner successfulRunner = new(request =>
         {
+            beforeSuccessfulExtraction?.Invoke();
+            beforeSuccessfulExtraction = null;
             string nested = Path.Combine(request.Arguments[2], "content", "db");
             Directory.CreateDirectory(nested);
             string stagedCdb =
@@ -6490,11 +6642,130 @@ static async Task VerifyQuickBmsImport()
             "cancelling replacement preserves the existing extracted file without running QuickBMS");
 
         currentSuccessfulCdb =
-            "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"Fixture\",\"value\":2}]}]}";
+            "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"FishingDurationControl\",\"value\":10}]}]}";
         QuickBmsImportResult second =
             await service.ImportAsync(
                 options,
                 replaceExistingExtractedCdb: true);
+
+        Check(first.Project.SourceProvenanceStatus == SourceProvenanceStatus.Verified &&
+              first.Project.SourceCdbGenerationIdentity ==
+                  first.Project.CurrentCdbContentIdentity,
+            "initial QuickBMS import establishes equal authoritative source and current identities");
+        Check(second.Project.UpdateCompatibilityReport?.Transition ==
+                  SourceGenerationTransition.ChangedSourceGeneration,
+            "different QuickBMS candidate is classified as a changed source generation");
+
+        string secondSource = second.Project.SourceCdbGenerationIdentity!;
+        ProjectMutationService secondMutation = new();
+        GameplayPresetService secondPreset = new(
+            secondMutation,
+            new GameplayOperationStateService(secondMutation));
+        ProjectOperationResult secondApplied = new ProjectOperationService().Execute(
+            new GameplayPresetOperation(
+                secondPreset,
+                ProgressionType.FishingSpeed,
+                "Fast"),
+            second.Project);
+        Check(secondApplied.Succeeded && second.Project.GameplayOperationStates.Count == 1,
+            "same-source compatibility fixture records real gameplay state before local save");
+        EntryModel secondEntry = second.Project.Sheets[0].Entries[0];
+        new ProjectMutationService().EnsurePropertyByPath(
+            secondEntry,
+            "localMarker",
+            new JValue(99));
+        new JsonDataService().SaveProject(second.Project, promotedCdb);
+        Check(second.Project.SourceCdbGenerationIdentity == secondSource &&
+              second.Project.CurrentCdbContentIdentity != secondSource,
+            "local save advances current identity while preserving QuickBMS source identity");
+
+        QuickBmsImportResult third =
+            await service.ImportAsync(
+                options,
+                replaceExistingExtractedCdb: true);
+        Check(third.Project.SourceCdbGenerationIdentity == secondSource &&
+              third.Project.CurrentCdbContentIdentity == secondSource,
+            "same-source re-import after edits compares source to source");
+        Check(third.Project.UpdateCompatibilityReport == null,
+            "same-source re-import creates no false generation-change report");
+        Check(third.Project.GameplayOperationStates.Count == 0 &&
+              third.Project.HistoricalGameplayOperationStates.Count == 1 &&
+              third.Project.HistoricalGameplayOperationStates[0]
+                  .ProjectCompatibilityIdentity == secondSource,
+            "same-source re-import revalidates incompatible target content and retains state as verified history");
+
+        third.Project.EstablishPersistedIdentity(
+            third.Project.CurrentCdbContentIdentity,
+            null,
+            SourceProvenanceStatus.Unknown);
+        new JsonDataService().SaveGameplayOperationState(third.Project);
+        QuickBmsImportResult unknownPrior = await service.ImportAsync(
+            options,
+            replaceExistingExtractedCdb: true);
+        Check(unknownPrior.Project.UpdateCompatibilityReport?.Transition ==
+                  SourceGenerationTransition.PreviousSourceGenerationUnknown,
+            "bound Version 2 manifest with null source is not classified as confirmed changed generation");
+        Check(unknownPrior.Project.HistoricalGameplayOperationStates.All(state =>
+                  string.IsNullOrWhiteSpace(state.ProjectCompatibilityIdentity)),
+            "QuickBMS retains null-source prior state only as unknown history");
+
+        string statePath = promotedCdb +
+            GameplayOperationStatePersistenceService.SidecarExtension;
+        File.WriteAllText(statePath, "{bad-json");
+        QuickBmsImportResult malformedPrior = await service.ImportAsync(
+            options,
+            replaceExistingExtractedCdb: true);
+        Check(malformedPrior.Project.UpdateCompatibilityReport?.Transition ==
+                  SourceGenerationTransition.PreviousSourceGenerationUnknown,
+            "malformed prior sidecar produces unverified-prior compatibility result");
+
+        File.WriteAllText(statePath, "{}");
+        FileStream unreadableLock = new(
+            statePath,
+            FileMode.Open,
+            FileAccess.ReadWrite,
+            FileShare.None);
+        beforeSuccessfulExtraction = unreadableLock.Dispose;
+        QuickBmsImportResult unreadablePrior = await service.ImportAsync(
+            options,
+            replaceExistingExtractedCdb: true);
+        Check(unreadablePrior.Project.UpdateCompatibilityReport?.Transition ==
+                  SourceGenerationTransition.PreviousSourceGenerationUnknown,
+            "unreadable prior sidecar produces unverified-prior compatibility result and safe replacement");
+
+        ProjectMutationService vanillaMutation = new();
+        GameplayPresetService vanillaPreset = new(
+            vanillaMutation,
+            new GameplayOperationStateService(vanillaMutation));
+        Check(new ProjectOperationService().Execute(
+                new GameplayPresetOperation(
+                    vanillaPreset,
+                    ProgressionType.FishingSpeed,
+                    "Vanilla"),
+                unreadablePrior.Project).Succeeded,
+            "verified-history return fixture records a content-compatible active state");
+        new JsonDataService().SaveGameplayOperationState(unreadablePrior.Project);
+
+        currentSuccessfulCdb =
+            "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"FishingDurationControl\",\"value\":20}]}]}";
+        QuickBmsImportResult changedSource = await service.ImportAsync(
+            options,
+            replaceExistingExtractedCdb: true);
+        Check(changedSource.Project.UpdateCompatibilityReport?.Transition ==
+                  SourceGenerationTransition.ChangedSourceGeneration &&
+              changedSource.Project.GameplayOperationStates.Count == 0 &&
+              changedSource.Project.HistoricalGameplayOperationStates.Any(state =>
+                  state.ProjectCompatibilityIdentity == secondSource),
+            "changed source moves prior active state to verified non-restorable history");
+
+        currentSuccessfulCdb =
+            "{\"sheets\":[{\"name\":\"constant\",\"lines\":[{\"id\":\"FishingDurationControl\",\"value\":10}]}]}";
+        QuickBmsImportResult returnedSource = await service.ImportAsync(
+            options,
+            replaceExistingExtractedCdb: true);
+        Check(returnedSource.Project.SourceCdbGenerationIdentity == secondSource &&
+              returnedSource.Project.GameplayOperationStates.Count == 1,
+            "exact verified source return reactivates history only after full content validation");
 
         Check(first.Project.Sheets.Count == 1 &&
               first.Project.Sheets[0].Name == "constant",
@@ -6507,7 +6778,7 @@ static async Task VerifyQuickBmsImport()
             "the durable extracted CDB retains the validated staging fingerprint");
         Check(stagingCdbWasCreated &&
               second.ExtractedCdbFingerprint != promotedFingerprint &&
-              second.Project.Sheets[0].Entries[0].SourceEntry?["value"]?.Value<int>() == 2,
+              returnedSource.Project.Sheets[0].Entries[0].SourceEntry?["value"]?.Value<int>() == 10,
             "approved replacement promotes the newly validated staging CDB over the existing durable file");
         Check(first.StagingDirectory != second.StagingDirectory &&
               first.SessionId != second.SessionId,
@@ -6534,10 +6805,7 @@ static async Task VerifyQuickBmsImport()
             "successful promotion leaves no importing artifact");
 
         JsonDataService statePersistence = new();
-        statePersistence.SaveGameplayOperationState(second.Project);
-        string statePath =
-            promotedCdb +
-            GameplayOperationStatePersistenceService.SidecarExtension;
+        statePersistence.SaveGameplayOperationState(returnedSource.Project);
         Check(File.Exists(statePath),
             "a project imported from Wartales can persist gameplay-operation state beside its durable CDB");
         File.Delete(statePath);
