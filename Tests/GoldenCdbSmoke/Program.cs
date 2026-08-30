@@ -1,6 +1,7 @@
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Operations;
@@ -587,17 +588,19 @@ try
         importSuccessFixture.Service);
     Check(await importSuccessMain.ImportCurrentWartalesAsGoldenAsync() &&
           importSuccessFixture.Runner.Requests.Count == 1 &&
-          importSuccessMain.CurrentFile == importSuccessFixture.PromotedCdbPath &&
-          importSuccessMain.Project!.SourceProvenanceStatus ==
-              SourceProvenanceStatus.Verified &&
-          importSuccessMain.Project.SourceCdbGenerationIdentity ==
-              importSuccessMain.Project.CurrentCdbContentIdentity &&
+          importSuccessMain.Project == null &&
+          importSuccessMain.CurrentFile == string.Empty &&
+          importSuccessMessages.UnsavedPromptCount == 0 &&
           importSuccessMessages.ConfirmationCount == 1,
-        "Golden import reuses production QuickBMS acquisition and publication with provenance");
+        "Golden import with no active project acquires and designates without opening a project");
     Check(File.ReadAllBytes(importSuccessGolden.GetCanonicalPath())
-              .SequenceEqual(File.ReadAllBytes(importSuccessFixture.PromotedCdbPath)) &&
+              .SequenceEqual(Encoding.UTF8.GetBytes(
+                  importSuccessFixture.ExtractedCdbJson)) &&
           importSuccessGolden.GetState().Identity ==
-              identities.Calculate(importSuccessFixture.PromotedCdbPath),
+              identities.Calculate(Encoding.UTF8.GetBytes(
+                  importSuccessFixture.ExtractedCdbJson)) &&
+          !File.Exists(importSuccessFixture.PromotedCdbPath) &&
+          importSuccessFixture.DetachedWorkspaceCount == 0,
         "successful current Wartales import designates exact durable bytes as Golden");
     Check(importSuccessFixture.Runner.Requests.Single().Arguments.Count == 3 &&
           importSuccessFixture.Runner.Requests.Single().Arguments.All(argument =>
@@ -624,48 +627,293 @@ try
         new GoldenCdbComparisonService(),
         quickBmsImportOptions: declineFixture.Options);
     declineMain.UseQuickBmsImportServiceForTesting(declineFixture.Service);
+    declineMain.ImportFromWartalesCommand.Execute(null);
+    ProjectModel declineActiveProject =
+        declineMain.Project
+        ?? throw new InvalidOperationException(
+            "Normal Import did not publish the decline fixture project.");
+    byte[] declineExtractedBytes =
+        File.ReadAllBytes(declineFixture.PromotedCdbPath);
+    byte[] declineSidecarBytes =
+        File.ReadAllBytes(declineFixture.PromotedCdbPath + ".wtstate");
+    declineFixture.ExtractedCdbJson = BaseJson(741);
     Check(!await declineMain.ImportCurrentWartalesAsGoldenAsync() &&
-          declineFixture.Runner.Requests.Count == 1 &&
-          declineMain.Project?.FileName == declineFixture.PromotedCdbPath &&
+          declineFixture.Runner.Requests.Count == 2 &&
+          ReferenceEquals(declineMain.Project, declineActiveProject) &&
+          declineMain.CurrentFile == declineFixture.PromotedCdbPath &&
           declineGolden.GetState().Identity == declineIdentity &&
+          declineMessages.UnsavedPromptCount == 0 &&
           declineMessages.ConfirmationCount == 1 &&
+          File.ReadAllBytes(declineFixture.PromotedCdbPath)
+              .SequenceEqual(declineExtractedBytes) &&
+          File.ReadAllBytes(declineFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(declineSidecarBytes) &&
+          declineFixture.DetachedWorkspaceCount == 0 &&
           declineMessages.LastInformation?.Contains(
               "not replaced",
               StringComparison.OrdinalIgnoreCase) == true,
-        "declining Golden replacement preserves old Golden and successful imported project");
+        "declining Golden replacement cleans detached acquisition and preserves old Golden and active Extracted project bytes and sidecar");
 
-    GoldenQuickBmsFixture cancelFixture = new(
+    GoldenQuickBmsFixture declineCleanupFixture = new(
         json,
-        Path.Combine(root, "Golden Import Cancel"),
-        BaseJson(75));
-    GoldenCdbService cancelImportGolden = new(
+        Path.Combine(root, "Golden Import Decline Cleanup"),
+        BaseJson(742));
+    GoldenCdbService declineCleanupGolden = new(
         json,
-        Path.Combine(root, "Golden Import Cancel Storage"));
-    cancelImportGolden.SetFromFile(sourceB);
-    string cancelImportIdentity = cancelImportGolden.GetState().Identity;
-    TestMessages cancelImportMessages = new(
+        Path.Combine(root, "Golden Import Decline Cleanup Storage"));
+    declineCleanupGolden.SetFromFile(sourceB);
+    string declineCleanupGoldenIdentity =
+        declineCleanupGolden.GetState().Identity;
+    TestMessages declineCleanupMessages = new(
         UnsavedChangesResult.Cancel,
-        confirmation: true);
-    MainViewModel cancelImportMain = CreateMain(
+        confirmation: false);
+    MainViewModel declineCleanupMain = CreateMain(
         json,
         new TestFileDialogs(),
-        cancelImportMessages,
-        cancelImportGolden,
+        declineCleanupMessages,
+        declineCleanupGolden,
         new GoldenCdbComparisonService(),
-        quickBmsImportOptions: cancelFixture.Options);
-    cancelImportMain.UseQuickBmsImportServiceForTesting(cancelFixture.Service);
-    ProjectModel cancelImportProject = json.LoadReferenceProject(sourceC);
-    cancelImportMain.PromoteLoadedProject(cancelImportProject, sourceC);
-    cancelImportProject.Sheets.Single().Entries.Single().Properties
-        .Single(property => property.EffectivePropertyPath == "value")
-        .Value = 751L;
-    Check(!await cancelImportMain.ImportCurrentWartalesAsGoldenAsync() &&
-          cancelFixture.Runner.Requests.Count == 0 &&
-          ReferenceEquals(cancelImportMain.Project, cancelImportProject) &&
-          cancelImportGolden.GetState().Identity == cancelImportIdentity &&
-          cancelImportMessages.UnsavedPromptCount == 1 &&
-          cancelImportMessages.ConfirmationCount == 0,
-        "cancelled shared import leaves current project and Golden unchanged");
+        quickBmsImportOptions: declineCleanupFixture.Options);
+    declineCleanupMain.UseQuickBmsImportServiceForTesting(
+        declineCleanupFixture.Service);
+    declineCleanupMain.ImportFromWartalesCommand.Execute(null);
+    ProjectModel declineCleanupActive =
+        declineCleanupMain.Project
+        ?? throw new InvalidOperationException(
+            "Normal Import did not publish the cleanup-decline fixture project.");
+    byte[] declineCleanupExtracted =
+        File.ReadAllBytes(declineCleanupFixture.PromotedCdbPath);
+    byte[] declineCleanupSidecar =
+        File.ReadAllBytes(
+            declineCleanupFixture.PromotedCdbPath + ".wtstate");
+    declineCleanupFixture.ExtractedCdbJson = BaseJson(743);
+    declineCleanupFixture.Runner.BlockCleanupForNext();
+    Check(!await declineCleanupMain.ImportCurrentWartalesAsGoldenAsync() &&
+          ReferenceEquals(
+              declineCleanupMain.Project,
+              declineCleanupActive) &&
+          declineCleanupGolden.GetState().Identity ==
+              declineCleanupGoldenIdentity &&
+          File.ReadAllBytes(declineCleanupFixture.PromotedCdbPath)
+              .SequenceEqual(declineCleanupExtracted) &&
+          File.ReadAllBytes(
+              declineCleanupFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(declineCleanupSidecar) &&
+          declineCleanupFixture.DetachedWorkspaceCount == 1 &&
+          declineCleanupMessages.LastWarning?.Contains(
+              "temporary Golden acquisition folder",
+              StringComparison.OrdinalIgnoreCase) == true &&
+          declineCleanupMain.Status.Contains(
+              "cleanup needs attention",
+              StringComparison.OrdinalIgnoreCase),
+        "declined replacement preserves the active Extracted project and surfaces detached cleanup failure");
+    string retainedDeclineWorkspace =
+        Directory.EnumerateDirectories(
+            declineCleanupFixture.DetachedStagingRoot).Single();
+    declineCleanupFixture.Runner.ReleaseCleanupBlock();
+    declineCleanupMessages.EnqueueConfirmation(true);
+    declineCleanupFixture.ExtractedCdbJson = BaseJson(744);
+    Check(await declineCleanupMain.ImportCurrentWartalesAsGoldenAsync() &&
+          declineCleanupFixture.Runner.Requests.Count == 3 &&
+          !string.Equals(
+              declineCleanupFixture.Runner.Requests[2].Arguments[2],
+              retainedDeclineWorkspace,
+              StringComparison.OrdinalIgnoreCase) &&
+          declineCleanupGolden.GetState().Identity !=
+              declineCleanupGoldenIdentity &&
+          ReferenceEquals(
+              declineCleanupMain.Project,
+              declineCleanupActive) &&
+          File.ReadAllBytes(declineCleanupFixture.PromotedCdbPath)
+              .SequenceEqual(declineCleanupExtracted) &&
+          File.ReadAllBytes(
+              declineCleanupFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(declineCleanupSidecar) &&
+          declineCleanupFixture.DetachedWorkspaceCount == 0,
+        "next production Golden acquisition reconciles retained owned session then creates and cleans exactly one fresh session");
+
+    GoldenQuickBmsFixture samePathFixture = new(
+        json,
+        Path.Combine(root, "Golden Import Same Path"),
+        BaseJson(75));
+    GoldenCdbService samePathGolden = new(
+        json,
+        Path.Combine(root, "Golden Import Same Path Storage"));
+    samePathGolden.SetFromFile(sourceB);
+    string samePathInitialGoldenIdentity =
+        samePathGolden.GetState().Identity;
+    TestMessages samePathMessages = new(
+        UnsavedChangesResult.Cancel,
+        confirmation: true);
+    TestFileDialogs samePathFileDialogs = new();
+    EditHistoryService acquisitionHistory = new();
+    string acquisitionProfileDirectory =
+        Path.Combine(root, "Acquisition Profile Library");
+    Directory.CreateDirectory(acquisitionProfileDirectory);
+    string profileSentinel = Path.Combine(
+        acquisitionProfileDirectory,
+        "profile-sentinel.wtprofile");
+    File.WriteAllText(profileSentinel, "profile-sentinel");
+    ModProfileLibraryService acquisitionProfileLibrary = new(
+        new ModProfileLibraryPathService(
+            acquisitionProfileDirectory),
+        new ModProfileSerializationService());
+    string acquisitionLanguageFile = Path.Combine(
+        root,
+        "acquisition-language.xml");
+    File.WriteAllText(
+        acquisitionLanguageFile,
+        "<cdb><sheet><A><name>Active Localized Name</name></A></sheet></cdb>");
+    LocalizationService acquisitionLocalization = new();
+    acquisitionLocalization.Load(acquisitionLanguageFile);
+    MainViewModel samePathMain = CreateMain(
+        json,
+        samePathFileDialogs,
+        samePathMessages,
+        samePathGolden,
+        new GoldenCdbComparisonService(),
+        acquisitionHistory,
+        quickBmsImportOptions: samePathFixture.Options,
+        profileLibrary: acquisitionProfileLibrary,
+        localizationService: acquisitionLocalization);
+    samePathMain.UseQuickBmsImportServiceForTesting(
+        samePathFixture.Service);
+    samePathMain.ImportFromWartalesCommand.Execute(null);
+    ProjectModel samePathProject =
+        samePathMain.Project
+        ?? throw new InvalidOperationException(
+            "Normal Import did not publish the same-path fixture project.");
+    Check(samePathMain.CurrentFile == samePathFixture.PromotedCdbPath &&
+          samePathProject.FileName == samePathFixture.PromotedCdbPath &&
+          File.Exists(samePathFixture.PromotedCdbPath) &&
+          samePathFixture.Runner.Requests.Count == 1,
+        "normal Import establishes the active durable Extracted project before Golden refresh");
+
+    PropertyModel acquisitionProperty =
+        samePathProject.Sheets.Single().Entries.Single().Properties
+            .Single(property => property.EffectivePropertyPath == "value");
+    acquisitionProperty.Value = 750L;
+    acquisitionProperty.Value = 751L;
+    Check(acquisitionHistory.Undo() &&
+          acquisitionHistory.CanUndo &&
+          acquisitionHistory.CanRedo,
+        "acquisition-only preservation fixture has both Undo and Redo history");
+    samePathProject.GameplayOperationStates.Add(
+        new GameplayOperationStateModel
+        {
+            OperationType = ProgressionType.Character,
+            TargetSheet = "constant",
+            TargetEntry = "A",
+            TargetPath = "value",
+            BaselineArray = new JArray(1, 2, 3),
+            AppliedPercentage = 75,
+            BaselineFingerprint = "baseline",
+            ExpectedCurrentFingerprint = "current",
+            ElementCount = 3,
+            ElementShapeFingerprint = "shape",
+            ProjectCompatibilityIdentity = "compatibility"
+        });
+    samePathProject.IsGameplayOperationStateModified = true;
+    UpdateCompatibilityReport acquisitionCompatibility = new(
+        SourceGenerationTransition.ExternalContentMismatch,
+        1,
+        0,
+        0,
+        Array.Empty<GameplayCompatibilityAssessment>(),
+        new[] { "fixture warning" },
+        "fixture player summary",
+        "fixture technical summary");
+    samePathProject.SetUpdateCompatibilityReport(
+        acquisitionCompatibility);
+    byte[] activeSidecar = Encoding.UTF8.GetBytes(
+        "active-project-state-sentinel");
+    File.WriteAllBytes(
+        samePathFixture.PromotedCdbPath + ".wtstate",
+        activeSidecar);
+    byte[] extractedBytesBeforeAcquisition =
+        File.ReadAllBytes(samePathFixture.PromotedCdbPath);
+    string snapshotSentinel = Path.Combine(root, "snapshot-sentinel.json");
+    File.WriteAllText(snapshotSentinel, "snapshot-sentinel");
+    ProjectModel activeProjectBeforeAcquisition = samePathMain.Project!;
+    string currentFileBeforeAcquisition = samePathMain.CurrentFile;
+    string projectFileBeforeAcquisition = samePathProject.FileName;
+    string jsonBeforeAcquisition =
+        samePathProject.RootDocument.ToString(Newtonsoft.Json.Formatting.None);
+    string identityBeforeAcquisition =
+        samePathProject.CurrentCdbContentIdentity;
+    string? sourceIdentityBeforeAcquisition =
+        samePathProject.SourceCdbGenerationIdentity;
+    SourceProvenanceStatus provenanceBeforeAcquisition =
+        samePathProject.SourceProvenanceStatus;
+    bool modifiedBeforeAcquisition = samePathProject.IsModified;
+    bool stateModifiedBeforeAcquisition =
+        samePathProject.IsGameplayOperationStateModified;
+    string gameplayStateBeforeAcquisition =
+        JArray.FromObject(samePathProject.GameplayOperationStates)
+            .ToString(Newtonsoft.Json.Formatting.None);
+    string[] referencesBeforeAcquisition =
+        ReferenceDataService.Instance.GetValues("constant", "value")
+            .Select(value => value.Value)
+            .ToArray();
+    samePathMain.UseProjectPublicationFailureForTesting(
+        () => throw new InvalidOperationException(
+            "Golden acquisition must not publish an active project."));
+    samePathFixture.ExtractedCdbJson = BaseJson(752);
+    byte[] expectedGoldenBytes =
+        Encoding.UTF8.GetBytes(samePathFixture.ExtractedCdbJson);
+    Check(await samePathMain.ImportCurrentWartalesAsGoldenAsync() &&
+          samePathFixture.Runner.Requests.Count == 2 &&
+          ReferenceEquals(samePathMain.Project, samePathProject) &&
+          samePathGolden.GetState().Identity !=
+              samePathInitialGoldenIdentity &&
+          File.ReadAllBytes(samePathGolden.GetCanonicalPath())
+              .SequenceEqual(expectedGoldenBytes) &&
+          samePathMessages.UnsavedPromptCount == 0 &&
+          samePathMessages.ConfirmationCount == 1 &&
+          samePathFileDialogs.SaveCount == 0,
+        "same-path Golden acquisition succeeds independently with unsaved CDB and gameplay-state changes without abandon prompt or Save");
+    Check(ReferenceEquals(samePathMain.Project, activeProjectBeforeAcquisition) &&
+          samePathMain.CurrentFile == currentFileBeforeAcquisition &&
+          samePathProject.FileName == projectFileBeforeAcquisition &&
+          samePathProject.RootDocument.ToString(Newtonsoft.Json.Formatting.None) ==
+              jsonBeforeAcquisition &&
+          samePathProject.CurrentCdbContentIdentity ==
+              identityBeforeAcquisition &&
+          samePathProject.SourceCdbGenerationIdentity ==
+              sourceIdentityBeforeAcquisition &&
+          samePathProject.SourceProvenanceStatus ==
+              provenanceBeforeAcquisition &&
+          samePathProject.IsModified == modifiedBeforeAcquisition &&
+          samePathProject.IsGameplayOperationStateModified ==
+              stateModifiedBeforeAcquisition,
+        "same-path Golden acquisition preserves active project reference file JSON identities provenance and modification flags");
+    Check(JArray.FromObject(samePathProject.GameplayOperationStates)
+              .ToString(Newtonsoft.Json.Formatting.None) ==
+              gameplayStateBeforeAcquisition &&
+          ReferenceEquals(
+              samePathProject.UpdateCompatibilityReport,
+              acquisitionCompatibility) &&
+          acquisitionHistory.CanUndo &&
+          acquisitionHistory.CanRedo &&
+          ReferenceDataService.Instance.GetValues("constant", "value")
+              .Select(value => value.Value)
+              .SequenceEqual(referencesBeforeAcquisition) &&
+          acquisitionLocalization.EntryCount == 1 &&
+          acquisitionLocalization.GetLocalizedName("A") ==
+              "Active Localized Name",
+        "Golden acquisition preserves gameplay state compatibility Undo Redo reference and localization data");
+    Check(File.ReadAllBytes(samePathFixture.PromotedCdbPath)
+              .SequenceEqual(extractedBytesBeforeAcquisition) &&
+          File.ReadAllBytes(samePathFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(activeSidecar) &&
+          File.ReadAllText(profileSentinel) == "profile-sentinel" &&
+          File.ReadAllText(snapshotSentinel) == "snapshot-sentinel" &&
+          samePathFixture.DetachedWorkspaceCount == 0 &&
+          samePathFixture.Runner.Requests[1].Arguments[2].StartsWith(
+              samePathFixture.DetachedStagingRoot +
+              Path.DirectorySeparatorChar,
+              StringComparison.OrdinalIgnoreCase),
+        "same-path Golden acquisition leaves Extracted bytes active sidecar profiles snapshots unchanged and cleans detached workspace");
 
     GoldenQuickBmsFixture failureFixture = new(
         json,
@@ -688,13 +936,35 @@ try
         new GoldenCdbComparisonService(),
         quickBmsImportOptions: failureFixture.Options);
     importFailureMain.UseQuickBmsImportServiceForTesting(failureFixture.Service);
+    Directory.CreateDirectory(
+        Path.GetDirectoryName(failureFixture.PromotedCdbPath)!);
+    File.WriteAllText(
+        failureFixture.PromotedCdbPath,
+        BaseJson(760));
+    byte[] importFailureSidecar = Encoding.UTF8.GetBytes(
+        "import-failure-active-sidecar");
+    File.WriteAllBytes(
+        failureFixture.PromotedCdbPath + ".wtstate",
+        importFailureSidecar);
+    byte[] importFailureExtracted =
+        File.ReadAllBytes(failureFixture.PromotedCdbPath);
+    ProjectModel failureActiveProject =
+        json.LoadReferenceProject(failureFixture.PromotedCdbPath);
+    importFailureMain.PromoteLoadedProject(
+        failureActiveProject,
+        failureFixture.PromotedCdbPath);
     Check(!await importFailureMain.ImportCurrentWartalesAsGoldenAsync() &&
           failureFixture.Runner.Requests.Count == 1 &&
-          importFailureMain.Project == null &&
+          ReferenceEquals(importFailureMain.Project, failureActiveProject) &&
+          importFailureMain.CurrentFile == failureFixture.PromotedCdbPath &&
+          File.ReadAllBytes(failureFixture.PromotedCdbPath)
+              .SequenceEqual(importFailureExtracted) &&
+          File.ReadAllBytes(failureFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(importFailureSidecar) &&
           importFailureGolden.GetState().Identity == importFailureIdentity &&
           importFailureMessages.LastError != null &&
           importFailureMessages.ConfirmationCount == 0,
-        "failed shared QuickBMS import creates no project or Golden replacement");
+        "failed shared QuickBMS acquisition preserves active project and Golden");
 
     GoldenQuickBmsFixture designationFailureFixture = new(
         json,
@@ -721,20 +991,66 @@ try
         quickBmsImportOptions: designationFailureFixture.Options);
     designationFailureMain.UseQuickBmsImportServiceForTesting(
         designationFailureFixture.Service);
+    designationFailureMain.ImportFromWartalesCommand.Execute(null);
+    ProjectModel designationActiveProject =
+        designationFailureMain.Project
+        ?? throw new InvalidOperationException(
+            "Normal Import did not publish the designation-failure fixture project.");
+    byte[] designationExtractedBytes =
+        File.ReadAllBytes(designationFailureFixture.PromotedCdbPath);
+    byte[] designationSidecarBytes =
+        File.ReadAllBytes(
+            designationFailureFixture.PromotedCdbPath + ".wtstate");
+    designationFailureFixture.ExtractedCdbJson = BaseJson(771);
+    designationFailureFixture.Runner.BlockCleanupForNext();
     Check(!await designationFailureMain.ImportCurrentWartalesAsGoldenAsync() &&
-          designationFailureMain.Project?.FileName ==
+          ReferenceEquals(
+              designationFailureMain.Project,
+              designationActiveProject) &&
+          designationFailureMain.CurrentFile ==
               designationFailureFixture.PromotedCdbPath &&
-          File.Exists(designationFailureFixture.PromotedCdbPath) &&
+          File.ReadAllBytes(designationFailureFixture.PromotedCdbPath)
+              .SequenceEqual(designationExtractedBytes) &&
+          File.ReadAllBytes(
+              designationFailureFixture.PromotedCdbPath + ".wtstate")
+              .SequenceEqual(designationSidecarBytes) &&
+          designationFailureFixture.DetachedWorkspaceCount == 1 &&
           designationFailureGolden.GetState().Identity ==
               designationOldIdentity &&
           designationFailureMessages.LastError?.Contains(
               "imported successfully",
               StringComparison.OrdinalIgnoreCase) == true &&
+          designationFailureMessages.LastError?.Contains(
+              "temporary Golden acquisition folder",
+              StringComparison.OrdinalIgnoreCase) == true &&
           designationFailureMessages.ConfirmationCount == 1 &&
           designationFailureMain.Status.Contains(
               "import succeeded",
               StringComparison.OrdinalIgnoreCase),
-        "Golden designation failure preserves truthful successful import and previous Golden");
+        "Golden designation and cleanup failure preserves truthful acquisition active Extracted project and previous Golden");
+    int requestsBeforeBlockedReconciliation =
+        designationFailureFixture.Runner.Requests.Count;
+    Check(!await designationFailureMain.ImportCurrentWartalesAsGoldenAsync() &&
+          designationFailureFixture.Runner.Requests.Count ==
+              requestsBeforeBlockedReconciliation &&
+          designationFailureFixture.DetachedWorkspaceCount == 1 &&
+          designationFailureMessages.LastError?.Contains(
+              "retained temporary Golden acquisition folder",
+              StringComparison.OrdinalIgnoreCase) == true &&
+          designationFailureGolden.GetState().Identity ==
+              designationOldIdentity &&
+          ReferenceEquals(
+              designationFailureMain.Project,
+              designationActiveProject),
+        "undeletable retained owned session blocks new Golden acquisition before QuickBMS or another GUID workspace");
+    designationFailureFixture.Runner.ReleaseCleanupBlock();
+    Check(!await designationFailureMain.ImportCurrentWartalesAsGoldenAsync() &&
+          designationFailureFixture.Runner.Requests.Count ==
+              requestsBeforeBlockedReconciliation + 1 &&
+          designationFailureFixture.DetachedWorkspaceCount == 0 &&
+          designationFailureGolden.GetState().Identity ==
+              designationOldIdentity,
+        "next safe production attempt reconciles retained designation-failure session and leaves no temporary bloat");
 
     GoldenQuickBmsFixture originalCommandFixture = new(
         json,
@@ -787,6 +1103,39 @@ try
               "imported successfully",
               StringComparison.OrdinalIgnoreCase) == true,
         "original Import From Wartales command retains normal success status and messaging");
+
+    GoldenQuickBmsFixture normalUnsavedFixture = new(
+        json,
+        Path.Combine(root, "Normal Import Unsaved Protection"),
+        BaseJson(781));
+    TestMessages normalUnsavedMessages = new(
+        UnsavedChangesResult.Cancel,
+        confirmation: true);
+    MainViewModel normalUnsavedMain = CreateMain(
+        json,
+        new TestFileDialogs(),
+        normalUnsavedMessages,
+        new GoldenCdbService(
+            json,
+            Path.Combine(root, "Normal Import Unsaved Golden Storage")),
+        new GoldenCdbComparisonService(),
+        quickBmsImportOptions: normalUnsavedFixture.Options);
+    normalUnsavedMain.UseQuickBmsImportServiceForTesting(
+        normalUnsavedFixture.Service);
+    ProjectModel normalUnsavedProject =
+        json.LoadReferenceProject(sourceC);
+    normalUnsavedMain.PromoteLoadedProject(
+        normalUnsavedProject,
+        sourceC);
+    normalUnsavedProject.Sheets.Single().Entries.Single().Properties
+        .Single(property => property.EffectivePropertyPath == "value")
+        .Value = 782L;
+    normalUnsavedMain.ImportFromWartalesCommand.Execute(null);
+    Check(normalUnsavedMessages.UnsavedPromptCount == 1 &&
+          normalUnsavedFixture.Runner.Requests.Count == 0 &&
+          ReferenceEquals(normalUnsavedMain.Project, normalUnsavedProject) &&
+          normalUnsavedMain.CurrentFile == sourceC,
+        "normal Import From Wartales retains abandon-unsaved protection and active project preservation on cancel");
 
     Exception? lifecycleException = null;
     Thread lifecycleThread = new(() =>
@@ -1311,6 +1660,9 @@ try
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown
         };
+        SynchronizationContext.SetSynchronizationContext(
+            new DispatcherSynchronizationContext(
+                Dispatcher.CurrentDispatcher));
         application.Resources.MergedDictionaries.Add(
             new ResourceDictionary
             {
@@ -1334,6 +1686,41 @@ try
 
         try
         {
+            GoldenCdbWindow OpenGoldenWindow(MainViewModel main)
+            {
+                main.ShowGoldenCdbCommand.Execute(null);
+                return application.Windows
+                    .OfType<GoldenCdbWindow>()
+                    .Single(candidate => candidate.IsVisible);
+            }
+
+            GoldenCdbViewModel GoldenViewModel(
+                GoldenCdbWindow window) =>
+                (GoldenCdbViewModel)window.DataContext;
+
+            void PumpUntil(
+                Func<bool> condition,
+                string failureMessage)
+            {
+                DateTime deadline = DateTime.UtcNow.AddSeconds(5);
+                while (!condition() && DateTime.UtcNow < deadline)
+                {
+                    DispatcherFrame frame = new();
+                    _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+                        DispatcherPriority.Background,
+                        new Action(() => frame.Continue = false));
+                    Dispatcher.PushFrame(frame);
+                    Thread.Sleep(1);
+                }
+
+                if (!condition())
+                    throw new InvalidOperationException(failureMessage);
+            }
+
+            string windowSourceA = WriteCdb(
+                "golden-window-source-a.cdb",
+                BaseJson(90));
+
             GoldenQuickBmsFixture fixture = new(
                 json,
                 Path.Combine(root, "Golden Window Lifecycle"),
@@ -1366,7 +1753,6 @@ try
             {
                 if (cycle > 1)
                 {
-                    File.Delete(fixture.PromotedCdbPath);
                     fixture.ExtractedCdbJson = BaseJson(78 + cycle);
                 }
 
@@ -1378,16 +1764,63 @@ try
                 Button importButton = FindButton(
                     window,
                     "Import Current Wartales CDB as Golden");
+                GoldenCdbViewModel windowViewModel =
+                    GoldenViewModel(window);
+                TextBlock operationStatusText =
+                    window.FindName("OperationStatusText") as TextBlock
+                    ?? throw new InvalidOperationException(
+                        "Golden operation status area was not found.");
 
                 Check(lifecycleMain.IsGoldenCdbWindowOpen &&
                       !ReferenceEquals(previousWindow, window),
                     $"Golden lifecycle cycle {cycle} opens one fresh tracked window");
+                Check(operationStatusText.TextWrapping == TextWrapping.Wrap &&
+                      !windowViewModel.HasOperationStatus,
+                    $"Golden lifecycle cycle {cycle} opens with one wrapping local status area and no stale result");
+                Check(!operationStatusText.Text.Contains(
+                          "sha256",
+                          StringComparison.OrdinalIgnoreCase),
+                    $"Golden lifecycle cycle {cycle} does not restore visible identity or hash text");
+
+                if (cycle == 1)
+                {
+                    windowViewModel.ShowOperationInformation(
+                        "A deliberately long Golden operation result remains readable inside the management window and wraps without hiding the available actions or Close button.");
+                    window.UpdateLayout();
+                    Check(operationStatusText.TextWrapping == TextWrapping.Wrap &&
+                          operationStatusText.ActualWidth > 0 &&
+                          FindButton(window, "Close").IsVisible &&
+                          importButton.IsVisible,
+                        "long local Golden result wraps at normal window size while actions remain reachable");
+                }
 
                 int requestsBefore = fixture.Runner.Requests.Count;
                 int confirmationsBefore = lifecycleMessages.ConfirmationCount;
                 int informationBefore = lifecycleMessages.InformationCount;
-                importButton.RaiseEvent(
-                    new RoutedEventArgs(Button.ClickEvent));
+                if (cycle == 1)
+                    fixture.Runner.BlockNext();
+
+                importButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                if (cycle == 1)
+                {
+                    Check(windowViewModel.IsOperationBusy &&
+                          windowViewModel.OperationStatus ==
+                              "Importing current Wartales CDB for Golden..." &&
+                          operationStatusText.Text ==
+                              "Importing current Wartales CDB for Golden..." &&
+                          !importButton.IsEnabled,
+                        "Import as Golden begins with visible local progress and blocks duplicate import clicks");
+                    fixture.Runner.Release();
+                    PumpUntil(
+                        () => !windowViewModel.IsOperationBusy,
+                        "Timed out waiting for Golden import completion.");
+                    DispatcherFrame bindingFrame = new();
+                    _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+                        DispatcherPriority.Background,
+                        new Action(() => bindingFrame.Continue = false));
+                    Dispatcher.PushFrame(bindingFrame);
+                }
 
                 string currentIdentity = lifecycleGolden.GetState().Identity;
                 Check(fixture.Runner.Requests.Count == requestsBefore + 1 &&
@@ -1395,19 +1828,36 @@ try
                       lifecycleMessages.ConfirmationTitles.Last() ==
                           "Replace Golden CDB?",
                     $"Golden lifecycle cycle {cycle} produces exactly one import and replacement confirmation");
-                Check(lifecycleMessages.InformationCount == informationBefore + 2 &&
-                      lifecycleMain.Project?.FileName == fixture.PromotedCdbPath &&
-                      lifecycleMain.Project.SourceProvenanceStatus ==
-                          SourceProvenanceStatus.Verified &&
-                      lifecycleMain.Project.SourceCdbGenerationIdentity ==
-                          lifecycleMain.Project.CurrentCdbContentIdentity,
-                    $"Golden lifecycle cycle {cycle} produces one import result one designation result and normal provenance");
+                Check(lifecycleMessages.InformationCount == informationBefore + 1 &&
+                      lifecycleMain.Project == null &&
+                      lifecycleMain.CurrentFile == string.Empty,
+                    $"Golden lifecycle cycle {cycle} produces one designation result without active-project publication");
                 Check(currentIdentity != previousIdentity &&
-                      currentIdentity == identities.Calculate(fixture.PromotedCdbPath) &&
+                      currentIdentity == identities.Calculate(
+                          Encoding.UTF8.GetBytes(fixture.ExtractedCdbJson)) &&
                       File.ReadAllBytes(lifecycleGolden.GetCanonicalPath())
-                          .SequenceEqual(File.ReadAllBytes(fixture.PromotedCdbPath)) &&
+                          .SequenceEqual(Encoding.UTF8.GetBytes(
+                              fixture.ExtractedCdbJson)) &&
+                      !File.Exists(fixture.PromotedCdbPath) &&
+                      fixture.DetachedWorkspaceCount == 0 &&
                       OnlyCanonicalFile(lifecycleGolden),
                     $"Golden lifecycle cycle {cycle} atomically designates exact imported bytes without residue");
+                if (windowViewModel.OperationStatus !=
+                        "Current Wartales CDB imported and set as Golden." ||
+                    !windowViewModel.IsOperationStatusSuccess ||
+                    operationStatusText.Text !=
+                        "Current Wartales CDB imported and set as Golden.")
+                {
+                    throw new InvalidOperationException(
+                        $"Unexpected Golden local result: VM='{windowViewModel.OperationStatus}', text='{operationStatusText.Text}', success={windowViewModel.IsOperationStatusSuccess}.");
+                }
+
+                Check(windowViewModel.OperationStatus ==
+                          "Current Wartales CDB imported and set as Golden." &&
+                      windowViewModel.IsOperationStatusSuccess &&
+                      operationStatusText.Text ==
+                          "Current Wartales CDB imported and set as Golden.",
+                    $"Golden lifecycle cycle {cycle} displays exactly one local import and designation success result");
 
                 if (cycle == 1)
                 {
@@ -1438,8 +1888,287 @@ try
                 new RoutedEventArgs(Button.ClickEvent));
             Check(fixture.Runner.Requests.Count == 3 &&
                   lifecycleMessages.ConfirmationCount == 3 &&
-                  lifecycleMessages.InformationCount == 6,
+                  lifecycleMessages.InformationCount == 3,
                 "three Golden window cycles retain one event path without duplicate callbacks or messages");
+
+            GoldenQuickBmsFixture declineFixture = new(
+                json,
+                Path.Combine(root, "Golden Window Import Decline"),
+                BaseJson(91));
+            GoldenCdbService declineGolden = new(
+                json,
+                Path.Combine(root, "Golden Window Import Decline Storage"));
+            declineGolden.SetFromFile(sourceB);
+            MainViewModel declineMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: false),
+                declineGolden,
+                new GoldenCdbComparisonService(),
+                quickBmsImportOptions: declineFixture.Options);
+            declineMain.UseQuickBmsImportServiceForTesting(
+                declineFixture.Service);
+            GoldenCdbWindow declineWindow = OpenGoldenWindow(declineMain);
+            declineFixture.Runner.BlockCleanupForNext();
+            FindButton(declineWindow, "Import Current Wartales CDB as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(declineWindow).OperationStatus.Contains(
+                      "Current Wartales CDB was imported. Existing Golden CDB was not replaced.",
+                      StringComparison.Ordinal) &&
+                  GoldenViewModel(declineWindow).OperationStatus.Contains(
+                      "temporary Golden acquisition folder",
+                      StringComparison.OrdinalIgnoreCase) &&
+                  GoldenViewModel(declineWindow).IsOperationStatusWarning &&
+                  declineMain.Project == null &&
+                  declineMain.CurrentFile == string.Empty,
+                "declined Golden replacement plus detached cleanup failure displays both results in the local Golden status");
+            declineFixture.Runner.ReleaseCleanupBlock();
+            FindButton(declineWindow, "Import Current Wartales CDB as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(declineFixture.DetachedWorkspaceCount == 0,
+                "next live Golden-window acquisition reconciles retained cleanup-warning workspace");
+            declineWindow.Close();
+
+            GoldenQuickBmsFixture failedImportFixture = new(
+                json,
+                Path.Combine(root, "Golden Window Import Failure"),
+                BaseJson(92),
+                failImport: true);
+            GoldenCdbService failedImportGolden = new(
+                json,
+                Path.Combine(root, "Golden Window Import Failure Storage"));
+            MainViewModel failedImportMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: true),
+                failedImportGolden,
+                new GoldenCdbComparisonService(),
+                quickBmsImportOptions: failedImportFixture.Options);
+            failedImportMain.UseQuickBmsImportServiceForTesting(
+                failedImportFixture.Service);
+            GoldenCdbWindow failedImportWindow = OpenGoldenWindow(failedImportMain);
+            FindButton(failedImportWindow, "Import Current Wartales CDB as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(failedImportWindow).OperationStatus.Contains(
+                      "QuickBMS",
+                      StringComparison.OrdinalIgnoreCase) &&
+                  GoldenViewModel(failedImportWindow).IsOperationStatusError,
+                "QuickBMS import failure displays its existing meaningful summary locally");
+            failedImportWindow.Close();
+
+            GoldenQuickBmsFixture designationFixture = new(
+                json,
+                Path.Combine(root, "Golden Window Designation Failure"),
+                BaseJson(93));
+            string designationStorage =
+                Path.Combine(root, "Golden Window Designation Failure Storage");
+            GoldenCdbService designationSeed = new(json, designationStorage);
+            designationSeed.SetFromFile(sourceB);
+            GoldenCdbService designationGolden = new(
+                json,
+                designationStorage,
+                new FaultHooks { ThrowAfterPromotion = true });
+            MainViewModel designationMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: true),
+                designationGolden,
+                new GoldenCdbComparisonService(),
+                quickBmsImportOptions: designationFixture.Options);
+            designationMain.UseQuickBmsImportServiceForTesting(
+                designationFixture.Service);
+            GoldenCdbWindow designationWindow = OpenGoldenWindow(designationMain);
+            FindButton(designationWindow, "Import Current Wartales CDB as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(designationWindow).OperationStatus ==
+                      "Current Wartales CDB was imported, but Golden CDB could not be updated." &&
+                  GoldenViewModel(designationWindow).IsOperationStatusError &&
+                  designationMain.Project == null &&
+                  designationMain.CurrentFile == string.Empty,
+                "successful import with failed Golden designation displays a split truthful local result");
+            designationWindow.Close();
+
+            string managementStorage =
+                Path.Combine(root, "Golden Window Management Storage");
+            GoldenCdbService managementGolden = new(json, managementStorage);
+            TestMessages managementMessages = new(
+                UnsavedChangesResult.Discard,
+                confirmation: true);
+            MainViewModel managementMain = CreateMain(
+                json,
+                new TestFileDialogs { OpenFileName = sourceB },
+                managementMessages,
+                managementGolden,
+                new GoldenCdbComparisonService());
+            managementMain.PromoteLoadedProject(
+                json.LoadReferenceProject(windowSourceA),
+                windowSourceA);
+            GoldenCdbWindow managementWindow = OpenGoldenWindow(managementMain);
+            GoldenCdbViewModel managementViewModel = GoldenViewModel(managementWindow);
+            FindButton(managementWindow, "Set Current Project as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus ==
+                      "Golden CDB set from the current project." &&
+                  managementViewModel.IsOperationStatusSuccess,
+                "Set Current success displays local success");
+
+            managementMessages.EnqueueConfirmation(false);
+            FindButton(managementWindow, "Replace with Current Project")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus ==
+                      "Golden CDB was not changed." &&
+                  managementViewModel.IsOperationStatusWarning,
+                "Replace decline replaces the prior local message with one cancellation result");
+
+            managementMain.PromoteLoadedProject(
+                json.LoadReferenceProject(sourceC),
+                sourceC);
+            managementMessages.EnqueueConfirmation(true);
+            FindButton(managementWindow, "Replace with Current Project")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus ==
+                      "Golden CDB replaced." &&
+                  managementGolden.GetState().Identity == identities.Calculate(sourceC),
+                "Replace success displays local result and uses the authoritative designation service");
+
+            FindButton(managementWindow, "Compare Current to Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus.StartsWith(
+                      "Comparison complete.",
+                      StringComparison.Ordinal) &&
+                  managementViewModel.Comparison != null,
+                "Compare completion displays the existing summary locally and retains the comparison model");
+
+            FindButton(managementWindow, "Remove Golden CDB")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus ==
+                      "Golden CDB removed." &&
+                  managementViewModel.IsOperationStatusSuccess &&
+                  !managementGolden.GetState().CanonicalFileExists,
+                "Remove success displays local result");
+
+            FindButton(managementWindow, managementViewModel.SelectText)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.OperationStatus ==
+                      "Golden CDB set from the selected file." &&
+                  managementViewModel.IsOperationStatusSuccess,
+                "standalone Select CDB success displays local result");
+
+            ProjectModel invalidSetProject =
+                json.LoadReferenceProject(windowSourceA);
+            managementMain.PromoteLoadedProject(
+                invalidSetProject,
+                windowSourceA);
+            invalidSetProject.Sheets.Single().Entries.Single().Properties
+                .Single(property => property.EffectivePropertyPath == "value")
+                .Value = 999L;
+            FindButton(managementWindow, "Replace with Current Project")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(managementViewModel.IsOperationStatusError &&
+                  managementViewModel.OperationStatus ==
+                      "The current project could not be set as Golden.",
+                "Set Current validation failure displays concise local failure");
+            managementWindow.Close();
+
+            string cleanupStorage =
+                Path.Combine(root, "Golden Window Cleanup Warning Storage");
+            GoldenCdbService cleanupSeed = new(json, cleanupStorage);
+            cleanupSeed.SetFromFile(windowSourceA);
+            GoldenCdbService cleanupGolden = new(
+                json,
+                cleanupStorage,
+                new FaultHooks { FailRollbackCleanupOnce = true });
+            MainViewModel cleanupMain = CreateMain(
+                json,
+                new TestFileDialogs { OpenFileName = sourceB },
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: true),
+                cleanupGolden,
+                new GoldenCdbComparisonService());
+            GoldenCdbWindow cleanupWindow = OpenGoldenWindow(cleanupMain);
+            FindButton(cleanupWindow, "Select Replacement CDB")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(cleanupGolden.GetState().HasCleanupWarning &&
+                  GoldenViewModel(cleanupWindow).IsOperationStatusWarning &&
+                  GoldenViewModel(cleanupWindow).OperationStatus.Contains(
+                      "temporary",
+                      StringComparison.OrdinalIgnoreCase),
+                "Golden cleanup warning remains visible in the local status area");
+            cleanupWindow.Close();
+
+            GoldenCdbService loadGolden = new(
+                json,
+                Path.Combine(root, "Golden Window Load Storage"));
+            loadGolden.SetFromFile(sourceC);
+            MainViewModel loadSuccessMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: true),
+                loadGolden,
+                new GoldenCdbComparisonService());
+            loadSuccessMain.PromoteLoadedProject(
+                json.LoadReferenceProject(windowSourceA),
+                windowSourceA);
+            GoldenCdbWindow loadSuccessWindow = OpenGoldenWindow(loadSuccessMain);
+            FindButton(loadSuccessWindow, "Load Golden CDB")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(loadSuccessWindow).OperationStatus ==
+                      "Golden CDB loaded." &&
+                  GoldenViewModel(loadSuccessWindow).IsOperationStatusSuccess,
+                "Load Golden success displays local result");
+            loadSuccessWindow.Close();
+
+            MainViewModel loadCancelMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Cancel,
+                    confirmation: true),
+                loadGolden,
+                new GoldenCdbComparisonService());
+            ProjectModel dirtyLoadProject =
+                json.LoadReferenceProject(windowSourceA);
+            loadCancelMain.PromoteLoadedProject(
+                dirtyLoadProject,
+                windowSourceA);
+            dirtyLoadProject.Sheets.Single().Entries.Single().Properties
+                .Single(property => property.EffectivePropertyPath == "value")
+                .Value = 998L;
+            GoldenCdbWindow loadCancelWindow = OpenGoldenWindow(loadCancelMain);
+            FindButton(loadCancelWindow, "Load Golden CDB")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(loadCancelWindow).OperationStatus ==
+                      "Load cancelled. The current project was not changed." &&
+                  GoldenViewModel(loadCancelWindow).IsOperationStatusWarning,
+                "Load Golden cancellation displays local result");
+            loadCancelWindow.Close();
+
+            File.WriteAllText(loadGolden.GetCanonicalPath(), "invalid Golden");
+            MainViewModel loadFailureMain = CreateMain(
+                json,
+                new TestFileDialogs(),
+                new TestMessages(
+                    UnsavedChangesResult.Discard,
+                    confirmation: true),
+                loadGolden,
+                new GoldenCdbComparisonService());
+            GoldenCdbWindow loadFailureWindow = OpenGoldenWindow(loadFailureMain);
+            FindButton(loadFailureWindow, "Load Golden CDB")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(GoldenViewModel(loadFailureWindow).OperationStatus ==
+                      "Golden CDB could not be opened. The current project was preserved." &&
+                  GoldenViewModel(loadFailureWindow).IsOperationStatusError,
+                "Load Golden failure displays concise local result");
+            loadFailureWindow.Close();
         }
         finally
         {
@@ -1453,13 +2182,20 @@ try
         DependencyObject parent,
         string content)
     {
-        if (parent is Button button &&
-            string.Equals(
-                button.Content as string,
-                content,
-                StringComparison.Ordinal))
+        if (parent is Button button)
         {
-            return button;
+            string? buttonContent = button.Content as string;
+            if (string.Equals(
+                    buttonContent,
+                    content,
+                    StringComparison.Ordinal) ||
+                (content.StartsWith("Select", StringComparison.Ordinal) &&
+                 buttonContent?.StartsWith(
+                     "Select",
+                     StringComparison.Ordinal) == true))
+            {
+                return button;
+            }
         }
 
         foreach (object child in LogicalTreeHelper.GetChildren(parent))
@@ -1494,9 +2230,12 @@ try
         GoldenCdbService goldenService,
         GoldenCdbComparisonService comparisonService,
         EditHistoryService? editHistory = null,
-        QuickBmsImportOptions? quickBmsImportOptions = null)
+        QuickBmsImportOptions? quickBmsImportOptions = null,
+        ModProfileLibraryService? profileLibrary = null,
+        LocalizationService? localizationService = null)
     {
-        LocalizationService localization = new();
+        LocalizationService localization =
+            localizationService ?? new LocalizationService();
         ModificationSnapshotWorkflowService snapshotWorkflow = new();
         ValidationWorkflowService validationWorkflow = new(
             new ValidationService(dataService));
@@ -1523,7 +2262,7 @@ try
             new ModificationSnapshotService(),
             snapshotWorkflow,
             new ChangeSummaryService(),
-            new ModProfileLibraryService(),
+            profileLibrary ?? new ModProfileLibraryService(),
             new ModProfileWorkflowService(
                 profiles,
                 new ModProfileSerializationService(),
@@ -1867,6 +2606,17 @@ sealed class GoldenQuickBmsFixture
 
     public string PromotedCdbPath { get; }
 
+    public string DetachedStagingRoot =>
+        Path.Combine(
+            Path.GetDirectoryName(Options.StagingRootDirectory)!,
+            "GoldenImport");
+
+    public int DetachedWorkspaceCount =>
+        Directory.Exists(DetachedStagingRoot)
+            ? Directory.EnumerateFileSystemEntries(
+                DetachedStagingRoot).Count()
+            : 0;
+
     public string ExtractedCdbJson { get; set; }
 
     public GoldenFakeExternalProcessRunner Runner { get; }
@@ -1877,6 +2627,11 @@ sealed class GoldenQuickBmsFixture
 sealed class GoldenFakeExternalProcessRunner : IExternalProcessRunner
 {
     private readonly Func<ExternalProcessRequest, ExternalProcessResult> run;
+    private TaskCompletionSource? nextRunGate;
+    private TaskCompletionSource? activeRunGate;
+    private bool blockCleanupForNext;
+    private FileStream? cleanupBlockStream;
+    private string? cleanupWorkspace;
 
     public GoldenFakeExternalProcessRunner(
         Func<ExternalProcessRequest, ExternalProcessResult> run)
@@ -1886,12 +2641,57 @@ sealed class GoldenFakeExternalProcessRunner : IExternalProcessRunner
 
     public List<ExternalProcessRequest> Requests { get; } = new();
 
-    public Task<ExternalProcessResult> RunAsync(
+    public void BlockNext() =>
+        nextRunGate = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public void Release() => activeRunGate?.TrySetResult();
+
+    public void BlockCleanupForNext() =>
+        blockCleanupForNext = true;
+
+    public void ReleaseCleanupBlock()
+    {
+        cleanupBlockStream?.Dispose();
+        cleanupBlockStream = null;
+        cleanupWorkspace = null;
+    }
+
+    public async Task<ExternalProcessResult> RunAsync(
         ExternalProcessRequest request,
         CancellationToken cancellationToken = default)
     {
         Requests.Add(request);
-        return Task.FromResult(run(request));
+        TaskCompletionSource? gate = nextRunGate;
+        nextRunGate = null;
+        activeRunGate = gate;
+        if (gate != null)
+            await gate.Task.WaitAsync(cancellationToken);
+        try
+        {
+            ExternalProcessResult result = run(request);
+
+            if (blockCleanupForNext &&
+                result.ExitCode == 0)
+            {
+                blockCleanupForNext = false;
+                cleanupWorkspace = request.Arguments[2];
+                string cleanupBlockPath = Path.Combine(
+                    cleanupWorkspace,
+                    "cleanup-block.lock");
+                cleanupBlockStream = new FileStream(
+                    cleanupBlockPath,
+                    FileMode.Create,
+                    FileAccess.ReadWrite,
+                    FileShare.None);
+            }
+
+            return result;
+        }
+        finally
+        {
+            activeRunGate = null;
+        }
     }
 }
 
@@ -1920,6 +2720,7 @@ sealed class TestMessages : IMessageDialogService
 {
     private readonly UnsavedChangesResult unsavedResult;
     private readonly bool confirmation;
+    private readonly Queue<bool> confirmationResults = new();
 
     public TestMessages(
         UnsavedChangesResult unsavedResult,
@@ -1938,6 +2739,9 @@ sealed class TestMessages : IMessageDialogService
     public List<string>? EventLog { get; init; }
     public List<string> ConfirmationTitles { get; } = new();
 
+    public void EnqueueConfirmation(bool result) =>
+        confirmationResults.Enqueue(result);
+
     public void ShowInformation(string message, string title)
     {
         InformationCount++;
@@ -1955,7 +2759,9 @@ sealed class TestMessages : IMessageDialogService
         ConfirmationCount++;
         ConfirmationTitles.Add(title);
         EventLog?.Add("confirmation");
-        return confirmation;
+        return confirmationResults.Count > 0
+            ? confirmationResults.Dequeue()
+            : confirmation;
     }
 
     public UnsavedChangesResult ShowUnsavedChanges(

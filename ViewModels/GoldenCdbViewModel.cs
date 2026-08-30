@@ -8,6 +8,9 @@ public sealed class GoldenCdbViewModel : ObservableObject
     private GoldenCdbState state;
     private GoldenCdbComparisonResult? comparison;
     private bool hasProject;
+    private string operationStatus = string.Empty;
+    private GoldenCdbOperationStatusKind operationStatusKind;
+    private bool isOperationBusy;
 
     public GoldenCdbViewModel(
         GoldenCdbState state,
@@ -26,11 +29,19 @@ public sealed class GoldenCdbViewModel : ObservableObject
 
     public bool HasProject => hasProject;
 
-    public bool CanSetCurrent => hasProject;
+    public bool CanSetCurrent => hasProject && !isOperationBusy;
 
-    public bool CanLoad => state.IsAvailable;
+    public bool CanLoad => state.IsAvailable && !isOperationBusy;
 
-    public bool CanCompare => state.IsAvailable && hasProject;
+    public bool CanCompare =>
+        state.IsAvailable && hasProject && !isOperationBusy;
+
+    public bool CanSelect => !isOperationBusy;
+
+    public bool CanImport => !isOperationBusy;
+
+    public bool CanRemove =>
+        state.CanonicalFileExists && !isOperationBusy;
 
     public string Heading => state.Availability switch
     {
@@ -52,6 +63,22 @@ public sealed class GoldenCdbViewModel : ObservableObject
     public string FullIdentity => state.Identity;
 
     public string StatusMessage => state.Message;
+
+    public string OperationStatus => operationStatus;
+
+    public bool HasOperationStatus =>
+        !string.IsNullOrWhiteSpace(operationStatus);
+
+    public bool IsOperationStatusSuccess =>
+        operationStatusKind == GoldenCdbOperationStatusKind.Success;
+
+    public bool IsOperationStatusWarning =>
+        operationStatusKind == GoldenCdbOperationStatusKind.Warning;
+
+    public bool IsOperationStatusError =>
+        operationStatusKind == GoldenCdbOperationStatusKind.Error;
+
+    public bool IsOperationBusy => isOperationBusy;
 
     public string SetCurrentText => state.IsAvailable
         ? "Replace with Current Project"
@@ -92,5 +119,59 @@ public sealed class GoldenCdbViewModel : ObservableObject
         comparison = result ??
             throw new ArgumentNullException(nameof(result));
         OnPropertyChanged(string.Empty);
+    }
+
+    internal void BeginOperation(string message)
+    {
+        isOperationBusy = true;
+        SetOperationStatus(
+            message,
+            GoldenCdbOperationStatusKind.Information);
+        OnPropertyChanged(string.Empty);
+    }
+
+    internal void ShowOperationSuccess(string message) =>
+        CompleteOperation(
+            message,
+            GoldenCdbOperationStatusKind.Success);
+
+    internal void ShowOperationWarning(string message) =>
+        CompleteOperation(
+            message,
+            GoldenCdbOperationStatusKind.Warning);
+
+    internal void ShowOperationError(string message) =>
+        CompleteOperation(
+            message,
+            GoldenCdbOperationStatusKind.Error);
+
+    internal void ShowOperationInformation(string message) =>
+        CompleteOperation(
+            message,
+            GoldenCdbOperationStatusKind.Information);
+
+    private void CompleteOperation(
+        string message,
+        GoldenCdbOperationStatusKind kind)
+    {
+        isOperationBusy = false;
+        SetOperationStatus(message, kind);
+        OnPropertyChanged(string.Empty);
+    }
+
+    private void SetOperationStatus(
+        string message,
+        GoldenCdbOperationStatusKind kind)
+    {
+        operationStatus = message ?? string.Empty;
+        operationStatusKind = kind;
+    }
+
+    private enum GoldenCdbOperationStatusKind
+    {
+        Information,
+        Success,
+        Warning,
+        Error
     }
 }

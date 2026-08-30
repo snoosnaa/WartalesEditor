@@ -16,6 +16,8 @@
             <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
@@ -58,7 +60,46 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="4">
+        <Border Grid.Row="4"
+                AutomationProperties.LiveSetting="Polite">
+            <Border.Style>
+                <Style TargetType="Border"
+                       BasedOn="{StaticResource InformationalPanelStyle}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasOperationStatus}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsOperationStatusSuccess}" Value="True">
+                            <Setter Property="Background" Value="{StaticResource ApplyFeedbackBackgroundBrush}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource ApplyFeedbackBorderBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock x:Name="OperationStatusText"
+                       Text="{Binding OperationStatus}"
+                       TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource SupportingTextBrush}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOperationStatusSuccess}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource ValidationSuccessTextBrush}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsOperationStatusWarning}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource ModifiedAccentBrush}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsOperationStatusError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource GameplayValidationTextBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Border>
+
+        <Grid Grid.Row="6">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="12"/>
@@ -71,15 +112,15 @@
                 <Button Content="{Binding SetCurrentText}" MinWidth="190" Margin="0,0,8,8"
                         IsEnabled="{Binding CanSetCurrent}" Click="SetCurrentButton_Click"/>
                 <Button Content="{Binding SelectText}" MinWidth="170" Margin="0,0,8,8"
-                        Click="SelectButton_Click"/>
+                        IsEnabled="{Binding CanSelect}" Click="SelectButton_Click"/>
                 <Button Content="Import Current Wartales CDB as Golden" MinWidth="245" Margin="0,0,8,8"
-                        Click="ImportCurrentWartalesButton_Click"/>
+                        IsEnabled="{Binding CanImport}" Click="ImportCurrentWartalesButton_Click"/>
                 <Button Content="Load Golden CDB" MinWidth="145" Margin="0,0,8,8"
                         IsEnabled="{Binding CanLoad}" Click="LoadButton_Click"/>
                 <Button Content="Compare Current to Golden" MinWidth="190" Margin="0,0,8,8"
                         IsEnabled="{Binding CanCompare}" Click="CompareButton_Click"/>
                 <Button Content="Remove Golden CDB" MinWidth="155" Margin="0,0,0,8"
-                        IsEnabled="{Binding HasCanonicalFile}" Click="RemoveButton_Click"/>
+                        IsEnabled="{Binding CanRemove}" Click="RemoveButton_Click"/>
             </WrapPanel>
 
             <StackPanel Grid.Row="2"
@@ -106,7 +147,7 @@
             </DataGrid>
         </Grid>
 
-        <Button Grid.Row="6" Content="Close" Width="90" HorizontalAlignment="Right"
+        <Button Grid.Row="8" Content="Close" Width="90" HorizontalAlignment="Right"
                 Style="{StaticResource GameplayCloseButtonStyle}" IsCancel="True"
                 Click="CloseButton_Click"/>
     </Grid>

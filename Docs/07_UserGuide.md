@@ -21,18 +21,37 @@ only the stored reference; it does not close or alter the current project,
 profiles, gameplay state, or Undo history.
 
 **Import Current Wartales CDB as Golden** runs the same read-only **Import From
-Wartales** workflow used by the main editor. It extracts and validates the
-currently installed game data, publishes and opens the durable imported CDB, and
-then offers to designate those exact persisted bytes as Golden. If Golden already
-exists, replacement still requires confirmation. Declining changes only the
-Golden step: the successful import remains open and the previous Golden remains
-unchanged. Import cancellation or failure does not change Golden. This action
-does not write to or deploy into `res.pak`.
+Wartales** acquisition used by the main editor. It extracts and validates the
+currently installed game data in a detached temporary workspace and offers to
+designate those exact validated bytes as Golden. It does not publish to or change
+the game's normal `Extracted\data.cdb` or adjacent `.wtstate`, and it does not open
+the acquired CDB or replace your current project. Unsaved current work therefore
+remains in place and does not require an abandon-changes prompt. If Golden already
+exists, replacement still requires confirmation. Declining leaves both the
+current project and previous Golden unchanged. Import cancellation or failure
+also leaves them unchanged. Use **Load Golden CDB** when you explicitly want to
+open Golden as the current project. This action does not write to or deploy into
+`res.pak`.
+
+The detached acquisition workspace is cleaned after success, replacement decline,
+or a safe failure. If cleanup cannot finish, the Golden result remains truthful
+and the window reports the temporary-folder warning, including after decline or
+designation failure. The next Golden acquisition first reconciles a safely marked
+editor-owned session. Unknown, redirected, locked, or otherwise unsafe residue is
+left untouched and blocks another acquisition instead of accumulating folders.
 
 If the canonical Golden is published but an obsolete temporary transaction file
 cannot be removed, the window reports cleanup attention instead of clean success.
 Golden remains usable and the next Set/Replace safely clears recognized stale
 transaction files before publishing.
+
+The Golden window shows progress and the latest result directly beneath its
+Golden-state summary. Import outcomes distinguish successful import from Golden
+replacement decline or designation failure; Load, Set/Replace, Select, Remove,
+Compare, cancellations, failures, and cleanup warnings also report locally. The
+message remains until the next Golden action. Closing and reopening the window
+starts with no prior operation message. Technical identity and hash values remain
+internal.
 
 **Load Golden CDB** opens a detached, sidecar-free copy through the normal
 unsaved-changes prompt. It does not grant Restore Previous Values authority.
@@ -80,6 +99,28 @@ If replacement fails after it begins, the editor reports whether the previous
 language data was restored or whether it must be set up again. If the new data
 is active but an obsolete temporary recovery file cannot be removed, the editor
 keeps the new language active and displays a cleanup warning.
+
+# Export Back to Wartales
+
+Choose **File → Export Back to Wartales...** to put the current saved project
+into Wartales. If the project or its gameplay settings have unsaved changes, the
+normal Save workflow runs first; cancelling or failing Save stops Export.
+
+Close Wartales before confirming. Export directly modifies the installed
+`res.pak`. Wartales Editor does not create an automatic backup. If you want a
+local backup, copy `res.pak` yourself before continuing. Steam's **Verify
+Integrity of Game Files** or reinstalling Wartales can restore game files when
+necessary.
+
+The progress window reports Preparing, Exporting, and Verifying. Preparation can
+be cancelled. Once package writing starts, wait for Export and verification to
+finish. A success message appears only after Wartales Editor re-extracts
+`data.cdb` and proves it exactly matches the saved project bytes. Export does not
+change Undo/Redo, profiles, snapshots, Golden CDB, compatibility results, or
+project modification state beyond the normal Save that may precede it.
+If the temporary Export folder cannot be removed after any outcome, the editor
+keeps the primary result and shows a separate cleanup warning; the retained safe
+session is checked before the next export.
 
 # Import From Wartales
 

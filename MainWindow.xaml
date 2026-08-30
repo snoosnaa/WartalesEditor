@@ -180,6 +180,9 @@
                 <MenuItem Header="_Import From Wartales..."
                           Command="{Binding ImportFromWartalesCommand}"/>
 
+                <MenuItem Header="_Export Back to Wartales..."
+                          Command="{Binding ExportBackToWartalesCommand}"/>
+
                 <Separator/>
 
                 <MenuItem Header="_Open Wartales File..."

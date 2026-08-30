@@ -6,6 +6,63 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# QuickBMS Export Back to Wartales Version 1
+
+**Status:** Complete and closed; Engineering Review and Project Owner live-package
+acceptance passed, exact verification completed, and final reconciliation completed
+
+## Added
+
+- **File → Export Back to Wartales...** with normal save-first validation and
+  exact persisted-content identity authority.
+- Marked GUID temporary sessions containing only `Modded\data.cdb` plus a
+  verification folder created after a confirmed write.
+- Filtered `-w -r -r -f "{}data.cdb"` reimport through the existing contained
+  process runner, followed by filtered read-only extraction and exact SHA-256/
+  length comparison.
+- Shared Import/Export busy state and a small owned progress window with safe
+  preparation cancellation and non-cancellable write/verify stages.
+- Package signature, non-reparse, and exclusive read/write preflight plus a pure
+  exact-one-file QuickBMS output parser.
+- 202 isolated export transport, WPF lifecycle, save-first, source-race,
+  timeout, cleanup, state-neutrality, and UI-presentation regression checks.
+  Directory reparse boundaries are exercised with junctions; file-link cases
+  retain the repository's privilege-dependent skip. No installed package was
+  written during implementation or correction.
+
+## Corrected after Focused Engineering Review
+
+- Source identity and staging now consume one accepted in-memory byte snapshot;
+  the source path is never reopened as transport authority afterward.
+- Structured post-write outcomes are captured before presentation, so a dialog
+  failure cannot replace success or a known failure with a false unchanged-game
+  claim.
+- Cleanup failure is preserved and surfaced independently for preparation,
+  cancellation, success, and transport failure outcomes.
+- Verified Success is finalized before best-effort Completed progress reporting,
+  so an observer failure cannot rewrite the package outcome.
+- Partial workspace-creation failure now preserves the primary error, retained
+  editor-owned path, and cleanup status; the next safe run reconciles residue.
+- Behavioral tests cover owner failure before dialog tracking, the actual
+  MainWindow close/retry chain, and complete state neutrality for Success and
+  VerificationFailed outcomes.
+
+## Boundaries
+
+- No automatic package backup/restore, manifest, lineage, provenance/generation
+  gate, Golden integration, or project mutation. Manual backup and Steam Verify/
+  reinstall remain the recovery model.
+
+## Accepted
+
+- Project Owner live acceptance completed the authorized direct write, exact
+  verification, modified-file detection, new-game launch, and in-game Rusty Shiv
+  sale-price check successfully.
+- The post-acceptance MainWindow maximize cleanup passed focused review and Project
+  Owner visual acceptance without changing Export behavior.
+
+---
+
 # Golden CDB Version 1
 
 **Status:** Complete and closed; Final Renewed Focused Engineering Review passed
@@ -30,7 +87,7 @@ documentation reconciliation completed
 - Difference-only live comparison with exact/modeled all-clear states, stable
   modeled identity, array shape/value classification, and separate aggregated
   unsupported-coverage reporting.
-- 163 isolated permanent Golden CDB checks covering storage, validation,
+- 188 isolated permanent Golden CDB checks covering storage, validation,
   atomicity, removal, load, save protection, overwrite reconciliation,
   comparison, caching, no-mutation boundaries, and modeless UI structure.
 
@@ -49,9 +106,34 @@ documentation reconciliation completed
 
 ## Corrected after Project Owner testing
 
+- Corrected **Import Current Wartales CDB as Golden** to reuse QuickBMS durable
+  acquisition mechanics without publishing to normal `Extracted\data.cdb` or
+  publishing the acquired CDB as the active editor project. The validated CDB now
+  remains in a detached temporary `GoldenImport` workspace until exact-byte Golden
+  designation completes, then the workspace is cleaned.
+  Dirty current projects no longer receive an abandon-unsaved prompt; project
+  identity, JSON, gameplay state, Undo/Redo, compatibility, references, and
+  sidecar state remain unchanged even when the active project is the exact normal
+  Extracted destination. Normal Import still durably publishes and opens the acquired project,
+  and Load Golden remains the explicit Golden-opening action.
+- Preserved detached cleanup warnings after successful designation, replacement
+  decline, and designation failure. Same-path production regressions raise the
+  Golden suite from 193 to 197 checks.
+- Corrected retained detached-session accumulation. A temporary exact ownership
+  marker now permits the next Golden acquisition to reconcile safe stale GUID
+  sessions before creating one fresh session; unrecognized or undeletable content
+  blocks refresh. Production retry and local WPF warning coverage raise the Golden
+  suite to 199 checks. Final Narrow Engineering Review returned **PASS** with no
+  findings, and the Project Owner brief re-test passed.
+- Superseded the earlier deferred classification of Golden-window-local feedback.
+  The owned Golden ViewModel now presents one ephemeral wrapping progress/result
+  message for Import, Load, Set/Replace, Select, Remove, Compare, cancellation,
+  split import/designation failures, and cleanup warnings. Reopening starts clean,
+  and technical identity/hash remains hidden.
+
 - Added **Import Current Wartales CDB as Golden**, which reuses the existing
-  read-only Import From Wartales orchestration and designates only its successful
-  durable imported project through `GoldenCdbService`.
+  read-only acquisition and designates its exact durable imported CDB through
+  `GoldenCdbService` without active-project publication.
 - Preserved separate Golden replacement confirmation and truthful cancellation,
   import-failure, replacement-decline, and post-import designation-failure
   outcomes.
@@ -70,8 +152,8 @@ documentation reconciliation completed
 - Final Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING
   NOTES** with no production defect, unsafe test seam, artifact residue, or
   remaining closure blocker.
-- Golden-specific import/loading progress and result messaging inside the Golden
-  window remains an accepted non-blocking UX refinement for possible later work.
+- Golden-specific progress and result messaging is implemented inside the Golden
+  window; its earlier deferred classification was superseded.
 
 ## Preserved
 

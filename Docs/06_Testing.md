@@ -76,10 +76,46 @@ Expected Result
 
 # Project Loading
 
+## QuickBMS Export Back to Wartales Version 1 Regression Contract
+
+Automated export tests must use isolated package paths and must never target the
+installed Wartales `res.pak`. The focused suite covers parser ambiguity,
+one-read source-snapshot authority, post-snapshot source replacement,
+persisted/staged identity, marker ownership and stale cleanup, exact write and
+verification arguments, package signature/write-access preflight, contained
+runner use, termination proof, exact re-extracted bytes, failure outcomes, and
+cleanup semantics. Its STA WPF harness also exercises production `MainViewModel`
+save-first behavior, shared Import/Export exclusion, reentrancy, confirmation
+ordering, progress/title close, the actual MainWindow deferred close/retry chain,
+owner-resolution failure, presentation and completed-progress observer
+exceptions, partial-creation cleanup warnings, and complete application-state
+neutrality. Main, Golden, Update
+Survival, Language Data, QuickBMS import, and Class A regression suites remain
+required before review.
+
+The focused Export suite currently contains 202 passing checks. Six focused
+post-acceptance WPF checks exercise unconstrained native maximization, restored
+and maximized client coverage, wider/narrower and taller/shorter resizing,
+menu/toolbar/status-bar width coverage, and Gameplay Tools/Detailed Editor
+workspace transitions. Complete
+neutrality captures the ProjectModel/root references and JSON, identities,
+provenance and modification flags, full gameplay-operation state, Undo/Redo
+stacks, profile files, snapshot bytes, Golden state/file, compatibility report,
+and exact `.wtstate` bytes after Save and before transport, for both verified
+success and verification failure. Directory
+reparse boundaries use real Windows junctions. File symbolic-link cases report
+the established explicit skip when Windows symlink privilege is unavailable;
+production regular-file/reparse rejection remains enabled.
+
+Project Owner Interactive Acceptance performed the first authorized installed-
+package write and passed end to end. All automated Engineering verification must
+still reimport only into copied packages and must never perform another live write
+without explicit authorization.
+
 ## Golden CDB Version 1 Regression Contract
 
 `Tests/GoldenCdbSmoke` uses an isolated temporary canonical directory and never
-touches the user's Documents Golden or a real Wartales CDB. Its 163 permanent
+touches the user's Documents Golden or a real Wartales CDB. Its 199 permanent
 checks cover canonical path resolution and normalized comparison, exact-byte
 identity/copying, sidecar-free parsing, current-project preconditions, source
 independence, structural rejection, atomic initial Set and replacement,
@@ -113,12 +149,34 @@ and save-warning wiring. Project Owner WPF acceptance passed for the corrected
 Golden functionality and window.
 
 Isolated fake-runner integration checks exercise the Golden window's shared
-Import From Wartales orchestration through the production `QuickBmsImportService`.
+QuickBMS extraction mechanics through the production `QuickBmsImportService`.
 They verify exact imported-byte designation, preserved source provenance, no
 write-back flags, explicit replacement decline, unsaved-project cancellation,
 QuickBMS failure, and truthful successful-import/failed-Golden separation.
 Structural UI checks confirm the import action and existing actions remain,
 ordinary identity/hash text is absent, and status/cleanup-warning text remains.
+Behavioral WPF coverage now also exercises the real wrapping local status area,
+visible blocked import progress, import/designation success, replacement decline,
+designation and QuickBMS failures, Load success/cancellation/failure,
+Set/Replace/Select/Remove, comparison summary, cleanup warnings, message
+replacement, and fresh close/reopen state. The local status remains ephemeral and
+does not read or scrape the main editor status bar.
+Detached acquisition/publication separation coverage uses production MainViewModel,
+QuickBMS, Golden service, and WPF paths. Normal Import first publishes the active
+`Extracted\data.cdb`; Golden import then uses an isolated transient
+`GoldenImport` workspace and proves the exact active CDB and `.wtstate` bytes do
+not change. Golden import with no project opens none; dirty CDB and gameplay-state projects receive no abandon
+prompt; project/file references, JSON, identities, provenance, modification
+flags, Gameplay Operation State, Undo/Redo, compatibility, reference data,
+localization data, profiles/snapshots sentinels, and active `.wtstate` bytes remain unchanged;
+accepted and declined replacement plus acquisition/designation failures remain
+neutral; cleanup failure after decline/designation remains visible; detached
+workspaces clean after ordinary outcomes; the next production acquisition
+reconciles a released marked stale session; a still-locked session blocks before
+QuickBMS or another GUID; and an injected active-publication
+failure hook is never reached. Normal
+Import still protects and publishes the acquired project, while Load Golden still
+publishes explicitly.
 Final behavioral regressions invoke the original main Import From Wartales
 command and prove zero Golden confirmation or byte/identity side effects; accept
 replacement of an existing Golden through the actual live Golden button/event and
@@ -126,10 +184,11 @@ prove exact imported-byte identity; and run three STA WPF close/reopen/import
 cycles, including post-close button events, with one import/designation per live
 cycle and no stale callback or duplicate message.
 
-Current implementation evidence: the main, Golden, Class A, and Update Survival
-projects build with zero warnings and zero errors; Golden passes 163 checks;
-Update Survival passes 180/180; focused QuickBMS and Language Data suites pass;
-and all 25 Class A groups pass.
+Final accepted evidence: all required Release builds complete with zero warnings
+and zero errors; Golden passes 199 checks; Export passes 202; Update Survival
+passes 180; focused QuickBMS Import and Language Data pass; and all 25 Class A
+groups pass. MainWindow maximize/layout and Golden lifecycle checks pass, the
+Golden identity remains hidden, and temporary roots/process audits are clean.
 
 ## Update Survival Regression Contract
 

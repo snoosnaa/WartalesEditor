@@ -113,9 +113,11 @@ public class MainViewModel : ObservableObject
 
     private readonly IFileDialogService fileDialogService;
 
-    private readonly IMessageDialogService messageDialogService;
+    private IMessageDialogService messageDialogService;
 
     private QuickBmsImportService quickBmsImportService;
+
+    private IQuickBmsExportService quickBmsExportService;
 
     private GoldenCdbService goldenCdbService;
 
@@ -148,6 +150,12 @@ public class MainViewModel : ObservableObject
     private GoldenCdbWindow? goldenCdbWindow;
 
     private GoldenCdbViewModel? goldenCdbViewModel;
+
+    private QuickBmsImportAttemptOutcome
+        lastQuickBmsImportAttemptOutcome;
+
+    private string lastQuickBmsImportAttemptMessage =
+        string.Empty;
 
     private Action? projectPublicationFailureForTesting;
 
@@ -182,12 +190,39 @@ public class MainViewModel : ObservableObject
     private RandomTraitExclusionsDialog?
         randomTraitExclusionsDialog;
 
+    private QuickBmsExportProgressDialog?
+        quickBmsExportProgressDialog;
+
+    private QuickBmsExportProgressViewModel?
+        quickBmsExportProgressViewModel;
+
+    private CancellationTokenSource?
+        quickBmsExportPreparationCancellation;
+
+    private bool closePendingAfterExportPreparation;
+
+    internal QuickBmsExportResult?
+        LastQuickBmsExportResultForTesting { get; private set; }
+
+    internal bool IsQuickBmsExportProgressDialogOpen =>
+        quickBmsExportProgressDialog != null;
+
+    internal QuickBmsExportProgressDialog?
+        QuickBmsExportProgressDialogForTesting =>
+            quickBmsExportProgressDialog;
+
+    internal QuickBmsExportProgressViewModel?
+        QuickBmsExportProgressViewModelForTesting =>
+            quickBmsExportProgressViewModel;
+
     private UpdateCompatibilityWindow?
         updateCompatibilityWindow;
 
     private ProjectModel? project;
 
-    private bool isImportInProgress;
+    private QuickBmsOperationKind quickBmsOperationKind;
+
+    public event EventHandler? ApplicationCloseReady;
 
     private MainWorkspace activeWorkspace =
         MainWorkspace.GameplayTools;
@@ -727,24 +762,21 @@ public class MainViewModel : ObservableObject
 
     public bool IsImportInProgress
     {
-        get => isImportInProgress;
-        private set
-        {
-            if (!SetProperty(
-                    ref isImportInProgress,
-                    value))
-            {
-                return;
-            }
-
-            OnPropertyChanged(
-                nameof(IsEditorInteractionEnabled));
-            RefreshCommandStates();
-        }
+        get => quickBmsOperationKind ==
+            QuickBmsOperationKind.Importing;
     }
 
+    public bool IsExportInProgress =>
+        quickBmsOperationKind is
+            QuickBmsOperationKind.ExportPreparing or
+            QuickBmsOperationKind.ExportWriting or
+            QuickBmsOperationKind.ExportVerifying;
+
+    public bool IsQuickBmsOperationInProgress =>
+        quickBmsOperationKind != QuickBmsOperationKind.None;
+
     public bool IsEditorInteractionEnabled =>
-        !IsImportInProgress;
+        !IsQuickBmsOperationInProgress;
 
     private int modifiedPropertyCount;
 
@@ -844,6 +876,8 @@ public class MainViewModel : ObservableObject
     public RelayCommand OpenCommand { get; }
 
     public RelayCommand ImportFromWartalesCommand { get; }
+
+    public RelayCommand ExportBackToWartalesCommand { get; }
 
     public RelayCommand SaveCommand { get; }
 
@@ -1197,6 +1231,8 @@ public class MainViewModel : ObservableObject
         quickBmsImportService =
             new QuickBmsImportService(
                 this.jsonDataService);
+        quickBmsExportService =
+            new QuickBmsExportService();
 
         goldenCdbService =
             new GoldenCdbService(this.jsonDataService);
@@ -1251,17 +1287,24 @@ public class MainViewModel : ObservableObject
         OpenCommand =
             new RelayCommand(
                 _ => OpenProject(),
-                _ => !IsImportInProgress);
+                _ => !IsQuickBmsOperationInProgress);
 
         ImportFromWartalesCommand =
             new RelayCommand(
                 _ => ImportFromWartales(),
-                _ => !IsImportInProgress);
+                _ => !IsQuickBmsOperationInProgress);
+
+        ExportBackToWartalesCommand =
+            new RelayCommand(
+                _ => ExportBackToWartales(),
+                _ => Project != null &&
+                     !IsQuickBmsOperationInProgress);
 
         SaveCommand =
             new RelayCommand(
                 _ => SaveProject(),
-                _ => Project != null);
+                _ => Project != null &&
+                     !IsQuickBmsOperationInProgress);
 
         ShowGameplayToolsWorkspaceCommand =
             new RelayCommand(
@@ -2212,6 +2255,27 @@ public class MainViewModel : ObservableObject
 
     public bool ConfirmApplicationClose()
     {
+        if (quickBmsOperationKind ==
+            QuickBmsOperationKind.ExportPreparing)
+        {
+            closePendingAfterExportPreparation = true;
+            quickBmsExportPreparationCancellation?.Cancel();
+            Status =
+                "Cancelling export preparation before closing...";
+            return false;
+        }
+
+        if (quickBmsOperationKind is
+            QuickBmsOperationKind.ExportWriting or
+            QuickBmsOperationKind.ExportVerifying)
+        {
+            messageDialogService.ShowWarning(
+                "Wartales is currently being updated. Wait for Export Back to Wartales to finish before closing the editor.",
+                "Export In Progress");
+
+            return false;
+        }
+
         if (IsImportInProgress)
         {
             messageDialogService.ShowWarning(
@@ -2232,39 +2296,15 @@ public class MainViewModel : ObservableObject
     private async Task<QuickBmsImportResult?>
         ImportFromWartalesAsync()
     {
-        if (IsImportInProgress
-            ||
-            !ConfirmAbandonUnsavedChanges())
-        {
-            return null;
-        }
-
-        IsImportInProgress = true;
+        QuickBmsImportAcquisitionAttempt attempt =
+            await AcquireFromWartalesAsync(
+                protectActiveProject: true);
 
         try
         {
-            string promotedCdbPath =
-                quickBmsImportService.GetPromotedCdbPath(
-                    quickBmsImportOptions);
-            bool replaceExistingExtractedCdb =
-                File.Exists(promotedCdbPath);
-
-            if (replaceExistingExtractedCdb
-                &&
-                !ConfirmReplaceExistingExtractedCdb())
-            {
-                Status =
-                    "Wartales import cancelled. The existing extracted data file was preserved.";
+            QuickBmsImportResult? result = attempt.Result;
+            if (result == null)
                 return null;
-            }
-
-            Status =
-                "Importing Wartales data safely. The game package will not be changed...";
-
-            QuickBmsImportResult result =
-                await quickBmsImportService.ImportAsync(
-                    quickBmsImportOptions,
-                    replaceExistingExtractedCdb);
 
             PromoteLoadedProject(
                 result.Project,
@@ -2284,21 +2324,16 @@ public class MainViewModel : ObservableObject
                 cleanupNote,
                 "Import From Wartales");
 
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Succeeded;
             return result;
-        }
-        catch (QuickBmsImportException exception)
-        {
-            messageDialogService.ShowError(
-                exception.Message,
-                "Import From Wartales");
-
-            Status =
-                "Wartales import failed. The current project was preserved.";
-
-            return null;
         }
         catch (Exception exception)
         {
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Failed;
+            lastQuickBmsImportAttemptMessage =
+                "Wartales data could not be imported. No project was replaced.";
             messageDialogService.ShowError(
                 "Wartales data could not be imported. No project was replaced." +
                 Environment.NewLine + Environment.NewLine +
@@ -2312,8 +2347,612 @@ public class MainViewModel : ObservableObject
         }
         finally
         {
-            IsImportInProgress = false;
+            if (attempt.OwnsBusyState)
+            {
+                SetQuickBmsOperation(
+                    QuickBmsOperationKind.None);
+            }
         }
+    }
+
+    private async Task<QuickBmsImportAcquisitionAttempt>
+        AcquireFromWartalesAsync(
+            bool protectActiveProject)
+    {
+        lastQuickBmsImportAttemptOutcome =
+            QuickBmsImportAttemptOutcome.Cancelled;
+        lastQuickBmsImportAttemptMessage =
+            "Import was cancelled. Golden CDB was not changed.";
+
+        if (IsQuickBmsOperationInProgress)
+        {
+            return new QuickBmsImportAcquisitionAttempt(
+                null,
+                OwnsBusyState: false);
+        }
+
+        if (protectActiveProject &&
+            !ConfirmAbandonUnsavedChanges())
+        {
+            return new QuickBmsImportAcquisitionAttempt(
+                null,
+                OwnsBusyState: false);
+        }
+
+        SetQuickBmsOperation(
+            QuickBmsOperationKind.Importing);
+
+        try
+        {
+            string promotedCdbPath =
+                quickBmsImportService.GetPromotedCdbPath(
+                    quickBmsImportOptions);
+            bool replaceExistingExtractedCdb =
+                File.Exists(promotedCdbPath);
+
+            if (replaceExistingExtractedCdb &&
+                !ConfirmReplaceExistingExtractedCdb())
+            {
+                Status =
+                    "Wartales import cancelled. The existing extracted data file was preserved.";
+                return new QuickBmsImportAcquisitionAttempt(
+                    null,
+                    OwnsBusyState: true);
+            }
+
+            Status =
+                "Importing Wartales data safely. The game package will not be changed...";
+
+            QuickBmsImportResult result =
+                await quickBmsImportService.ImportAsync(
+                    quickBmsImportOptions,
+                    replaceExistingExtractedCdb);
+
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Succeeded;
+            return new QuickBmsImportAcquisitionAttempt(
+                result,
+                OwnsBusyState: true);
+        }
+        catch (QuickBmsImportException exception)
+        {
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Failed;
+            lastQuickBmsImportAttemptMessage =
+                exception.Message;
+            messageDialogService.ShowError(
+                exception.Message,
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+
+            return new QuickBmsImportAcquisitionAttempt(
+                null,
+                OwnsBusyState: true);
+        }
+        catch (Exception exception)
+        {
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Failed;
+            lastQuickBmsImportAttemptMessage =
+                "Wartales data could not be imported. No project was replaced.";
+            messageDialogService.ShowError(
+                "Wartales data could not be imported. No project was replaced." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+
+            return new QuickBmsImportAcquisitionAttempt(
+                null,
+                OwnsBusyState: true);
+        }
+    }
+
+    private async Task<QuickBmsDetachedAcquisitionAttempt>
+        AcquireDetachedFromWartalesAsync()
+    {
+        lastQuickBmsImportAttemptOutcome =
+            QuickBmsImportAttemptOutcome.Cancelled;
+        lastQuickBmsImportAttemptMessage =
+            "Import was cancelled. Golden CDB was not changed.";
+
+        if (IsQuickBmsOperationInProgress)
+        {
+            return new QuickBmsDetachedAcquisitionAttempt(
+                null,
+                OwnsBusyState: false);
+        }
+
+        SetQuickBmsOperation(
+            QuickBmsOperationKind.Importing);
+
+        try
+        {
+            Status =
+                "Importing Wartales data safely. The game package and active project will not be changed...";
+
+            QuickBmsDetachedAcquisitionResult result =
+                await quickBmsImportService.AcquireDetachedAsync(
+                    quickBmsImportOptions,
+                    GetGoldenAcquisitionStagingRoot(
+                        quickBmsImportOptions));
+
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Succeeded;
+            return new QuickBmsDetachedAcquisitionAttempt(
+                result,
+                OwnsBusyState: true);
+        }
+        catch (QuickBmsImportException exception)
+        {
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Failed;
+            lastQuickBmsImportAttemptMessage =
+                exception.Message;
+            messageDialogService.ShowError(
+                exception.Message,
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+
+            return new QuickBmsDetachedAcquisitionAttempt(
+                null,
+                OwnsBusyState: true);
+        }
+        catch (Exception exception)
+        {
+            lastQuickBmsImportAttemptOutcome =
+                QuickBmsImportAttemptOutcome.Failed;
+            lastQuickBmsImportAttemptMessage =
+                "Wartales data could not be imported. No project was replaced.";
+            messageDialogService.ShowError(
+                "Wartales data could not be imported. No project was replaced." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Import From Wartales");
+
+            Status =
+                "Wartales import failed. The current project was preserved.";
+
+            return new QuickBmsDetachedAcquisitionAttempt(
+                null,
+                OwnsBusyState: true);
+        }
+    }
+
+    private static string GetGoldenAcquisitionStagingRoot(
+        QuickBmsImportOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (string.IsNullOrWhiteSpace(
+                options.StagingRootDirectory))
+        {
+            return Path.Combine(
+                Path.GetTempPath(),
+                "WartalesEditor",
+                "GoldenImport");
+        }
+
+        string configuredRoot =
+            Path.GetFullPath(
+                options.StagingRootDirectory)
+                .TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar);
+        string parent =
+            Path.GetDirectoryName(configuredRoot)
+            ?? Path.GetTempPath();
+
+        return Path.Combine(
+            parent,
+            "GoldenImport");
+    }
+
+    private async void ExportBackToWartales()
+    {
+        try
+        {
+            await ExportBackToWartalesAsync();
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                "Export Back to Wartales could not be opened. No game files were changed." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Export Back to Wartales");
+            SetQuickBmsOperation(
+                QuickBmsOperationKind.None);
+        }
+    }
+
+    internal async Task ExportBackToWartalesAsync()
+    {
+        LastQuickBmsExportResultForTesting = null;
+
+        if (Project == null ||
+            IsQuickBmsOperationInProgress)
+        {
+            return;
+        }
+
+        bool saveRequired =
+            Project.IsModified ||
+            Project.IsGameplayOperationStateModified ||
+            string.IsNullOrWhiteSpace(Project.FileName) ||
+            !File.Exists(Project.FileName);
+
+        if (saveRequired)
+        {
+            if (!SaveProject())
+                return;
+        }
+        else
+        {
+            ValidationResultModel validationResult =
+                validationWorkflowService.ValidateForSave(Project);
+            ValidationPresentationModel presentation =
+                validationPresentationService.BuildPresentation(
+                    validationResult,
+                    "Export Back to Wartales");
+
+            if (validationResult.HasErrors)
+            {
+                messageDialogService.ShowError(
+                    presentation.Summary,
+                    presentation.Title);
+                Status =
+                    "Export blocked by validation errors.";
+                return;
+            }
+
+            if (validationResult.HasWarnings)
+            {
+                messageDialogService.ShowWarning(
+                    presentation.Summary,
+                    presentation.Title);
+            }
+        }
+
+        if (Project == null ||
+            Project.IsModified ||
+            Project.IsGameplayOperationStateModified ||
+            string.IsNullOrWhiteSpace(Project.FileName))
+        {
+            Status =
+                "Export stopped because the project was not fully saved.";
+            return;
+        }
+
+        QuickBmsExportPreparation? preparation = null;
+        QuickBmsExportResult? resultToPresent = null;
+        bool writeMayHaveStarted = false;
+        Window mainWindow = GetMainWindowOwner();
+        QuickBmsExportProgressViewModel progressViewModel = new();
+        QuickBmsExportProgressDialog progressDialog =
+            new(progressViewModel);
+        progressDialog.Owner = mainWindow;
+        CancellationTokenSource preparationCancellation = new();
+
+        quickBmsExportProgressViewModel = progressViewModel;
+        quickBmsExportProgressDialog = progressDialog;
+        quickBmsExportPreparationCancellation =
+            preparationCancellation;
+
+        EventHandler cancellationHandler = (_, _) =>
+            preparationCancellation.Cancel();
+        progressViewModel.CancellationRequested +=
+            cancellationHandler;
+
+        try
+        {
+            SetQuickBmsOperation(
+                QuickBmsOperationKind.ExportPreparing);
+            progressViewModel.SetStage(
+                QuickBmsExportStage.Preparing);
+            progressDialog.Show();
+
+            Status =
+                "Preparing the saved project for export...";
+            preparation =
+                await quickBmsExportService.PrepareAsync(
+                    Project.FileName,
+                    Project.CurrentCdbContentIdentity,
+                    quickBmsImportOptions,
+                    preparationCancellation.Token);
+
+            preparationCancellation.Token
+                .ThrowIfCancellationRequested();
+
+            bool confirmed =
+                messageDialogService.ShowConfirmation(
+                    "Export Back to Wartales will modify the installed Wartales game package. Close Wartales before continuing." +
+                    Environment.NewLine + Environment.NewLine +
+                    "If you want a local backup, copy res.pak before exporting. Steam’s Verify Integrity of Game Files or reinstalling Wartales can restore the game files if necessary." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Continue?",
+                    "Export Back to Wartales?");
+
+            if (!confirmed)
+            {
+                bool cleaned =
+                    quickBmsExportService
+                        .TryCancelPreparation(preparation);
+                preparation = null;
+                Status = "Export cancelled.";
+
+                if (!cleaned)
+                {
+                    messageDialogService.ShowWarning(
+                        GetExportCleanupWarning(),
+                        "Export Back to Wartales");
+                }
+
+                return;
+            }
+
+            SetQuickBmsOperation(
+                QuickBmsOperationKind.ExportWriting);
+            writeMayHaveStarted = true;
+            progressViewModel.SetStage(
+                QuickBmsExportStage.Exporting);
+            Status =
+                "Updating the Wartales game package...";
+
+            Progress<QuickBmsExportStage> progress =
+                new(stage =>
+                {
+                    progressViewModel.SetStage(stage);
+                    if (stage == QuickBmsExportStage.Verifying)
+                    {
+                        SetQuickBmsOperation(
+                            QuickBmsOperationKind.ExportVerifying);
+                        Status =
+                            "Verifying the exported Wartales data...";
+                    }
+                });
+
+            QuickBmsExportResult result =
+                await quickBmsExportService.ExportAsync(
+                    preparation,
+                    progress);
+            preparation = null;
+            LastQuickBmsExportResultForTesting = result;
+            resultToPresent = result;
+        }
+        catch (OperationCanceledException)
+        {
+            bool cleaned = true;
+            if (preparation != null)
+            {
+                cleaned = quickBmsExportService
+                    .TryCancelPreparation(preparation);
+            }
+
+            Status = "Export cancelled before Wartales was changed.";
+
+            if (!cleaned)
+            {
+                messageDialogService.ShowWarning(
+                    GetExportCleanupWarning(),
+                    "Export Back to Wartales");
+            }
+        }
+        catch (QuickBmsExportPreparationException exception)
+        {
+            Status = exception.WasCancelled
+                ? "Export cancelled before Wartales was changed."
+                : "Export preparation failed.";
+
+            messageDialogService.ShowError(
+                exception.Message +
+                Environment.NewLine + Environment.NewLine +
+                GetExportCleanupWarning(),
+                "Export Back to Wartales");
+        }
+        catch (QuickBmsImportException exception)
+        {
+            if (preparation != null)
+            {
+                _ = quickBmsExportService
+                    .TryCancelPreparation(preparation);
+            }
+
+            messageDialogService.ShowError(
+                exception.Message,
+                "Export Back to Wartales");
+            Status = "Export preparation failed.";
+        }
+        catch (Exception exception)
+        {
+            bool cleaned = true;
+            if (preparation != null)
+            {
+                cleaned = quickBmsExportService
+                    .TryCancelPreparation(preparation);
+            }
+
+            messageDialogService.ShowError(
+                (writeMayHaveStarted
+                    ? "Export encountered an unexpected error after Wartales may have been updated. If Wartales does not work correctly, use Steam’s Verify Integrity of Game Files or reinstall the game."
+                    : "Export could not start. Wartales game files were not changed.") +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}" +
+                (cleaned
+                    ? string.Empty
+                    : Environment.NewLine + Environment.NewLine +
+                      GetExportCleanupWarning()),
+                "Export Back to Wartales");
+            Status = writeMayHaveStarted
+                ? "Export encountered an unexpected error."
+                : "Export preparation failed.";
+        }
+        finally
+        {
+            try
+            {
+                progressViewModel.CancellationRequested -=
+                    cancellationHandler;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                progressDialog.AllowCloseAndClose();
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                preparationCancellation.Dispose();
+            }
+            catch
+            {
+            }
+
+            quickBmsExportProgressDialog = null;
+            quickBmsExportProgressViewModel = null;
+            quickBmsExportPreparationCancellation = null;
+
+            try
+            {
+                SetQuickBmsOperation(
+                    QuickBmsOperationKind.None);
+            }
+            catch
+            {
+                quickBmsOperationKind =
+                    QuickBmsOperationKind.None;
+            }
+
+            try
+            {
+                if (mainWindow.WindowState == WindowState.Minimized)
+                    mainWindow.WindowState = WindowState.Normal;
+                mainWindow.Activate();
+                mainWindow.Focus();
+            }
+            catch
+            {
+            }
+
+            if (closePendingAfterExportPreparation)
+            {
+                closePendingAfterExportPreparation = false;
+                try
+                {
+                    ApplicationCloseReady?.Invoke(this, EventArgs.Empty);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        if (resultToPresent != null)
+            PresentQuickBmsExportResultSafely(resultToPresent);
+    }
+
+    private void PresentQuickBmsExportResultSafely(
+        QuickBmsExportResult result)
+    {
+        try
+        {
+            PresentQuickBmsExportResult(result);
+        }
+        catch
+        {
+            try
+            {
+                messageDialogService.ShowWarning(
+                    "Export finished, but its result message could not be displayed. The editor status still reflects the export outcome.",
+                    "Export Back to Wartales");
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private void PresentQuickBmsExportResult(
+        QuickBmsExportResult result)
+    {
+        string cleanupWarning = result.StagingCleaned
+            ? string.Empty
+            : Environment.NewLine + Environment.NewLine +
+              GetExportCleanupWarning();
+
+        switch (result.Outcome)
+        {
+            case QuickBmsExportOutcome.PreflightFailed:
+                Status = "Export preparation failed.";
+                messageDialogService.ShowError(
+                    "Export could not be prepared. No game files were changed." +
+                    cleanupWarning,
+                    "Export Back to Wartales");
+                break;
+
+            case QuickBmsExportOutcome.Success:
+                Status = "Exported to Wartales and verified.";
+                messageDialogService.ShowInformation(
+                    "Your saved changes were exported to Wartales and verified." +
+                    cleanupWarning,
+                    "Export Back to Wartales");
+                break;
+
+            case QuickBmsExportOutcome.ReimportNotConfirmed:
+                Status = "Export was not confirmed.";
+                messageDialogService.ShowError(
+                    "QuickBMS did not confirm that the data file was exported." +
+                    cleanupWarning,
+                    "Export Back to Wartales");
+                break;
+
+            case QuickBmsExportOutcome.VerificationFailed:
+                Status = "Export verification failed.";
+                messageDialogService.ShowError(
+                    "Export may have changed the game package, but Wartales Editor could not verify the exported data. Use Steam Verify if the game does not work correctly." +
+                    cleanupWarning,
+                    "Export Back to Wartales");
+                break;
+
+            default:
+                Status = "Export failed.";
+                messageDialogService.ShowError(
+                    "Export failed while Wartales was being updated. If Wartales no longer starts or its data appears damaged, use Steam’s Verify Integrity of Game Files or reinstall the game." +
+                    cleanupWarning,
+                    "Export Back to Wartales");
+                break;
+        }
+    }
+
+    private static string GetExportCleanupWarning()
+    {
+        return "The temporary Export working folder could not be removed. It will be checked before the next export.";
+    }
+
+    private void SetQuickBmsOperation(
+        QuickBmsOperationKind operationKind)
+    {
+        if (quickBmsOperationKind == operationKind)
+            return;
+
+        quickBmsOperationKind = operationKind;
+        OnPropertyChanged(nameof(IsImportInProgress));
+        OnPropertyChanged(nameof(IsExportInProgress));
+        OnPropertyChanged(nameof(IsQuickBmsOperationInProgress));
+        OnPropertyChanged(nameof(IsEditorInteractionEnabled));
+        RefreshCommandStates();
     }
 
     internal bool ConfirmReplaceExistingExtractedCdb()
@@ -3954,12 +4593,18 @@ public class MainViewModel : ObservableObject
         if (Project == null)
             return;
 
+        goldenCdbViewModel?.BeginOperation(
+            "Setting the current project as Golden...");
+
         try
         {
             goldenCdbService.ValidateProjectSource(Project);
-            if (!ConfirmGoldenDesignation(
-                    goldenCdbService.GetState()))
+            GoldenCdbState previousState =
+                goldenCdbService.GetState();
+            if (!ConfirmGoldenDesignation(previousState))
             {
+                goldenCdbViewModel?.ShowOperationWarning(
+                    "Golden CDB was not changed.");
                 return;
             }
 
@@ -3970,7 +4615,10 @@ public class MainViewModel : ObservableObject
             ShowGoldenDesignationResult(
                 state,
                 "Golden CDB was set from the current project.",
-                "The exact saved CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.");
+                "The exact saved CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.",
+                previousState.CanonicalFileExists
+                    ? "Golden CDB replaced."
+                    : "Golden CDB set from the current project.");
         }
         catch (Exception exception)
         {
@@ -3984,18 +4632,30 @@ public class MainViewModel : ObservableObject
         object? sender,
         EventArgs e)
     {
+        goldenCdbViewModel?.BeginOperation(
+            "Select a CDB to use as Golden...");
+
         string? fileName =
             fileDialogService.ShowOpenFileDialog(
                 ProjectOpenFilter);
         if (string.IsNullOrWhiteSpace(fileName))
+        {
+            goldenCdbViewModel?.ShowOperationInformation(
+                "CDB selection was cancelled. Golden CDB was not changed.");
             return;
+        }
 
         try
         {
+            goldenCdbViewModel?.BeginOperation(
+                "Setting the selected CDB as Golden...");
             goldenCdbService.ValidateSourceFile(fileName);
-            if (!ConfirmGoldenDesignation(
-                    goldenCdbService.GetState()))
+            GoldenCdbState previousState =
+                goldenCdbService.GetState();
+            if (!ConfirmGoldenDesignation(previousState))
             {
+                goldenCdbViewModel?.ShowOperationWarning(
+                    "Golden CDB was not changed.");
                 return;
             }
 
@@ -4006,7 +4666,10 @@ public class MainViewModel : ObservableObject
             ShowGoldenDesignationResult(
                 state,
                 "Golden CDB was set from the selected file.",
-                "The selected CDB was copied into editor-owned storage. The original file is no longer required. Wartales Editor does not certify that it is vanilla or pristine.");
+                "The selected CDB was copied into editor-owned storage. The original file is no longer required. Wartales Editor does not certify that it is vanilla or pristine.",
+                previousState.CanonicalFileExists
+                    ? "Golden CDB replaced from the selected file."
+                    : "Golden CDB set from the selected file.");
         }
         catch (Exception exception)
         {
@@ -4026,51 +4689,164 @@ public class MainViewModel : ObservableObject
     internal async Task<bool>
         ImportCurrentWartalesAsGoldenAsync()
     {
-        QuickBmsImportResult? importResult =
-            await ImportFromWartalesAsync();
-        if (importResult == null)
-            return false;
+        goldenCdbViewModel?.BeginOperation(
+            "Importing current Wartales CDB for Golden...");
 
-        GoldenCdbState previousGolden =
-            goldenCdbService.GetState();
-        if (!ConfirmGoldenDesignation(previousGolden))
-        {
-            RefreshGoldenCdbWindowState(previousGolden);
-            Status =
-                "Wartales import succeeded. Golden CDB was not changed.";
-            messageDialogService.ShowInformation(
-                previousGolden.CanonicalFileExists
-                    ? "Wartales data was imported successfully and remains open. Your existing Golden CDB was not replaced."
-                    : "Wartales data was imported successfully and remains open. No Golden CDB was set.",
-                "Golden CDB Unchanged");
-            return false;
-        }
+        QuickBmsDetachedAcquisitionAttempt attempt =
+            await AcquireDetachedFromWartalesAsync();
+        QuickBmsDetachedAcquisitionResult? importResult =
+            attempt.Result;
+        bool cleanupAttempted = false;
 
         try
         {
+            if (importResult == null)
+            {
+                if (lastQuickBmsImportAttemptOutcome ==
+                    QuickBmsImportAttemptOutcome.Failed)
+                {
+                    goldenCdbViewModel?.ShowOperationError(
+                        lastQuickBmsImportAttemptMessage);
+                }
+                else
+                {
+                    goldenCdbViewModel?.ShowOperationWarning(
+                        "Import was cancelled. Golden CDB was not changed.");
+                }
+
+                return false;
+            }
+
+            GoldenCdbState previousGolden =
+                goldenCdbService.GetState();
+            if (!ConfirmGoldenDesignation(previousGolden))
+            {
+                string? cleanupWarning =
+                    TryCleanDetachedGoldenAcquisition(
+                        importResult);
+                cleanupAttempted = true;
+                string localResult =
+                    previousGolden.CanonicalFileExists
+                        ? "Current Wartales CDB was imported. Existing Golden CDB was not replaced."
+                        : "Current Wartales CDB was imported. No Golden CDB was set.";
+                string dialogResult =
+                    previousGolden.CanonicalFileExists
+                        ? "Wartales data was imported successfully. Your existing Golden CDB was not replaced."
+                        : "Wartales data was imported successfully. No Golden CDB was set.";
+
+                RefreshGoldenCdbWindowState(previousGolden);
+                goldenCdbViewModel?.ShowOperationWarning(
+                    AppendCleanupWarning(
+                        localResult,
+                        cleanupWarning));
+                Status =
+                    cleanupWarning == null
+                        ? "Wartales data was imported. Golden CDB was not changed."
+                        : "Wartales data was imported and Golden CDB was not changed, but temporary cleanup needs attention.";
+
+                if (cleanupWarning == null)
+                {
+                    messageDialogService.ShowInformation(
+                        dialogResult,
+                        "Golden CDB Unchanged");
+                }
+                else
+                {
+                    messageDialogService.ShowWarning(
+                        AppendCleanupWarning(
+                            dialogResult,
+                            cleanupWarning),
+                        "Golden CDB Cleanup");
+                }
+
+                return false;
+            }
+
             GoldenCdbState state =
-                goldenCdbService.SetFromProject(
-                    importResult.Project);
+                goldenCdbService.SetFromFile(
+                    importResult.ExtractedCdbPath);
+            string? successCleanupWarning =
+                TryCleanDetachedGoldenAcquisition(
+                    importResult);
+            cleanupAttempted = true;
             goldenCdbComparisonService.Invalidate();
             RefreshGoldenCdbWindowState(state);
             ShowGoldenDesignationResult(
                 state,
-                "Current Wartales data was imported and set as Golden.",
-                "The exact imported CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.");
+                "Current Wartales CDB imported and set as Golden.",
+                "The exact imported CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.",
+                additionalWarning:
+                    successCleanupWarning);
             return true;
         }
         catch (Exception exception)
         {
+            string? cleanupWarning =
+                importResult != null &&
+                !cleanupAttempted
+                    ? TryCleanDetachedGoldenAcquisition(
+                        importResult)
+                    : null;
+            cleanupAttempted =
+                cleanupAttempted || importResult != null;
+            string localResult =
+                AppendCleanupWarning(
+                    "Current Wartales CDB was imported, but Golden CDB could not be updated.",
+                    cleanupWarning);
+            string dialogResult =
+                AppendCleanupWarning(
+                    "Wartales data was imported successfully, but it could not be designated as Golden." +
+                    Environment.NewLine + Environment.NewLine +
+                    $"Details: {exception.Message}",
+                    cleanupWarning);
+
             RefreshGoldenCdbWindowState();
+            goldenCdbViewModel?.ShowOperationError(
+                localResult);
             messageDialogService.ShowError(
-                "Wartales data was imported successfully and remains open, but it could not be designated as Golden." +
-                Environment.NewLine + Environment.NewLine +
-                $"Details: {exception.Message}",
+                dialogResult,
                 "Golden CDB");
             Status =
-                "Wartales import succeeded; Golden CDB designation failed.";
+                cleanupWarning == null
+                    ? "Wartales import succeeded; Golden CDB designation failed."
+                    : "Wartales import succeeded and Golden CDB designation failed; temporary cleanup also needs attention.";
             return false;
         }
+        finally
+        {
+            if (importResult != null &&
+                !cleanupAttempted)
+            {
+                _ = TryCleanDetachedGoldenAcquisition(
+                    importResult);
+            }
+
+            if (attempt.OwnsBusyState)
+            {
+                SetQuickBmsOperation(
+                    QuickBmsOperationKind.None);
+            }
+        }
+    }
+
+    private string? TryCleanDetachedGoldenAcquisition(
+        QuickBmsDetachedAcquisitionResult acquisition)
+    {
+        return quickBmsImportService.TryCleanDetachedAcquisition(
+            acquisition)
+                ? null
+                : "The temporary Golden acquisition folder could not be removed automatically.";
+    }
+
+    private static string AppendCleanupWarning(
+        string primaryMessage,
+        string? cleanupWarning)
+    {
+        return string.IsNullOrWhiteSpace(cleanupWarning)
+            ? primaryMessage
+            : primaryMessage +
+              Environment.NewLine + Environment.NewLine +
+              cleanupWarning;
     }
 
     private bool ConfirmGoldenDesignation(
@@ -4092,19 +4868,38 @@ public class MainViewModel : ObservableObject
     private void ShowGoldenDesignationResult(
         GoldenCdbState state,
         string successStatus,
-        string successMessage)
+        string successMessage,
+        string? localSuccessStatus = null,
+        string? additionalWarning = null)
     {
-        if (state.HasCleanupWarning)
+        if (state.HasCleanupWarning ||
+            !string.IsNullOrWhiteSpace(additionalWarning))
         {
             Status =
                 "Golden CDB was stored, but temporary cleanup needs attention.";
+            string warning = string.Join(
+                Environment.NewLine + Environment.NewLine,
+                new[]
+                {
+                    localSuccessStatus ?? successStatus,
+                    state.HasCleanupWarning
+                        ? state.Message
+                        : null,
+                    additionalWarning
+                }
+                .Where(message =>
+                    !string.IsNullOrWhiteSpace(message)));
+            goldenCdbViewModel?.ShowOperationWarning(
+                warning);
             messageDialogService.ShowWarning(
-                state.Message,
+                warning,
                 "Golden CDB Cleanup");
             return;
         }
 
         Status = successStatus;
+        goldenCdbViewModel?.ShowOperationSuccess(
+            localSuccessStatus ?? successStatus);
         messageDialogService.ShowInformation(
             successMessage,
             "Golden CDB Set");
@@ -4119,19 +4914,28 @@ public class MainViewModel : ObservableObject
 
     internal bool LoadGoldenCdb()
     {
+        goldenCdbViewModel?.BeginOperation(
+            "Loading Golden CDB...");
+
         try
         {
             ProjectModel detached =
                 goldenCdbService.LoadDetachedProject();
 
             if (!ConfirmAbandonUnsavedChanges())
+            {
+                goldenCdbViewModel?.ShowOperationWarning(
+                    "Load cancelled. The current project was not changed.");
                 return false;
+            }
 
             string canonicalPath =
                 goldenCdbService.GetCanonicalPath();
             PromoteLoadedProject(detached, canonicalPath);
             Status = "Golden CDB opened as the current project.";
             RefreshGoldenCdbWindowState();
+            goldenCdbViewModel?.ShowOperationSuccess(
+                "Golden CDB loaded.");
             return true;
         }
         catch (Exception exception)
@@ -4150,6 +4954,9 @@ public class MainViewModel : ObservableObject
         if (Project == null)
             return;
 
+        goldenCdbViewModel?.BeginOperation(
+            "Comparing current project to Golden...");
+
         try
         {
             GoldenCdbReference golden =
@@ -4159,6 +4966,8 @@ public class MainViewModel : ObservableObject
                     Project,
                     golden);
             goldenCdbViewModel?.ShowComparison(result);
+            goldenCdbViewModel?.ShowOperationSuccess(
+                $"Comparison complete. {result.Summary}");
             Status = result.Summary;
         }
         catch (Exception exception)
@@ -4178,13 +4987,20 @@ public class MainViewModel : ObservableObject
         if (!state.CanonicalFileExists)
         {
             RefreshGoldenCdbWindowState(state);
+            goldenCdbViewModel?.ShowOperationInformation(
+                "Golden CDB is already not set.");
             return;
         }
+
+        goldenCdbViewModel?.BeginOperation(
+            "Removing Golden CDB...");
 
         if (!messageDialogService.ShowConfirmation(
                 "Remove the stored Golden CDB? The current project, profiles, gameplay state, and Undo history will not be changed.",
                 "Remove Golden CDB?"))
         {
+            goldenCdbViewModel?.ShowOperationWarning(
+                "Removal cancelled. Golden CDB was not changed.");
             return;
         }
 
@@ -4194,6 +5010,8 @@ public class MainViewModel : ObservableObject
             goldenCdbComparisonService.Invalidate();
             RefreshGoldenCdbWindowState(removed);
             Status = "Golden CDB was removed.";
+            goldenCdbViewModel?.ShowOperationSuccess(
+                "Golden CDB removed.");
         }
         catch (Exception exception)
         {
@@ -4215,6 +5033,7 @@ public class MainViewModel : ObservableObject
         string message,
         Exception exception)
     {
+        goldenCdbViewModel?.ShowOperationError(message);
         messageDialogService.ShowError(
             message + Environment.NewLine + Environment.NewLine +
             $"Details: {exception.Message}",
@@ -4271,6 +5090,21 @@ public class MainViewModel : ObservableObject
             throw new ArgumentNullException(nameof(service));
     }
 
+    internal void UseQuickBmsExportServiceForTesting(
+        IQuickBmsExportService service)
+    {
+        quickBmsExportService = service ??
+            throw new ArgumentNullException(nameof(service));
+    }
+
+    internal void UseMessageDialogServiceForTesting(
+        IMessageDialogService service)
+    {
+        messageDialogService = service ??
+            throw new ArgumentNullException(nameof(service));
+    }
+
+
     internal void UseProjectPublicationFailureForTesting(
         Action? failure)
     {
@@ -4285,6 +5119,21 @@ public class MainViewModel : ObservableObject
 
     internal bool IsGoldenCdbWindowOpen =>
         goldenCdbWindow != null;
+
+    private enum QuickBmsImportAttemptOutcome
+    {
+        Cancelled,
+        Failed,
+        Succeeded
+    }
+
+    private sealed record QuickBmsImportAcquisitionAttempt(
+        QuickBmsImportResult? Result,
+        bool OwnsBusyState);
+
+    private sealed record QuickBmsDetachedAcquisitionAttempt(
+        QuickBmsDetachedAcquisitionResult? Result,
+        bool OwnsBusyState);
 
     private void OnLanguageDataSelectionRequested(
         object? sender,
@@ -4718,6 +5567,8 @@ public class MainViewModel : ObservableObject
     {
         OpenCommand?.NotifyCanExecuteChanged();
         ImportFromWartalesCommand?
+            .NotifyCanExecuteChanged();
+        ExportBackToWartalesCommand?
             .NotifyCanExecuteChanged();
         SaveCommand?.NotifyCanExecuteChanged();
 

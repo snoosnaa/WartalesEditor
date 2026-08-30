@@ -39,6 +39,15 @@ personal gameplay experience through safe, reusable editing tools.
 -   0.9.0 Character Progression & Party Economy ✅
 -   0.9.1 World Convenience — Overworld Movement Speed and Rain Frequency ✅
 
+## Completed Infrastructure Milestone
+
+-   QuickBMS Export Back to Wartales Version 1 — Engineering reviewed, exact-byte
+    verification complete, Project Owner live-package accepted, and closed ✅
+
+## Next Milestone
+
+-   Public Release Preparation
+
 ------------------------------------------------------------------------
 
 # Priority 1 -- Personal Gameplay Tools

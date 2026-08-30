@@ -2,15 +2,34 @@
 
 ## Current Milestone
 
-QuickBMS Write-Back / Deploy Edited CDB to Wartales
+Public Release Preparation
 
 ## Current Status
 
-Not started. Golden CDB Version 1 is closed, and QuickBMS Write-Back / Deploy is
-the next required milestone. It must begin with a separate Engineering
-Investigation and authority/safety resolution. No write-back, repack, deploy, or
-live `res.pak` mutation has been implemented. Public-release preparation remains
-after this milestone.
+**The complete QuickBMS Export and Golden acquisition milestone batch is closed.**
+QuickBMS Export Back to Wartales Version 1 passed Engineering Review and Project
+Owner live-package acceptance. The bounded MainWindow maximize cleanup passed
+focused review and Project Owner visual acceptance. Golden local status, detached
+acquisition-only behavior, exact same-path active-project preservation, and stale
+temporary-session reconciliation passed Final Narrow Engineering Review and the
+Project Owner brief re-test. The accepted direct Export workflow is Edit/Load → normal
+Save when required → one exact persisted-byte snapshot for identity and staging
+→ warning/confirmation → contained filtered QuickBMS
+reimport → read-only re-extraction → exact byte verification → safe cleanup.
+Known transport results cannot be rewritten by result-presentation or completed-
+progress observer failures, including when cleanup also fails. Partial workspace-
+creation cleanup failures preserve their retained path and warning independently.
+Deterministic coverage now exercises owner-resolution failure, the actual
+MainWindow close/retry chain, and complete application-state neutrality for
+verified success and verification failure. Project Owner live-package acceptance
+passed. The cleanup removes persistent work-area `MaxWidth`/`MaxHeight`
+constraints that undersized the native maximized window; Export behavior is
+unchanged.
+
+Version 1 intentionally has no automatic backup/restore, manifest, lineage,
+provenance or generation gate, Golden coupling, or project-state mutation. The
+recovery model is an optional player-made `res.pak` copy plus Steam Verify
+Integrity of Game Files or reinstall when necessary.
 
 Previous milestone:
 
@@ -56,23 +75,36 @@ recognized stale transaction artifacts are cleared before the next publication.
 Load publication rollback has deterministic coverage, and all Golden destination
 intent is resolved before ordinary save validation.
 
-The current-game import convenience action runs the unchanged QuickBMS import
-orchestration first, preserving unsaved-change handling, freshness confirmation,
-process containment, durable Extracted publication, project publication, and
-source provenance. Golden replacement is separately confirmed afterward and uses
-`GoldenCdbService.SetFromProject`; decline or Golden failure never undoes or
-misreports the successful import. No write-back/deploy behavior exists.
+The current-game import convenience action reuses the authoritative QuickBMS
+toolchain, process-containment, staging, discovery, fingerprint, and validation
+mechanics through a detached temporary `GoldenImport` workspace. It designates
+that validated file through `GoldenCdbService.SetFromFile`, then cleans the
+workspace. It never publishes to normal `Extracted\data.cdb`, reads or writes its
+`.wtstate`, or publishes an active project. Normal **Import From Wartales** still
+owns durable Extracted publication and active-project replacement; **Load Golden
+CDB** remains the explicit Golden action that opens it. No write-back or deploy
+behavior exists.
 
-Verification: main, Golden, Class A, and Update Survival builds complete with
-zero warnings and zero errors; 163 Golden checks, 180 Update Survival checks,
-focused QuickBMS and Language Data suites, and all 25 Class A groups pass. The
+Final verification: all Release builds complete with zero warnings and zero
+errors; Golden passes 199 checks, Export passes 202 checks, Update Survival passes
+180 checks, focused QuickBMS Import and Language Data pass, and all 25 Class A
+groups pass. Marked stale detached sessions are reconciled before a new Golden
+session; unrecognized, unsafe, reparse-containing, or still-locked content blocks
+refresh without creating another GUID. The
 final regressions invoke the original Import From Wartales command, accepted
 existing-Golden replacement through the live Golden window event, and three
 close/reopen/import cycles with no stale callback.
 
-Deferred non-blocking UX note: Golden-specific import/loading progress and result
-messages would be easier to notice inside the Golden window instead of primarily
-in the main status area. This is not required for Golden Version 1 closure.
+The earlier deferred classification of Golden-window-local operation feedback was
+superseded by Project Owner acceptance direction. The owned Golden ViewModel now
+retains one ephemeral local progress/result message until the next Golden action;
+success, cancellation, split import/designation outcomes, failures, comparison,
+and cleanup warnings appear in the Golden window. Detached cleanup warnings are
+preserved after success, replacement decline, and designation failure. Closing and reopening creates a
+fresh ViewModel with no stale result. Technical identity/hash remains hidden.
+The final detached-temp cleanup correction passed Final Narrow Engineering Review
+with no findings, and the Project Owner brief re-test passed. Golden CDB Version 1
+is fully closed.
 
 Earlier milestone:
 
@@ -390,7 +422,7 @@ configured 645-change state.
 
 ## Next Required Step
 
-Begin a separate Engineering Investigation for QuickBMS Write-Back / Deploy
-Edited CDB to Wartales. Golden CDB Version 1 is closed. Do not begin public-
-release preparation before the write-back/deploy milestone is completed and
-accepted.
+Begin Public Release Preparation as a separate milestone. QuickBMS safe Import,
+Update Survival, Golden CDB Version 1, and QuickBMS Export Back to Wartales Version
+1 are complete, reviewed, accepted, and closed. Do not begin release-preparation
+implementation as part of this reconciliation checkpoint.

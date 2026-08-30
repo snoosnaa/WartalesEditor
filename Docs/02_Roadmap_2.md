@@ -610,10 +610,13 @@ Values, Update Survival, or Check Compatibility authority. Multiple versions,
 history, metadata, Golden restore/reset, Steam validation, and automatic
 comparison remain deferred.
 
-Required sequence:
+Completed sequence:
 
-QuickBMS Write-Back / Deploy → Public-Release Preparation. Write-Back / Deploy is
-the next required milestone and has not started.
+QuickBMS Export Back to Wartales Version 1 is complete and closed after Engineering
+Review, exact read-only verification, and Project Owner live-package acceptance.
+The accepted scope is direct filtered QuickBMS reimport with manual backup/Steam
+recovery and no editor-managed package-management subsystem. Public Release
+Preparation is the next available milestone.
 
 Part 3 — Version 1.0, Reliability & Release Readiness
 Version 1.0 — Stable Public Release

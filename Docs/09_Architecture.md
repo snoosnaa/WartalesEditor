@@ -155,9 +155,35 @@ Steam Wartales location. Services accept explicit options and a process-runner
 abstraction for deterministic testing and later settings UI without embedding
 a user-specific absolute path in core logic.
 
-Backup, reimport, candidate package construction, live replacement, Restore
-Original Game File, Update Survival, Golden CDB, and external-tool packaging are
-outside this architecture milestone.
+## Export Back to Wartales transport boundary
+
+`MainViewModel` owns normal Save/validation and passes only the durable project
+path plus `CurrentCdbContentIdentity` to `QuickBmsExportService`. The service
+does not serialize or mutate `ProjectModel`. It reads the persisted source once,
+proves identity from that exact in-memory snapshot, and copies those same bytes to a marked
+`%TEMP%\WartalesEditor\QuickBmsExport\<guid>\Modded\data.cdb` session, validates
+the accepted toolchain and live package, and invokes the shared contained runner
+with `-w -r -r -f "{}data.cdb"`. Exit code alone is insufficient: a pure parser
+must confirm exactly one `data.cdb` reimport.
+
+After write, the package signature is rechecked and a separate contained
+read-only `-o -f "{}data.cdb"` extraction populates the session's `Verify`
+directory. Success requires exactly one regular extracted CDB whose length and
+SHA-256 equal the staged bytes. Safe terminal outcomes remove the owned session;
+unproven process termination preserves it for validated next-run reconciliation.
+Import and Export share one mutually exclusive operation state. Preparation may
+be cancelled; active write and verification cannot be cancelled by the user.
+Cleanup status is independent of the primary transport result. Once write may
+have started, result capture is separated from player-message presentation;
+presentation or final UI cleanup failures cannot rewrite the known transport
+outcome or make a pre-write-only unchanged-package claim.
+
+This is intentionally direct live-package transport, not package management.
+There is no editor-managed backup/restore, manifest, lineage, provenance or
+generation gate, Golden dependency, profile/snapshot integration, or export
+state persistence. Recovery is player-managed backup or Steam Verify/reinstall.
+The existing read-only Import From Wartales path remains architecturally
+separate.
 
 ---
 
@@ -219,15 +245,33 @@ before ordinary save validation; every final write remains subject to the
 unchanged validation workflow.
 
 The Golden window's **Import Current Wartales CDB as Golden** action composes two
-existing authorities. `MainViewModel` first runs the same read-only Import From
-Wartales orchestration used by the main command, including normal unsaved-change,
-freshness, toolchain, process-containment, staging, validation, durable promotion,
-project publication, and provenance behavior. Only a successful durable import
-is then passed to `GoldenCdbService.SetFromProject`. Golden replacement retains
-its separate confirmation and atomic exact-byte publication. Import cancellation
-or failure never reaches Golden; a later Golden failure does not roll back or
-misreport the successful import. Golden identity remains internal exact-byte
-authority and is not displayed in the ordinary management window.
+existing authorities across an explicit acquisition/publication boundary.
+`QuickBmsImportService` remains the one implementation for installation/toolchain
+validation, process containment, temporary extraction, discovery, validation, and
+fingerprints. Its internal detached acquisition result retains ownership of the
+validated workspace until a caller finishes consuming it. Normal `ImportAsync`
+adds durable `Extracted\data.cdb` promotion, gameplay-state reconciliation and
+`.wtstate` persistence; the main-menu caller then performs unsaved protection and
+`PromoteLoadedProject`, publishing references, current file/project, provenance,
+history, and ordinary import presentation.
+
+The Golden caller invokes only detached acquisition in the application-controlled
+temporary `GoldenImport` root, without abandon-unsaved protection. It never calls
+normal Extracted promotion or `PromoteLoadedProject`, and designates the exact
+temporary validated CDB with `GoldenCdbService.SetFromFile` before cleanup. It
+therefore cannot read, overwrite, fingerprint, timestamp, or persist state beside
+an active normal `Extracted\data.cdb`. Golden replacement
+retains its separate confirmation and atomic exact-byte publication. Acquisition
+cancellation/failure never reaches Golden; a later Golden failure does not open
+the acquired CDB or alter the active project. Cleanup is attempted after success,
+decline, and designation failure; a failed cleanup is appended to the primary
+local/dialog result. Detached sessions carry one temporary ownership marker that
+is deleted last with the session. Before a new Golden acquisition, the service
+removes only reparse-free GUID children with that exact marker. Unrecognized
+content or a session that still cannot be deleted stops refresh before another
+GUID is created, preventing silent accumulation. **Load Golden CDB** remains the
+only Golden-window action that intentionally uses active-project publication.
+Golden identity remains internal and is not displayed in the management window.
 
 ## Update Survival Identity and Compatibility
 

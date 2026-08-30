@@ -94,6 +94,98 @@ public sealed class QuickBmsImportService
                     promotedCdbPath)
                 : GameplayStateManifestSnapshot.NoPriorCanonical;
 
+        QuickBmsDetachedAcquisitionResult acquisition =
+            await AcquireDetachedAsync(
+                options,
+                package,
+                options.StagingRootDirectory,
+                reconcileOwnedSessions: false,
+                cancellationToken);
+
+        try
+        {
+            ProjectModel project =
+                PromoteAndLoadExtractedCdb(
+                    acquisition.ExtractedCdbPath,
+                    promotedCdbPath,
+                    acquisition.ExtractedCdbFingerprint,
+                    replaceExistingExtractedCdb,
+                    previousState);
+            FileFingerprint promotedCdbFingerprint =
+                fingerprintService.Calculate(
+                    promotedCdbPath);
+
+            bool cleaned =
+                TryCleanDetachedAcquisition(acquisition);
+
+            return new QuickBmsImportResult
+            {
+                Project = project,
+                WartalesInstallationDirectory =
+                    acquisition.WartalesInstallationDirectory,
+                SourcePackagePath = acquisition.SourcePackagePath,
+                SourcePackageFingerprint =
+                    acquisition.SourcePackageFingerprint,
+                QuickBmsExecutablePath =
+                    acquisition.QuickBmsExecutablePath,
+                QuickBmsExecutableFingerprint =
+                    acquisition.QuickBmsExecutableFingerprint,
+                ShiroScriptPath = acquisition.ShiroScriptPath,
+                ShiroScriptFingerprint =
+                    acquisition.ShiroScriptFingerprint,
+                StagingDirectory = acquisition.StagingDirectory,
+                ExtractedCdbPath = promotedCdbPath,
+                ExtractedCdbFingerprint = promotedCdbFingerprint,
+                ExtractionStartedUtc = acquisition.ExtractionStartedUtc,
+                SessionId = acquisition.SessionId,
+                ProcessExitCode = acquisition.ProcessExitCode,
+                ContainedProcessCount =
+                    acquisition.ContainedProcessCount,
+                StagingCleaned = cleaned
+            };
+        }
+        catch
+        {
+            TryCleanDetachedAcquisition(acquisition);
+            throw;
+        }
+    }
+
+    internal async Task<QuickBmsDetachedAcquisitionResult>
+        AcquireDetachedAsync(
+            QuickBmsImportOptions options,
+            string stagingRootDirectory,
+            CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        WartalesPackageInfo package =
+            installationService.Validate(
+                options.WartalesInstallationDirectory);
+
+        return await AcquireDetachedAsync(
+            options,
+            package,
+            stagingRootDirectory,
+            reconcileOwnedSessions: true,
+            cancellationToken);
+    }
+
+    internal bool TryCleanDetachedAcquisition(
+        QuickBmsDetachedAcquisitionResult acquisition)
+    {
+        ArgumentNullException.ThrowIfNull(acquisition);
+        return workspaceService.TryClean(acquisition.Workspace);
+    }
+
+    private async Task<QuickBmsDetachedAcquisitionResult>
+        AcquireDetachedAsync(
+            QuickBmsImportOptions options,
+            WartalesPackageInfo package,
+            string stagingRootDirectory,
+            bool reconcileOwnedSessions,
+            CancellationToken cancellationToken)
+    {
         QuickBmsToolchainInfo toolchain =
             toolchainService.Validate(
                 options.QuickBmsExecutablePath,
@@ -110,12 +202,15 @@ public sealed class QuickBmsImportService
                 toolchain.ScriptPath);
 
         EnsureStagingIsOutsideInstallation(
-            options.StagingRootDirectory,
+            stagingRootDirectory,
             package.InstallationDirectory);
 
         ExtractionWorkspace workspace =
-            workspaceService.Create(
-                options.StagingRootDirectory);
+            reconcileOwnedSessions
+                ? workspaceService.CreateReconciledOwnedSession(
+                    stagingRootDirectory)
+                : workspaceService.Create(
+                    stagingRootDirectory);
         DateTimeOffset startedUtc =
             DateTimeOffset.UtcNow;
         bool cleanupIsSafe = true;
@@ -164,25 +259,22 @@ public sealed class QuickBmsImportService
             }
 
             ValidateProcessResult(processResult);
-
             workspaceService.ValidateForUse(workspace);
 
             string extractedCdb =
-                LocateExtractedCdb(
-                    workspace);
+                LocateExtractedCdb(workspace);
             workspaceService.ValidateContainedRegularFile(
                 workspace,
                 extractedCdb);
             FileFingerprint cdbFingerprint =
-                fingerprintService.Calculate(
-                    extractedCdb);
+                fingerprintService.Calculate(extractedCdb);
 
             ProjectModel validationProject;
 
             try
             {
                 validationProject =
-                    jsonDataService.LoadProject(
+                    jsonDataService.LoadReferenceProject(
                         extractedCdb);
 
                 if (validationProject.Sheets.Count == 0)
@@ -199,23 +291,9 @@ public sealed class QuickBmsImportService
                     exception);
             }
 
-            ProjectModel project =
-                PromoteAndLoadExtractedCdb(
-                    extractedCdb,
-                    promotedCdbPath,
-                    cdbFingerprint,
-                    replaceExistingExtractedCdb,
-                    previousState);
-            FileFingerprint promotedCdbFingerprint =
-                fingerprintService.Calculate(
-                    promotedCdbPath);
-
-            bool cleaned =
-                workspaceService.TryClean(workspace);
-
-            return new QuickBmsImportResult
+            return new QuickBmsDetachedAcquisitionResult
             {
-                Project = project,
+                ValidationProject = validationProject,
                 WartalesInstallationDirectory =
                     package.InstallationDirectory,
                 SourcePackagePath = package.PackagePath,
@@ -225,15 +303,14 @@ public sealed class QuickBmsImportService
                 ShiroScriptPath = toolchain.ScriptPath,
                 ShiroScriptFingerprint = scriptFingerprint,
                 StagingDirectory = workspace.DirectoryPath,
-                ExtractedCdbPath = promotedCdbPath,
-                ExtractedCdbFingerprint = promotedCdbFingerprint,
+                ExtractedCdbPath = extractedCdb,
+                ExtractedCdbFingerprint = cdbFingerprint,
                 ExtractionStartedUtc = startedUtc,
                 SessionId = workspace.SessionId,
                 ProcessExitCode = processResult.ExitCode,
                 ContainedProcessCount =
-                    processResult.ContainedProcessCount
-                    ?? 0,
-                StagingCleaned = cleaned
+                    processResult.ContainedProcessCount ?? 0,
+                Workspace = workspace
             };
         }
         catch

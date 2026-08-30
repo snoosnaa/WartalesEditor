@@ -56,15 +56,28 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-QuickBMS Write-Back / Deploy Edited CDB to Wartales
+Public Release Preparation
 
 Current phase:
 
-Not started. This required milestone follows the completed Golden CDB work and
-must receive its own Engineering Investigation, authority/safety resolution,
-Design / Architecture Review, implementation, Engineering Review, Project Owner
-acceptance, reconciliation, and commit. No write-back, deploy, repack, or live
-`res.pak` mutation has begun. Public-release preparation follows this milestone.
+**QuickBMS Export Back to Wartales Version 1 is complete, reviewed, Project Owner
+accepted, and closed. Public Release Preparation is the next available activity.**
+File → Export Back to Wartales now reuses normal Save, captures the persisted
+CDB once, binds identity validation and staging to that exact byte snapshot,
+stages only `Modded\data.cdb` in a marked temporary session, and uses
+the contained QuickBMS runner for filtered direct reimport. Success requires an
+exact read-only re-extraction and byte-for-byte verification. Known transport
+outcomes survive presentation and completed-progress observer failures, and
+cleanup warnings remain independent of success, failure, pre-write cancellation,
+and partial workspace creation. Permanent tests cover owner-resolution failure,
+the actual MainWindow close/retry lifecycle, and deep state neutrality across
+project JSON and identities, gameplay state, Undo/Redo, profiles, snapshots,
+Golden, compatibility reporting, and `.wtstate`. No automatic
+backup, restore, provenance/generation gate, Golden integration, or project
+mutation was added. Project Owner live-package acceptance passed: the editor
+verified the live write, Wartales reported modified files, and the accepted Rusty
+Shiv sale-price change appeared in a new game. No additional live Export was
+performed during final correction, review, or reconciliation verification.
 
 Previous milestone:
 
@@ -89,8 +102,12 @@ created.
 **Tools → Golden CDB...** opens one modeless management window for Set/Replace,
 standalone selection, current installed Wartales import/designation, Load,
 Compare, and Remove. The import action reuses the existing read-only QuickBMS
-Import From Wartales workflow, then passes only its successfully promoted durable
-project to Golden designation. It adds no extraction or write-back path. The
+extraction mechanics in a detached temporary `GoldenImport` workspace, designates
+those exact validated bytes, and cleans the workspace. It does not publish or
+touch normal `Extracted\data.cdb` or its `.wtstate`. Normal Import From Wartales
+still acquires, durably publishes, and opens the Extracted project, while Load Golden CDB
+remains the explicit Golden action that replaces the current project. It adds no
+extraction or write-back path. The
 exact-byte SHA-256 identity remains internal and is no longer shown in the normal
 window. Reference loading is explicitly
 sidecar-free and never installs `.wtstate` gameplay state or source provenance.
@@ -109,7 +126,7 @@ ordinary validation. Golden
 does not authorize mutation, Restore Previous Values, profile behavior, Update
 Survival provenance, or Check Compatibility.
 
-Permanent isolated verification includes 163 Golden CDB checks, 180 Update
+Permanent isolated verification includes 199 Golden CDB checks, 180 Update
 Survival checks, focused QuickBMS and Language Data suites, and all 25 Class A
 compatibility groups. All four projects build with zero warnings and zero errors.
 The final Golden additions behaviorally prove that the original Import From
@@ -117,15 +134,37 @@ Wartales command has no Golden side effect, accepted convenience import replaces
 an existing Golden with exact durable bytes, and three close/reopen/import window
 cycles retain exactly one event path.
 
-Project Owner acceptance is complete. The corrected Golden window, Import Current
-Wartales CDB as Golden workflow, hidden technical identity, and retained Load
-Golden CDB workflow were manually accepted. Golden-specific progress and result
-messages remain primarily in the main status area; showing them in the Golden
-window is an accepted, non-blocking deferred UX refinement.
+Project Owner acceptance for Golden functionality is complete. The later required
+local-status correction passed focused review and Project Owner confirmation.
+Golden operations show ephemeral progress and result text in
+the owned Golden window while retaining compatible main-status messages. Import
+success, replacement decline, designation failure, QuickBMS failure, Load,
+Set/Replace/Select, Remove, Compare, and cleanup warnings have distinct truthful
+local outcomes. Closing and reopening starts with no stale message, and the
+technical identity/hash remains hidden. The earlier deferred classification is
+superseded. Export Project Owner acceptance and the reviewed, visually accepted
+MainWindow maximize cleanup are complete.
 
-Required sequence:
+Project Owner subsequently corrected the Golden convenience import semantics.
+That action is now detached acquisition-only with respect to the active editor
+and the normal Extracted working file: it does
+not prompt to abandon unsaved work, call active-project publication, rebuild
+references, clear history, install imported provenance/state, or change the
+current file. Exact same-path tests prove an active `Extracted\data.cdb`, its
+`.wtstate`, dirty in-memory CDB/gameplay state, and all related editor state remain
+unchanged. Accepted/declined replacement and acquisition/designation failures all
+preserve the current project, and detached cleanup warnings survive decline and
+designation failure. A tiny temporary marker identifies editor-owned detached
+sessions; the next Golden acquisition safely reconciles marked stale sessions
+before creating a new GUID, while unrecognized or undeletable content blocks the
+refresh instead of accumulating folders. Final Narrow Engineering Review returned
+**PASS** with no findings, and the Project Owner brief re-test passed. The detached
+Golden acquisition correction and Golden CDB Version 1 are closed.
 
-QuickBMS Write-Back / Deploy → Public-Release Preparation.
+Completed sequence:
+
+QuickBMS safe Import → Update Survival → Golden CDB → QuickBMS Export Back to
+Wartales. Public Release Preparation is the next available activity.
 
 Earlier milestone:
 
@@ -637,8 +676,8 @@ Feature Batch
 Completed bounded reset-authority investigation and Restore Previous Values
 correction
 
-Completed QuickBMS safe-import milestone, followed by separately authorized
-package backup/reimport/install/restore milestones
+Completed QuickBMS safe Import, Update Survival, Golden CDB Version 1, and direct
+QuickBMS Export Back to Wartales Version 1 milestones
 
 Completed, reviewed, and Project Owner accepted Update Survival
 
@@ -746,9 +785,8 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Begin a separate Engineering Investigation for QuickBMS Write-Back / Deploy
-Edited CDB to Wartales. Golden CDB Version 1 is closed. Public-Release
-Preparation remains after the write-back/deploy milestone.
+Begin Public Release Preparation as a separate milestone. QuickBMS Export Back to
+Wartales Version 1 and Golden CDB Version 1 are closed.
 
 Document Maintenance
 

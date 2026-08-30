@@ -86,4 +86,52 @@ public sealed class WartalesInstallationService
             package.FullName,
             package.Length);
     }
+
+    public WartalesPackageInfo ValidateForExport(
+        string installationDirectory)
+    {
+        WartalesPackageInfo package =
+            Validate(installationDirectory);
+
+        try
+        {
+            FileInfo file = new(package.PackagePath);
+
+            if ((file.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new IOException(
+                    "The Wartales game package is a reparse point.");
+            }
+
+            using FileStream stream = new(
+                package.PackagePath,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None);
+
+            if (stream.Length <= ExpectedSignature.Length)
+            {
+                throw new IOException(
+                    "The Wartales game package is empty.");
+            }
+
+            Span<byte> signature = stackalloc byte[4];
+
+            if (stream.Read(signature) != signature.Length ||
+                !signature.SequenceEqual(ExpectedSignature))
+            {
+                throw new IOException(
+                    "The Wartales game package signature is invalid.");
+            }
+        }
+        catch (Exception exception)
+        {
+            throw new QuickBmsImportException(
+                QuickBmsImportFailureKind.PackageInvalid,
+                "Wartales could not be updated. Close the game and check that Wartales Editor can write to the installation folder.",
+                exception);
+        }
+
+        return package;
+    }
 }

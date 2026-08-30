@@ -24,6 +24,26 @@
 
 # Architecture
 
+## QuickBMS export transport
+
+Export Back to Wartales is a transport operation over exact persisted CDB bytes.
+Normal Save and validation remain owned by `MainViewModel`; the export service
+reads the source once, checks `CurrentCdbContentIdentity` from that snapshot,
+stages those exact bytes only as `Modded\data.cdb`, and never
+serializes or mutates `ProjectModel`. It uses the existing Job Object process
+runner for filtered direct reimport, then performs an independent filtered
+read-only extraction and exact fingerprint comparison.
+
+Temporary-session markers prove cleanup ownership only. They are not manifests
+or deployment history. Unproven process termination prevents cleanup; otherwise
+recognized sessions are removed or reconciled on the next attempt. Version 1
+deliberately has no automatic package backup/restore, provenance/generation
+gate, or Golden CDB role.
+
+Transport outcome, player-facing presentation, and temporary-workspace cleanup
+are separate concerns. A presentation exception cannot replace a known result,
+and cleanup failure adds a warning without changing the primary outcome.
+
 The editor follows the MVVM (Model-View-ViewModel) pattern.
 
 Current data flow:

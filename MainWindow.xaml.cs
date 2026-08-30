@@ -151,6 +151,9 @@ public partial class MainWindow : Window
         DataContext =
             ViewModel;
 
+        ViewModel.ApplicationCloseReady +=
+            OnApplicationCloseReady;
+
         Closing +=
             OnWindowClosing;
     }
@@ -310,11 +313,6 @@ public partial class MainWindow : Window
         Rect area =
             workArea.Value;
 
-        MaxWidth =
-            area.Width;
-        MaxHeight =
-            area.Height;
-
         Width =
             Math.Min(
                 Width,
@@ -359,11 +357,6 @@ public partial class MainWindow : Window
             Width > area.Width
             ||
             Height > area.Height;
-
-        MaxWidth =
-            area.Width;
-        MaxHeight =
-            area.Height;
 
         if (isOversized)
         {
@@ -791,5 +784,14 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
         }
+    }
+
+    private void OnApplicationCloseReady(
+        object? sender,
+        EventArgs e)
+    {
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Normal,
+            new Action(Close));
     }
 }

@@ -1341,6 +1341,23 @@ contracts. Implementation corrections are complete; Renewed Focused Engineering
 Review and Project Owner Interactive Acceptance remain pending. No commit or
 push was performed.
 
+## 2026-08-30 — QuickBMS Export Post-Acceptance UI Cleanup
+
+Project Owner Interactive Acceptance passed, including a successful live Export,
+normal Wartales launch, and the expected in-game data change. The bounded cleanup
+corrects a maximized-window right/bottom uncovered area caused by assigning the
+monitor work-area dimensions to the WPF window's persistent `MaxWidth` and
+`MaxHeight`. Those top-level constraints applied to the entire native window,
+including its non-client resize frame, and could undersize maximized client
+coverage. Normal-state work-area clamping and reachability recovery remain.
+
+Six focused checks use the actual STA `MainWindow` to cover restored, maximized,
+restore-after-maximize, wider/narrower, taller/shorter, menu/toolbar/status-bar,
+Gameplay Tools, and Detailed Editor layout behavior. The Export suite now passes
+202/202. Export behavior was not changed. Focused cleanup review and the brief
+Project Owner visual re-test remain pending; final documentation reconciliation,
+commit, and push remain pending.
+
 # 2026-08-25 — Update Survival Final Focused Corrections
 
 Closed the three remaining findings from Renewed Focused Engineering Review.
@@ -1454,6 +1471,164 @@ NOTES**. Main, Golden, Update Survival, and Class A Release builds completed wit
 zero warnings/errors; Golden passed 163, Update Survival 180, focused QuickBMS and
 Language Data passed, and all 25 Class A groups passed. Project Owner acceptance,
 Engineering acceptance, and documentation reconciliation are complete. The
-Golden-window-local progress/result messaging idea remains an accepted deferred
-UX note. Golden CDB Version 1 is closed; QuickBMS Write-Back / Deploy is the next
-required, not-started milestone before public-release preparation.
+Golden-window-local progress/result messaging was classified here as an accepted
+deferred UX note; later Project Owner direction superseded that classification
+and required the correction recorded below. Golden CDB Version 1 was otherwise
+closed; QuickBMS Write-Back / Deploy was the next required milestone before
+public-release preparation.
+# 2026-08-30 — QuickBMS Export Back to Wartales Version 1 Implementation
+
+Implemented the accepted direct Export workflow: normal Save when required,
+exact persisted-identity validation, marked GUID `Modded\data.cdb` staging,
+exclusive live-package preflight, filtered contained QuickBMS reimport, exact-one
+output confirmation, and filtered read-only byte-for-byte verification. Import
+and Export now share a mutually exclusive operation state; the owned progress
+window permits cancellation only during preparation and defers application close
+until safe preparation cleanup finishes.
+
+Version 1 adds no automatic package backup/restore, manifest, lineage,
+provenance/generation gate, Golden integration, or project mutation. The focused
+isolated suite passes 73 checks and no installed `res.pak` was written.
+Implementation is complete; Focused Engineering Review and Project Owner
+live-package acceptance remain pending. No commit or push was performed.
+
+## 2026-08-30 — QuickBMS Export Focused Corrections
+
+Corrected the four findings from the first Focused Engineering Review without
+changing the accepted direct-write architecture. Identity validation, source
+fingerprinting, and staged input now derive from one captured byte snapshot.
+Transport result capture is separated from result-message presentation, and
+cleanup failure is carried independently through preparation, cancellation,
+success, and failure paths.
+
+Permanent coverage expanded from 73 to 164 checks with behavioral save-first,
+Import/Export exclusion, WPF progress and close lifecycle, source replacement,
+presentation exception, cleanup matrix, timeout/termination, project-neutrality,
+and directory-reparse tests. File-symlink cases retain the established explicit
+skip when Windows privilege is unavailable. Implementation corrections are
+complete; Renewed Focused Engineering Review is pending. No commit or push was
+performed.
+
+## 2026-08-30 — QuickBMS Export Final Focused Corrections
+
+Corrected the four blockers from the Renewed Focused Engineering Review without
+changing direct-write transport semantics. Exact verification now finalizes
+Success before best-effort Completed progress notification, so observer and
+cleanup failures remain secondary. Partial workspace initialization now reports
+the primary creation error together with truthful cleanup status and a retained
+editor-owned path when safe cleanup fails.
+
+The focused suite now passes 196 checks. New deterministic coverage exercises
+post-session, post-marker, and post-Modded creation failures; retained-session
+reconciliation; owner resolution before dialog tracking; the actual MainWindow
+Preparing close/retry and Writing/Verifying close rejection paths; an exceptional
+close-ready subscriber; and deep application-state neutrality after Save for
+both verified Success and VerificationFailed. The neutrality capture covers
+project/root references and JSON, structure, identities, provenance, modification
+flags, complete gameplay state, Undo/Redo stacks, profile definitions, snapshot
+bytes, Golden state/file, compatibility report, warnings, and exact `.wtstate`
+bytes. Final Renewed Focused Engineering Review and Project Owner live-package
+acceptance remain pending. No installed package was written, and no commit or
+push was performed.
+
+## 2026-08-30 — Golden CDB Window Local-Status Acceptance Correction
+
+Project Owner direction superseded the prior non-blocking/deferred classification
+of Golden-window-local operation feedback. `GoldenCdbViewModel` now owns one
+ephemeral progress/result message and minimal busy/severity presentation state;
+the existing MainViewModel Golden handlers publish truthful outcomes from the
+unchanged import, designation, load, comparison, and removal operations. The
+window adds one wrapping status area and disables Golden actions during the
+asynchronous convenience import without changing shared QuickBMS coordination.
+
+Permanent WPF coverage includes visible import progress, success, replacement
+decline, designation and QuickBMS failure, Load results, Set/Replace/Select/
+Remove, comparison, cleanup warning, message replacement, and fresh close/reopen
+state. The Golden suite increased from 163 to 188 checks. Identity/hash remains
+hidden. Export behavior and the reviewed MainWindow maximize correction remain
+unchanged. Focused review and brief Project Owner visual confirmation remain;
+final combined reconciliation, commit, and push were not performed.
+
+## 2026-08-30 — Golden Import Acquisition / Active-Project Separation
+
+Project Owner acceptance identified that the Golden convenience import still
+published the acquired CDB as the active editor project. The existing service was
+already correctly separated: `QuickBmsImportService.ImportAsync` owns acquisition
+and durable Extracted publication, while `MainViewModel.PromoteLoadedProject`
+owns active-project publication. The UI orchestration now exposes that boundary.
+Normal Import retains unsaved protection and publication; Golden import skips
+both, designates the durable standalone CDB with `SetFromFile`, and leaves the
+active project untouched. Load Golden remains the explicit publication action.
+
+The Golden suite now passes 193 checks. New behavioral coverage preserves dirty
+CDB and gameplay state, project/file references, JSON, identities/provenance,
+Undo/Redo, compatibility, references, active sidecar bytes, and profile/snapshot
+artifacts, plus active localization, across success, decline, acquisition failure,
+and designation failure.
+Local wording no longer implies the acquired project was opened. Focused review
+and brief Project Owner re-test remain pending; no commit or push was performed.
+
+## 2026-08-30 — Detached Golden Acquisition Correction
+
+Focused review found that avoiding `PromoteLoadedProject` was insufficient because
+`QuickBmsImportService.ImportAsync` still replaced normal `Extracted\data.cdb` and
+reconciled its `.wtstate`. That could change the backing files of an already-active
+imported project while leaving its in-memory model untouched.
+
+The import service now exposes one internal detached acquisition boundary for the
+existing installation/toolchain checks, contained QuickBMS process, safe staging,
+CDB discovery, validation, and fingerprints. Normal Import consumes that result
+through its unchanged durable Extracted/state/provenance publication. Golden
+instead consumes the validated CDB directly from a transient sibling
+`GoldenImport` root, calls `GoldenCdbService.SetFromFile`, and cleans the workspace.
+It never participates in normal Extracted or `.wtstate` publication.
+
+Permanent same-path coverage first runs normal Import, makes the active Extracted
+project CDB- and gameplay-state-dirty, then proves Golden refresh preserves exact
+Extracted/sidecar bytes, the active model and identities, Undo/Redo, references,
+localization, compatibility, profiles, and snapshots without prompting or saving.
+Accepted/declined replacement, acquisition/designation failure, detached cleanup,
+and cleanup-warning propagation now pass 197 Golden checks. The focused QuickBMS
+Import suite still passes. Renewed Focused Engineering Review remains pending; no
+final reconciliation, Project Owner re-test, commit, or push was performed.
+
+## 2026-08-30 — Final Detached Golden Temp Cleanup Correction
+
+Renewed review confirmed detached acquisition and same-path preservation but found
+that a failed cleanup could leave a GUID session which later acquisitions ignored.
+Detached Golden sessions now carry one temporary exact ownership marker which is
+deleted last. Before a new session is created, production reconciles only
+reparse-free GUID children with that marker. A marked session which remains
+locked, or any unrecognized child, blocks refresh before QuickBMS starts or
+another GUID is created.
+
+Focused regressions no longer delete retained sessions from test code. They prove
+a released stale session is removed by the next production acquisition, exactly
+one fresh acquisition proceeds, a still-locked session blocks without
+accumulation, and the Golden window displays replacement-decline plus cleanup-
+warning text. The Golden suite now passes 199 checks. Final Narrow Engineering
+Review and Project Owner re-test remain pending; no commit or push was performed.
+
+## 2026-08-30 — QuickBMS Export and Golden Acquisition Final Closure
+
+The complete uncommitted milestone batch passed final lifecycle reconciliation.
+QuickBMS Export Back to Wartales Version 1 passed Engineering Review and Project
+Owner live-package acceptance, including exact verification and an in-game Rusty
+Shiv sale-price result. The bounded MainWindow maximize cleanup passed focused
+review and Project Owner visual acceptance.
+
+Golden local status, detached acquisition-only behavior, exact same-path active-
+project preservation, and retained temporary-session reconciliation are complete.
+Final Narrow Engineering Review returned **PASS** with no findings, and the Project
+Owner brief re-test passed. Production reconciles safe marked stale sessions before
+creating a fresh workspace and blocks unknown, unsafe, reparse-containing, locked,
+or otherwise unremovable residue without accumulation.
+
+Final verification completed with zero-warning Release builds, Golden 199, Export
+202, Update Survival 180, focused QuickBMS Import and Language Data passing, and
+all 25 Class A groups passing. MainWindow layout/maximize and Golden lifecycle
+coverage passed; identity remains hidden; temp and process audits were clean. No
+additional live Export was performed during correction, review, or reconciliation.
+QuickBMS safe Import, Update Survival, Golden CDB Version 1, and QuickBMS Export
+Back to Wartales Version 1 are closed. Public Release Preparation is the next
+available high-level activity and was not begun here.
