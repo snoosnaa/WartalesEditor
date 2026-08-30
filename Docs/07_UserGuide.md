@@ -1,6 +1,59 @@
 ﻿
 # Version 0.10.0 workflow terminology
 
+# Golden CDB
+
+Use **Tools → Golden CDB...** to manage one optional reference CDB. Golden means
+only the exact file you choose as your reference; Wartales Editor checks that it
+is structurally usable but does not certify that it is vanilla, pristine,
+Steam-verified, or current. The stored copy is
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`. Its technical identity remains
+internal; the normal Golden window shows the stored filename and useful status or
+cleanup messages instead. No metadata file or archive history is created.
+
+**Set Current Project as Golden** requires the open CDB content to match its saved
+file. Unsaved scalar, added, removed, null, and other structural CDB changes must
+be saved first; a gameplay-state-only change does not block designation because
+it does not change the CDB bytes. **Select CDB...** validates and copies a standalone CDB without opening
+its adjacent gameplay state. Replacing Golden requires confirmation. The source
+file can be moved or deleted after a successful Set. **Remove Golden CDB** removes
+only the stored reference; it does not close or alter the current project,
+profiles, gameplay state, or Undo history.
+
+**Import Current Wartales CDB as Golden** runs the same read-only **Import From
+Wartales** workflow used by the main editor. It extracts and validates the
+currently installed game data, publishes and opens the durable imported CDB, and
+then offers to designate those exact persisted bytes as Golden. If Golden already
+exists, replacement still requires confirmation. Declining changes only the
+Golden step: the successful import remains open and the previous Golden remains
+unchanged. Import cancellation or failure does not change Golden. This action
+does not write to or deploy into `res.pak`.
+
+If the canonical Golden is published but an obsolete temporary transaction file
+cannot be removed, the window reports cleanup attention instead of clean success.
+Golden remains usable and the next Set/Replace safely clears recognized stale
+transaction files before publishing.
+
+**Load Golden CDB** opens a detached, sidecar-free copy through the normal
+unsaved-changes prompt. It does not grant Restore Previous Values authority.
+When a loaded Golden project is saved, or another project's save destination is
+the Golden path, the editor explicitly offers Save Golden Anyway, Choose Another
+Location, or Cancel. Choosing another location creates the normal editable copy
+and leaves Golden unchanged. This choice is made before ordinary save validation;
+Cancel exits immediately, while the final selected destination is still validated
+before any write.
+
+**Compare Current to Golden** explicitly compares current live values, including
+unsaved edits, without changing either project. Exact bytes receive an exact
+match message. Byte-different projects with the same supported editor values
+receive a modeled all-clear. Otherwise the grid shows only proven differences.
+Records without safe stable identifiers and unsupported structures are reported
+separately as incomplete coverage, not counted as differences. If either side is
+ambiguous or unsupported, the editor does not also claim the corresponding item
+is missing/new and does not compare descendants under that unresolved identity.
+Golden comparison
+is separate from **Check Compatibility** and never applies or restores changes.
+
 # Language Data
 
 The Detailed Editor can use localized Wartales names from a game export

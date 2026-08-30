@@ -163,6 +163,72 @@ outside this architecture milestone.
 
 # Core Architectural Subsystems
 
+## Golden CDB Reference Boundary
+
+`GoldenCdbService` owns one optional user-designated reference at
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`. `GoldenCdbIdentity` is the
+canonical `sha256:` identity of the exact stored bytes. It is intentionally
+independent of `SourceCdbGenerationIdentity` and
+`CurrentCdbContentIdentity`: equality may be informative, but Golden never
+establishes provenance, authorizes historical gameplay state, or changes Update
+Survival classification.
+
+`JsonDataService.LoadReferenceProject` uses the same exact-byte parsing core as
+ordinary loading while excluding adjacent `.wtstate` publication. It hashes and
+parses the same byte buffer, builds through `ProjectModelFactory`, requires at
+least one modeled sheet, sets only current-content identity, and leaves source
+identity and provenance unknown. Golden storage stages and revalidates exact
+bytes in the canonical directory, atomically moves or replaces them, verifies
+hash and length after promotion, and uses only transient candidate/rollback
+siblings. No durable metadata, backup, archive, or source-path authority exists.
+Recognized stale transaction siblings must be removed before another publication
+begins. A canonical publication remains active when only post-publication cleanup
+fails, but the service reports an Available state with an explicit cleanup warning
+until the residue is removed; it never reports ordinary clean success.
+
+`GoldenCdbComparisonService` is read-only. It caches only the Golden index under
+the exact canonical hash and rebuilds the current index for every explicit
+comparison so live unsaved edits participate. Matching is ordinal by unique
+sheet name, explicit unique entry source ID, and unique
+`EffectivePropertyPath`. Missing sheets/entries aggregate at their own scope;
+ID-less, ambiguous, and unsupported records become separate coverage findings.
+Indexes retain unresolved keys and scope-wide unsupported-identity state. An
+unresolved identity on either side suppresses Missing/New classification and all
+descendant comparison for that scope; only proven absence can produce a
+difference. Coverage findings therefore never inflate `DifferenceCount`.
+Arrays remain one property and distinguish shape from value by the established
+gameplay-operation shape fingerprint. Comparison never calls the mutation,
+transaction, profile, snapshot, gameplay-state, or compatibility systems.
+
+The canonical path is reserved in the normal destination-based save workflow.
+An intentional overwrite invalidates both Golden caches before Save and
+reconciles them from the actual canonical file in a guaranteed completion path,
+including when CDB publication succeeded but `.wtstate` persistence failed.
+Loading Golden uses normal unsaved-change confirmation and
+`PromoteLoadedProject`; it receives no special Restore Previous Values authority.
+Detached load publication uses the shared failure-atomic path: reference data,
+current project/file identity, and history remain or are restored together if
+publication fails.
+
+Set Current validates the live `RootDocument` against a fresh sidecar-free parse
+of the persisted current file. This catches scalar and structural CDB changes,
+including removed properties no longer represented by an attached
+`PropertyModel`, while allowing gameplay-operation-state-only changes whose CDB
+content is unchanged. Save destination and Golden-overwrite intent are resolved
+before ordinary save validation; every final write remains subject to the
+unchanged validation workflow.
+
+The Golden window's **Import Current Wartales CDB as Golden** action composes two
+existing authorities. `MainViewModel` first runs the same read-only Import From
+Wartales orchestration used by the main command, including normal unsaved-change,
+freshness, toolchain, process-containment, staging, validation, durable promotion,
+project publication, and provenance behavior. Only a successful durable import
+is then passed to `GoldenCdbService.SetFromProject`. Golden replacement retains
+its separate confirmation and atomic exact-byte publication. Import cancellation
+or failure never reaches Golden; a later Golden failure does not roll back or
+misreport the successful import. Golden identity remains internal exact-byte
+authority and is not displayed in the ordinary management window.
+
 ## Update Survival Identity and Compatibility
 
 `ProjectModel` owns two production-read-only exact-byte identities.

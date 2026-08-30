@@ -592,6 +592,29 @@ Information
 Suggested fixes
 Migration concerns
 
+Golden CDB — User-Authoritative Reference
+
+Status: Version 1 complete and closed. Final Renewed Focused Engineering Review
+passed with non-blocking notes; Project Owner acceptance and the brief corrected-
+functionality re-test passed; final behavioral coverage and documentation
+reconciliation are complete.
+
+The implemented scope provides one exact user-designated reference at
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`, sidecar-free loading,
+exact-byte SHA-256 identity, atomic Set/Replace/Remove, explicit Load, protected
+intentional save-over, observational difference-only comparison, and direct reuse
+of the read-only Import From Wartales workflow for current-game designation. The
+identity remains internal rather than normal player-facing UI. It does not
+certify pristine/vanilla status and has no profile, mutation, Restore Previous
+Values, Update Survival, or Check Compatibility authority. Multiple versions,
+history, metadata, Golden restore/reset, Steam validation, and automatic
+comparison remain deferred.
+
+Required sequence:
+
+QuickBMS Write-Back / Deploy → Public-Release Preparation. Write-Back / Deploy is
+the next required milestone and has not started.
+
 Part 3 — Version 1.0, Reliability & Release Readiness
 Version 1.0 — Stable Public Release
 Objective

@@ -6,6 +6,82 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Golden CDB Version 1
+
+**Status:** Complete and closed; Final Renewed Focused Engineering Review passed
+with non-blocking notes, Project Owner acceptance and re-test passed, and final
+documentation reconciliation completed
+
+## Added
+
+- One optional user-authoritative Golden reference at
+  `<Documents>\Wartales Editor\Golden CDB\data.cdb` with exact-byte SHA-256
+  identity and no metadata/archive companion.
+- **Tools → Golden CDB...** as one owned modeless window for Set/Replace,
+  standalone selection, read-only current-game import and designation, Load,
+  Compare, and Remove.
+- Shared sidecar-free reference loading that hashes and parses the same bytes,
+  uses the existing project model factory, and grants no source provenance or
+  gameplay-state authority.
+- Atomic exact-byte initial publication/replacement with staged validation,
+  rollback verification, failure recovery, and transient cleanup.
+- Explicit save-over-Golden protection for both a loaded canonical project and
+  another project selecting the canonical destination.
+- Difference-only live comparison with exact/modeled all-clear states, stable
+  modeled identity, array shape/value classification, and separate aggregated
+  unsupported-coverage reporting.
+- 163 isolated permanent Golden CDB checks covering storage, validation,
+  atomicity, removal, load, save protection, overwrite reconciliation,
+  comparison, caching, no-mutation boundaries, and modeless UI structure.
+
+## Corrected after Focused Engineering Review
+
+- Retained unresolved sheet, entry, and property identities in comparison indexes
+  so ambiguity/unsupported coverage cannot also become false Missing/New results.
+- Replaced attached-property-only Set Current detection with a live-versus-fresh-
+  persisted CDB content comparison, covering structural removal plus gameplay
+  state while preserving genuine state-only designation.
+- Added explicit cleanup-warning outcomes, stale transaction ownership cleanup,
+  failure-atomic Load Golden publication coverage, and cold-cache source deletion
+  coverage.
+- Resolved Golden save intent and final destination before running the unchanged
+  ordinary save-validation workflow.
+
+## Corrected after Project Owner testing
+
+- Added **Import Current Wartales CDB as Golden**, which reuses the existing
+  read-only Import From Wartales orchestration and designates only its successful
+  durable imported project through `GoldenCdbService`.
+- Preserved separate Golden replacement confirmation and truthful cancellation,
+  import-failure, replacement-decline, and post-import designation-failure
+  outcomes.
+- Removed the visible identity/hash row from the normal Golden window while
+  preserving internal SHA-256 authority and player-facing status/cleanup text.
+- Added behavioral production-path regressions proving that the original Import
+  From Wartales command has no Golden side effect, accepted current-game import
+  replaces an existing Golden with exact durable bytes, and three Golden window
+  close/reopen/import cycles retain one handler with no stale callback.
+
+## Accepted
+
+- Project Owner testing and the brief corrected-functionality re-test passed for
+  the Golden window, current Wartales import/designation, hidden technical hash,
+  and retained Load Golden workflow.
+- Final Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING
+  NOTES** with no production defect, unsafe test seam, artifact residue, or
+  remaining closure blocker.
+- Golden-specific import/loading progress and result messaging inside the Golden
+  window remains an accepted non-blocking UX refinement for possible later work.
+
+## Preserved
+
+- Golden is observational and does not alter profiles, snapshots, `.wtstate`,
+  Update Survival provenance, Restore Previous Values, Check Compatibility,
+  transactions, Undo/Redo, or `PropertyModel.IsModified` authority.
+- No Steam API, pristine/vanilla certification, automatic comparison,
+  Golden-based restore/mutation, QuickBMS write-back, or public-release work was
+  introduced.
+
 # Update Survival
 
 **Status:** Complete; final Renewed Focused Engineering Review passed with

@@ -54,6 +54,44 @@ Property edits flow upward through the editing pipeline to update the original J
 
 ## CDB Identity
 
+Golden CDB adds a third, deliberately separate identity:
+`GoldenCdbIdentity` is SHA-256 over the exact bytes at
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`. It represents the one
+reference explicitly designated by the user. It neither proves pristine/vanilla
+status nor participates in source provenance, current-content binding, gameplay
+state, profiles, snapshots, Restore Previous Values, or Update Compatibility.
+
+Golden references are loaded through the shared exact-byte parsing core without
+reading adjacent `.wtstate`. Atomic Set/Replace uses only transient sibling
+candidate and rollback files and retains no metadata or archive. The parsed
+Golden and comparison index are lazy, hash-keyed caches; every Golden operation
+rehashes the canonical file so an external change invalidates stale state.
+
+Comparison uses stable modeled identities only: unique sheet name, explicit
+unique entry ID, and unique effective property path. Proven changes are counted
+separately from aggregated ambiguous, ID-less, or unsupported coverage. The
+comparison index retains unresolved identities so one-sided ambiguity or
+unsupported identity suppresses false Missing/New results and descendant
+comparison. Arrays
+are compared as one property by shape and then deep value. This entire path is
+observational and owns no mutation authority.
+
+Set Current uses a fresh sidecar-free parse of the durable source and deep
+compares its `RootDocument` with the live project. That content authority detects
+structural removals and additions as well as scalar changes without redefining
+`PropertyModel.IsModified`; sidecar-only gameplay state remains outside the CDB
+comparison. Golden publication cleanup failures retain a coherent canonical
+reference but surface an Available-with-cleanup-warning state until recognized
+transaction residue is removed.
+
+Golden's SHA-256 identity remains internal authority for exact-byte verification,
+cache invalidation, replacement, and comparison; the ordinary management window
+does not expose the hash. The import-current-game convenience action does not add
+an extraction subsystem: it awaits the existing `MainViewModel` Import From
+Wartales orchestration and passes only its successfully promoted durable project
+to `GoldenCdbService`. QuickBMS owns acquisition and source provenance; Golden
+owns designation and exact-byte storage.
+
 `SourceCdbGenerationIdentity` is the SHA-256 identity of pristine Wartales CDB
 bytes established by validated QuickBMS import. `CurrentCdbContentIdentity` is
 the SHA-256 identity of the exact persisted project revision. Source identity

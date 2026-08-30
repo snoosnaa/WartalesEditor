@@ -4,7 +4,7 @@ Application Version: 0.10.0 (Development)
 
 Status: Active Development
 
-Last Updated: 2026-08-26
+Last Updated: 2026-08-30
 
 Purpose
 
@@ -56,9 +56,82 @@ Future development is focused primarily on expanding gameplay tools andimproving
 
 Current Milestone
 
-Update Survival
+QuickBMS Write-Back / Deploy Edited CDB to Wartales
 
 Current phase:
+
+Not started. This required milestone follows the completed Golden CDB work and
+must receive its own Engineering Investigation, authority/safety resolution,
+Design / Architecture Review, implementation, Engineering Review, Project Owner
+acceptance, reconciliation, and commit. No write-back, deploy, repack, or live
+`res.pak` mutation has begun. Public-release preparation follows this milestone.
+
+Previous milestone:
+
+Golden CDB Version 1
+
+Previous phase:
+
+**CLOSED.** Implementation, both Project Owner-directed corrections, the brief
+Project Owner re-test, final behavioral-regression correction, documentation
+reconciliation, Engineering acceptance, and Project Owner acceptance are
+complete. The Final Renewed Focused Engineering Review returned **PASS WITH
+NON-BLOCKING NOTES** with no production defect, unsafe test seam, artifact
+residue, or remaining blocker.
+
+Golden CDB is one optional, user-authoritative, editor-owned reference stored at
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`. Wartales Editor validates
+structural usability and records the SHA-256 identity of the exact stored bytes;
+it does not certify that the user-selected file is vanilla, pristine, current,
+or Steam-verified. No companion metadata, archive history, or numbered copy is
+created.
+
+**Tools → Golden CDB...** opens one modeless management window for Set/Replace,
+standalone selection, current installed Wartales import/designation, Load,
+Compare, and Remove. The import action reuses the existing read-only QuickBMS
+Import From Wartales workflow, then passes only its successfully promoted durable
+project to Golden designation. It adds no extraction or write-back path. The
+exact-byte SHA-256 identity remains internal and is no longer shown in the normal
+window. Reference loading is explicitly
+sidecar-free and never installs `.wtstate` gameplay state or source provenance.
+Saving to the reserved canonical path requires explicit Save Anyway, Choose
+Another Location, or Cancel intent and reconciles the Golden identity from the
+actual canonical bytes even if later state persistence fails.
+
+Comparison is observational and difference-only. It matches unique sheet names,
+explicit unique entry IDs, and unique effective property paths; unsupported or
+ambiguous stable identity is reported separately as incomplete coverage and
+suppresses false Missing/New or descendant results. Set Current compares live CDB
+content with a fresh sidecar-free persisted parse, so structural changes cannot be
+hidden by simultaneous gameplay-state changes. Cleanup residue is reported as an
+explicit warning, and save intent/final destination is resolved before unchanged
+ordinary validation. Golden
+does not authorize mutation, Restore Previous Values, profile behavior, Update
+Survival provenance, or Check Compatibility.
+
+Permanent isolated verification includes 163 Golden CDB checks, 180 Update
+Survival checks, focused QuickBMS and Language Data suites, and all 25 Class A
+compatibility groups. All four projects build with zero warnings and zero errors.
+The final Golden additions behaviorally prove that the original Import From
+Wartales command has no Golden side effect, accepted convenience import replaces
+an existing Golden with exact durable bytes, and three close/reopen/import window
+cycles retain exactly one event path.
+
+Project Owner acceptance is complete. The corrected Golden window, Import Current
+Wartales CDB as Golden workflow, hidden technical identity, and retained Load
+Golden CDB workflow were manually accepted. Golden-specific progress and result
+messages remain primarily in the main status area; showing them in the Golden
+window is an accepted, non-blocking deferred UX refinement.
+
+Required sequence:
+
+QuickBMS Write-Back / Deploy → Public-Release Preparation.
+
+Earlier milestone:
+
+Update Survival
+
+Earlier phase:
 
 Complete, reviewed, accepted, and reconciled. Final Renewed Focused Engineering
 Review: **PASS WITH NON-BLOCKING NOTES**. Final Project Owner Interactive
@@ -101,7 +174,8 @@ zero-warning builds. The current real canonical CDB was inspected read-only at
 6,691,681 bytes, SHA-256
 `29BE149FD1AD68D849FA498F671A8E71868117EB3AA15B25643D86C647E76576`,
 with 395 sheets. Golden CDB, Steam APIs, heuristic target migration, and a
-mandatory migration wizard remain excluded.
+mandatory migration wizard were excluded from Update Survival; Golden CDB is
+now implemented as the separate current milestone.
 
 The final Renewed Focused Engineering Review passed with non-blocking notes.
 Project Owner testing established and accepted the intended workflow: import a
@@ -672,9 +746,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-No subsequent milestone has been started. Await Project Owner direction.
-Golden CDB and other optional post-Update-Survival work remain separate and
-unstarted.
+Begin a separate Engineering Investigation for QuickBMS Write-Back / Deploy
+Edited CDB to Wartales. Golden CDB Version 1 is closed. Public-Release
+Preparation remains after the write-back/deploy milestone.
 
 Document Maintenance
 

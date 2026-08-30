@@ -115,7 +115,11 @@ public class MainViewModel : ObservableObject
 
     private readonly IMessageDialogService messageDialogService;
 
-    private readonly QuickBmsImportService quickBmsImportService;
+    private QuickBmsImportService quickBmsImportService;
+
+    private GoldenCdbService goldenCdbService;
+
+    private GoldenCdbComparisonService goldenCdbComparisonService;
 
     private readonly QuickBmsImportOptions quickBmsImportOptions;
 
@@ -140,6 +144,14 @@ public class MainViewModel : ObservableObject
 
     private LanguageDataDialogViewModel?
         languageDataDialogViewModel;
+
+    private GoldenCdbWindow? goldenCdbWindow;
+
+    private GoldenCdbViewModel? goldenCdbViewModel;
+
+    private Action? projectPublicationFailureForTesting;
+
+    private Action? saveValidationStartedForTesting;
 
     private ValidationResultsWindow?
         validationResultsWindow;
@@ -292,6 +304,7 @@ public class MainViewModel : ObservableObject
             RefreshHistoryState();
             RefreshCommandStates();
             RefreshProfileManagerProjectState();
+            RefreshGoldenCdbWindowState();
         }
     }
 
@@ -911,6 +924,8 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ShowGoldenCdbCommand { get; }
+
     public RelayCommand ContentCreationCommand
     {
         get;
@@ -1183,6 +1198,11 @@ public class MainViewModel : ObservableObject
             new QuickBmsImportService(
                 this.jsonDataService);
 
+        goldenCdbService =
+            new GoldenCdbService(this.jsonDataService);
+        goldenCdbComparisonService =
+            new GoldenCdbComparisonService();
+
         ProjectMutationService progressionMutationService =
             new();
 
@@ -1332,6 +1352,10 @@ public class MainViewModel : ObservableObject
             new RelayCommand(
                 _ => ShowLanguageData());
 
+        ShowGoldenCdbCommand =
+            new RelayCommand(
+                _ => ShowGoldenCdb());
+
         ContentCreationCommand =
             new RelayCommand(
                 ExecuteContentCreation,
@@ -1431,6 +1455,27 @@ public class MainViewModel : ObservableObject
 
         try
         {
+            string initialFileName =
+                string.IsNullOrWhiteSpace(
+                    CurrentFile)
+                    ? "data.cdb"
+                    : Path.GetFileName(
+                        CurrentFile);
+
+            string? fileName =
+                ResolveProjectSaveDestination(
+                    initialFileName);
+
+            if (string.IsNullOrWhiteSpace(
+                    fileName))
+            {
+                Status =
+                    "Save cancelled.";
+
+                return false;
+            }
+
+            saveValidationStartedForTesting?.Invoke();
             ValidationResultModel validationResult =
                 validationWorkflowService
                     .ValidateForSave(Project);
@@ -1461,30 +1506,34 @@ public class MainViewModel : ObservableObject
                     validationPresentation.Title);
             }
 
-            string initialFileName =
-                string.IsNullOrWhiteSpace(
-                    CurrentFile)
-                    ? "data.cdb"
-                    : Path.GetFileName(
-                        CurrentFile);
+            bool targetsGolden =
+                goldenCdbService.IsCanonicalPath(fileName);
+            GoldenCdbState? reconciledGoldenState = null;
 
-            string? fileName =
-                fileDialogService.ShowSaveFileDialog(
-                    ProjectSaveFilter,
-                    initialFileName);
-
-            if (string.IsNullOrWhiteSpace(
-                    fileName))
+            if (targetsGolden)
             {
-                Status =
-                    "Save cancelled.";
-
-                return false;
+                goldenCdbService.InvalidateCache();
+                goldenCdbComparisonService.Invalidate();
             }
 
-            jsonDataService.SaveProject(
-                Project,
-                fileName);
+            try
+            {
+                jsonDataService.SaveProject(
+                    Project,
+                    fileName);
+            }
+            finally
+            {
+                if (targetsGolden)
+                {
+                    reconciledGoldenState =
+                        goldenCdbService
+                            .ReconcileAfterCanonicalWrite();
+                    goldenCdbComparisonService.Invalidate();
+                    RefreshGoldenCdbWindowState(
+                        reconciledGoldenState);
+                }
+            }
 
             Project.FileName =
                 fileName;
@@ -1501,6 +1550,14 @@ public class MainViewModel : ObservableObject
                       $"{Path.GetFileName(fileName)}"
                     : $"Saved: " +
                       $"{Path.GetFileName(fileName)}";
+
+            if (targetsGolden &&
+                reconciledGoldenState?.IsAvailable != true)
+            {
+                messageDialogService.ShowWarning(
+                    "The project was saved, but the Golden CDB status could not be refreshed. The stored reference will be checked again the next time it is used.",
+                    "Golden CDB Status");
+            }
 
             return true;
         }
@@ -2092,6 +2149,67 @@ public class MainViewModel : ObservableObject
         }
     }
 
+    private string? ResolveProjectSaveDestination(
+        string initialFileName)
+    {
+        bool activeProjectIsGolden =
+            Project != null &&
+            goldenCdbService.IsCanonicalPath(
+                Project.FileName);
+
+        if (activeProjectIsGolden)
+        {
+            GoldenSaveChoice choice =
+                PromptGoldenSaveChoice();
+
+            if (choice == GoldenSaveChoice.Cancel)
+                return null;
+
+            if (choice ==
+                GoldenSaveChoice.SaveGoldenAnyway)
+            {
+                return goldenCdbService
+                    .GetCanonicalPath();
+            }
+        }
+
+        string? selected =
+            fileDialogService.ShowSaveFileDialog(
+                ProjectSaveFilter,
+                initialFileName);
+
+        if (string.IsNullOrWhiteSpace(selected) ||
+            !goldenCdbService.IsCanonicalPath(selected))
+        {
+            return selected;
+        }
+
+        return messageDialogService.ShowConfirmation(
+            "This destination is your designated Golden CDB. Saving here will replace the reference bytes. Choose Yes only if you intend to change Golden; choose No to return without saving.",
+            "Save Over Golden CDB?")
+            ? selected
+            : null;
+    }
+
+    private GoldenSaveChoice PromptGoldenSaveChoice()
+    {
+        UnsavedChangesResult result =
+            messageDialogService.ShowUnsavedChanges(
+                "This project is the designated Golden CDB. Saving over it will change your reference baseline." +
+                Environment.NewLine + Environment.NewLine +
+                "Choose Yes to Save Golden Anyway, No to choose another location, or Cancel to return to the editor.",
+                "Save Golden CDB?");
+
+        return result switch
+        {
+            UnsavedChangesResult.Save =>
+                GoldenSaveChoice.SaveGoldenAnyway,
+            UnsavedChangesResult.Discard =>
+                GoldenSaveChoice.ChooseAnotherLocation,
+            _ => GoldenSaveChoice.Cancel
+        };
+    }
+
     public bool ConfirmApplicationClose()
     {
         if (IsImportInProgress)
@@ -2108,11 +2226,17 @@ public class MainViewModel : ObservableObject
 
     private async void ImportFromWartales()
     {
+        _ = await ImportFromWartalesAsync();
+    }
+
+    private async Task<QuickBmsImportResult?>
+        ImportFromWartalesAsync()
+    {
         if (IsImportInProgress
             ||
             !ConfirmAbandonUnsavedChanges())
         {
-            return;
+            return null;
         }
 
         IsImportInProgress = true;
@@ -2131,7 +2255,7 @@ public class MainViewModel : ObservableObject
             {
                 Status =
                     "Wartales import cancelled. The existing extracted data file was preserved.";
-                return;
+                return null;
             }
 
             Status =
@@ -2159,6 +2283,8 @@ public class MainViewModel : ObservableObject
                 "Wartales data was imported successfully and opened from the game's Extracted folder. The original game package was not changed." +
                 cleanupNote,
                 "Import From Wartales");
+
+            return result;
         }
         catch (QuickBmsImportException exception)
         {
@@ -2168,6 +2294,8 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Wartales import failed. The current project was preserved.";
+
+            return null;
         }
         catch (Exception exception)
         {
@@ -2179,6 +2307,8 @@ public class MainViewModel : ObservableObject
 
             Status =
                 "Wartales import failed. The current project was preserved.";
+
+            return null;
         }
         finally
         {
@@ -2213,6 +2343,8 @@ public class MainViewModel : ObservableObject
         {
             referenceDataService.Apply(
                 preparedReferences);
+
+            projectPublicationFailureForTesting?.Invoke();
 
             CurrentFile = displayFileName;
             Project = loadedProject;
@@ -3781,6 +3913,379 @@ public class MainViewModel : ObservableObject
             languageDataDialog);
     }
 
+    private void ShowGoldenCdb()
+    {
+        if (goldenCdbWindow != null)
+        {
+            RefreshGoldenCdbWindowState();
+            RestoreAndActivateWindow(goldenCdbWindow);
+            return;
+        }
+
+        goldenCdbViewModel = new GoldenCdbViewModel(
+            goldenCdbService.GetState(),
+            Project != null);
+        goldenCdbWindow = new GoldenCdbWindow
+        {
+            Owner = GetMainWindowOwner(),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            DataContext = goldenCdbViewModel
+        };
+        goldenCdbWindow.SetCurrentRequested +=
+            OnGoldenSetCurrentRequested;
+        goldenCdbWindow.SelectRequested +=
+            OnGoldenSelectRequested;
+        goldenCdbWindow.ImportCurrentWartalesRequested +=
+            OnGoldenImportCurrentWartalesRequested;
+        goldenCdbWindow.LoadRequested +=
+            OnGoldenLoadRequested;
+        goldenCdbWindow.CompareRequested +=
+            OnGoldenCompareRequested;
+        goldenCdbWindow.RemoveRequested +=
+            OnGoldenRemoveRequested;
+        goldenCdbWindow.Closed += OnGoldenCdbWindowClosed;
+        ShowFeatureWindow(goldenCdbWindow);
+    }
+
+    private void OnGoldenSetCurrentRequested(
+        object? sender,
+        EventArgs e)
+    {
+        if (Project == null)
+            return;
+
+        try
+        {
+            goldenCdbService.ValidateProjectSource(Project);
+            if (!ConfirmGoldenDesignation(
+                    goldenCdbService.GetState()))
+            {
+                return;
+            }
+
+            GoldenCdbState state =
+                goldenCdbService.SetFromProject(Project);
+            goldenCdbComparisonService.Invalidate();
+            RefreshGoldenCdbWindowState(state);
+            ShowGoldenDesignationResult(
+                state,
+                "Golden CDB was set from the current project.",
+                "The exact saved CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.");
+        }
+        catch (Exception exception)
+        {
+            ShowGoldenFailure(
+                "The current project could not be set as Golden.",
+                exception);
+        }
+    }
+
+    private void OnGoldenSelectRequested(
+        object? sender,
+        EventArgs e)
+    {
+        string? fileName =
+            fileDialogService.ShowOpenFileDialog(
+                ProjectOpenFilter);
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        try
+        {
+            goldenCdbService.ValidateSourceFile(fileName);
+            if (!ConfirmGoldenDesignation(
+                    goldenCdbService.GetState()))
+            {
+                return;
+            }
+
+            GoldenCdbState state =
+                goldenCdbService.SetFromFile(fileName);
+            goldenCdbComparisonService.Invalidate();
+            RefreshGoldenCdbWindowState(state);
+            ShowGoldenDesignationResult(
+                state,
+                "Golden CDB was set from the selected file.",
+                "The selected CDB was copied into editor-owned storage. The original file is no longer required. Wartales Editor does not certify that it is vanilla or pristine.");
+        }
+        catch (Exception exception)
+        {
+            ShowGoldenFailure(
+                "The selected CDB could not be set as Golden.",
+                exception);
+        }
+    }
+
+    private async void OnGoldenImportCurrentWartalesRequested(
+        object? sender,
+        EventArgs e)
+    {
+        _ = await ImportCurrentWartalesAsGoldenAsync();
+    }
+
+    internal async Task<bool>
+        ImportCurrentWartalesAsGoldenAsync()
+    {
+        QuickBmsImportResult? importResult =
+            await ImportFromWartalesAsync();
+        if (importResult == null)
+            return false;
+
+        GoldenCdbState previousGolden =
+            goldenCdbService.GetState();
+        if (!ConfirmGoldenDesignation(previousGolden))
+        {
+            RefreshGoldenCdbWindowState(previousGolden);
+            Status =
+                "Wartales import succeeded. Golden CDB was not changed.";
+            messageDialogService.ShowInformation(
+                previousGolden.CanonicalFileExists
+                    ? "Wartales data was imported successfully and remains open. Your existing Golden CDB was not replaced."
+                    : "Wartales data was imported successfully and remains open. No Golden CDB was set.",
+                "Golden CDB Unchanged");
+            return false;
+        }
+
+        try
+        {
+            GoldenCdbState state =
+                goldenCdbService.SetFromProject(
+                    importResult.Project);
+            goldenCdbComparisonService.Invalidate();
+            RefreshGoldenCdbWindowState(state);
+            ShowGoldenDesignationResult(
+                state,
+                "Current Wartales data was imported and set as Golden.",
+                "The exact imported CDB bytes are now your Golden reference. Wartales Editor does not certify that this file is vanilla or pristine.");
+            return true;
+        }
+        catch (Exception exception)
+        {
+            RefreshGoldenCdbWindowState();
+            messageDialogService.ShowError(
+                "Wartales data was imported successfully and remains open, but it could not be designated as Golden." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Golden CDB");
+            Status =
+                "Wartales import succeeded; Golden CDB designation failed.";
+            return false;
+        }
+    }
+
+    private bool ConfirmGoldenDesignation(
+        GoldenCdbState state)
+    {
+        string action = state.CanonicalFileExists
+            ? "replace your existing Golden CDB"
+            : "set this CDB as your Golden reference";
+
+        return messageDialogService.ShowConfirmation(
+            $"This will {action}. Golden is a reference you designate; Wartales Editor verifies structural usability but does not certify that it is vanilla, pristine, or current." +
+            Environment.NewLine + Environment.NewLine +
+            "Continue?",
+            state.CanonicalFileExists
+                ? "Replace Golden CDB?"
+                : "Set Golden CDB?");
+    }
+
+    private void ShowGoldenDesignationResult(
+        GoldenCdbState state,
+        string successStatus,
+        string successMessage)
+    {
+        if (state.HasCleanupWarning)
+        {
+            Status =
+                "Golden CDB was stored, but temporary cleanup needs attention.";
+            messageDialogService.ShowWarning(
+                state.Message,
+                "Golden CDB Cleanup");
+            return;
+        }
+
+        Status = successStatus;
+        messageDialogService.ShowInformation(
+            successMessage,
+            "Golden CDB Set");
+    }
+
+    private void OnGoldenLoadRequested(
+        object? sender,
+        EventArgs e)
+    {
+        _ = LoadGoldenCdb();
+    }
+
+    internal bool LoadGoldenCdb()
+    {
+        try
+        {
+            ProjectModel detached =
+                goldenCdbService.LoadDetachedProject();
+
+            if (!ConfirmAbandonUnsavedChanges())
+                return false;
+
+            string canonicalPath =
+                goldenCdbService.GetCanonicalPath();
+            PromoteLoadedProject(detached, canonicalPath);
+            Status = "Golden CDB opened as the current project.";
+            RefreshGoldenCdbWindowState();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ShowGoldenFailure(
+                "Golden CDB could not be opened. The current project was preserved.",
+                exception);
+            return false;
+        }
+    }
+
+    private void OnGoldenCompareRequested(
+        object? sender,
+        EventArgs e)
+    {
+        if (Project == null)
+            return;
+
+        try
+        {
+            GoldenCdbReference golden =
+                goldenCdbService.LoadReference();
+            GoldenCdbComparisonResult result =
+                goldenCdbComparisonService.Compare(
+                    Project,
+                    golden);
+            goldenCdbViewModel?.ShowComparison(result);
+            Status = result.Summary;
+        }
+        catch (Exception exception)
+        {
+            RefreshGoldenCdbWindowState();
+            ShowGoldenFailure(
+                "The current project could not be compared to Golden.",
+                exception);
+        }
+    }
+
+    private void OnGoldenRemoveRequested(
+        object? sender,
+        EventArgs e)
+    {
+        GoldenCdbState state = goldenCdbService.GetState();
+        if (!state.CanonicalFileExists)
+        {
+            RefreshGoldenCdbWindowState(state);
+            return;
+        }
+
+        if (!messageDialogService.ShowConfirmation(
+                "Remove the stored Golden CDB? The current project, profiles, gameplay state, and Undo history will not be changed.",
+                "Remove Golden CDB?"))
+        {
+            return;
+        }
+
+        try
+        {
+            GoldenCdbState removed = goldenCdbService.Remove();
+            goldenCdbComparisonService.Invalidate();
+            RefreshGoldenCdbWindowState(removed);
+            Status = "Golden CDB was removed.";
+        }
+        catch (Exception exception)
+        {
+            ShowGoldenFailure(
+                "Golden CDB could not be removed.",
+                exception);
+        }
+    }
+
+    private void RefreshGoldenCdbWindowState(
+        GoldenCdbState? state = null)
+    {
+        goldenCdbViewModel?.RefreshState(
+            state ?? goldenCdbService.GetState(),
+            Project != null);
+    }
+
+    private void ShowGoldenFailure(
+        string message,
+        Exception exception)
+    {
+        messageDialogService.ShowError(
+            message + Environment.NewLine + Environment.NewLine +
+            $"Details: {exception.Message}",
+            "Golden CDB");
+        Status = "Golden CDB operation failed.";
+    }
+
+    private void OnGoldenCdbWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (goldenCdbWindow != null)
+        {
+            goldenCdbWindow.SetCurrentRequested -=
+                OnGoldenSetCurrentRequested;
+            goldenCdbWindow.SelectRequested -=
+                OnGoldenSelectRequested;
+            goldenCdbWindow.ImportCurrentWartalesRequested -=
+                OnGoldenImportCurrentWartalesRequested;
+            goldenCdbWindow.LoadRequested -=
+                OnGoldenLoadRequested;
+            goldenCdbWindow.CompareRequested -=
+                OnGoldenCompareRequested;
+            goldenCdbWindow.RemoveRequested -=
+                OnGoldenRemoveRequested;
+            goldenCdbWindow.Closed -=
+                OnGoldenCdbWindowClosed;
+        }
+
+        goldenCdbWindow = null;
+        goldenCdbViewModel = null;
+    }
+
+    internal void UseGoldenCdbServicesForTesting(
+        GoldenCdbService service,
+        GoldenCdbComparisonService comparisonService)
+    {
+        if (goldenCdbWindow != null)
+        {
+            throw new InvalidOperationException(
+                "Golden CDB services cannot be changed while its window is open.");
+        }
+
+        goldenCdbService = service ??
+            throw new ArgumentNullException(nameof(service));
+        goldenCdbComparisonService = comparisonService ??
+            throw new ArgumentNullException(nameof(comparisonService));
+    }
+
+    internal void UseQuickBmsImportServiceForTesting(
+        QuickBmsImportService service)
+    {
+        quickBmsImportService = service ??
+            throw new ArgumentNullException(nameof(service));
+    }
+
+    internal void UseProjectPublicationFailureForTesting(
+        Action? failure)
+    {
+        projectPublicationFailureForTesting = failure;
+    }
+
+    internal void UseSaveValidationStartedForTesting(
+        Action? callback)
+    {
+        saveValidationStartedForTesting = callback;
+    }
+
+    internal bool IsGoldenCdbWindowOpen =>
+        goldenCdbWindow != null;
+
     private void OnLanguageDataSelectionRequested(
         object? sender,
         EventArgs e)
@@ -4238,6 +4743,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         ShowLanguageDataCommand?
+            .NotifyCanExecuteChanged();
+
+        ShowGoldenCdbCommand?
             .NotifyCanExecuteChanged();
 
         ExportSnapshotCommand?

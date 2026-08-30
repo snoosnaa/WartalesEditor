@@ -360,39 +360,10 @@ public class JsonDataService
     public ProjectModel LoadProject(
         string fileName)
     {
-        byte[] exactBytes =
-            File.ReadAllBytes(
-                fileName);
+        ReferenceProjectLoadResult loaded =
+            LoadReferenceProjectCore(fileName);
 
-        string currentContentIdentity =
-            cdbGenerationIdentityService.Calculate(
-                exactBytes);
-
-        string json;
-        using (MemoryStream stream = new(exactBytes, writable: false))
-        using (StreamReader reader = new(
-                   stream,
-                   Encoding.UTF8,
-                   detectEncodingFromByteOrderMarks: true))
-        {
-            json = reader.ReadToEnd();
-        }
-
-        ProjectModel project =
-            CreateProjectFromJson(
-                json,
-                fileName);
-
-        if (project.Sheets.Count == 0)
-        {
-            throw new InvalidDataException(
-                "The data file does not contain any usable project sheets.");
-        }
-
-        project.EstablishPersistedIdentity(
-            currentContentIdentity,
-            null,
-            SourceProvenanceStatus.Unknown);
+        ProjectModel project = loaded.Project;
 
         gameplayOperationStatePersistenceService
             .LoadIntoProject(
@@ -423,6 +394,70 @@ public class JsonDataService
         }
 
         return project;
+    }
+
+    public ProjectModel LoadReferenceProject(
+        string fileName)
+    {
+        return LoadReferenceProjectCore(fileName).Project;
+    }
+
+    internal ReferenceProjectLoadResult
+        LoadReferenceProjectWithBytes(
+            string fileName)
+    {
+        return LoadReferenceProjectCore(fileName);
+    }
+
+    private ReferenceProjectLoadResult
+        LoadReferenceProjectCore(
+            string fileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+
+        string fullFileName =
+            Path.GetFullPath(fileName);
+
+        byte[] exactBytes =
+            File.ReadAllBytes(fullFileName);
+
+        if (exactBytes.Length == 0)
+        {
+            throw new InvalidDataException(
+                "The data file is empty.");
+        }
+
+        string currentContentIdentity =
+            cdbGenerationIdentityService.Calculate(exactBytes);
+
+        string json;
+        using (MemoryStream stream = new(exactBytes, writable: false))
+        using (StreamReader reader = new(
+                   stream,
+                   Encoding.UTF8,
+                   detectEncodingFromByteOrderMarks: true))
+        {
+            json = reader.ReadToEnd();
+        }
+
+        ProjectModel project =
+            CreateProjectFromJson(json, fullFileName);
+
+        if (project.Sheets.Count == 0)
+        {
+            throw new InvalidDataException(
+                "The data file does not contain any usable project sheets.");
+        }
+
+        project.EstablishPersistedIdentity(
+            currentContentIdentity,
+            null,
+            SourceProvenanceStatus.Unknown);
+
+        return new ReferenceProjectLoadResult(
+            project,
+            exactBytes,
+            currentContentIdentity);
     }
 
     internal GameplayStateManifestSnapshot CaptureGameplayStateForReplacement(
@@ -535,3 +570,8 @@ public class JsonDataService
         return project;
     }
 }
+
+internal sealed record ReferenceProjectLoadResult(
+    ProjectModel Project,
+    byte[] ExactBytes,
+    string ContentIdentity);

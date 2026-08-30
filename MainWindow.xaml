@@ -245,6 +245,10 @@
                           Command="{Binding ShowLanguageDataCommand}"
                           ToolTip="Set up or replace localized Wartales names."/>
 
+                <MenuItem Header="_Golden CDB..."
+                          Command="{Binding ShowGoldenCdbCommand}"
+                          ToolTip="Manage and compare against your reference CDB."/>
+
                 <Separator/>
 
                 <MenuItem Header="_Check Project"

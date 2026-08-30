@@ -76,6 +76,61 @@ Expected Result
 
 # Project Loading
 
+## Golden CDB Version 1 Regression Contract
+
+`Tests/GoldenCdbSmoke` uses an isolated temporary canonical directory and never
+touches the user's Documents Golden or a real Wartales CDB. Its 163 permanent
+checks cover canonical path resolution and normalized comparison, exact-byte
+identity/copying, sidecar-free parsing, current-project preconditions, source
+independence, structural rejection, atomic initial Set and replacement,
+pre/post-promotion faults, exact rollback recovery and failed-recovery state,
+candidate/rollback cleanup warnings and stale-artifact recovery, valid/corrupt/
+missing Remove, and external-change detection. Source independence includes a
+fresh-service/cold-cache canonical reload after deleting the selected source.
+
+Load tests cover the ordinary unsaved-project prompt, cancellation, detached
+publication, current/source identity boundaries, exclusion of adjacent gameplay
+state, normal edit-history clearing, invalid-Golden preservation, and injected
+failure after reference-data application with complete prior-publication
+restoration. Save tests
+cover active-canonical and selected-destination warnings, Save Golden Anyway,
+Choose Another Location, Cancel, rejected/confirmed destination overwrite,
+source-provenance preservation, comparison-cache invalidation, canonical identity
+refresh, CDB-committed/sidecar-failed reconciliation, and protection after Remove.
+Event-order assertions prove Golden intent and final destination resolution occur
+before ordinary validation, including choose-other then select Golden again and
+the ordinary non-Golden path.
+
+Comparison tests cover exact and modeled all-clear results, unsaved-edit shortcut
+suppression, scalar/missing/new/type/array shape and value differences,
+sheet/entry aggregation, duplicate and ID-less identity coverage, unsupported raw
+structures, one-sided unresolved-identity suppression with zero false Missing/New
+rows, difference-versus-coverage counts, concise omission of equal values,
+cache reuse/invalidation, and preservation of project JSON, modification state,
+gameplay state, and history. Structural UI checks cover the Tools command,
+management actions, owned modeless placement, single tracked window lifecycle,
+and save-warning wiring. Project Owner WPF acceptance passed for the corrected
+Golden functionality and window.
+
+Isolated fake-runner integration checks exercise the Golden window's shared
+Import From Wartales orchestration through the production `QuickBmsImportService`.
+They verify exact imported-byte designation, preserved source provenance, no
+write-back flags, explicit replacement decline, unsaved-project cancellation,
+QuickBMS failure, and truthful successful-import/failed-Golden separation.
+Structural UI checks confirm the import action and existing actions remain,
+ordinary identity/hash text is absent, and status/cleanup-warning text remains.
+Final behavioral regressions invoke the original main Import From Wartales
+command and prove zero Golden confirmation or byte/identity side effects; accept
+replacement of an existing Golden through the actual live Golden button/event and
+prove exact imported-byte identity; and run three STA WPF close/reopen/import
+cycles, including post-close button events, with one import/designation per live
+cycle and no stale callback or duplicate message.
+
+Current implementation evidence: the main, Golden, Class A, and Update Survival
+projects build with zero warnings and zero errors; Golden passes 163 checks;
+Update Survival passes 180/180; focused QuickBMS and Language Data suites pass;
+and all 25 Class A groups pass.
+
 ## Update Survival Regression Contract
 
 Permanent automated coverage distinguishes pristine source generation from the

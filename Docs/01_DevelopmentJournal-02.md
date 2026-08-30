@@ -1357,3 +1357,103 @@ report-level `AssessmentFailed`, and explicit rollback-attempt/Undo assertions.
 Implementation corrections are complete; Renewed Focused Engineering Review and
 Project Owner Interactive Acceptance remain pending. No commit or push was
 performed.
+
+# 2026-08-26 — Golden CDB Version 1 Implementation
+
+Implemented the accepted one-Golden architecture as an optional,
+user-authoritative exact-byte reference. The canonical file is
+`<Documents>\Wartales Editor\Golden CDB\data.cdb`; there is no metadata
+companion, permanent backup, archive history, pristine claim, or Steam
+authority. Shared reference loading parses and hashes one byte buffer through
+the existing model factory without loading `.wtstate` or establishing source
+provenance.
+
+Set Current and standalone Select validate before atomic same-directory
+publication. Replacement verifies and restores exact prior bytes on late
+failure; failed recovery leaves an explicit invalid state. Remove is idempotent
+and affects only the canonical reference and recognized transients. Load Golden
+uses the normal unsaved-project and publication lifecycle. The normal
+destination-based Save now reserves the canonical path, exposes explicit Save
+Anyway / Choose Another Location / Cancel intent, and reconciles Golden from the
+actual file even when later sidecar persistence reports failure.
+
+The new explicit comparison service is observational. It compares current live
+in-memory values against a lazy hash-keyed Golden index using unique sheet name,
+explicit unique entry ID, and unique effective property path. Proven differences
+remain separate from aggregated ambiguous, ID-less, and unsupported coverage;
+arrays distinguish structural shape from content. No mutation, Undo, profile,
+snapshot, gameplay-state, compatibility, or Restore authority was added.
+
+Initial implementation coverage contained 102 Golden checks. Main, Golden, Class A,
+and Update Survival builds had zero warnings/errors; Golden 102, Update
+Survival 180, focused QuickBMS and Language Data, and all 25 Class A groups pass.
+Implementation was complete; Focused Engineering Review subsequently returned
+CORRECTIONS REQUIRED, and Project Owner Interactive Acceptance was not performed.
+No commit or push was performed. The
+approved sequence remains Golden CDB → QuickBMS Write-Back / Deploy →
+Public-Release Preparation.
+
+# 2026-08-26 — Golden CDB Version 1 Focused Review Corrections
+
+Corrected the five blocking Focused Engineering Review findings without changing
+the accepted Golden product boundary. Comparison indexes now retain unresolved
+sheet, entry, and property identities so one-sided ambiguity or unsupported
+identity produces coverage only, suppresses false Missing/New results, and stops
+descendant comparison. Set Current now compares the live CDB `RootDocument` with
+a fresh sidecar-free parse of its durable file, closing the structural-removal
+plus gameplay-state hole while permitting genuine sidecar-only changes.
+
+Golden publication now removes recognized stale transaction artifacts before a
+new transaction and reports an Available cleanup-warning outcome when canonical
+publication succeeds but candidate/rollback cleanup fails. The next transaction
+deterministically retries cleanup. Permanent failure injection also proves that a
+detached Golden load which fails after reference-data application restores the
+prior project, file identity, reference data, and history.
+
+Golden save intent and final destination are now resolved before the unchanged
+ordinary validation workflow. Cancel performs no validation or write; choosing a
+different location and reselecting Golden still requires confirmation. Fresh-
+service/cold-cache source-independence coverage and the new correction regressions
+raise the isolated Golden suite from 102 to 129 passing checks. Renewed Focused
+Engineering Review and Project Owner Interactive Acceptance remain pending. No
+commit or push was performed.
+
+# 2026-08-30 — Golden CDB Project Owner Acceptance Corrections
+
+The Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING NOTES**
+and Project Owner functionality testing passed. Interactive Acceptance requested
+two bounded corrections. The Golden window now offers **Import Current Wartales
+CDB as Golden** by awaiting the existing read-only Import From Wartales
+orchestration and passing only its successfully promoted durable current project
+to `GoldenCdbService`. QuickBMS continues to own installation/toolchain checks,
+process containment, staging, extraction, durable publication, project
+publication, and source provenance; no extraction logic or write-back/deploy path
+was added.
+
+Golden replacement remains a separate explicit confirmation after import. Import
+cancellation/failure never reaches Golden, declining replacement preserves both
+the successful imported project and prior Golden, and a later Golden designation
+failure truthfully leaves the successful import active. The ordinary Golden
+window no longer displays its technical SHA-256 identity, while internal
+exact-byte identity, cache, verification, comparison, and cleanup-warning status
+remain unchanged. Isolated production-path coverage raises the Golden suite from
+129 to 140 checks. The brief Project Owner re-test subsequently passed.
+
+# 2026-08-30 — Golden CDB Version 1 Final Closure
+
+The first Final Focused Engineering Review found no production defect but required
+three missing permanent behavioral regressions. The test-only correction invoked
+the original Import From Wartales command and proved zero Golden side effects;
+accepted replacement of an existing Golden through the live Golden window event
+and proved exact durable-byte identity; and exercised three STA WPF
+close/reopen/import cycles with no duplicate or stale handler. The isolated suite
+increased from 140 to 163 passing checks without production changes.
+
+The Final Renewed Focused Engineering Review returned **PASS WITH NON-BLOCKING
+NOTES**. Main, Golden, Update Survival, and Class A Release builds completed with
+zero warnings/errors; Golden passed 163, Update Survival 180, focused QuickBMS and
+Language Data passed, and all 25 Class A groups passed. Project Owner acceptance,
+Engineering acceptance, and documentation reconciliation are complete. The
+Golden-window-local progress/result messaging idea remains an accepted deferred
+UX note. Golden CDB Version 1 is closed; QuickBMS Write-Back / Deploy is the next
+required, not-started milestone before public-release preparation.
