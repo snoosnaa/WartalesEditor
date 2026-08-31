@@ -2,9 +2,11 @@
 
 ## Project Snapshot
 
-**Application Version:** 0.9.1  
-**Documentation Version:** 1.2  
-**Last Updated:** 2026-07-24
+**Application Version:** 1.0.0
+
+**Documentation Version:** 1.3
+
+**Last Updated:** 2026-08-31
 
 ---
 
@@ -20,15 +22,21 @@ The long-term goal is to provide a complete content creation platform that allow
 
 # Project Status
 
-**Status:** Stable Development Build ✅
+**Status:** Public Release Preparation In Progress
 
-**Current Development Version:** 0.9.1
+**Current Development Version:** 1.0.0
 
 **Current Milestone:**
 
-World Convenience
+Public Release Preparation
 
-**Status:** Complete ✅
+**Status:** Phase 1 complete; overall release preparation remains in progress
+
+Legal/public metadata, public onboarding, version reconciliation, repository
+hygiene, release-note groundwork, and the history privacy plan are implemented
+and repository-verified. Packaging, history sanitization, clean-machine
+validation, checksums, tagging, and publication remain pending. Earlier capability and milestone
+sections below are retained as historical snapshot context.
 
 The editor now provides:
 
@@ -329,14 +337,10 @@ No milestone is considered complete until runtime testing has been successfully 
 
 # Current Task
 
-1. Documentation complete.
-2. Commit and push Version 0.9.1.
-3. Profile polish investigation.
-4. Profile polish implementation.
-5. UI polish investigation.
-6. UI polish implementation.
-7. Gameplay roadmap audit.
-8. Bundled gameplay development.
+1. Perform Git-history sanitization only with separate explicit authorization.
+2. Define the publish process and create the release candidate in later phases.
+3. Generate checksums, scan, clean-machine validate, record exact supported
+   versions, tag, and publish only when authorized.
 
 ---
 
@@ -356,7 +360,7 @@ The editor now possesses a mature reusable infrastructure including:
 Future development is expected to focus primarily on extending the existing architecture rather than redesigning it.
 
 The project has successfully transitioned from infrastructure construction into feature expansion while maintaining a clean, reusable architecture suitable for long-term development.
-# Version 0.10.0 UI state
+# Historical Version 0.10.0 UI state
 
 The application now presents Profiles as the sole player-facing persistence
 workflow while preserving Snapshot infrastructure internally. Primary visible

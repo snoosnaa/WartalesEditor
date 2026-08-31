@@ -361,3 +361,32 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Wartales proprietary game data and user project state
+*.cdb
+res.pak
+export_*.xml
+texts_*.xml
+/export.xml
+*.wtstate
+*.wtprofile
+*.snapshot.json
+
+# Editor-owned references and user-local workflow data
+/Golden CDB/
+/Language Data/
+/Profiles/
+/Snapshots/
+
+# External user-supplied QuickBMS toolchain (never redistribute)
+/quickbms/
+quickbms.exe
+quickbms_4gb_files.exe
+Shiro_Games_PAK_script.bms
+
+# Public release artifacts (created outside source control)
+/publish/
+/release-artifacts/
+WartalesEditor-*.zip
+WartalesEditor-*.zip.sha256
+*.sha256

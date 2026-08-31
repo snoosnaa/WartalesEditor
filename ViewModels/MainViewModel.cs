@@ -5532,6 +5532,10 @@ public class MainViewModel : ObservableObject
             Environment.NewLine + Environment.NewLine +
             "A companion application for safely customizing Wartales game data." +
             Environment.NewLine + Environment.NewLine +
+            "Copyright © 2026 M. Tyler Spencer" +
+            Environment.NewLine +
+            "Released by TyTech Games" +
+            Environment.NewLine + Environment.NewLine +
             "Wartales Editor is an unofficial community project and is not affiliated with or endorsed by Shiro Games.",
             "About Wartales Editor");
     }

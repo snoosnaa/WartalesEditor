@@ -1,167 +1,55 @@
-﻿# Wartales Editor
+# Wartales Editor Documentation
 
-Wartales Editor is a professional Windows desktop application for safely editing and expanding the game data used by **Wartales**.
+**Application Version:** 1.0.0
 
-The project began as a configuration editor and has evolved into a reusable transactional content creation platform capable of introducing new gameplay content while preserving project integrity.
+**Current lifecycle:** Public Release Preparation — IN PROGRESS
 
-The long-term goal is to provide a powerful, safe, and extensible editor that allows players and mod creators to modify existing content and eventually create entirely new gameplay content.
+The root [README](../README.md) is the public introduction and quick-start
+guide. This directory retains the complete user, architecture, engineering,
+testing, roadmap, and historical record for the source repository.
 
----
+## Public Documentation
 
-# Current Status
+- [User Guide](07_UserGuide.md) — installation, supported environment,
+  QuickBMS setup, editing workflows, safety, recovery, and troubleshooting.
+- [Changelog](CHANGELOG.md) — public release groundwork and historical changes.
+- [Public Release Preparation](PublicReleasePreparation.md) — intended V1
+  release model, lifecycle state, pending work, and history-sanitization plan.
+- [Project Status](ProjectStatus.md) — authoritative current project state.
 
-**Application Version:** 0.9.1
+## Engineering Documentation
 
-Current state:
+- [Architecture](09_Architecture.md)
+- [Developer Guide](08_DeveloperGuide.md)
+- [Codex Development Guide](CodexDevelopmentGuide.md)
+- [Testing](06_Testing.md)
+- [Player First Design](PlayerFirstDesign.md)
+- [Knowledge Base](04_KnowledgeBase.md)
+- [Decision Log](03_DecisionLog.md)
 
-- Stable development build
-- Fully compiling
-- Architecturally stable
-- Active development
+## Planning and History
 
-Recently verified:
+- [Current Task](CurrentTask.md)
+- [Dashboard](Dashboard.md)
+- [Project Snapshot](Project%20Snapshot.md)
+- [Roadmap](02_Roadmap.md)
+- [Roadmap 2](02_Roadmap_2.md)
+- [Development Journal — Part 1](01_DevelopmentJounal.md)
+- [Development Journal — Part 2](01_DevelopmentJournal-02.md)
+- [Lessons Learned](LessonsLearned.md)
 
-- Add Camp Facilities
-- Upgrade All Equipment
-- Weather gameplay modifications
-- Character and Profession XP Controls
-- Starting Resources and Party Economy controls
-- Overworld Movement Speed
-- Rain Frequency
-- Transaction rollback
-- Save / Reload
-- Validation
-- Atomic Undo / Redo
+Historical version references in journals, roadmaps, and closed changelog
+entries remain intentionally unchanged. Current release-facing metadata is
+1.0.0.
 
----
+## Public Release Identity
 
-# Major Features
+Wartales Editor is free and MIT licensed.
 
-## Editing Platform
+Copyright © 2026 M. Tyler Spencer. Released by TyTech Games.
 
-- Intelligent property editing
-- Type-aware editors
-- English localization
-- Search
-- Modification tracking
-- Undo / Redo
-- Change Summary
+[Support TyTech Games on Ko-fi](https://ko-fi.com/tytechgames).
 
-## Project Management
-
-- Snapshot workflow
-- Mod Profiles
-- Validation framework
-- Save validation
-
-## Content Creation Platform
-
-- Project Mutation Layer
-- Project Operations
-- Transaction Framework
-- Mutation-based rollback
-- Nested property editing
-- Object-valued mutation
-- Operation validation
-
-## Verified Gameplay Features
-
-- Add Camp Facilities
-- Upgrade All Equipment
-- Character and Profession XP Controls
-- Starting Resources
-- Volunteer Wage Reduction
-- Maximum and Restored Valour
-- Saddlebag and Pony Carrying Capacity
-- Overworld Movement Speed
-- Rain Frequency
-
----
-
-# Architecture
-
-The editor is built around reusable infrastructure.
-
-Major architectural subsystems include:
-
-- Editing
-- Snapshots
-- Profiles
-- Validation
-- Project Mutation
-- Content Creation
-- Project Operations
-- Transaction Framework
-
-New features are expected to extend existing infrastructure rather than introduce parallel implementations.
-
----
-
-# Technologies
-
-- C#
-- .NET 10
-- WPF
-- MVVM
-- Newtonsoft.Json
-
----
-
-# Development Philosophy
-
-The project emphasizes:
-
-- Clean architecture
-- Long-term maintainability
-- Infrastructure before features
-- Mutation-based editing
-- Validation before persistence
-- Runtime verification
-- Comprehensive documentation
-
-Every milestone is expected to:
-
-- Compile successfully
-- Pass runtime testing
-- Update documentation
-- Be committed only after verification
-
----
-
-# Documentation
-
-Important project documentation includes:
-
-- ProjectStatus.md
-- Architecture.md
-- Dashboard.md
-- ProjectSnapshot.md
-- CurrentTask.md
-- DevelopmentJournal.md
-- LessonsLearned.md
-- Changelog.md
-
----
-
-# Roadmap
-
-Future development includes:
-
-- Additional content creation tools
-- Gameplay modification tools
-- NPC creation
-- Profession creation
-- Advanced batch operations
-- Merge Preview
-- Additional validation
-- Performance improvements
-
-Development is organized into small, fully verified milestones.
-
----
-
-# License
-
-This project is currently under active development.
-
-Licensing and public release details will be finalized prior to Version 1.0.
+Wartales Editor is an unofficial community tool and is not affiliated with or
+endorsed by Shiro Games. Wartales and related names and content belong to their
+respective owners.

@@ -6,9 +6,11 @@ Public Release Preparation
 
 ## Current Status
 
-**Public Release Preparation is the repository-authoritative next activity and
-has not begun.** This document records the handoff only; no release-preparation
-work was performed during the final Request Board/Restore closeout.
+**Public Release Preparation is IN PROGRESS.** Phase 1 is COMPLETE. Legal/public
+metadata, repository hygiene, public onboarding, version 1.0.0 reconciliation,
+public release-note groundwork, and a non-executed Git-history privacy rewrite
+plan are implemented and repository-verified. See
+`PublicReleasePreparation.md` for the release model and remaining work.
 
 ## Most Recently Closed Batch
 
@@ -453,7 +455,9 @@ configured 645-change state.
 
 ## Next Required Step
 
-Begin Public Release Preparation as a separate milestone. QuickBMS safe Import,
-Update Survival, Golden CDB Version 1, and QuickBMS Export Back to Wartales Version
-1 are complete, reviewed, accepted, and closed. Do not begin release-preparation
-implementation as part of this reconciliation checkpoint.
+Git-history sanitization, publish configuration, package and checksum creation,
+malware scanning, clean-machine validation, exact supported-version recording,
+tagging, and release publication remain separate later tasks requiring their
+own authorization. QuickBMS safe Import,
+Update Survival, Golden CDB Version 1, and QuickBMS Export Back to Wartales
+Version 1 remain complete, reviewed, accepted, and closed.

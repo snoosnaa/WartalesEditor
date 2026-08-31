@@ -1,14 +1,23 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 0.9.1  
-**Document Version:** 1.9  
-**Last Updated:** 2026-07-24
+**Application Version:** 1.0.0
+
+**Document Version:** 2.0
+
+**Last Updated:** 2026-08-31
 
 ---
 
 # Project Status
 
-**Current Phase:** Player-Facing Gameplay Development
+**Current Phase:** Public Release Preparation — IN PROGRESS
+
+Phase 1 is COMPLETE. It covers legal/public metadata, public onboarding, version
+reconciliation, repository hygiene, release-note groundwork, and the Git-history
+privacy plan.
+Packaging, clean-machine validation, history sanitization, checksums, tagging,
+and publication remain pending. Earlier milestone sections below are retained as
+historical dashboard context.
 
 Wartales Editor has successfully transitioned from a safe editing platform into a transactional content creation platform.
 
@@ -18,7 +27,7 @@ The architecture has now been verified through both editor testing and extended 
 
 ---
 
-# Current Release
+# Earlier Release Milestone
 
 ## Version 0.9.1 — World Convenience
 
@@ -182,12 +191,12 @@ Planned features include:
 
 # Current Priorities
 
-1. Documentation complete.
-2. Commit and push Version 0.9.1.
-3. Profile polish investigation and implementation.
-4. UI polish investigation and implementation.
-5. Gameplay roadmap audit.
-6. Bundled gameplay feature development.
+1. Sanitize Git history in a separately authorized task.
+2. Define and verify the publish process.
+3. Create and scan the release candidate, publish its SHA-256 checksum, and
+   complete clean-machine validation.
+4. Record final supported Wartales/toolchain versions, tag `v1.0.0`, and publish
+   only when authorized.
 
 ---
 
@@ -214,7 +223,7 @@ Detailed implementation information belongs in:
 - Changelog.md
 - CurrentTask.md
 - ProjectSnapshot.md
-# Version 0.10.0 UI Polish
+# Historical Version 0.10.0 UI Polish
 
 Pass 5 player communication and language polish: implemented and build
 verified; Visual Studio runtime verification pending.

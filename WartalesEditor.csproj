@@ -6,7 +6,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.10.0</Version>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <AssemblyTitle>Wartales Editor</AssemblyTitle>
+    <Product>Wartales Editor</Product>
+    <Company>TyTech Games</Company>
+    <Authors>M. Tyler Spencer</Authors>
+    <Copyright>Copyright © 2026 M. Tyler Spencer</Copyright>
+    <Description>A Windows desktop editor for Wartales data.cdb files.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

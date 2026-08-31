@@ -1,10 +1,10 @@
 ﻿Project Status
 
-Application Version: 0.10.0 (Development)
+Application Version: 1.0.0 (Public Release Preparation)
 
-Status: Active Development
+Status: Release Preparation In Progress
 
-Last Updated: 2026-08-30
+Last Updated: 2026-08-31
 
 Purpose
 
@@ -32,7 +32,8 @@ Historical information belongs in DevelopmentJournal.md andChangelog.md.
 
 Current State
 
-Wartales Editor has transitioned from infrastructure development toplayer-focused gameplay feature development.
+Wartales Editor has completed its accepted feature and engineering milestones
+and is now preparing Version 1.0.0 for public release.
 
 The application:
 
@@ -52,7 +53,8 @@ Is maintained with Git and GitHub.
 
 The editing platform and supporting architecture are considered stable.
 
-Future development is focused primarily on expanding gameplay tools andimproving the player experience.
+The current work is limited to release preparation; future product development
+remains outside this phase.
 
 Current Milestone
 
@@ -60,8 +62,16 @@ Public Release Preparation
 
 Current phase:
 
-**Public Release Preparation is next and has not begun.** The immediately prior
-post-milestone batch is accepted, reconciled, committed, pushed, and closed.
+**Public Release Preparation is IN PROGRESS.** Phase 1 is COMPLETE: legal/public
+metadata, repository hygiene, public onboarding, version reconciliation, public
+release-note groundwork, and the Git-history privacy inventory/plan are
+implemented and repository-verified.
+
+Phase 1 does not publish a release. Git-history sanitization, the actual publish
+process, package and checksum creation, malware scanning, clean-machine
+release-candidate validation, exact supported Wartales/toolchain version
+recording, the `v1.0.0` tag, GitHub Release, and any authorized Nexus publication
+remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
 implementation, focused Engineering Review (**PASS WITH NON-BLOCKING NOTES**),
@@ -86,7 +96,7 @@ all 25 Class A groups with zero warnings or errors.
 Previous active status:
 
 **QuickBMS Export Back to Wartales Version 1 is complete, reviewed, Project Owner
-accepted, and closed. Public Release Preparation is the next available activity.**
+accepted, and closed. Public Release Preparation followed and is now in progress.**
 File → Export Back to Wartales now reuses normal Save, captures the persisted
 CDB once, binds identity validation and staging to that exact byte snapshot,
 stages only `Modded\data.cdb` in a marked temporary session, and uses
@@ -189,7 +199,7 @@ Golden acquisition correction and Golden CDB Version 1 are closed.
 Completed sequence:
 
 QuickBMS safe Import → Update Survival → Golden CDB → QuickBMS Export Back to
-Wartales. Public Release Preparation is the next available activity.
+Wartales. Public Release Preparation followed and is now in progress.
 
 Earlier milestone:
 
@@ -810,8 +820,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Begin Public Release Preparation as a separate milestone. QuickBMS Export Back to
-Wartales Version 1 and Golden CDB Version 1 are closed.
+Perform Git-history sanitization and packaging only as separately authorized
+tasks now that Phase 1 is complete.
+QuickBMS Export Back to Wartales Version 1 and Golden CDB Version 1 remain
+closed.
 
 Document Maintenance
 

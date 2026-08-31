@@ -1,5 +1,139 @@
 ﻿
-# Version 0.10.0 workflow terminology
+# Wartales Editor 1.0.0 User Guide
+
+Wartales Editor is a portable Windows desktop editor for Wartales `data.cdb`
+files. This guide begins with the supported public workflow and retains the
+detailed feature guidance below.
+
+## AI Development Disclosure
+
+Wartales Editor was designed, directed, tested, reviewed, and validated by
+M. Tyler Spencer through more than 60 hours of hands-on product design,
+requirements, architecture and UX decisions, prompting, testing, engineering
+review, real-game validation, release preparation, and repository management.
+All application code was produced using AI-assisted development tools,
+primarily OpenAI ChatGPT and OpenAI Codex, under that human direction and
+review. The project followed an iterative engineering and validation process,
+not a one-prompt autonomous generation process.
+
+## Supported Environment
+
+Version 1.0.0 is supported on Windows 11 x64 with the Steam version of Wartales
+installed at `C:\Program Files (x86)\Steam\steamapps\common\Wartales`.
+Integrated Import and Export require
+the external QuickBMS files at the documented Desktop location. The exact
+Wartales build and toolchain versions validated for release will be recorded
+during final release-candidate validation.
+
+Windows 10, Linux, macOS, ARM64, x86, Game Pass, GOG, nonstandard Steam library
+paths, unverified game builds, co-op behavior, and arbitrary third-party CDB
+combinations are outside the initial verified support claim.
+
+## Install and Launch
+
+The intended release is the portable, self-contained
+`WartalesEditor-1.0.0-win-x64.zip`. After publication:
+
+1. Download it only from the official GitHub or Nexus release location.
+2. Verify the published SHA-256 checksum.
+3. Extract the entire ZIP to a normal user-writable folder.
+4. Run `WartalesEditor.exe`; keep all extracted files together.
+
+No installer or updater is included. To uninstall, close the editor and delete
+the extracted application folder. If you also want to remove application data,
+review and manually remove only the Wartales Editor folders you own under
+`<Documents>\Wartales Editor`; those folders can contain Language Data and
+Golden CDB files you chose to retain. Removing the program folder does not
+restore a modified Wartales `res.pak`; use a manual backup, Steam Verify, or a
+reinstall for game-file recovery.
+
+## QuickBMS Toolchain Setup
+
+QuickBMS and `Shiro_Games_PAK_script.bms` are external, user-supplied tools.
+They are not bundled or mirrored with Wartales Editor. Obtain QuickBMS from
+[Luigi Auriemma's official site](https://aluigi.altervista.org/quickbms.htm)
+and the script from the
+[upstream Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
+Avoid arbitrary repackaged binaries.
+
+Place the files exactly here:
+
+- `<Desktop>\quickbms\quickbms.exe`
+- `<Desktop>\quickbms\Shiro_Games_PAK_script.bms`
+
+Integrated Import and Export remain unavailable until both files exist. Final
+release notes will identify the exact versions validated for release.
+
+## First-Run Workflow
+
+1. Close Wartales.
+2. Choose **File → Import From Wartales...** to extract, validate, promote, and
+   open the current installed Steam `data.cdb`. Use **File → Open...** instead
+   when you already have a CDB you want to edit manually.
+3. Use **Gameplay Tools** for guided changes or **Detailed Editor** for precise
+   property editing.
+4. Use **Review Changes** to inspect edits and **Check Project** to validate the
+   current project.
+5. Choose **Save** or **Save As**. Saving the edited CDB before Export gives you
+   a durable project file outside the live game package.
+6. With Wartales still closed, choose **File → Export Back to Wartales...** only
+   when ready to write the live `res.pak`.
+
+## Profiles, Previous Values, and Updates
+
+Profiles save reusable groups of changes and supported gameplay-operation
+intent. **Restore Previous Values** uses compatible values captured before the
+tool first changed its targets; it is not a universal game-default lookup. The
+Detailed Editor's **Reset Property** uses the current project's property
+baseline and is a separate action.
+
+After a Wartales update, import the fresh current CDB, apply the intended
+profile, and choose **Tools → Check Compatibility**. The check does not mutate
+the project and cannot guarantee compatibility with every future game update.
+
+## Safety, Privacy, and Troubleshooting
+
+- **Export Back to Wartales writes to the live `res.pak`.** Save the edited CDB
+  first and keep Wartales closed. The editor performs exact verification, but
+  no live modification is risk-free and no automatic package backup is made.
+- You may manually copy `res.pak` before Export. Steam **Verify Integrity of
+  Game Files** or reinstalling Wartales can restore game files.
+- If Import or Export cannot start, verify the standard Steam installation and
+  the two exact QuickBMS paths above.
+- If localized names are unavailable, use **Tools → Language Data...** or the
+  Detailed Editor setup action. Internal IDs remain usable without language
+  data.
+- If Windows SmartScreen warns, confirm the download came from the official
+  release location and verify its SHA-256 checksum. V1 may be unsigned; do not
+  disable SmartScreen or antivirus globally.
+- Wartales Editor has no telemetry, analytics, update check, network requests,
+  or personal-data transmission. It uses local files required by selected
+  workflows.
+
+For a bug report, provide the Wartales Editor version, Wartales build, Windows
+version, reproduction steps, and the relevant editor message. Do not publicly
+upload `res.pak`, proprietary CDBs, Golden CDB data, personal profiles, or state
+files.
+
+Wartales Editor is an unofficial community tool and is not affiliated with or
+endorsed by Shiro Games. Wartales and related names and content belong to their
+respective owners. Users must own and install Wartales to use integrated game
+workflows.
+
+## Support and License
+
+Wartales Editor is free and MIT licensed. Copyright © 2026 M. Tyler Spencer.
+Released by TyTech Games. Public issues are the intended bug-reporting route
+after the repository is published. This free community project does not promise
+individual responses, fixes, future updates, or an update/release cadence, and
+the issue tracker is not a personal support desk. Custom-mod requests and
+one-on-one troubleshooting are not supported or promised. Optional support is
+available through
+[TyTech Games on Ko-fi](https://ko-fi.com/tytechgames); payment is not required.
+See the root README and `THIRD-PARTY-NOTICES.txt` for credits and dependency
+details.
+
+## Detailed Workflows
 
 # Golden CDB
 

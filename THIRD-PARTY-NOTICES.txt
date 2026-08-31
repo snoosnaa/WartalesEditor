@@ -1,0 +1,113 @@
+Wartales Editor — Third-Party Notices
+
+Wartales Editor is Copyright (c) 2026 M. Tyler Spencer and is released under
+the MIT License found in the repository LICENSE file.
+
+This file identifies redistributed components and external, user-supplied
+tools used by optional integrated workflows. A listing here does not imply
+that an upstream project endorses Wartales Editor.
+
+==============================================================================
+REDISTRIBUTED COMPONENTS
+==============================================================================
+
+Newtonsoft.Json 13.0.4
+----------------------
+
+Newtonsoft.Json is redistributed with Wartales Editor.
+
+Copyright (c) 2007 James Newton-King
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Microsoft .NET and Windows Presentation Foundation (WPF)
+--------------------------------------------------------
+
+The planned self-contained Windows release will redistribute Microsoft .NET
+and Windows Desktop Runtime components. The Windows distribution contains
+files governed by multiple licenses. Microsoft documents the applicable terms
+and component mapping at:
+
+https://github.com/dotnet/core/blob/main/license-information-windows.md
+
+Relevant references include:
+
+- .NET MIT License:
+  https://github.com/dotnet/core/blob/main/LICENSE.TXT
+- Microsoft .NET Library License:
+  https://dotnet.microsoft.com/en-us/dotnet_library_license.htm
+- Windows SDK License:
+  https://learn.microsoft.com/legal/windows-sdk/license
+- WPF repository and notices:
+  https://github.com/dotnet/wpf
+
+Copyright Microsoft Corporation and the respective .NET contributors. The
+final self-contained package must retain the notices applicable to the exact
+.NET runtime files it distributes.
+
+==============================================================================
+EXTERNAL USER-SUPPLIED TOOLS — NOT BUNDLED
+==============================================================================
+
+QuickBMS
+--------
+
+QuickBMS is not included in Wartales Editor, its source repository, or its
+release archive. It is an external dependency used only by the integrated
+Import From Wartales and Export Back to Wartales workflows.
+
+Author: Luigi Auriemma
+Version validated during pre-release engineering: 0.12.0
+Upstream licensing: GNU General Public License version 2 (GPL-2.0)
+Trusted upstream source: https://aluigi.altervista.org/quickbms.htm
+
+Users must obtain QuickBMS themselves from the trusted upstream source. The
+final release notes will record the exact version validated for that release.
+
+Shiro Games PAK QuickBMS script
+-------------------------------
+
+Shiro_Games_PAK_script.bms is not included in Wartales Editor, its source
+repository, or its release archive. It is an external, user-supplied QuickBMS
+script used by the integrated Import and Export workflows.
+
+Credits recorded by the script:
+
+- Allen — original script
+- Bartlomiej Duda (Ikskoks) — v0.2 modification
+- Allgames-kari — v0.3 type-2 analysis
+- Applicable current contributors to the upstream Tools repository
+
+Version validated locally during pre-release engineering: v0.2
+Version observed upstream during release preparation: v0.3
+Trusted upstream source:
+https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms
+
+The upstream Tools repository is presented under a GPL-3.0 licensing context,
+while the individual script does not state equally explicit per-file license
+terms. Wartales Editor therefore makes no claim of redistribution authority and
+requires users to obtain the script directly from the upstream source.
+
+==============================================================================
+OTHER CREDITS AND OWNERSHIP
+==============================================================================
+
+Wartales and related names and content are owned by their respective owners.
+Wartales is developed and published by Shiro Games. No Wartales game data is
+redistributed with Wartales Editor.

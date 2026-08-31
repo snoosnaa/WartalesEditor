@@ -6,6 +6,41 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Version 1.0.0 — Public Release Preparation
+
+**Status:** Phase 1 complete; final package validation and publication pending
+
+## User-facing release scope
+
+- Gameplay-focused tools across progression, party, professions, world, camp,
+  and equipment, including Request Board Rewards.
+- Detailed Editor with search, localized names, type-aware editing, and
+  property reset.
+- Profiles, effective change accounting, and compatible Restore Previous Values
+  history.
+- Review Changes, Check Project, validation-before-save, and atomic Undo/Redo.
+- Update Survival compatibility assessment for freshly imported game data.
+- Optional Golden CDB reference management and difference comparison.
+- Optional Language Data setup for localized Wartales names.
+- Safe QuickBMS Import From Wartales and directly verified Export Back to
+  Wartales using an external, user-supplied toolchain.
+
+## Release preparation
+
+- Added the MIT project license, third-party notices, public credits,
+  unofficial-project disclaimer, privacy statement, SmartScreen guidance, and
+  prominent AI development disclosure.
+- Added a public-first root README and reconciled the User Guide for onboarding,
+  support boundaries, QuickBMS setup, export recovery, and portable removal.
+- Reconciled application and public metadata to version 1.0.0 and hardened
+  repository ignore rules against proprietary game data and user-local state.
+
+The self-contained release package, checksum, final supported Wartales/toolchain
+version record, clean-machine validation, tag, and public release publication
+remain pending. No package has been published by this entry.
+
+---
+
 # Request Board Rewards V1 and Shared Restore Authority
 
 **Status:** Complete and closed; focused Engineering Reviews passed with
