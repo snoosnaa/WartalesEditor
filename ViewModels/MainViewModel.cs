@@ -106,6 +106,9 @@ public class MainViewModel : ObservableObject
 
     private readonly RainFrequencyService rainFrequencyService;
 
+    private readonly RequestBoardRewardsService
+        requestBoardRewardsService;
+
     private readonly GameplayPresetService gameplayPresetService;
 
     private readonly RandomTraitExclusionsService
@@ -183,6 +186,9 @@ public class MainViewModel : ObservableObject
         overworldMovementSpeedDialog;
 
     private RainFrequencyDialog? rainFrequencyDialog;
+
+    private RequestBoardRewardsDialog?
+        requestBoardRewardsDialog;
 
     private readonly Dictionary<ProgressionType, GameplayPresetDialog>
         gameplayPresetDialogs = new();
@@ -291,6 +297,7 @@ public class MainViewModel : ObservableObject
                 dialog.Close();
             overworldMovementSpeedDialog?.Close();
             rainFrequencyDialog?.Close();
+            requestBoardRewardsDialog?.Close();
             foreach (GameplayPresetDialog dialog in gameplayPresetDialogs.Values.ToArray())
                 dialog.Close();
             randomTraitExclusionsDialog?.Close();
@@ -981,6 +988,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand RainFrequencyCommand { get; }
 
+    public RelayCommand RequestBoardRewardsCommand { get; }
+
     public RelayCommand GameplayPresetCommand { get; }
 
     public RelayCommand RandomTraitExclusionsCommand { get; }
@@ -1271,6 +1280,11 @@ public class MainViewModel : ObservableObject
                 progressionMutationService,
                 gameplayOperationStateService);
 
+        requestBoardRewardsService =
+            new RequestBoardRewardsService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
         gameplayPresetService =
             new GameplayPresetService(
                 progressionMutationService,
@@ -1427,6 +1441,11 @@ public class MainViewModel : ObservableObject
         RainFrequencyCommand =
             new RelayCommand(
                 ExecuteRainFrequency,
+                _ => Project != null);
+
+        RequestBoardRewardsCommand =
+            new RelayCommand(
+                _ => ExecuteRequestBoardRewards(),
                 _ => Project != null);
 
         GameplayPresetCommand =
@@ -4065,6 +4084,156 @@ public class MainViewModel : ObservableObject
             rainFrequencyDialog = null;
     }
 
+    private void ExecuteRequestBoardRewards()
+    {
+        if (Project == null) return;
+        if (requestBoardRewardsDialog != null)
+        {
+            RestoreAndActivateWindow(requestBoardRewardsDialog);
+            return;
+        }
+
+        RequestBoardRewardsDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window =>
+                    window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException(
+                    "The main application window is not available.");
+            RequestBoardRewardsDialogViewModel viewModel =
+                new(Project, requestBoardRewardsService);
+            dialog = new RequestBoardRewardsDialog
+            {
+                Owner = owner,
+                DataContext = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested +=
+                OnRequestBoardRewardsApplyRequested;
+            dialog.DisplayFailed +=
+                OnRequestBoardRewardsDisplayFailed;
+            dialog.Closed += OnRequestBoardRewardsClosed;
+            ShowFeatureWindow(dialog);
+            requestBoardRewardsDialog = dialog;
+            Status = "Request Board Rewards opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            requestBoardRewardsDialog = null;
+            messageDialogService.ShowError(
+                "Request Board Rewards could not be opened." +
+                Environment.NewLine + Environment.NewLine +
+                "The project was not changed.",
+                "Request Board Rewards");
+        }
+    }
+
+    private void OnRequestBoardRewardsApplyRequested(
+        object? sender,
+        RequestBoardRewardsApplyEventArgs e)
+    {
+        if (Project == null) return;
+        if (sender is RequestBoardRewardsDialog feedbackDialog &&
+            feedbackDialog.DataContext is
+                RequestBoardRewardsDialogViewModel feedbackViewModel)
+        {
+            feedbackViewModel.ApplyFeedback.Clear();
+        }
+
+        IProjectOperation operation = new RequestBoardRewardsOperation(
+            requestBoardRewardsService,
+            e.Percentage,
+            e.RestorePreviousValues);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    (e.RestorePreviousValues
+                        ? "The previous Request Board reward values could not be restored."
+                        : "The Request Board reward preset could not be applied.") +
+                    Environment.NewLine + Environment.NewLine +
+                    "No changes were made.",
+                    operation.Name);
+                return;
+            }
+
+            if (result.MutationResult.WasModified)
+            {
+                editHistoryService.Record(
+                    new ProjectOperationHistoryAction(
+                        operation.Name,
+                        result.MutationResult,
+                        projectOperationTransactionService));
+            }
+
+            RefreshAfterProjectOperation();
+            if (sender is RequestBoardRewardsDialog dialog &&
+                dialog.DataContext is
+                    RequestBoardRewardsDialogViewModel viewModel)
+            {
+                viewModel.RefreshFromProject();
+                if (result.MutationResult.WasModified)
+                {
+                    viewModel.ApplyFeedback.ShowApplied(
+                        e.RestorePreviousValues
+                            ? "Previous values were restored."
+                            : "Request Board rewards were updated.");
+                }
+                else
+                {
+                    viewModel.ApplyFeedback.ShowAlreadyApplied();
+                }
+            }
+
+            Status = result.MutationResult.WasModified
+                ? e.RestorePreviousValues
+                    ? "Request Board Rewards previous values restored."
+                    : "Request Board Rewards updated."
+                : "Request Board Rewards already matched the selected setting.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                (e.RestorePreviousValues
+                    ? "The previous Request Board reward values could not be restored."
+                    : "The Request Board reward preset could not be applied.") +
+                Environment.NewLine + Environment.NewLine +
+                "No changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnRequestBoardRewardsDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Request Board Rewards could not be displayed." +
+            Environment.NewLine + Environment.NewLine +
+            "The project was not changed.",
+            "Request Board Rewards");
+    }
+
+    private void OnRequestBoardRewardsClosed(object? sender, EventArgs e)
+    {
+        if (sender is not RequestBoardRewardsDialog dialog) return;
+        dialog.ApplyRequested -= OnRequestBoardRewardsApplyRequested;
+        dialog.DisplayFailed -= OnRequestBoardRewardsDisplayFailed;
+        dialog.Closed -= OnRequestBoardRewardsClosed;
+        if (ReferenceEquals(requestBoardRewardsDialog, dialog))
+            requestBoardRewardsDialog = null;
+    }
+
     private void ValidateProject()
     {
         if (Project == null)
@@ -5627,6 +5796,9 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         RainFrequencyCommand?
+            .NotifyCanExecuteChanged();
+
+        RequestBoardRewardsCommand?
             .NotifyCanExecuteChanged();
 
         GameplayPresetCommand?

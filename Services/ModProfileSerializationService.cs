@@ -387,15 +387,39 @@ public sealed class ModProfileSerializationService
 
             if (request.OperationId is not
                 (ProfileOperationIds.AddCampFacilities or
-                 ProfileOperationIds.UpgradeAllEquipment))
+                 ProfileOperationIds.UpgradeAllEquipment or
+                 ProfileOperationIds.RequestBoardRewards))
             {
                 throw new ModProfileSerializationException(
                     $"The profile requests an unsupported gameplay " +
                     $"tool '{request.OperationId}'.");
             }
 
-            if (request.Settings != null &&
-                request.Settings.HasValues)
+            if (request.OperationId ==
+                ProfileOperationIds.RequestBoardRewards)
+            {
+                if (request.Settings?["percentage"]?.Type !=
+                        Newtonsoft.Json.Linq.JTokenType.Integer ||
+                    request.Settings.Properties().Count() != 1)
+                {
+                    throw new ModProfileSerializationException(
+                        "The Request Board Rewards profile preset is invalid.");
+                }
+
+                try
+                {
+                    RequestBoardRewardsService.ValidateProfilePercentage(
+                        request.Settings["percentage"]!.ToObject<int>());
+                }
+                catch (Exception exception)
+                {
+                    throw new ModProfileSerializationException(
+                        "The Request Board Rewards profile preset is invalid.",
+                        exception);
+                }
+            }
+            else if (request.Settings != null &&
+                     request.Settings.HasValues)
             {
                 throw new ModProfileSerializationException(
                     $"The gameplay tool '{request.OperationId}' " +

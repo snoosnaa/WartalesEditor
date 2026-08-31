@@ -33,6 +33,9 @@ public sealed class OperationValidatorProvider
     private readonly RainFrequencyOperationValidator
         rainFrequencyValidator = new();
 
+    private readonly RequestBoardRewardsOperationValidator
+        requestBoardRewardsValidator = new();
+
     private readonly RandomTraitExclusionsOperationValidator
         randomTraitExclusionsValidator = new();
 
@@ -99,6 +102,9 @@ public sealed class OperationValidatorProvider
 
                 RainFrequencyOperation =>
                     rainFrequencyValidator,
+
+                RequestBoardRewardsOperation =>
+                    requestBoardRewardsValidator,
 
                 RandomTraitExclusionsOperation =>
                     randomTraitExclusionsValidator,

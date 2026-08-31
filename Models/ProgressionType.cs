@@ -27,5 +27,6 @@ public enum ProgressionType
     ResourceReplenishment,
     LecternKnowledgeGain,
     PositiveRandomTraits,
-    RandomTraitExclusions
+    RandomTraitExclusions,
+    RequestBoardRewards
 }

@@ -213,6 +213,7 @@ public sealed class ModificationSnapshotWorkflowService
                             portableRootSourceIdentity,
                             portableFormatSupportsProvenance,
                             state))
+                    .Select(state => state.DeepClone())
                     .ToArray();
 
             GameplayOperationStateModel? randomTraitState =

@@ -6,6 +6,51 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Request Board Rewards V1 and Shared Restore Authority
+
+**Status:** Complete and closed; focused Engineering Reviews passed with
+non-blocking hardening notes, runtime/editor acceptance passed, and final
+reconciliation completed
+
+## Added
+
+- **Gameplay Tools → World → Request Board Rewards** with 100%, 150%, 200%, and
+  300% captured-baseline presets plus Restore Previous Values.
+- Dynamic discriminator-based ownership of the complete
+  `MissionGoldMinDifficulty/valueDifficulty` and
+  `MissionGoldMaxDifficulty/valueDifficulty` arrays, preserving order, unknown
+  members, integer tokens, and unrelated reward modifiers.
+- Decimal, checked, non-compounding scaling with midpoint rounding away from
+  zero; both arrays mutate atomically as one Undo/Redo action.
+- Percentage-intent profile capture and destination-baseline replay, Update
+  Survival classification, Golden visibility, and 101 focused checks.
+- Optional Version 2 `LocalRestoreContentIdentity` for bounded same-project
+  Restore authority when ordinary Open has unknown pristine-source provenance.
+
+## Corrected
+
+- Ordinary-open projects can now Restore Previous Values immediately, after
+  Save, and after Save/reopen without inventing verified source provenance.
+- Active local state survives exact CDB/sidecar rebinding, while unknown or
+  legacy history, content mismatch, incompatible targets, and expected-current
+  fingerprint mismatch remain blocked.
+- Profiles and snapshots strip local-only authority. Cross-generation,
+  historical, rebase, and Update Survival restoration continues to require
+  verified matching source-generation authority.
+
+## Accepted
+
+- Project Owner editor acceptance exercised Restore Previous Values across
+  multiple gameplay features and the profile/save/export workflow.
+- Real Wartales validation launched successfully, started a new game, showed
+  changed Request Board base Krown rewards, completed a battle and save, and
+  successfully loaded that save after a full exit.
+- Final verification passed Request Board 101, Golden 199, Export 202, Update
+  Survival 180, focused QuickBMS Import, Language Data, focused Restore, and all
+  25 Class A groups with zero build warnings or errors.
+
+---
+
 # QuickBMS Export Back to Wartales Version 1
 
 **Status:** Complete and closed; Engineering Review and Project Owner live-package

@@ -41,6 +41,9 @@ public sealed class GameplayOperationStateModel
     public string ProjectCompatibilityIdentity { get; set; } =
         string.Empty;
 
+    public string LocalRestoreContentIdentity { get; set; } =
+        string.Empty;
+
     public StartingResourcesSettings? StartingResources { get; init; }
 
     public JObject? GameplaySettings { get; init; }
@@ -72,6 +75,7 @@ public sealed class GameplayOperationStateModel
             ElementCount = ElementCount,
             ElementShapeFingerprint = ElementShapeFingerprint,
             ProjectCompatibilityIdentity = ProjectCompatibilityIdentity,
+            LocalRestoreContentIdentity = LocalRestoreContentIdentity,
             StartingResources = StartingResources?.DeepClone(),
             GameplaySettings = (JObject?)GameplaySettings?.DeepClone(),
             IsCompatible = IsCompatible,

@@ -1,7 +1,7 @@
 ﻿# Wartales Editor Roadmap
 
 **Application Roadmap**\
-**Last Updated:** 2026-07-24
+**Last Updated:** 2026-08-31
 
 ------------------------------------------------------------------------
 
@@ -43,6 +43,10 @@ personal gameplay experience through safe, reusable editing tools.
 
 -   QuickBMS Export Back to Wartales Version 1 — Engineering reviewed, exact-byte
     verification complete, Project Owner live-package accepted, and closed ✅
+-   Shared Restore Previous Values local-chain authority correction — reviewed,
+    Project Owner accepted, and closed ✅
+-   Request Board Rewards V1 — reviewed, real-game validated, Project Owner
+    accepted, and closed ✅
 
 ## Next Milestone
 

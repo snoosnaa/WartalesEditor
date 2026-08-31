@@ -61,6 +61,10 @@ public sealed class EffectiveChangeCountService
                     UpgradeAllEquipmentTargetCatalog.Count
                     - CountUpgradeSnapshotOverlap(profile.Snapshot),
 
+                ProfileOperationIds.RequestBoardRewards =>
+                    RequestBoardRewardsService.TargetDefinitions.Count
+                    - CountRequestBoardSnapshotOverlap(profile.Snapshot),
+
                 _ => 0
             };
         }
@@ -325,6 +329,31 @@ public sealed class EffectiveChangeCountService
                     GetPropertyIdentity(property))))
             .Distinct(StringComparer.Ordinal)
             .Count();
+    }
+
+    private static int CountRequestBoardSnapshotOverlap(
+        ModificationSnapshotModel snapshot)
+    {
+        ModificationSnapshotCategoryModel? category =
+            snapshot.Categories.FirstOrDefault(candidate =>
+                string.Equals(
+                    candidate.Name,
+                    "constant",
+                    StringComparison.Ordinal));
+        if (category == null)
+            return 0;
+
+        HashSet<string> entryIds =
+            RequestBoardRewardsService.TargetDefinitions
+                .Select(target => target.EntryId)
+                .ToHashSet(StringComparer.Ordinal);
+        return category.Settings
+            .Where(setting => entryIds.Contains(setting.Id))
+            .SelectMany(setting => setting.Properties)
+            .Count(property => string.Equals(
+                GetPropertyIdentity(property),
+                RequestBoardRewardsService.PropertyPath,
+                StringComparison.Ordinal));
     }
 
     private static bool IsUpgradeOwnedFlagChange(

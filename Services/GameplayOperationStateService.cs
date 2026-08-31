@@ -11,6 +11,8 @@ public sealed class GameplayOperationStateService
     private readonly ProgressionTableResolver
         tableResolver;
 
+    private readonly CdbGenerationIdentityService identityService = new();
+
     public GameplayOperationStateService()
         : this(
             new ProjectMutationService())
@@ -131,7 +133,7 @@ public sealed class GameplayOperationStateService
             return false;
         }
 
-        if (!HasRestoreProvenance(project, state))
+        if (!HasRestoreAuthority(project, state))
         {
             return false;
         }
@@ -154,7 +156,7 @@ public sealed class GameplayOperationStateService
         }
 
 
-        if (!HasRestoreProvenance(project, state))
+        if (!HasRestoreAuthority(project, state))
         {
             throw new InvalidOperationException(
                 "The saved previous values cannot be verified for this game-data version.");
@@ -201,7 +203,8 @@ public sealed class GameplayOperationStateService
     public void ReplaceState(
         ProjectModel project,
         GameplayOperationStateModel state,
-        bool markModified = true)
+        bool markModified = true,
+        bool establishLocalRestoreAuthority = true)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(state);
@@ -209,6 +212,10 @@ public sealed class GameplayOperationStateService
         state.ProjectCompatibilityIdentity =
             project.SourceCdbGenerationIdentity
             ?? string.Empty;
+        state.LocalRestoreContentIdentity =
+            establishLocalRestoreAuthority
+                ? project.CurrentCdbContentIdentity
+                : string.Empty;
 
         GameplayOperationStateModel? existing =
             FindState(project, state.OperationType);
@@ -324,13 +331,17 @@ public sealed class GameplayOperationStateService
             bool previousModified =
                 project.IsGameplayOperationStateModified;
 
-            ReplaceState(project, state);
+            ReplaceState(
+                project,
+                state,
+                establishLocalRestoreAuthority: false);
 
             mutationResult.AddGameplayOperationState(
                 project,
                 previousState,
                 state,
-                previousModified);
+                previousModified,
+                establishLocalRestoreAuthority: false);
         }
 
         ValidateProjectStates(project);
@@ -402,6 +413,13 @@ public sealed class GameplayOperationStateService
             ProgressionType.RandomTraitExclusions)
         {
             RandomTraitExclusionsService.ValidateState(project, state);
+            return;
+        }
+
+        if (state.OperationType ==
+            ProgressionType.RequestBoardRewards)
+        {
+            RequestBoardRewardsService.ValidateState(project, state);
             return;
         }
 
@@ -546,23 +564,64 @@ public sealed class GameplayOperationStateService
                 "Overworld Movement Speed",
             ProgressionType.RainFrequency =>
                 "Rain Frequency",
+            ProgressionType.RequestBoardRewards =>
+                "Request Board Rewards",
             _ when GameplayPresetCatalog.IsSupported(progressionType) =>
                 GameplayPresetCatalog.Get(progressionType).Title,
             _ => "gameplay operation"
         };
     }
 
-    private static bool HasRestoreProvenance(
+    internal bool HasRestoreAuthority(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        return HasCrossGenerationRestoreAuthority(project, state) ||
+               HasLocalRestoreAuthority(project, state);
+    }
+
+    internal bool HasCrossGenerationRestoreAuthority(
         ProjectModel project,
         GameplayOperationStateModel state)
     {
         return project.SourceProvenanceStatus ==
                    SourceProvenanceStatus.Verified &&
-               !string.IsNullOrWhiteSpace(
+               identityService.IsValid(
                    project.SourceCdbGenerationIdentity) &&
-               string.Equals(
+               identityService.AreEqual(
                    project.SourceCdbGenerationIdentity,
-                   state.ProjectCompatibilityIdentity,
-                   StringComparison.Ordinal);
+                   state.ProjectCompatibilityIdentity);
+    }
+
+    internal bool HasLocalRestoreAuthority(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        return project.SourceProvenanceStatus !=
+                   SourceProvenanceStatus.ContentMismatch &&
+               identityService.IsValid(
+                   project.CurrentCdbContentIdentity) &&
+               identityService.AreEqual(
+                   project.CurrentCdbContentIdentity,
+                   state.LocalRestoreContentIdentity);
+    }
+
+    internal void RebindAuthorizedLocalStates(
+        ProjectModel project,
+        string newCurrentContentIdentity)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        if (!identityService.IsValid(newCurrentContentIdentity))
+            throw new ArgumentException(
+                "The new current-content identity is invalid.",
+                nameof(newCurrentContentIdentity));
+
+        foreach (GameplayOperationStateModel state in
+                 project.GameplayOperationStates)
+        {
+            if (HasRestoreAuthority(project, state))
+                state.LocalRestoreContentIdentity =
+                    newCurrentContentIdentity;
+        }
     }
 }

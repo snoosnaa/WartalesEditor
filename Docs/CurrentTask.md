@@ -6,6 +6,37 @@ Public Release Preparation
 
 ## Current Status
 
+**Public Release Preparation is the repository-authoritative next activity and
+has not begun.** This document records the handoff only; no release-preparation
+work was performed during the final Request Board/Restore closeout.
+
+## Most Recently Closed Batch
+
+Request Board Rewards V1 and the shared Restore Previous Values authority
+correction are complete, Engineering reviewed with non-blocking hardening notes,
+Project Owner accepted, finally verified, committed, pushed, and closed.
+
+Request Board Rewards exposes 100%, 150%, 200%, and 300% captured-baseline
+presets for the shared Min/Max base Krown reward arrays. Its real-game acceptance
+launched Wartales, started a new game, showed changed Request Board rewards,
+completed a battle and save, and succeeded after full exit/reload. Profiles store
+percentage intent and derive output from the destination project's own baseline.
+
+The systemic Restore defect came from shared provenance authority, not Request
+Board Rewards. `LocalRestoreContentIdentity` now provides bounded same-project
+authority for ordinary-open Apply, Save, and Save/reopen workflows. It does not
+certify pristine source data and is not portable. Rebase, imported history,
+Update Survival, and cross-generation restoration still require verified source
+authority. Focused verification passes Request Board 101, Golden 199, Export
+202, Update Survival 180, QuickBMS Import, Language Data, focused Restore, and
+all 25 Class A groups with zero build warnings or errors.
+
+## Prior Closed Milestone
+
+QuickBMS Export Back to Wartales Version 1
+
+## Previous Active Status
+
 **The complete QuickBMS Export and Golden acquisition milestone batch is closed.**
 QuickBMS Export Back to Wartales Version 1 passed Engineering Review and Project
 Owner live-package acceptance. The bounded MainWindow maximize cleanup passed

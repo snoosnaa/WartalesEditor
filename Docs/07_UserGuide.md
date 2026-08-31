@@ -166,10 +166,11 @@ replace the previous result. The report lists only gameplay features or
 warnings that need attention. If none exist, it displays **No compatibility
 issues detected.** rather than a table of compatible features.
 
-Previous values from another or unverified game-data generation remain
-non-restorable. Compatible ordinary profile changes remain available for normal
-review. Restore Previous Values still requires verified QuickBMS source
-provenance and compatible captured history.
+Previous values transported from another project, history, or game-data
+generation remain non-restorable without verified matching source provenance.
+Values captured by a gameplay tool in the current ordinary-open project may use
+bounded local authority instead. That authority requires exact current-content
+and operation-state fingerprints and does not certify pristine or vanilla data.
 
 Project Owner acceptance verified this workflow in the running editor,
 including normal compatibility-window minimize/restore and repeated checks.
@@ -178,15 +179,12 @@ remained available after closing and reopening their feature windows within the
 same project session.
 
 An adjacent state file can be tied to the current saved CDB without proving
-which pristine Wartales generation produced it. Ordinary Open treats that state
-as unverified and grants no restoration authority; it does not show a separate
-notice solely for this bound null-source condition. Import From Wartales reports
-that the previous generation could not be verified. Damaged or unreadable prior
-state is handled the same conservative way after a successful import.
-
-Opening a CDB without trusted adjacent provenance remains supported. Editing
-and ordinary profile comparison work, but generation-sensitive Restore Previous
-Values is unavailable until provenance is established by authoritative import.
+which pristine Wartales generation produced it. Ordinary Open may retain active
+local Restore authority only when the CDB bytes, sidecar binding, local content
+identity, expected current values, and target structure all agree. Unknown
+historical records, damaged state, mismatched content, and legacy records without
+that bounded authority remain non-restorable. Authoritative import is still
+required for cross-generation or historical restoration.
 
 The main player workflows are:
 
@@ -244,6 +242,14 @@ reconciliation. The action restores the pre-tool baseline retained by Gameplay
 Operation State; it does not claim to know universal game defaults.
 
 # Class A Gameplay Tools
+
+Request Board Rewards appears under World with 100%, 150%, 200%, and 300%
+presets. It changes the shared base Krown reward ranges used by ordinary Tavern
+Request Board missions while preserving mission-specific and other reward
+modifiers. Presets always scale from the captured previous values rather than
+compounding from the last selection. Restore Previous Values returns both reward
+arrays together, and profiles replay the percentage against the destination
+project's own compatible baseline.
 
 The Gameplay Tools dashboard now includes a Professions category for Delicious
 Meals, Forging Assistance, Mining & Woodcutting, Fishing, and Lockpicking.

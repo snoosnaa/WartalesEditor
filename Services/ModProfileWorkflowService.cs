@@ -210,7 +210,7 @@ public sealed class ModProfileWorkflowService
             {
                 IProjectOperation operation =
                     operationResolver.Resolve(
-                        request.OperationId);
+                        request);
 
                 ProjectOperationResult result =
                     projectOperationService.Execute(
@@ -328,10 +328,16 @@ public sealed class ModProfileWorkflowService
         ContentCreationService contentCreationService =
             new(mutationService);
 
+        GameplayOperationStateService stateService =
+            new(mutationService);
+
         return new ProfileOperationResolver(
             new AddCampFacilitiesOperation(
                 contentCreationService),
             new UpgradeAllEquipmentOperation(
-                contentCreationService));
+                contentCreationService),
+            new RequestBoardRewardsService(
+                mutationService,
+                stateService));
     }
 }

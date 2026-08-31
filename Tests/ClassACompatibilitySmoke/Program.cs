@@ -1330,6 +1330,7 @@ static void VerifyRealLanguageDataFile(
 static void VerifyRestorePreviousValuesContract()
 {
     VerifySharedPresetPreviousValues();
+    VerifyOrdinaryOpenTimeBetweenRests();
     VerifyPartyEconomyPreviousValues();
     VerifyMovementPreviousValues();
     VerifyRainPreviousValues();
@@ -1339,9 +1340,52 @@ static void VerifyRestorePreviousValuesContract()
         "PASS unified Restore Previous Values authority, persistence, profiles, and history");
 }
 
+static void VerifyOrdinaryOpenTimeBetweenRests()
+{
+    ProjectModel project = WithUnknownSource(CreateProject(
+        Sheet(
+            "constant",
+            new JObject
+            {
+                ["id"] = "TirednessAmountHours",
+                ["value"] = 30
+            })));
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    GameplayPresetService service = new(mutation, states);
+    ProjectOperationService executor = new();
+
+    Check(ApplyPreset(
+            executor,
+            service,
+            project,
+            ProgressionType.TimeBetweenRests,
+            "Longer").Succeeded &&
+          states.CanRestorePreviousValues(
+              project,
+              ProgressionType.TimeBetweenRests),
+        "ordinary-open Time Between Rests enables bounded local Restore");
+    ProjectOperationResult restore = executor.Execute(
+        new GameplayPresetOperation(
+            service,
+            ProgressionType.TimeBetweenRests,
+            "Vanilla",
+            true),
+        project);
+    Check(restore.Succeeded,
+        "ordinary-open Time Between Rests Restore succeeds");
+    CheckNumber(
+        project,
+        "constant",
+        "TirednessAmountHours",
+        "value",
+        30);
+}
+
 static void VerifyRteAccountingAndPartyImmediateRestore()
 {
-    ProjectModel exclusionsProject = CreateRandomTraitExclusionProject();
+    ProjectModel exclusionsProject = WithUnknownSource(
+        CreateRandomTraitExclusionProject());
     ProjectMutationService exclusionsMutation = new();
     GameplayOperationStateService exclusionsStates = new(exclusionsMutation);
     RandomTraitExclusionsService exclusionsService = new(
@@ -1358,6 +1402,10 @@ static void VerifyRteAccountingAndPartyImmediateRestore()
                 baselineAllowed),
             exclusionsProject).Succeeded,
         "RTE accounting fixture establishes captured previous values");
+    Check(exclusionsStates.CanRestorePreviousValues(
+            exclusionsProject,
+            ProgressionType.RandomTraitExclusions),
+        "ordinary-open RTE captures bounded local Restore authority");
     int preRteCount = new EffectiveChangeCountService().Calculate(exclusionsProject);
     IReadOnlyList<ChangeSummaryItemModel> baselineSummary =
         new ChangeSummaryService().BuildItems(
@@ -1492,6 +1540,7 @@ static void VerifyPartyEconomyImmediateRestore(
     ProjectModel project,
     PartyEconomySettings modifiedSettings)
 {
+    WithUnknownSource(project);
     string baselineJson = Json(project);
     ProjectMutationService mutation = new();
     GameplayOperationStateService states = new(mutation);
@@ -1508,6 +1557,8 @@ static void VerifyPartyEconomyImmediateRestore(
         project);
     Check(modified.Succeeded,
         $"{type} immediate-Restore fixture applies modified settings");
+    Check(states.CanRestorePreviousValues(project, type),
+        $"ordinary-open {type} captures bounded local Restore authority");
     string modifiedJson = Json(project);
     viewModel.RefreshFromProject();
     Check(viewModel.TryRestorePreviousValues(),
@@ -1719,7 +1770,7 @@ static void VerifyRandomTraitExclusionsRestoreLifecycle()
 
 static void VerifyPartyEconomyPreviousValues()
 {
-    ProjectModel project = CreateProject(
+    ProjectModel project = WithUnknownSource(CreateProject(
         Sheet(
             "trait",
             new JObject
@@ -1730,7 +1781,7 @@ static void VerifyPartyEconomyPreviousValues()
                 {
                     ["value"] = 25
                 }
-            }));
+            })));
     ProjectMutationService mutation = new();
     GameplayOperationStateService states = new(mutation);
     PartyEconomyService service = new(mutation, states);
@@ -1780,14 +1831,14 @@ static void VerifySharedPresetPreviousValues()
     GameplayOperationStateService states = new(mutation);
     GameplayPresetService service = new(mutation, states);
     ProjectOperationService executor = new();
-    ProjectModel project = CreateProject(
+    ProjectModel project = WithUnknownSource(CreateProject(
         Sheet(
             "constant",
             new JObject
             {
                 ["id"] = "FishingDurationControl",
                 ["value"] = 7.5
-            }));
+            })));
 
     Check(!service.CanRestorePreviousValues(
             project,
@@ -1813,6 +1864,10 @@ static void VerifySharedPresetPreviousValues()
             ProgressionType.FishingSpeed,
             "Faster").Succeeded,
         "shared preset first change captures previous values");
+    Check(states.CanRestorePreviousValues(
+            project,
+            ProgressionType.FishingSpeed),
+        "ordinary-open scalar preset captures bounded local Restore authority");
     Check(ApplyPreset(
             executor,
             service,
@@ -1948,7 +2003,8 @@ static void VerifySharedPresetPreviousValues()
 
 static void VerifyMovementPreviousValues()
 {
-    ProjectModel project = CreateMovementProject(7, 12);
+    ProjectModel project = WithUnknownSource(
+        CreateMovementProject(7, 12));
     ProjectMutationService mutation = new();
     GameplayOperationStateService states = new(mutation);
     OverworldMovementSpeedService service = new(mutation, states);
@@ -1972,6 +2028,10 @@ static void VerifyMovementPreviousValues()
                 OverworldMovementPreset.Fast),
             project).Succeeded,
         "movement preset applies from non-catalog previous values");
+    Check(states.CanRestorePreviousValues(
+            project,
+            ProgressionType.OverworldMovementSpeed),
+        "ordinary-open multi-target movement captures bounded local Restore authority");
     string modified = Json(project);
     ProjectOperationResult restore = executor.Execute(
         new OverworldMovementSpeedOperation(
@@ -6237,6 +6297,15 @@ static ProjectModel CreateProject(params JObject[] sheets)
         identity,
         identity,
         SourceProvenanceStatus.Verified);
+    return project;
+}
+
+static ProjectModel WithUnknownSource(ProjectModel project)
+{
+    project.EstablishPersistedIdentity(
+        project.CurrentCdbContentIdentity,
+        null,
+        SourceProvenanceStatus.Unknown);
     return project;
 }
 

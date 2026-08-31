@@ -7,4 +7,7 @@ public static class ProfileOperationIds
 
     public const string UpgradeAllEquipment =
         "upgrade-all-equipment";
+
+    public const string RequestBoardRewards =
+        "request-board-rewards";
 }

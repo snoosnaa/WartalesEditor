@@ -60,6 +60,31 @@ Public Release Preparation
 
 Current phase:
 
+**Public Release Preparation is next and has not begun.** The immediately prior
+post-milestone batch is accepted, reconciled, committed, pushed, and closed.
+
+Request Board Rewards V1 completed investigation, approved design,
+implementation, focused Engineering Review (**PASS WITH NON-BLOCKING NOTES**),
+real-game runtime validation, and Project Owner acceptance. Wartales launched
+with the modified CDB, a new game showed changed Request Board base Krown
+rewards, a battle and save completed, and the save loaded successfully after a
+full exit. The 101-check focused suite remains green.
+
+The shared Restore Previous Values correction is also closed. The systemic
+ordinary-open failure was caused by shared provenance authority rather than
+Request Board Rewards. Bounded `LocalRestoreContentIdentity` authority now
+supports immediate and Save/reopen restoration without claiming pristine
+source authenticity. Verified source authority remains mandatory across
+rebase, source-generation change, imported history, portable transfer, and
+Update Survival boundaries. Focused Engineering Review returned **PASS WITH
+NON-BLOCKING NOTES**, and Project Owner interactive acceptance passed.
+
+Final sequential verification passes Golden 199/199, Export 202/202, Update
+Survival 180/180, focused QuickBMS Import, Language Data, focused Restore, and
+all 25 Class A groups with zero warnings or errors.
+
+Previous active status:
+
 **QuickBMS Export Back to Wartales Version 1 is complete, reviewed, Project Owner
 accepted, and closed. Public Release Preparation is the next available activity.**
 File → Export Back to Wartales now reuses normal Save, captures the persisted

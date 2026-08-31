@@ -180,7 +180,8 @@ public sealed class ProjectMutationResult
         ProjectModel project,
         GameplayOperationStateModel? previousState,
         GameplayOperationStateModel replacementState,
-        bool previousStateWasModified)
+        bool previousStateWasModified,
+        bool establishLocalRestoreAuthority = true)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(replacementState);
@@ -188,6 +189,10 @@ public sealed class ProjectMutationResult
         replacementState.ProjectCompatibilityIdentity =
             project.SourceCdbGenerationIdentity
             ?? string.Empty;
+        replacementState.LocalRestoreContentIdentity =
+            establishLocalRestoreAuthority
+                ? project.CurrentCdbContentIdentity
+                : string.Empty;
 
         gameplayOperationStateRollbackRecords.Add(
             new GameplayOperationStateRollbackRecord(

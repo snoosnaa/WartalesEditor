@@ -294,8 +294,14 @@ unreadable manifest remains unknown provenance. Unknown/untrusted history has
 actionable source authority scrubbed and cannot reactivate. Verified history may
 reactivate only on exact verified source return plus full target/content
 validation. Restore Previous Values additionally requires exact source
-provenance plus all existing target, shape, settings, and current-value checks.
-Save never turns current edited content into a new source generation.
+provenance when state crosses a source-generation, rebase, replacement,
+historical-reactivation, or portable-transfer boundary. A state captured by an
+active operation in the current ordinary-open project chain may instead use its
+exact `LocalRestoreContentIdentity` binding, provided current-content binding
+and all existing target, shape, settings, and expected-current-value checks
+remain valid. Save advances that bounded local binding with the successfully
+persisted revision; it never turns current edited content into a new source
+generation.
 
 An active record in a verified manifest is authoritative only when its record
 source equals the verified manifest source. A missing, invalid, or contradictory
@@ -548,6 +554,15 @@ The authority is the compatible pre-tool baseline captured in
 changes its managed targets. Later settings preserve that baseline. The
 `.wtstate` sidecar persists it across save/reload and compatible profile
 snapshots transport it between projects.
+
+Restore authority has two deliberately separate forms. Bounded local-chain
+authority binds a newly captured active state to the exact current project
+content and may survive Save/reopen even when pristine source provenance is
+unknown. It does not establish source authenticity and is scrubbed when state
+becomes untrusted history or crosses authoritative source replacement/rebase.
+Cross-generation, historical-reactivation, and portable authority continues to
+require a verified source-generation identity. Matching target values alone
+never promotes arbitrary unknown history to active state.
 
 Restore availability is determined centrally by `GameplayOperationStateService`.
 If compatible historical state is absent, restoration remains unavailable;

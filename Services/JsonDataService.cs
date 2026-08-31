@@ -173,10 +173,15 @@ public class JsonDataService
                         .GetSidecarPath(fullFileName));
 
             gameplayOperationStatePersistenceService
-                .AcceptCurrentStates(project);
+                .RebindAuthorizedLocalStates(
+                    project,
+                    targetContentIdentity);
 
             project.AdvanceCurrentContentIdentity(
                 targetContentIdentity);
+
+            gameplayOperationStatePersistenceService
+                .AcceptCurrentStates(project);
         }
         catch (Exception exception)
         {

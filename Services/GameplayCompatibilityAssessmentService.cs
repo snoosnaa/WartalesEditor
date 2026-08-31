@@ -57,6 +57,8 @@ public sealed class GameplayCompatibilityAssessmentService
             _ = RainFrequencyService.ResolveTargets(project));
         Probe(results, "Random Trait Exclusions", () =>
             _ = RandomTraitExclusionsService.ResolveCandidateIds(project));
+        Probe(results, "Request Board Rewards", () =>
+            _ = RequestBoardRewardsService.ResolveTargets(project));
 
         foreach (ProgressionType type in Enum.GetValues<ProgressionType>()
                      .Where(GameplayPresetCatalog.IsSupported))

@@ -216,6 +216,18 @@ when Windows symlink privilege is unavailable.
 The real canonical CDB may be inspected read-only. All mutation, Save, and
 re-import tests use isolated deterministic synthetic files.
 
+### Shared Restore Previous Values Authority Regression
+
+Permanent ordinary-open fixtures use a valid current-content identity with
+unknown source provenance. Coverage proves immediate Apply/Restore, Save then
+Restore, Save/reopen then Restore, exact sidecar binding, expected-current and
+target-shape rejection, authoritative rebase rejection, legacy/imported unknown
+history rejection, verified-source preservation, independent Undo/Redo, and
+no-op Restore history suppression. Representative scalar, multi-target,
+array-backed, Party Economy, and removal-backed operation families use the same
+shared authority path. The Request Board suite includes STA WPF interaction
+with the production dialog's actual Apply and Restore buttons.
+
 Compatibility workflow coverage verifies that shared ordinary/QuickBMS project
 publication retains background transition evidence without opening the report,
 the command requires a loaded project, repeated checks replace results using
@@ -487,6 +499,32 @@ Verify:
 Expected Result
 
 ✅ Saved project matches editor state.
+
+---
+
+# Request Board Rewards V1 Regression Contract
+
+`Tests/RequestBoardRewardsSmoke` uses synthetic in-memory project models and
+does not access a real CDB, Golden file, user `.wtstate`, or Wartales package.
+Its 101
+focused checks cover unique Min/Max target resolution, dynamic discriminator
+discovery, order independence, matching-set validation, 100/150/200/300 percent
+behavior, integer rounding away from zero, non-compounding Apply, complete
+baseline restoration, atomic Undo/Redo, unknown-member preservation, isolated
+temporary state persistence, profile
+intent capture and destination-baseline replay, Update Existing Profile,
+effective accounting, serialization validation, malformed and ambiguous target
+rejection, arithmetic overflow, validator rollback, unrelated mutation
+rejection, Update Survival classification, Golden observability, excluded reward
+modifier preservation, and World-dashboard wiring.
+
+The isolated in-game validation gate passed after Engineering Review. Wartales
+launched with the full modified CDB, a new game showed clearly changed Request
+Board base Krown rewards, a battle and save completed, and the save loaded after
+a full exit. This confirms the intended base-reward target without claiming an
+exact final-payout formula or exhaustive coverage of Champion, Weekly Bounty,
+troop-size, negotiation/Influence, path, trait, Fief, and scripted-reward
+interactions.
 
 ---
 

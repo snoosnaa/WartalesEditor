@@ -87,6 +87,20 @@ public sealed class ProfileOperationCaptureService
             FilterUpgradeProperties(snapshot);
         }
 
+        if (RequestBoardRewardsService.TryGetProfilePercentage(
+                project,
+                out int requestBoardPercentage))
+        {
+            requests.Add(
+                CreateRequest(
+                    ProfileOperationIds.RequestBoardRewards,
+                    new JObject
+                    {
+                        ["percentage"] = requestBoardPercentage
+                    }));
+            FilterRequestBoardRewards(snapshot);
+        }
+
         RemoveEmptySnapshotContainers(snapshot);
         return requests;
     }
@@ -105,12 +119,50 @@ public sealed class ProfileOperationCaptureService
     }
 
     private static ProfileOperationRequestModel CreateRequest(
-        string operationId)
+        string operationId,
+        JObject? settings = null)
     {
         return new ProfileOperationRequestModel
         {
-            OperationId = operationId
+            OperationId = operationId,
+            Settings = settings
         };
+    }
+
+    private static void FilterRequestBoardRewards(
+        ModificationSnapshotModel snapshot)
+    {
+        ModificationSnapshotCategoryModel? category =
+            snapshot.Categories.FirstOrDefault(candidate =>
+                string.Equals(
+                    candidate.Name,
+                    "constant",
+                    StringComparison.Ordinal));
+        if (category != null)
+        {
+            foreach (string entryId in new[]
+                     {
+                         RequestBoardRewardsService.MinimumEntryId,
+                         RequestBoardRewardsService.MaximumEntryId
+                     })
+            {
+                ModificationSnapshotSettingModel? setting =
+                    category.Settings.FirstOrDefault(candidate =>
+                        string.Equals(
+                            candidate.Id,
+                            entryId,
+                            StringComparison.Ordinal));
+                setting?.Properties.RemoveAll(property =>
+                    string.Equals(
+                        GetPropertyIdentity(property),
+                        RequestBoardRewardsService.PropertyPath,
+                        StringComparison.Ordinal));
+            }
+        }
+
+        snapshot.GameplayOperationStates.RemoveAll(state =>
+            state.OperationType ==
+            ProgressionType.RequestBoardRewards);
     }
 
     private void FilterAddCampProperties(

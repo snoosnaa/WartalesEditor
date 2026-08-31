@@ -574,6 +574,10 @@
                                     Command="{Binding GameplayPresetCommand}"
                                     CommandParameter="{x:Static models:ProgressionType.VendorRefresh}"
                                     ToolTip="Choose how quickly merchant inventories replenish."/>
+                            <Button Content="Request Board Rewards"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding RequestBoardRewardsCommand}"
+                                    ToolTip="Increase the base Krown rewards offered by Tavern Request Board missions."/>
                             <Button Content="Resource Replenishment"
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding GameplayPresetCommand}"

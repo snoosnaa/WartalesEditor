@@ -2,7 +2,7 @@
 
 **Version:** 0.9\
 **Status:** Active\
-**Last Updated:** 2026-08-26\
+**Last Updated:** 2026-08-31\
 **Applies To:** Entire Project
 
 ------------------------------------------------------------------------
@@ -1632,3 +1632,38 @@ additional live Export was performed during correction, review, or reconciliatio
 QuickBMS safe Import, Update Survival, Golden CDB Version 1, and QuickBMS Export
 Back to Wartales Version 1 are closed. Public Release Preparation is the next
 available high-level activity and was not begun here.
+
+## 2026-08-31 — Request Board Rewards and Shared Restore Authority Closure
+
+Request Board Rewards V1 completed investigation, approved architecture,
+implementation, and focused Engineering Review with non-blocking test-hardening
+notes. The feature owns the shared minimum and maximum base Krown reward arrays
+by dynamically discovered difficulty discriminator, scales integer values from
+the captured baseline, preserves unknown data and ordering, and applies both
+arrays atomically. Profiles carry percentage intent and derive output from the
+destination project's compatible baseline.
+
+Runtime acceptance passed with the real game: Wartales launched with the full
+modified CDB, a new game showed changed Tavern Request Board rewards, a battle
+and save completed, the game exited fully, and the save loaded successfully.
+This establishes the intended base-reward behavior without claiming an exact
+compiled final-payout formula.
+
+Request Board testing exposed a pre-existing shared Restore Previous Values
+defect. Ordinary-open projects had exact current-content identity but unknown
+pristine-source provenance, so the earlier Update Survival authority gate denied
+all restoration and demoted active state after reopen. The accepted correction
+adds optional Version 2 `LocalRestoreContentIdentity` as bounded same-project
+authority. Immediate, Save, and Save/reopen restoration now work while
+ContentMismatch, fingerprint/shape failure, imported unknown history, rebase,
+and cross-generation state remain protected by the existing verified-source
+rules. Local authority is removed from portable profiles, snapshots, and
+untrusted history.
+
+Focused Engineering Review returned **PASS WITH NON-BLOCKING NOTES**, and
+Project Owner interactive acceptance passed. Final verification completed with
+zero-warning Release builds, Request Board 101, Golden 199, Export 202, Update
+Survival 180, focused QuickBMS Import, Language Data, focused Restore, and all
+25 Class A groups passing. No additional live Export or game launch occurred
+during reconciliation. Both items are closed, and Public Release Preparation is
+the next repository-authoritative activity; it was not begun here.

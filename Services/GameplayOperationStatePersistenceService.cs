@@ -112,7 +112,39 @@ public sealed class GameplayOperationStatePersistenceService
             if (sourceIdentity == null)
             {
                 RetainAsUnknownHistory(project, stateFile.HistoricalOperations);
-                RetainAsUnknownHistory(project, stateFile.Operations);
+                foreach (GameplayOperationStateModel state in
+                         stateFile.Operations)
+                {
+                    if (string.IsNullOrWhiteSpace(
+                            state.ProjectCompatibilityIdentity) &&
+                        identityService.IsValid(
+                            state.LocalRestoreContentIdentity) &&
+                        identityService.AreEqual(
+                            actualIdentity,
+                            state.LocalRestoreContentIdentity))
+                    {
+                        project.GameplayOperationStates.Add(
+                            state.DeepClone());
+                    }
+                    else
+                    {
+                        RetainAsUnknownHistory(project, new[] { state });
+                    }
+                }
+
+                stateService.ValidateProjectStates(project);
+                foreach (GameplayOperationStateModel state in
+                         project.GameplayOperationStates.ToArray())
+                {
+                    if (state.IsCompatible)
+                        continue;
+
+                    project.GameplayOperationStates.Remove(state);
+                    RetainAsUnknownHistory(project, new[] { state });
+                    project.GameplayOperationStateWarnings.Add(
+                        state.CompatibilityMessage);
+                }
+
                 stateService.AcceptCurrentStates(project);
                 return;
             }
@@ -348,6 +380,9 @@ public sealed class GameplayOperationStatePersistenceService
         try
         {
             CommitTemporary(temporaryPath, sidecarPath);
+            stateService.RebindAuthorizedLocalStates(
+                project,
+                project.CurrentCdbContentIdentity);
             stateService.AcceptCurrentStates(project);
             project.RequiresGameplayStateManifestMigration = false;
         }
@@ -371,24 +406,37 @@ public sealed class GameplayOperationStatePersistenceService
         bool hasVerifiedSource =
             project.SourceProvenanceStatus == SourceProvenanceStatus.Verified &&
             identityService.IsValid(project.SourceCdbGenerationIdentity);
-        if (hasVerifiedSource)
-            BindActiveStatesToSource(project);
+
+        List<GameplayOperationStateModel> authorizedActive =
+            project.GameplayOperationStates
+                .Where(state =>
+                    stateService.HasRestoreAuthority(project, state))
+                .Select(state => state.DeepClone())
+                .ToList();
+
+        foreach (GameplayOperationStateModel state in authorizedActive)
+        {
+            state.ProjectCompatibilityIdentity =
+                hasVerifiedSource
+                    ? project.SourceCdbGenerationIdentity!
+                    : string.Empty;
+            state.LocalRestoreContentIdentity = currentContentIdentity;
+        }
+
+        IEnumerable<GameplayOperationStateModel> unauthorizedActive =
+            project.GameplayOperationStates.Where(state =>
+                !stateService.HasRestoreAuthority(project, state));
 
         IEnumerable<GameplayOperationStateModel> history =
-            hasVerifiedSource
-                ? project.HistoricalGameplayOperationStates
-                : project.HistoricalGameplayOperationStates.Concat(
-                    project.GameplayOperationStates);
+            project.HistoricalGameplayOperationStates.Concat(
+                unauthorizedActive);
 
         GameplayOperationStateFileModel stateFile = new()
         {
             SourceFileName = Path.GetFileName(cdbFileName),
             SourceCdbGenerationIdentity = project.SourceCdbGenerationIdentity,
             CurrentCdbContentIdentity = currentContentIdentity,
-            Operations = hasVerifiedSource
-                ? project.GameplayOperationStates
-                    .Select(state => state.DeepClone()).ToList()
-                : new List<GameplayOperationStateModel>(),
+            Operations = authorizedActive,
             HistoricalOperations = hasVerifiedSource
                 ? BoundedHistory(history)
                 : BoundedUnknownHistory(history)
@@ -431,6 +479,15 @@ public sealed class GameplayOperationStatePersistenceService
         stateService.AcceptCurrentStates(project);
     }
 
+    internal void RebindAuthorizedLocalStates(
+        ProjectModel project,
+        string newCurrentContentIdentity)
+    {
+        stateService.RebindAuthorizedLocalStates(
+            project,
+            newCurrentContentIdentity);
+    }
+
     private static GameplayOperationStateFileModel ReadStateFile(string sidecarPath)
     {
         string json = File.ReadAllText(sidecarPath, Encoding.UTF8);
@@ -452,9 +509,10 @@ public sealed class GameplayOperationStatePersistenceService
         {
             ValidateSerializedState(state);
             if (!allowUnknownProvenance &&
-                string.IsNullOrWhiteSpace(state.ProjectCompatibilityIdentity))
+                string.IsNullOrWhiteSpace(state.ProjectCompatibilityIdentity) &&
+                string.IsNullOrWhiteSpace(state.LocalRestoreContentIdentity))
             {
-                throw new InvalidDataException("Active gameplay-operation state has no source provenance.");
+                throw new InvalidDataException("Active gameplay-operation state has no restore authority.");
             }
         }
     }
@@ -475,6 +533,16 @@ public sealed class GameplayOperationStatePersistenceService
             throw new InvalidDataException("The gameplay-operation state contains an invalid operation record.");
         }
 
+        CdbGenerationIdentityService identities = new();
+        if ((!string.IsNullOrWhiteSpace(state.ProjectCompatibilityIdentity) &&
+             !identities.IsValid(state.ProjectCompatibilityIdentity)) ||
+            (!string.IsNullOrWhiteSpace(state.LocalRestoreContentIdentity) &&
+             !identities.IsValid(state.LocalRestoreContentIdentity)))
+        {
+            throw new InvalidDataException(
+                "The gameplay-operation state contains an invalid authority identity.");
+        }
+
         if (state.OperationType == ProgressionType.StartingResources)
         {
             if (state.StartingResources == null)
@@ -486,7 +554,8 @@ public sealed class GameplayOperationStatePersistenceService
                  or ProgressionType.CarryingCapacity
                  or ProgressionType.OverworldMovementSpeed
                  or ProgressionType.RainFrequency
-                 or ProgressionType.RandomTraitExclusions ||
+                 or ProgressionType.RandomTraitExclusions
+                 or ProgressionType.RequestBoardRewards ||
                  GameplayPresetCatalog.IsSupported(state.OperationType))
         {
             if (state.GameplaySettings == null)
@@ -495,15 +564,6 @@ public sealed class GameplayOperationStatePersistenceService
         else
         {
             ProgressionScalingService.ValidatePercentage(state.AppliedPercentage);
-        }
-    }
-
-    private static void BindActiveStatesToSource(ProjectModel project)
-    {
-        foreach (GameplayOperationStateModel state in project.GameplayOperationStates)
-        {
-            state.ProjectCompatibilityIdentity =
-                project.SourceCdbGenerationIdentity ?? string.Empty;
         }
     }
 
@@ -523,6 +583,7 @@ public sealed class GameplayOperationStatePersistenceService
         {
             GameplayOperationStateModel unknown = state.DeepClone();
             unknown.ProjectCompatibilityIdentity = string.Empty;
+            unknown.LocalRestoreContentIdentity = string.Empty;
             AddHistorical(project, unknown);
         }
     }
@@ -540,10 +601,13 @@ public sealed class GameplayOperationStatePersistenceService
     private static List<GameplayOperationStateModel> BoundedHistory(
         IEnumerable<GameplayOperationStateModel> states)
     {
-        return states
+        List<GameplayOperationStateModel> bounded = states
             .GroupBy(state => state.OperationType)
             .Select(group => group.Last().DeepClone())
             .ToList();
+        foreach (GameplayOperationStateModel state in bounded)
+            state.LocalRestoreContentIdentity = string.Empty;
+        return bounded;
     }
 
     private static List<GameplayOperationStateModel> BoundedUnknownHistory(
@@ -551,7 +615,10 @@ public sealed class GameplayOperationStatePersistenceService
     {
         List<GameplayOperationStateModel> bounded = BoundedHistory(states);
         foreach (GameplayOperationStateModel state in bounded)
+        {
             state.ProjectCompatibilityIdentity = string.Empty;
+            state.LocalRestoreContentIdentity = string.Empty;
+        }
         return bounded;
     }
 }

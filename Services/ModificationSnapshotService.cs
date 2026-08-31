@@ -26,7 +26,7 @@ public sealed class ModificationSnapshotService
         snapshot.GameplayOperationStates.AddRange(
             project.GameplayOperationStates
                 .Where(state => state.IsCompatible)
-                .Select(state => state.DeepClone()));
+                .Select(CreatePortableState));
 
         foreach (SheetModel category in project.Sheets)
         {
@@ -69,6 +69,14 @@ public sealed class ModificationSnapshotService
         }
 
         return snapshot;
+    }
+
+    private static GameplayOperationStateModel CreatePortableState(
+        GameplayOperationStateModel state)
+    {
+        GameplayOperationStateModel portable = state.DeepClone();
+        portable.LocalRestoreContentIdentity = string.Empty;
+        return portable;
     }
 
     private static ModificationSnapshotCategoryModel
