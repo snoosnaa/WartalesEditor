@@ -1,442 +1,693 @@
-﻿
-# Wartales Editor 1.0.0 User Guide
+# Wartales Editor User Manual
 
-Wartales Editor is a portable Windows desktop editor for Wartales `data.cdb`
-files. This guide begins with the supported public workflow and retains the
-detailed feature guidance below.
+This manual covers Wartales Editor 1.0.0. It is written for players and does
+not require knowledge of CDB internals.
 
-## AI Development Disclosure
+## 1. What Wartales Editor Is
 
-Wartales Editor was designed, directed, tested, reviewed, and validated by
-M. Tyler Spencer through more than 60 hours of hands-on product design,
-requirements, architecture and UX decisions, prompting, testing, engineering
-review, real-game validation, release preparation, and repository management.
-All application code was produced using AI-assisted development tools,
-primarily OpenAI ChatGPT and OpenAI Codex, under that human direction and
-review. The project followed an iterative engineering and validation process,
-not a one-prompt autonomous generation process.
+Wartales Editor is a Windows desktop companion for customizing an extracted
+Wartales `data.cdb` file. It provides guided Gameplay Tools for common changes
+and a Detailed Editor for direct, type-aware editing. It tracks changes,
+validates projects, supports Undo and Redo, and can save reusable Profiles.
 
-## Supported Environment
+The editor can also use a user-supplied QuickBMS toolchain to import the current
+Wartales CDB and export a saved edited CDB back to the live game package.
+Wartales Editor is an unofficial community project and is not affiliated with
+or endorsed by Shiro Games.
 
-Version 1.0.0 is supported on Windows 11 x64 with the Steam version of Wartales
-installed at `C:\Program Files (x86)\Steam\steamapps\common\Wartales`.
-Integrated Import and Export require
-the external QuickBMS files at the documented Desktop location. The exact
-Wartales build and toolchain versions validated for release will be recorded
-during final release-candidate validation.
+## 2. Supported Platform and Game Build
 
-Windows 10, Linux, macOS, ARM64, x86, Game Pass, GOG, nonstandard Steam library
-paths, unverified game builds, co-op behavior, and arbitrary third-party CDB
-combinations are outside the initial verified support claim.
+The initial supported environment is:
 
-## Install and Launch
+- Windows 11 x64.
+- The Steam version of Wartales.
+- Wartales installed at
+  `C:\Program Files (x86)\Steam\steamapps\common\Wartales`.
+- The exact Wartales build recorded in the final 1.0.0 release notes.
+- The user-supplied QuickBMS and Shiro Games PAK script versions recorded in
+  the final release notes when integrated Import or Export is used.
 
-The intended release is the portable, self-contained
-`WartalesEditor-1.0.0-win-x64.zip`. After publication:
+Other Windows versions, operating systems, processor architectures, stores,
+nonstandard Steam library paths, unverified Wartales builds, co-op behavior,
+and arbitrary combinations of third-party CDB changes are not currently part
+of the verified support claim.
 
-1. Download it only from the official GitHub or Nexus release location.
-2. Verify the published SHA-256 checksum.
+## 3. Installation
+
+Wartales Editor is distributed as a portable, multi-file ZIP. It has no
+installer and does not require a separate .NET runtime.
+
+1. Download `WartalesEditor-1.0.0-win-x64.zip` from the official GitHub or
+   authorized Nexus release page.
+2. Verify its SHA-256 checksum against the published checksum file.
 3. Extract the entire ZIP to a normal user-writable folder.
-4. Run `WartalesEditor.exe`; keep all extracted files together.
+4. Keep all extracted files together.
+5. Run `WartalesEditor.exe` from the extracted folder.
 
-No installer or updater is included. To uninstall, close the editor and delete
-the extracted application folder. If you also want to remove application data,
-review and manually remove only the Wartales Editor folders you own under
-`<Documents>\Wartales Editor`; those folders can contain Language Data and
-Golden CDB files you chose to retain. Removing the program folder does not
-restore a modified Wartales `res.pak`; use a manual backup, Steam Verify, or a
-reinstall for game-file recovery.
+Do not run the application from inside the ZIP. Do not download repackaged
+copies from an unknown source.
 
-## QuickBMS Toolchain Setup
+## 4. First Launch
 
-QuickBMS and `Shiro_Games_PAK_script.bms` are external, user-supplied tools.
-They are not bundled or mirrored with Wartales Editor. Obtain QuickBMS from
-[Luigi Auriemma's official site](https://aluigi.altervista.org/quickbms.htm)
-and the script from the
-[upstream Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
-Avoid arbitrary repackaged binaries.
+The application starts with no Wartales file open. The welcome area offers
+**Import From Wartales**, **Open Extracted File**, and **Profiles**. Gameplay
+Tools and project-specific actions remain unavailable until a project is open.
+Language Data and Golden CDB setup are optional and available from **Tools**.
 
-Place the files exactly here:
+## 5. QuickBMS Setup
 
-- `<Desktop>\quickbms\quickbms.exe`
-- `<Desktop>\quickbms\Shiro_Games_PAK_script.bms`
+QuickBMS and the Shiro Games PAK script are external, user-supplied tools. They
+are not bundled, mirrored, or licensed as part of Wartales Editor.
 
-Integrated Import and Export remain unavailable until both files exist. Final
-release notes will identify the exact versions validated for release.
+1. Obtain QuickBMS from [Luigi Auriemma's official QuickBMS site](https://aluigi.altervista.org/quickbms.htm).
+2. Obtain `Shiro_Games_PAK_script.bms` from the
+   [upstream Bartlomiej Duda Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
+3. Create a folder named `quickbms` on your Windows Desktop.
+4. Place the files at these exact default locations:
 
-## First-Run Workflow
+```text
+<Desktop>\quickbms\quickbms.exe
+<Desktop>\quickbms\Shiro_Games_PAK_script.bms
+```
+
+Avoid arbitrary repackaged binaries or scripts. Integrated Import and Export
+remain unavailable until both expected files and the standard Wartales
+installation are present.
+
+## 6. Recommended Workflow
+
+1. Import or open a CDB.
+2. If you are working with a fresh or unmodded CDB, apply your existing Profile
+   if you want to reuse your saved mod configuration.
+3. Make or adjust the changes you want.
+4. Review the changes.
+5. Save the edited CDB.
+6. Create a new Profile or update your existing Profile to preserve your
+   personal mod configuration.
+7. Export the saved CDB to Wartales when ready.
+
+Saving the CDB preserves the edited game data file. Creating or updating a
+Profile preserves your reusable personal mod configuration. They are separate,
+and both are useful parts of the normal workflow.
+
+## 7. Opening a CDB Manually
+
+1. Choose **File → Open Wartales File...**, press **Ctrl+O**, use toolbar
+   **Open**, or choose **Open Extracted File**.
+2. Select an extracted `.cdb` file.
+
+- **Open** reads an existing CDB and does not run QuickBMS.
+- **Import From Wartales** extracts the current CDB from the installed Steam
+  package, stores it in the game's `Extracted` folder, and opens that durable
+  copy.
+
+The editor prompts before abandoning unsaved changes. An invalid or unreadable
+CDB is rejected without replacing the current project.
+
+## 8. Main Window Overview
+
+The **Gameplay Tools** workspace presents guided changes grouped by purpose.
+The **Detailed Editor** presents searchable sheets, entries, settings, and
+properties for direct editing. The toolbar provides Open, Save, Undo, Redo,
+Restore Value, Review Changes, Check Project, and Profiles.
+
+The menus contain:
+
+- **File:** Import, Export, Open, Save, and Exit.
+- **Edit:** Undo, Redo, and Restore Original Value.
+- **View:** Gameplay Tools, Detailed Editor, and Review Changes.
+- **Tools:** Profiles, Language Data, Golden CDB, Check Project, and Check
+  Compatibility.
+- **Help:** About Wartales Editor.
+
+Keyboard shortcuts are **Ctrl+O**, **Ctrl+S**, **Ctrl+Z**, and **Ctrl+Y** for
+Open, Save, Undo, and Redo.
+
+## 9. Profiles
+
+Profiles are the main way to save and reuse your personal mod configuration. A
+Profile can preserve your preferred collection of gameplay changes - such as
+movement, economy, profession, and Request Board Reward settings - for reuse on
+the same or another compatible CDB.
+
+Choose **Tools → Profiles** or toolbar **Profiles**. Profile Manager provides:
+
+- **New Profile:** saves your current mod setup as a new Profile.
+- **Update Profile:** saves your current setup into the selected Profile without
+  creating a new one.
+- **Apply Profile:** applies the selected Profile's compatible changes to the
+  CDB currently open.
+- **Rename**, **Duplicate**, **Import**, **Export**, **Delete**, and **Refresh**
+  for managing Profiles.
+
+Profile-applied changes appear in **Review Changes** and can be undone with
+Undo. If part of a Profile is not compatible with the open CDB, the editor
+reports it instead of guessing.
+
+Saving a CDB and saving a Profile are not the same thing:
+
+- A **CDB** is the actual edited game-data file.
+- A **Profile** is your reusable personal mod configuration.
+
+Recommended practice is to save the edited CDB and create or update the Profile
+when you want to reuse the setup later. Profiles are stored at:
+
+```text
+<Documents>\Wartales Editor\Profiles\
+```
+
+## 10. Gameplay Tools
+
+Open a project and select **Gameplay Tools**. Most preset tools follow this
+sequence:
+
+1. Review the current setting.
+2. Select a preset.
+3. Review the preview.
+4. Choose **Apply**.
+5. Optionally use **Restore Previous Values** when you want to return to the
+   settings that existed before this tool first changed them.
+6. Choose **Close**.
+
+Apply changes the open project in memory, records one Undo/Redo action, and
+does not save or export automatically. Reapplying the same setting is a safe
+no-op. Starting Resources, XP Progression, Add Camp Facilities, and Upgrade All
+Equipment use their own controls or Undo behavior rather than the common
+Restore button.
+
+### Starting Game
+
+#### Starting Resources
+
+Adds extra Krowns, Bread, Apples, Iron Ore, Wood, and Cloth to every standard
+new-campaign start. The selected starting group keeps its normal supplies and
+bonuses; existing saves are unchanged. First setup suggests 10 Bread and 5
+Apples.
+
+1. Enter nonnegative amounts or use **+5 to All Materials**, **+10 to All
+   Materials**, or **Clear Extras**.
+2. Review the preview.
+3. Choose **Apply**.
+
+In Wartales, large starting-resource amounts may cause the resource list to
+shift or stutter visually because the extra items extend beyond the normal
+display area. This does not affect the actual resource values.
+
+### Progression
+
+#### XP Progression
+
+Provides independent Character XP and Profession XP controls. Both start at
+100%, accept 10% through 300%, and update independently. Lower percentages
+reduce requirements. **Apply Character XP** and **Apply Profession XP** affect
+only their respective progression. **Use Current Values as 100%** deliberately
+adopts current values as that side's new scaling baseline; it is not Restore
+Previous Values.
+
+#### Lectern Knowledge Gain
+
+Changes Knowledge earned from the Lectern during qualifying rests. Presets are
+**Vanilla** (captured rate), **Increased** (2×), **High** (3×), and **Very High**
+(5×). Other Knowledge sources are unchanged.
+
+### Professions
+
+#### Delicious Meals
+
+Changes Tier 2 and Tier 3 Cooking Pot Delicious Meal chances. Tier 1 has no
+such bonus. Presets are **Vanilla** (15% / 30%), **Improved** (25% / 45%),
+**High** (35% / 55%), and **Guaranteed** (50% / 100%).
+
+#### Forging Assistance
+
+Extends the perfect-heat reaction window without removing forging. Presets are
+**Vanilla**, **Easier** (2×), **Easy** (3.2×), and **Very Easy** (4.8×).
+
+#### Mining & Woodcutting
+
+Slows the shared timing indicator while preserving both activities. Presets
+are **Vanilla** (100%), **Easier** (80%), **Easy** (60%), and **Very Easy** (40%).
+
+#### Fishing
+
+Shortens the fishing control phase without removing the minigame. Presets are
+**Vanilla**, **Faster**, **Fast**, and **Very Fast**.
+
+#### Lockpicking
+
+Increases the smallest valid lock zone while preserving the minigame. Presets
+are **Vanilla**, **Easier**, **Easy**, and **Very Easy**.
+
+### Camp & Equipment
+
+#### Add Camp Facilities
+
+Enables the Anvil and Apothecary Table and adds their Workshop recipes. Confirm
+when prompted. Existing supported data is preserved and an already configured
+project produces no new changes. Profiles can capture this operation; Undo can
+reverse it before saving.
+
+#### Upgrade All Equipment
+
+Makes supported normally obtainable equipment upgradeable at Brotherhood
+Training Grounds. It does not change stats, levels, price, rarity, or other
+values. Confirm when prompted. Unsupported or ambiguous projects are blocked
+instead of guessed. Profiles can capture this operation.
+
+#### Campfire Expansion
+
+Presets are **Vanilla** and **Expanded**. Expanded makes every tier 6 × 6,
+keeps Tier 1 capacity at 4, and raises Tier 2 and Tier 3 capacity to 8 and 12.
+
+#### Cooking Pot Food Reduction
+
+Changes daily food saved by an assigned cook without changing capacity.
+Presets are **Vanilla** (2 / 4 / 6 by tier), **Improved** (3 / 6 / 9),
+**Strong** (4 / 8 / 12), and **Very Strong** (6 / 12 / 18).
+
+#### Workshop Materials
+
+Changes Raw Materials produced per rest by an assigned Tinkerer. Presets are
+**Vanilla** (2 / 2 / 2), **Improved** (2 / 3 / 4), **High** (3 / 4 / 5), and
+**Very High** (4 / 5 / 6).
+
+#### Ruby & Sapphire Value
+
+Changes base values of Ruby and Sapphire only. Presets are **Vanilla** (40),
+**Higher** (100), **High** (150), and **Very High** (200).
+
+### Party
+
+#### Volunteer Trait
+
+Sets the wage reduction granted by Volunteer. **No Wages** sets the field to
+100% but does not Apply. At 100%, Volunteer companions require no Krowns during
+wage payments.
+
+#### Valour Points
+
+Configures maximum Valour, Valour restored after rest, and Tent bonuses. Tent
+presets are **Vanilla** (1 / 2 / 3) and **Increased** (2 / 3 / 4). Custom
+existing Tent values require an explicit supported preset before expanded
+bonuses are applied.
+
+#### Carrying Capacity
+
+Configures Saddlebag capacity, Pony starting capacity, and Hitching Post
+bonuses. Hitching Post presets are **Vanilla** and **Increased**. Custom
+existing bonuses require an explicit preset selection before Apply.
+
+#### Run Stamina Recovery
+
+Speeds overworld running-stamina recovery in normal and exhausted states.
+Presets are **Vanilla**, **Faster**, **Fast**, and **Very Fast**.
+
+#### Positive Random Traits
+
+**Positive Only** makes future eligible procedural units use the game's
+two-positive-trait branch. **Vanilla** restores captured settings. Existing
+units are unchanged; normal eligibility and incompatibility rules still apply.
+
+#### Random Trait Exclusions
+
+Controls which discovered positive and negative traits may appear in future
+standard random generation. Checked means allowed; unchecked means excluded.
+Search, **Select All**, and **Clear All** assist selection. Existing units and
+generated recruits are unchanged. Restore returns the exact prior state,
+including a trait that originally had no explicit setting.
+
+### World
+
+#### Movement Speed
+
+Changes only player overworld walking/running speed. Presets are **Vanilla**,
+**Faster**, **Fast**, and **Very Fast**. Other roaming parties are unchanged.
+Faster motion may appear blurry; this is visual only.
+
+#### Rain Frequency
+
+Changes ordinary regional rain while preserving regional differences. Presets
+are **Vanilla**, **Less Rain**, **Rare Rain**, and **No Rain**. Other weather
+systems are unchanged.
+
+#### Vendor Refresh
+
+Speeds merchant inventory replenishment while preserving category differences.
+Presets are **Vanilla**, **Faster** (2×), **Fast** (3×), and **Very Fast** (5×).
+
+#### Request Board Rewards
+
+Increases the base Krown rewards offered by Tavern Request Board missions using
+preset percentages.
+
+#### Resource Replenishment
+
+Speeds supported renewable overworld gathering while preserving Slow, Normal,
+and Fast category differences. Presets are **Vanilla**, **Faster** (2×),
+**Fast** (3×), and **Very Fast** (5×). It is not a general modifier for
+merchants, fishing, hunting, quests, one-time resources, or loot containers.
+
+#### Battle Camera Zoom
+
+Changes maximum battle-only zoom. Presets are **Vanilla**, **Extended**,
+**Far**, and **Very Far**. Distant units may look blurry until zoomed back in.
+
+#### Nine Puzzle Assistance
+
+Starts the puzzle with fewer shuffles and more placed tiles. Presets are
+**Vanilla**, **Easier**, **Easy**, and **Very Easy**. Very Easy is not an
+instant-win mode.
+
+#### Time Between Rests
+
+Changes approximate travel hours before fatigue requires rest. Presets are
+**Vanilla** (24), **Longer** (48), **Extended** (72), and **Very Long** (96).
+
+## 11. Request Board Rewards
+
+Changes shared base Krown payout ranges for ordinary Tavern Request Board
+missions. Presets are **100%**, **150%**, **200%**, and **300%**, always scaled
+from captured prior ranges rather than compounded. Mission-specific and other
+modifiers still affect final payout. Higher negotiated rewards may require
+more Influence. Restore keeps minimum/maximum ranges together, and compatible
+Profiles apply the selected percentage to the values in the open CDB.
+
+## 12. Restore Previous Values
+
+**Restore Previous Values** returns a Gameplay Tool to the values it had before
+you first changed it with that tool. For example, if Movement Speed was already
+set to a custom value before you used its Gameplay Tool, Restore returns to that
+custom value - not necessarily to Wartales defaults.
+
+Restore can continue working after Save and reopen when the editor can still
+safely verify the saved previous values. If it cannot safely determine those
+values, Restore is unavailable instead of guessing. Restore applies immediately
+and can itself be reversed with Undo.
+
+**Restore Original Value** in the Detailed Editor is different: it resets one
+property to the value it had when the current CDB was opened.
+
+## 13. Undo and Redo
+
+Undo reverses the latest editor action in the current session; Redo reapplies
+it. Use **Edit**, the toolbar, **Ctrl+Z**, or **Ctrl+Y**. Gameplay operations are
+kept together as one action. Undo/Redo covers actions from the current session;
+Restore Previous Values is the separate tool-specific action described above.
+
+## 14. Detailed Editor
+
+Browse categories, settings, and type-aware properties. To navigate by search:
+
+1. Search localized names, internal IDs, categories, settings, and matched
+   properties.
+2. Select a result.
+
+**Clear** resets search. Select a property and use **Restore Original Value** to
+return it to the value it had when the project opened. Prefer Gameplay Tools
+for supported coordinated changes and Detailed Editor for precise changes not
+covered by a tool.
+
+## 15. Review Changes
+
+1. Choose **View → Review Changes** or toolbar **Review Changes**.
+2. Review the grouped unsaved changes and their original/current values.
+3. Select a change and choose **Show in Editor** when you want to locate it.
+
+Review changes before every Save and Export.
+
+## 16. Check Project and Compatibility
+
+**Tools → Check Project** reports errors, warnings, and information, supports
+filtering/navigation/copy, and can check again. Errors block Save; warnings
+should be reviewed.
+
+**Tools → Check Compatibility** observationally evaluates gameplay features
+against current data without modifying it or creating Undo history. It lists
+items needing attention or reports **No compatibility issues detected.** It is
+not a guarantee for every future update.
+
+## 17. Save
+
+1. Choose **File → Save Modded File...**, **Ctrl+S**, or toolbar **Save**.
+2. Select the destination.
+3. Confirm if the selected destination is the designated Golden path.
+
+The editor validates and writes the CDB, then records it as the current file.
+It also preserves supported Gameplay Tool restore information when that
+information can be saved safely.
+
+## 18. Save As
+
+Version 1.0.0 has no separate Save As command. **Save Modded File...** always
+opens a destination picker and therefore provides Save As behavior every time.
+Choose a new path to preserve a source or Golden reference.
+
+## 19. Update Survival
+
+After Wartales updates:
 
 1. Close Wartales.
-2. Choose **File → Import From Wartales...** to extract, validate, promote, and
-   open the current installed Steam `data.cdb`. Use **File → Open...** instead
-   when you already have a CDB you want to edit manually.
-3. Use **Gameplay Tools** for guided changes or **Detailed Editor** for precise
-   property editing.
-4. Use **Review Changes** to inspect edits and **Check Project** to validate the
-   current project.
-5. Choose **Save** or **Save As**. Saving the edited CDB before Export gives you
-   a durable project file outside the live game package.
-6. With Wartales still closed, choose **File → Export Back to Wartales...** only
-   when ready to write the live `res.pak`.
+2. Use **Import From Wartales** to load the current game data.
+3. If you are working with a fresh or unmodded CDB and have an existing
+   Profile, apply it if desired.
+4. Make or adjust any changes.
+5. Run **Check Compatibility**.
+6. Review any warnings.
+7. Open **Review Changes**.
+8. Run **Check Project**.
+9. Save the CDB.
+10. Create or update the Profile if you want your personal mod configuration
+    preserved.
+11. Export to Wartales when ready.
+12. Test the updated setup in Wartales.
 
-## Profiles, Previous Values, and Updates
+If a Gameplay Tool is still compatible with the updated game data, the editor
+can continue using it. If Wartales changed the relevant data in a way the
+editor cannot safely recognize, that tool is blocked rather than guessed.
 
-Profiles save reusable groups of changes and supported gameplay-operation
-intent. **Restore Previous Values** uses compatible values captured before the
-tool first changed its targets; it is not a universal game-default lookup. The
-Detailed Editor's **Reset Property** uses the current project's property
-baseline and is a separate action.
+## 20. Golden CDB
 
-After a Wartales update, import the fresh current CDB, apply the intended
-profile, and choose **Tools → Check Compatibility**. The check does not mutate
-the project and cannot guarantee compatibility with every future game update.
+Golden is one optional reference designated by you. It is checked for
+structural usability but is not certified vanilla, pristine, current, or
+Steam-verified. **Tools → Golden CDB...** offers:
 
-## Safety, Privacy, and Troubleshooting
+- Set/Replace from the current project.
+- Select/Replace from another CDB.
+- Import Current Wartales CDB as Golden without changing the active project.
+- Compare Current to Golden (read-only).
+- **Load Golden CDB** opens your Golden CDB as the active project in the editor
+  so you can inspect or work with it directly. This is different from simply
+  using Golden as a comparison/reference copy.
+- Remove Golden CDB without changing the active project.
 
-- **Export Back to Wartales writes to the live `res.pak`.** Save the edited CDB
-  first and keep Wartales closed. The editor performs exact verification, but
-  no live modification is risk-free and no automatic package backup is made.
-- You may manually copy `res.pak` before Export. Steam **Verify Integrity of
-  Game Files** or reinstalling Wartales can restore game files.
-- If Import or Export cannot start, verify the standard Steam installation and
-  the two exact QuickBMS paths above.
-- If localized names are unavailable, use **Tools → Language Data...** or the
-  Detailed Editor setup action. Internal IDs remain usable without language
-  data.
-- If Windows SmartScreen warns, confirm the download came from the official
-  release location and verify its SHA-256 checksum. V1 may be unsigned; do not
-  disable SmartScreen or antivirus globally.
-- Wartales Editor has no telemetry, analytics, update check, network requests,
-  or personal-data transmission. It uses local files required by selected
-  workflows.
+Refreshing Golden and loading it are separate actions. Storage is:
 
-For a bug report, provide the Wartales Editor version, Wartales build, Windows
-version, reproduction steps, and the relevant editor message. Do not publicly
-upload `res.pak`, proprietary CDBs, Golden CDB data, personal profiles, or state
-files.
+```text
+<Documents>\Wartales Editor\Golden CDB\data.cdb
+```
 
-Wartales Editor is an unofficial community tool and is not affiliated with or
-endorsed by Shiro Games. Wartales and related names and content belong to their
-respective owners. Users must own and install Wartales to use integrated game
-workflows.
+## 21. Language Data
 
-## Support and License
+Optional Language Data supplies localized names.
 
-Wartales Editor is free and MIT licensed. Copyright © 2026 M. Tyler Spencer.
-Released by TyTech Games. Public issues are the intended bug-reporting route
-after the repository is published. This free community project does not promise
-individual responses, fixes, future updates, or an update/release cadence, and
-the issue tracker is not a personal support desk. Custom-mod requests and
-one-on-one troubleshooting are not supported or promised. Optional support is
-available through
-[TyTech Games on Ko-fi](https://ko-fi.com/tytechgames); payment is not required.
-See the root README and `THIRD-PARTY-NOTICES.txt` for credits and dependency
-details.
+1. Choose **Tools → Language Data...** or **Set Up Language Data**.
+2. Select a valid Wartales `export_*.xml` file.
 
-## Detailed Workflows
+A validated copy is stored and automatically loaded at:
 
-# Golden CDB
+```text
+<Documents>\Wartales Editor\Language Data\export.xml
+```
 
-Use **Tools → Golden CDB...** to manage one optional reference CDB. Golden means
-only the exact file you choose as your reference; Wartales Editor checks that it
-is structurally usable but does not certify that it is vanilla, pristine,
-Steam-verified, or current. The stored copy is
-`<Documents>\Wartales Editor\Golden CDB\data.cdb`. Its technical identity remains
-internal; the normal Golden window shows the stored filename and useful status or
-cleanup messages instead. No metadata file or archive history is created.
+The original is not needed afterward. Missing/invalid data falls back to raw
+IDs without blocking editing. Replacement refreshes current Detailed Editor,
+search, and Review Changes presentation; reopen an existing tool window if it
+still shows older labels. Language Data never changes project data.
 
-**Set Current Project as Golden** requires the open CDB content to match its saved
-file. Unsaved scalar, added, removed, null, and other structural CDB changes must
-be saved first; a gameplay-state-only change does not block designation because
-it does not change the CDB bytes. **Select CDB...** validates and copies a standalone CDB without opening
-its adjacent gameplay state. Replacing Golden requires confirmation. The source
-file can be moved or deleted after a successful Set. **Remove Golden CDB** removes
-only the stored reference; it does not close or alter the current project,
-profiles, gameplay state, or Undo history.
+## 22. Import From Wartales
 
-**Import Current Wartales CDB as Golden** runs the same read-only **Import From
-Wartales** acquisition used by the main editor. It extracts and validates the
-currently installed game data in a detached temporary workspace and offers to
-designate those exact validated bytes as Golden. It does not publish to or change
-the game's normal `Extracted\data.cdb` or adjacent `.wtstate`, and it does not open
-the acquired CDB or replace your current project. Unsaved current work therefore
-remains in place and does not require an abandon-changes prompt. If Golden already
-exists, replacement still requires confirmation. Declining leaves both the
-current project and previous Golden unchanged. Import cancellation or failure
-also leaves them unchanged. Use **Load Golden CDB** when you explicitly want to
-open Golden as the current project. This action does not write to or deploy into
-`res.pak`.
+1. Close Wartales.
+2. Complete the QuickBMS setup in Section 5.
+3. Choose **File → Import From Wartales...**.
 
-The detached acquisition workspace is cleaned after success, replacement decline,
-or a safe failure. If cleanup cannot finish, the Golden result remains truthful
-and the window reports the temporary-folder warning, including after decline or
-designation failure. The next Golden acquisition first reconciles a safely marked
-editor-owned session. Unknown, redirected, locked, or otherwise unsafe residue is
-left untouched and blocks another acquisition instead of accumulating folders.
+The editor validates the standard installation and toolchain, extracts one
+valid CDB without changing `res.pak`, stores it at the durable path, and opens
+it:
 
-If the canonical Golden is published but an obsolete temporary transaction file
-cannot be removed, the window reports cleanup attention instead of clean success.
-Golden remains usable and the next Set/Replace safely clears recognized stale
-transaction files before publishing.
+```text
+C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb
+```
 
-The Golden window shows progress and the latest result directly beneath its
-Golden-state summary. Import outcomes distinguish successful import from Golden
-replacement decline or designation failure; Load, Set/Replace, Select, Remove,
-Compare, cancellations, failures, and cleanup warnings also report locally. The
-message remains until the next Golden action. Closing and reopening the window
-starts with no prior operation message. Technical identity and hash values remain
-internal.
+Existing Extracted data and unsaved work are protected by confirmation. Import
+does not modify `res.pak`.
 
-**Load Golden CDB** opens a detached, sidecar-free copy through the normal
-unsaved-changes prompt. It does not grant Restore Previous Values authority.
-When a loaded Golden project is saved, or another project's save destination is
-the Golden path, the editor explicitly offers Save Golden Anyway, Choose Another
-Location, or Cancel. Choosing another location creates the normal editable copy
-and leaves Golden unchanged. This choice is made before ordinary save validation;
-Cancel exits immediately, while the final selected destination is still validated
-before any write.
+## 23. Export Back to Wartales
 
-**Compare Current to Golden** explicitly compares current live values, including
-unsaved edits, without changing either project. Exact bytes receive an exact
-match message. Byte-different projects with the same supported editor values
-receive a modeled all-clear. Otherwise the grid shows only proven differences.
-Records without safe stable identifiers and unsupported structures are reported
-separately as incomplete coverage, not counted as differences. If either side is
-ambiguous or unsupported, the editor does not also claim the corresponding item
-is missing/new and does not compare descendants under that unresolved identity.
-Golden comparison
-is separate from **Check Compatibility** and never applies or restores changes.
+Export writes a saved edited CDB into live `res.pak`:
 
-# Language Data
+1. Close Wartales.
+2. Review Changes and Check Project.
+3. Save the exact intended CDB.
+4. Choose **File → Export Back to Wartales...** and confirm.
+5. Do not interrupt preparation, writing, or verification.
 
-The Detailed Editor can use localized Wartales names from a game export
-localization XML file. If language data is not set up, the editor remains fully
-available with internal IDs and displays a **Set Up Language Data** action.
+The editor uses your saved CDB for the export, writes it back to Wartales, then
+re-extracts `data.cdb` and verifies that it matches exactly. If verification
+succeeds, the export is complete. If something goes wrong, the editor reports
+the failure clearly.
 
-Select the Wartales export file for the language you want to use. The embedded
-language code controls the setup, even if the file has been renamed. The editor
-uses its detected Wartales installation to open the file picker in the game
-folder and preselect a valid `export_*.xml` file when available. If detection or
-candidate discovery is unavailable, normal manual selection remains available.
-The editor validates the file and stores one durable copy at
-`<Documents>\Wartales Editor\Language Data\export.xml`. The selected source file
-is not needed afterward, and the stored copy loads automatically on later
-launches.
+## 24. Export Safety and Recovery
 
-Use **Tools → Language Data...** to view the active language code or replace the
-stored data. Ready language data is shown with the editor's green success
-treatment. Missing or damaged language data falls back to internal IDs without
-blocking project loading. Wartales `texts_*.xml` files are not used, and this
-feature does not translate the application menus or dialogs.
+No live package write is risk-free:
 
-If replacement fails after it begins, the editor reports whether the previous
-language data was restored or whether it must be set up again. If the new data
-is active but an obsolete temporary recovery file cannot be removed, the editor
-keeps the new language active and displays a cleanup warning.
+1. Save the intended CDB first.
+2. Keep Wartales closed.
+3. Do not interrupt the critical write.
 
-# Export Back to Wartales
+The editor does not automatically back up or restore `res.pak`; an optional
+manual backup is your choice. Steam **Verify integrity of game files** or
+reinstall can restore game files and may remove the modification. Preserve the
+saved edited CDB if Export fails.
 
-Choose **File → Export Back to Wartales...** to put the current saved project
-into Wartales. If the project or its gameplay settings have unsaved changes, the
-normal Save workflow runs first; cancelling or failing Save stops Export.
+## 25. File and Folder Locations
 
-Close Wartales before confirming. Export directly modifies the installed
-`res.pak`. Wartales Editor does not create an automatic backup. If you want a
-local backup, copy `res.pak` yourself before continuing. Steam's **Verify
-Integrity of Game Files** or reinstalling Wartales can restore game files when
-necessary.
+```text
+Profiles:      <Documents>\Wartales Editor\Profiles\
+Language Data:<Documents>\Wartales Editor\Language Data\export.xml
+Golden CDB:   <Documents>\Wartales Editor\Golden CDB\data.cdb
+Imported CDB: C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb
+QuickBMS:     <Desktop>\quickbms\quickbms.exe
+Shiro script: <Desktop>\quickbms\Shiro_Games_PAK_script.bms
+```
 
-The progress window reports Preparing, Exporting, and Verifying. Preparation can
-be cancelled. Once package writing starts, wait for Export and verification to
-finish. A success message appears only after Wartales Editor re-extracts
-`data.cdb` and proves it exactly matches the saved project bytes. Export does not
-change Undo/Redo, profiles, snapshots, Golden CDB, compatibility results, or
-project modification state beyond the normal Save that may precede it.
-If the temporary Export folder cannot be removed after any outcome, the editor
-keeps the primary result and shows a separate cleanup warning; the retained safe
-session is checked before the next export.
+Modified CDBs go where you select during Save. The editor may keep a companion
+file beside a saved CDB so supported Gameplay Tools can remember previous
+values. Import/Export preparation uses Windows temporary folders that are not
+user libraries; do not manipulate them while an operation is running.
 
-# Import From Wartales
+## 26. Updating Wartales Editor
 
-Choose **File → Import From Wartales...** or **Import From Wartales** on the
-welcome screen to extract and open the installed game's current `data.cdb`.
-The editor checks the standard Steam Wartales installation and the external
-QuickBMS folder on the current user's Desktop, performs extraction in a fresh
-temporary folder, validates the result with the normal project loader, promotes
-it to `<Wartales installation>\Extracted\data.cdb`, and opens that durable file
-as the current project. Temporary extraction staging is disposable.
+Version 1 has no updater.
 
-If `Extracted\data.cdb` already exists, the editor warns before extraction and
-replaces it only when the player chooses to continue. Cancel preserves the
-existing file and current project. The Extracted folder represents the current
-extracted CDB; import does not create numbered copies, archives, or backups.
+1. Read the new release notes.
+2. Download the new official ZIP.
+3. Verify its checksum.
+4. Extract it to a new folder.
+5. Preserve any manually saved CDBs and companion files you still need.
 
-The live `res.pak` is read-only during this workflow. Import does not install a
-modded CDB, replace a game file, create a game-package backup, or perform
-reimport. Existing unsaved changes receive the same Save/Discard/Cancel prompt
-used when opening another CDB. A failed import preserves the current project
-and reports whether the installation, package, tool, script, process, or
-extracted CDB prevented import.
+Profiles, Language Data, and Golden data stored under Documents normally remain
+available.
 
-The editor refuses temporary extraction paths redirected through Windows
-junctions or other reparse points. QuickBMS and any processes it starts are
-contained together by Windows while import runs. If that contained process tree
-cannot be confirmed completely stopped, no project is loaded and its temporary
-folder is retained instead of being deleted while it may still be in use.
+## 27. Updating Wartales
 
-# Update Compatibility
+Do not assume an old edited CDB remains compatible. Follow the Update Survival
+workflow in Section 19 and record the Wartales build in any issue report.
 
-Import From Wartales remembers which pristine game-data generation a project
-came from. Normal Save preserves that origin while recording the exact saved
-file revision. Automatic background checks continue protecting provenance,
-state-file trust, and Restore Previous Values, but opening or importing a CDB
-does not automatically open the full compatibility window.
+## 28. Troubleshooting
 
-After a Wartales update, import the fresh CDB, apply the profile you want, then
-choose **Tools → Check Compatibility**. The check evaluates the currently
-loaded project, including current in-memory profile changes, without changing
-project data or creating Undo history. Run it again after further changes to
-replace the previous result. The report lists only gameplay features or
-warnings that need attention. If none exist, it displays **No compatibility
-issues detected.** rather than a table of compatible features.
+- **QuickBMS not found:** verify `<Desktop>\quickbms\quickbms.exe`.
+- **Script not found:** verify the exact upstream
+  `Shiro_Games_PAK_script.bms` filename and location.
+- **Wartales not found:** integrated workflows require the standard Steam path;
+  manually Open an already extracted valid CDB if appropriate.
+- **Permission/write failure:** use a user-writable save folder, extract the
+  application fully, close Wartales for Export, and read the exact error.
+- **Language Data missing:** set valid `export_*.xml` or continue with raw IDs.
+- **Golden not configured:** explicitly designate one, or continue without it.
+- **Compatibility warning:** read the feature-specific message and do not guess.
+- **Restore unavailable:** the editor cannot safely verify the saved previous
+  values; use current-session Undo when applicable.
+- **Export failure:** preserve the saved CDB, keep Wartales closed, verify the
+  toolchain, and use Steam recovery if game files may be damaged.
+- **SmartScreen warning:** follow Section 31; do not disable security globally.
 
-Previous values transported from another project, history, or game-data
-generation remain non-restorable without verified matching source provenance.
-Values captured by a gameplay tool in the current ordinary-open project may use
-bounded local authority instead. That authority requires exact current-content
-and operation-state fingerprints and does not certify pristine or vanilla data.
+## 29. Supported and Unsupported Configurations
 
-Project Owner acceptance verified this workflow in the running editor,
-including normal compatibility-window minimize/restore and repeated checks.
-Restore Previous Values was also verified on multiple gameplay features and
-remained available after closing and reopening their feature windows within the
-same project session.
+The supported boundary is Section 2. Unsupported/unclaimed areas include
+non-Windows/non-x64 platforms, non-Steam or nonstandard integrated paths,
+unverified builds/toolchains, bundled external tools, automatic updates, an
+installer, arbitrary third-party combinations, guaranteed future
+compatibility, and certification of Golden as pristine.
 
-An adjacent state file can be tied to the current saved CDB without proving
-which pristine Wartales generation produced it. Ordinary Open may retain active
-local Restore authority only when the CDB bytes, sidecar binding, local content
-identity, expected current values, and target structure all agree. Unknown
-historical records, damaged state, mismatched content, and legacy records without
-that bounded authority remain non-restorable. Authoritative import is still
-required for cross-generation or historical restoration.
+## 30. Privacy and Offline Behavior
 
-The main player workflows are:
+Wartales Editor runs locally and offline. It has no telemetry, analytics,
+update check, network requests, or personal-data transmission. Local Profiles,
+CDBs, Golden data, Language Data, and state remain on your computer unless you
+move/upload them. Do not post proprietary Wartales files publicly.
 
-- Gameplay Tools for guided gameplay changes.
-- Detailed Editor for precise category, setting, and property editing.
-- Profiles for saving, reusing, importing, and exporting customizations.
-- Review Changes for reviewing unsaved changes before saving.
-- Check Project for determining whether the project is ready to save.
+## 31. SmartScreen and Unsigned Release
 
-Profiles are the player-facing persistence workflow. Snapshot infrastructure
-continues to support Profiles internally but is not exposed as a standard UI
-workflow.
+The unsigned V1 may trigger SmartScreen.
 
-# Final Feature Batch
+1. Obtain the editor only from the official release.
+2. Verify the published SHA-256 checksum.
+3. Confirm the source and version.
+4. Scan the extracted files with Windows Security.
+5. If you choose to continue, use Windows' per-file details flow.
 
-Lectern Knowledge Gain appears under Progression. Its presets adjust only the
-Knowledge earned from using the Lectern during qualifying rests, relative to
-the game-data value captured when the tool first takes ownership.
+Do not disable SmartScreen or antivirus globally, and do not assume no warning
+will appear.
 
-Positive Random Traits appears under Party. Positive Only makes future random
-recruits and other eligible procedural units use the game's two-positive-trait
-generation branch. It does not alter existing units, and normal eligibility and
-trait incompatibility rules still apply.
+## 32. Uninstall and Portable Removal
 
-Random Trait Exclusions also appears under Party. Search the dynamically
-discovered Positive and Negative lists, leave a trait checked to allow it in
-future standard random generation, or uncheck it to exclude it. Select All and
-Clear All change the current selection. Restore Previous Values restores the
-exact eligibility captured before the tool was first applied, including
-`true`, `false`, and an originally absent `done` property. Existing units and
-already generated recruits are unchanged. If Undo or another project action
-removes the compatible remembered history while this modeless window is open,
-Restore Previous Values is safely rejected instead of applying stale checkbox
-choices. Compatible profile state becomes the current remembered authority.
+1. Close the editor.
+2. Delete its extracted application folder.
+3. If desired, separately review and remove optional data under
+   `<Documents>\Wartales Editor` and any saved CDBs or companion files.
 
-Profile Manager's Update Profile action replaces the explicitly selected
-managed profile with the current intended configuration. Existing profile
-changes remain included even after they have been saved as the project's
-baseline, while changed or restored settings are reconciled by their exact
-property paths. The profile keeps its name, file, author, description, tags,
-version, and original creation time. The previous managed profile is not
-replaced unless the updated candidate can be reloaded and pass independent
-checks for retained history, current changes, canonical uniqueness, metadata,
-gameplay state, and gameplay-tool requests. Gameplay-state compatibility is
-refreshed against the live project before capture. Profiles record historical
-property presence separately from a JSON `null` value, so only a property known
-to have been created from structural absence can be restored to absence. This workflow
-does not require a separately maintained pristine CDB: the selected profile
-retains its prior history, while current `IsModified` properties contribute only
-the changes made relative to the loaded project baseline. Select a profile and
-open a project before choosing Update Profile.
+Uninstalling does not undo changes exported to Wartales; use Steam recovery for
+the live package.
 
-Gameplay tools use Restore Previous Values independently of Update Profile
-reconciliation. The action restores the pre-tool baseline retained by Gameplay
-Operation State; it does not claim to know universal game defaults.
+## 33. Support and Issue Reporting
 
-# Class A Gameplay Tools
+GitHub Issues is intended for general reproducible defects after enabled. It
+is not a personal support desk. No individual support, response, fix, future
+update, or release cadence is guaranteed. Custom-mod requests and one-on-one
+troubleshooting are not supported or promised.
 
-Request Board Rewards appears under World with 100%, 150%, 200%, and 300%
-presets. It changes the shared base Krown reward ranges used by ordinary Tavern
-Request Board missions while preserving mission-specific and other reward
-modifiers. Presets always scale from the captured previous values rather than
-compounding from the last selection. Restore Previous Values returns both reward
-arrays together, and profiles replay the percentage against the destination
-project's own compatible baseline.
+Include editor version, Wartales build, Windows version, QuickBMS version when
+relevant, exact steps, expected/actual behavior, and editor message text. Do
+not publicly upload `res.pak`, proprietary CDBs, Golden data, Profiles, or
+companion state files.
 
-The Gameplay Tools dashboard now includes a Professions category for Delicious
-Meals, Forging Assistance, Mining & Woodcutting, Fishing, and Lockpicking.
+## 34. Ko-fi
 
-Party includes Run Stamina Recovery. Valour Points also configures the Tent's
-tier-based Valour bonus, while Carrying Capacity also configures Hitching Post
-bonuses for assigned ponies.
+Wartales Editor is free. Optional support is available at
+[https://ko-fi.com/tytechgames](https://ko-fi.com/tytechgames).
 
-World includes Vendor Refresh, Resource Replenishment, Battle Camera Zoom, Nine
-Puzzle Assistance, and Time Between Rests. Camp & Equipment includes Campfire
-Expansion, Cooking Pot Food Reduction, Workshop Materials, and Ruby & Sapphire
-Value.
+## 35. Credits
 
-Each new preset dialog shows the current detected preset, selected gameplay
-values, and a plain-language preview. Restore Previous Values applies the exact
-baseline captured before the tool first changed the project. It becomes
-available only while compatible captured history exists; missing history is
-never reconstructed from current values. Every gameplay Restore Previous Values
-button applies restoration immediately; no second Apply click is required.
-Party Economy fields and RTE selections update to the values that were applied.
-Apply remains available for later manual edits. Each completed restoration
-records the complete tool as one Undo/Redo action. A project already at its
-previous values safely produces no additional changes. RTE traits that were
-already excluded in the captured baseline are not counted as changes, and an
-exact restoration produces no RTE Review Changes entry.
-If a legacy Valour or Carrying
-project contains custom Tent or Hitching Post values, the dialog reports them as
-custom and requires an explicit preset selection before expanding ownership.
+- **M. Tyler Spencer** — creator and Project Owner; product design,
+  requirements, architecture direction, UX decisions, testing, validation,
+  engineering-review direction, and release preparation.
+- **TyTech Games** — public release and publishing identity.
+- **OpenAI ChatGPT and OpenAI Codex** — implementation generation and
+  engineering/review assistance under human direction.
+- **James Newton-King** — Newtonsoft.Json.
+- **Luigi Auriemma** — QuickBMS.
+- **Allen, Bartlomiej Duda, Allgames-kari, and applicable upstream
+  contributors** — Shiro Games PAK QuickBMS script.
+- **Microsoft and .NET contributors** — .NET and WPF.
+- **Shiro Games** — Wartales.
 
-Movement retains Vanilla as an ordinary fixed preset, but Restore Previous
-Values returns to the captured pre-tool movement values instead of fixed 6/11.
-Rain likewise retains its ordinary regional presets while restoration returns
-the exact captured regional values rather than fixed Vanilla values. Gameplay
-Operation State is saved in the `.wtstate` sidecar and compatible state is also
-transported by Profiles, so previous values survive supported save/reload and
-profile workflows.
+These credits do not imply endorsement.
 
-Gameplay previous-value history is transferred from a profile or snapshot only
-when its current-format file provenance, embedded history provenance, and the
-open project's verified source generation all agree. Older portable files still
-apply compatible ordinary changes, but do not activate embedded previous-value
-history solely because a stored identity string matches.
+## 36. AI Development Disclosure
 
-The Detailed Editor's Reset Property action is separate. It restores the
-current project's property baseline and does not use Gameplay Operation State.
+Wartales Editor was designed, directed, tested, reviewed, and validated by
+M. Tyler Spencer, including more than 60 hours of hands-on human work. All
+application code was produced with AI-assisted development tools, primarily
+**OpenAI ChatGPT** and **OpenAI Codex**, under human direction and review. Work
+used documented requirements, bounded investigations, architecture decisions,
+incremental implementation, automated tests, engineering review, Project Owner
+testing, real-game validation, and lifecycle reconciliation.
 
-After Apply, the active gameplay dialog reports either Applied successfully or
-Already applied. Blocking failures continue to use the normal explicit error
-dialog. Closing a feature window returns focus to the editor and preserves its
-non-minimized state.
+## 37. License and Third-Party Notices
 
-Starting Resources notes that long displayed configurations can jump visually
-when the pointer moves between them; this does not change the resources.
-Movement Speed notes that faster motion can look blurry. Battle Camera Zoom is
-battle-only and notes that distant units can look blurry until the view is
-zoomed back in. These notes describe visual behavior and do not block Apply.
+Wartales Editor is free software under the MIT License.
+
+Copyright © 2026 M. Tyler Spencer. Released by TyTech Games.
+
+Read `LICENSE` and `THIRD-PARTY-NOTICES.txt`. QuickBMS, the Shiro Games PAK
+script, and Wartales game data are not included in the release.

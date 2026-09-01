@@ -73,20 +73,32 @@ together.
 Release availability will be announced only after the release-candidate checks
 and publication phase are complete.
 
+## Full User Manual
+
+The [Wartales Editor User Manual](Docs/07_UserGuide.md) provides complete
+installation, Gameplay Tools, Detailed Editor, Profile, Golden CDB, Language
+Data, Import/Export, safety, update, and troubleshooting instructions.
+
 ## Quick Start
 
-1. Close Wartales before using integrated Import or Export.
-2. Set up the external QuickBMS toolchain described below.
-3. Choose **File → Import From Wartales...** to extract and open the current
-   Steam `data.cdb`, or use **File → Open...** for an existing CDB.
-4. Use Gameplay Tools or the Detailed Editor.
-5. Use **Review Changes** and **Check Project** before saving.
-6. Choose **Save** or **Save As** and keep the edited CDB.
-7. Choose **File → Export Back to Wartales...** only when ready to update the
-   live game package.
+Close Wartales before using integrated Import or Export.
 
-See the [full User Guide](Docs/07_UserGuide.md) for detailed workflows and
-troubleshooting.
+1. Import or open a CDB.
+2. If you are working with a fresh or unmodded CDB, apply your existing Profile
+   if you want to reuse your saved mod configuration.
+3. Make or adjust the changes you want.
+4. Review the changes.
+5. Save the edited CDB.
+6. Create a new Profile or update your existing Profile to preserve your
+   personal mod configuration.
+7. Export the saved CDB to Wartales when ready.
+
+Saving the CDB preserves the edited game data file. Creating or updating a
+Profile preserves your reusable personal mod configuration. They are separate,
+and both are useful parts of the normal workflow.
+
+See the [Wartales Editor User Manual](Docs/07_UserGuide.md) for complete
+workflows and troubleshooting.
 
 ## QuickBMS Setup
 
@@ -106,11 +118,11 @@ the final release will be listed in its release notes.
 
 ## Profiles and Restore Previous Values
 
-Profiles save a reusable gameplay configuration and can combine ordinary edits
-with supported gameplay operations. **Restore Previous Values** uses compatible
-history captured before a gameplay tool first changed its owned settings; it is
-not a universal game-default lookup. The Detailed Editor's **Reset Property** is
-a separate property-baseline action.
+Profiles are the main way to save and reuse a personal mod configuration.
+**Restore Previous Values** returns a Gameplay Tool to the settings it had
+before that tool first changed them; those settings are not necessarily
+Wartales defaults. The Detailed Editor's **Restore Original Value** instead
+resets one property to the value it had when the current CDB was opened.
 
 ## Update Survival and Golden CDB
 

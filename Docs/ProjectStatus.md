@@ -8,7 +8,7 @@ Last Updated: 2026-08-31
 
 Purpose
 
-This document describes the current state of the Wartales Editorproject.
+This document describes the current state of the Wartales Editor project.
 
 It is intentionally concise.
 
@@ -28,7 +28,7 @@ Development workflow belongs in CodexDevelopmentGuide.md.
 
 Product philosophy belongs in PlayerFirstDesign.md.
 
-Historical information belongs in DevelopmentJournal.md andChangelog.md.
+Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
@@ -64,13 +64,24 @@ Current phase:
 
 **Public Release Preparation is IN PROGRESS.** Phase 1 is COMPLETE: legal/public
 metadata, repository hygiene, public onboarding, version reconciliation, public
-release-note groundwork, and the Git-history privacy inventory/plan are
-implemented and repository-verified.
+release-note groundwork, and Git-history privacy sanitization are complete
+locally and remotely.
 
-Phase 1 does not publish a release. Git-history sanitization, the actual publish
-process, package and checksum creation, malware scanning, clean-machine
-release-candidate validation, exact supported Wartales/toolchain version
-recording, the `v1.0.0` tag, GitHub Release, and any authorized Nexus publication
+**History sanitization:** COMPLETE locally and remotely.
+
+Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
+complete public User Manual, checksum and malware-scan procedures, clean-machine
+plan, issue-report guidance, and later publication sequence are defined and
+repository-verified. The User Manual has a Project Owner content-review pass and
+PDF visual pass. The README has a Project Owner content-review pass and PDF
+visual pass. The binary-package plan uses `README.pdf` and `USER-GUIDE.pdf`
+while the repository Markdown remains authoritative.
+
+The next product-development task is **Common Actions / basic help feature —
+Investigation**. Its separate lifecycle, the actual release candidate and
+checksum, final scan and clean-machine validation, exact supported
+Wartales/toolchain recording, GitHub Issues configuration, final release review,
+`v1.0.0` tag, GitHub Release, and any separately authorized Nexus publication
 remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
@@ -820,10 +831,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Perform Git-history sanitization and packaging only as separately authorized
-tasks now that Phase 1 is complete.
-QuickBMS Export Back to Wartales Version 1 and Golden CDB Version 1 remain
-closed.
+Begin **Common Actions / basic help feature — Investigation** as its separate
+engineering lifecycle. Actual release-candidate packaging and all later release
+actions remain separately authorized and pending. QuickBMS Export Back to
+Wartales Version 1 and Golden CDB Version 1 remain closed.
 
 Document Maintenance
 
