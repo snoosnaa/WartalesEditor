@@ -16,8 +16,12 @@ guidance, and later publication sequence are defined and repository-verified.
 
 **Phase 2 closeout:** User Manual content review: PASS. User Manual PDF Project
 Owner visual review: PASS. README content review: PASS. README PDF Project Owner
-visual review: PASS. The next product-development task is **Common Actions /
-basic help feature — Investigation**.
+visual review: PASS.
+
+**Quick Help V1:** CLOSED. Investigation, Design / Architecture,
+Implementation, Focused Engineering Review (**PASS**), Project Owner
+Interactive Acceptance (**PASS**), footer correction, brief visual re-test
+(**PASS**), reconciliation, and the final commit/push checkpoint are complete.
 
 Phase 2 defines the process. It does not create the final release candidate,
 checksum, tag, GitHub Release, or Nexus publication.
@@ -155,7 +159,9 @@ CHANGELOG.md
 
 The staging directory must contain exactly the vetted publish output minus
 `*.pdb`, plus those five public documents. Compare a recursive manifest against
-this rule before creating the ZIP.
+this rule before creating the ZIP. Because Quick Help resolves
+`USER-GUIDE.pdf` beside the executable, the final manifest and launch audit must
+explicitly verify that both files are present together at the ZIP root.
 
 ## Artifact Names
 
@@ -225,6 +231,8 @@ Manual**. README links to it from a visible **Full User Manual** section. During
 packaging the authoritative Markdown is rendered and visually verified, then
 the accepted PDF is copied to ZIP root as `USER-GUIDE.pdf`. The Markdown remains
 the single editable source and is not independently forked into a second manual.
+The Quick Help documentation added after the earlier PDF review requires the
+final review PDF to be regenerated and visually checked before RC packaging.
 
 The manual contains all 37 required subjects: platform/install/first launch,
 QuickBMS setup, recommended workflow, Main Window, Profiles, every Gameplay
@@ -248,6 +256,7 @@ binary ZIP as normal end-user documentation.
 |---|---:|---|
 | Install, first launch, QuickBMS setup, recommended workflow | Yes | 3–6 |
 | Manual Open and Main Window/menu/keyboard overview | Yes | 7–8 |
+| Quick Help compact workflow reference and complete-manual action | Yes | 8 / Quick Help |
 | Profile create/apply/update/rename/duplicate/import/export/delete | Yes | 9 |
 | Starting Resources | Yes | 10 / Starting Game |
 | XP Progression; Lectern Knowledge Gain | Yes | 10 / Progression |
@@ -310,7 +319,8 @@ Use the actual future immutable release ZIP, never development output:
 6. Extract the full ZIP to a normal standard-user folder.
 7. Audit the extracted manifest for required and prohibited files.
 8. Launch `WartalesEditor.exe` as a standard user with no optional resources.
-9. Confirm raw-ID fallback and normal startup/close/reopen.
+9. Confirm raw-ID fallback, Quick Help tabs/footer, packaged User Guide opening,
+   and normal startup/close/reopen.
 10. Manually open a valid CDB, edit, Save to a new path, close, and reopen it.
 11. Exercise representative tools from every Gameplay Tools category.
 12. Verify Restore Previous Values and atomic Undo/Redo.
@@ -343,13 +353,15 @@ QuickBMS version, and Shiro script version in all four public authorities:
 
 Do not guess or prefill these values.
 
-## Common Actions Feature Boundary
+## Quick Help V1 Lifecycle
 
-**Common Actions / basic help must complete its normal engineering lifecycle
-before the final release-candidate package is generated.** It is not designed
-or implemented by Phase 2. Its separate lifecycle is Investigation → Design /
-Architecture → Implementation → Focused Engineering Review → Project Owner
-Interactive Acceptance → Reconciliation → Commit/Push.
+**Quick Help V1 is complete and closed.** Its Investigation, Design /
+Architecture, Implementation, Focused Engineering Review (**PASS**), Project
+Owner Interactive Acceptance (**PASS**), footer presentation correction, brief
+visual re-test (**PASS**), reconciliation, and final commit/push checkpoint are
+complete. The accepted feature is the always-visible main-screen action, owned
+modeless five-tab reference window, one shared footer reminder, local packaged
+User Guide launcher, and project-independent single-instance lifecycle.
 
 ## Exact Later Release Process
 
@@ -391,7 +403,8 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Complete the Common Actions feature lifecycle.
+- Regenerate and visually verify the final `README.pdf` and `USER-GUIDE.pdf` as
+  needed from their authoritative sources before RC staging.
 - Produce the actual release-candidate publish/package.
 - Generate the final checksum.
 - Perform the final malware scan.

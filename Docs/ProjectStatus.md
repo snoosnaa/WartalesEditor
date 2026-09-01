@@ -4,7 +4,7 @@ Application Version: 1.0.0 (Public Release Preparation)
 
 Status: Release Preparation In Progress
 
-Last Updated: 2026-08-31
+Last Updated: 2026-09-01
 
 Purpose
 
@@ -77,12 +77,16 @@ PDF visual pass. The README has a Project Owner content-review pass and PDF
 visual pass. The binary-package plan uses `README.pdf` and `USER-GUIDE.pdf`
 while the repository Markdown remains authoritative.
 
-The next product-development task is **Common Actions / basic help feature —
-Investigation**. Its separate lifecycle, the actual release candidate and
-checksum, final scan and clean-machine validation, exact supported
-Wartales/toolchain recording, GitHub Issues configuration, final release review,
-`v1.0.0` tag, GitHub Release, and any separately authorized Nexus publication
-remain pending.
+**Quick Help V1 is CLOSED.** The always-visible main-window action, owned
+modeless five-tab utility window, shared footer reminder, packaged User Guide
+launcher, single-instance lifecycle, and focused WPF/STA coverage completed
+Focused Engineering Review (**PASS**) and Project Owner Interactive Acceptance
+(**PASS**), including the footer correction and brief visual re-test. The final
+focused suite passes 41 checks and the Export/MainWindow suite passes 202/202.
+The actual release candidate and checksum, final PDF regeneration, scan and
+clean-machine validation, exact supported Wartales/toolchain recording, GitHub
+Issues configuration, final release review, `v1.0.0` tag, GitHub Release, and
+any separately authorized Nexus publication remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
 implementation, focused Engineering Review (**PASS WITH NON-BLOCKING NOTES**),
@@ -831,10 +835,11 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Begin **Common Actions / basic help feature — Investigation** as its separate
-engineering lifecycle. Actual release-candidate packaging and all later release
-actions remain separately authorized and pending. QuickBMS Export Back to
-Wartales Version 1 and Golden CDB Version 1 remain closed.
+Generate and validate the **Wartales Editor 1.0.0 Release Candidate** through a
+separately authorized release-execution lifecycle. Regenerate and visually
+verify the updated User Manual PDF before final package staging. Packaging,
+checksum, malware scan, clean-machine validation, exact supported-version
+recording, tagging, and publication remain separately authorized and pending.
 
 Document Maintenance
 

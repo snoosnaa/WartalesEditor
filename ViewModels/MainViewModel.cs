@@ -145,6 +145,8 @@ public class MainViewModel : ObservableObject
 
     private ProfileManagerViewModel? profileManagerViewModel;
 
+    private QuickHelpWindow? quickHelpWindow;
+
     private LanguageDataDialog? languageDataDialog;
 
     private LanguageDataDialogViewModel?
@@ -163,6 +165,14 @@ public class MainViewModel : ObservableObject
     private Action? projectPublicationFailureForTesting;
 
     private Action? saveValidationStartedForTesting;
+
+    private Action<ProcessStartInfo> startUserGuideProcess =
+        static startInfo =>
+        {
+            _ = Process.Start(startInfo)
+                ?? throw new InvalidOperationException(
+                    "Windows did not start an application for the User Guide.");
+        };
 
     private ValidationResultsWindow?
         validationResultsWindow;
@@ -960,6 +970,11 @@ public class MainViewModel : ObservableObject
         get;
     }
 
+    public RelayCommand ShowQuickHelpCommand
+    {
+        get;
+    }
+
     public RelayCommand ShowLanguageDataCommand
     {
         get;
@@ -1404,6 +1419,10 @@ public class MainViewModel : ObservableObject
         ShowAboutCommand =
             new RelayCommand(
                 _ => ShowAbout());
+
+        ShowQuickHelpCommand =
+            new RelayCommand(
+                _ => ShowQuickHelp());
 
         ShowLanguageDataCommand =
             new RelayCommand(
@@ -5273,6 +5292,14 @@ public class MainViewModel : ObservableObject
             throw new ArgumentNullException(nameof(service));
     }
 
+    internal void UseUserGuideProcessStarterForTesting(
+        Action<ProcessStartInfo> processStarter)
+    {
+        startUserGuideProcess = processStarter ??
+            throw new ArgumentNullException(
+                nameof(processStarter));
+    }
+
 
     internal void UseProjectPublicationFailureForTesting(
         Action? failure)
@@ -5288,6 +5315,9 @@ public class MainViewModel : ObservableObject
 
     internal bool IsGoldenCdbWindowOpen =>
         goldenCdbWindow != null;
+
+    internal bool IsQuickHelpWindowOpen =>
+        quickHelpWindow != null;
 
     private enum QuickBmsImportAttemptOutcome
     {
@@ -5521,6 +5551,130 @@ public class MainViewModel : ObservableObject
         service.LoadCanonical();
 
         return service;
+    }
+
+    private void ShowQuickHelp()
+    {
+        if (quickHelpWindow != null)
+        {
+            RestoreAndActivateWindow(
+                quickHelpWindow);
+            return;
+        }
+
+        QuickHelpWindow? dialog = null;
+
+        try
+        {
+            dialog =
+                new QuickHelpWindow
+                {
+                    Owner =
+                        GetMainWindowOwner(),
+                    WindowStartupLocation =
+                        WindowStartupLocation.CenterOwner
+                };
+
+            dialog.OpenUserGuideRequested +=
+                OnOpenUserGuideRequested;
+            dialog.Closed +=
+                OnQuickHelpWindowClosed;
+
+            ShowFeatureWindow(dialog);
+
+            quickHelpWindow = dialog;
+        }
+        catch (Exception exception)
+        {
+            if (dialog != null)
+            {
+                dialog.OpenUserGuideRequested -=
+                    OnOpenUserGuideRequested;
+                dialog.Closed -=
+                    OnQuickHelpWindowClosed;
+
+                try
+                {
+                    dialog.Close();
+                }
+                catch (Exception cleanupException)
+                {
+                    Trace.WriteLine(
+                        "Quick Help cleanup failed after display failure: " +
+                        cleanupException);
+                }
+            }
+
+            quickHelpWindow = null;
+
+            messageDialogService.ShowError(
+                "Quick Help could not be opened." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Quick Help");
+        }
+    }
+
+    private void OnOpenUserGuideRequested(
+        object? sender,
+        EventArgs e)
+    {
+        string userGuidePath =
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "USER-GUIDE.pdf");
+
+        if (!File.Exists(userGuidePath))
+        {
+            messageDialogService.ShowError(
+                "The User Guide could not be found." +
+                Environment.NewLine + Environment.NewLine +
+                "Make sure USER-GUIDE.pdf is in the Wartales Editor folder.",
+                "Open User Guide");
+            return;
+        }
+
+        try
+        {
+            startUserGuideProcess(
+                new ProcessStartInfo
+                {
+                    FileName = userGuidePath,
+                    UseShellExecute = true
+                });
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                "The User Guide was found, but Windows could not open it." +
+                Environment.NewLine + Environment.NewLine +
+                "Make sure a PDF reader or default PDF application is available." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "Open User Guide");
+        }
+    }
+
+    private void OnQuickHelpWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is not QuickHelpWindow dialog)
+        {
+            return;
+        }
+
+        dialog.OpenUserGuideRequested -=
+            OnOpenUserGuideRequested;
+        dialog.Closed -=
+            OnQuickHelpWindowClosed;
+
+        if (ReferenceEquals(
+                quickHelpWindow,
+                dialog))
+        {
+            quickHelpWindow = null;
+        }
     }
 
     private void ShowAbout()

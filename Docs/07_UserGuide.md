@@ -123,6 +123,17 @@ The menus contain:
 Keyboard shortcuts are **Ctrl+O**, **Ctrl+S**, **Ctrl+Z**, and **Ctrl+Y** for
 Open, Save, Undo, and Redo.
 
+### Quick Help
+
+The **Quick Help** button is always visible on the main screen, including when
+no CDB is open. It opens a compact reference window with five tabs: **Import**,
+**Gameplay Tools**, **Profiles**, **Restore Previous Values**, and **Export**.
+Each tab provides short step-by-step reminders for that common workflow.
+
+Choose **Open User Guide** in Quick Help to open the complete
+`USER-GUIDE.pdf` included beside the application. Quick Help is a reference
+tool, not a tutorial or support system.
+
 ## 9. Profiles
 
 Profiles are the main way to save and reuse your personal mod configuration. A

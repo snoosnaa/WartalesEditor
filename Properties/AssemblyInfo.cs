@@ -4,3 +4,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("WartalesEditor.UpdateSurvivalTests")]
 [assembly: InternalsVisibleTo("WartalesEditor.QuickBmsExportTests")]
 [assembly: InternalsVisibleTo("WartalesEditor.RequestBoardRewardsTests")]
+[assembly: InternalsVisibleTo("WartalesEditor.QuickHelpTests")]

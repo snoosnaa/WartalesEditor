@@ -1,0 +1,211 @@
+<Window x:Class="WartalesEditor.Views.QuickHelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Quick Help"
+        Width="720"
+        Height="440"
+        MinWidth="620"
+        MinHeight="360"
+        SizeToContent="Manual"
+        ResizeMode="CanResizeWithGrip"
+        WindowState="Normal"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Grid Margin="{StaticResource UtilityWindowOuterMargin}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="6"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Quick Help"
+                   Style="{StaticResource UtilityMajorHeadingTextStyle}"/>
+
+        <TextBlock Grid.Row="2"
+                   Text="Choose a topic for a quick reminder of the usual workflow."
+                   TextWrapping="Wrap"
+                   Style="{StaticResource SupportingTextStyle}"/>
+
+        <TabControl Grid.Row="4"
+                    x:Name="QuickHelpTabs"
+                    SelectedIndex="0">
+
+            <TabItem Header="Import">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Import the current Wartales game data into the editor."
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="1. Close Wartales."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="2. Set up QuickBMS and the Shiro Games PAK script if you have not already."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="3. Click "/><Run Text="Import From Wartales" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock Text="4. Confirm replacement if prompted."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,12"><Run Text="5. Wait for "/><Run Text="data.cdb" FontWeight="SemiBold"/><Run Text=" to open in the editor."/></TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Gameplay Tools">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Use Gameplay Tools for guided gameplay changes."
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="1. Open or import a CDB and select "/><Run Text="Gameplay Tools" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock Text="2. Choose the tool you want to use."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="3. Select the available preset or option."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="4. Review the current setting and preview."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="5. Click "/><Run Text="Apply" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,12"><Run Text="6. Open "/><Run Text="Review Changes" FontWeight="SemiBold"/><Run Text=" if you want to inspect the result."/></TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Profiles">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Profiles preserve a reusable personal mod configuration."
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="1. Open or import the CDB you want to work with."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="2. If it is fresh or unmodded, apply your existing Profile if desired."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="3. Make or adjust your changes."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="4. Save the edited CDB."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="5. Create a new Profile or update your existing Profile to preserve the setup."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="Saving the CDB saves the edited game data. Creating or updating a Profile saves your reusable mod setup."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Restore Previous Values">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Restore Previous Values returns a Gameplay Tool to the values it had before you first changed it with that tool."
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="1. Open the same Gameplay Tool you previously changed."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="2. Click "/><Run Text="Restore Previous Values" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,12"><Run Text="3. Review the restored result in the tool or "/><Run Text="Review Changes" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock Text="These are your previous values, not necessarily Wartales defaults."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Export">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Export your saved CDB back to Wartales."
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="1. Finish and review your changes."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="2. Save the edited CDB."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="3. Close Wartales."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="4. Click "/><Run Text="Export Back to Wartales" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
+                        <TextBlock Text="5. Confirm the warning."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="6. Wait for writing and verification to finish."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="Export writes your saved CDB back to Wartales and verifies the result."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+        </TabControl>
+
+        <Grid Grid.Row="6"
+              x:Name="QuickHelpFooter">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       x:Name="UserGuideFooterReminder"
+                       Text="For more detailed instructions, see the User Guide."
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Style="{StaticResource SupportingTextStyle}"/>
+
+            <StackPanel Grid.Column="1"
+                        x:Name="QuickHelpFooterButtons"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <Button Content="Open User Guide"
+                        Style="{StaticResource UtilityWideActionButtonStyle}"
+                        Margin="0,0,8,0"
+                        Click="OpenUserGuideButton_Click"/>
+                <Button Content="Close"
+                        Style="{StaticResource UtilityActionButtonStyle}"
+                        IsCancel="True"
+                        Click="CloseButton_Click"/>
+            </StackPanel>
+
+        </Grid>
+
+    </Grid>
+
+</Window>

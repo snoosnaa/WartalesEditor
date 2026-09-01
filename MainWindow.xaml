@@ -346,23 +346,41 @@
         </ToolBar>
 
         <!-- Workspace selectors -->
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    Margin="20,6,20,6">
+        <Grid Grid.Row="2"
+              Margin="20,6,20,6">
 
-            <RadioButton Content="Gameplay Tools"
-                         GroupName="MainWorkspace"
-                         Style="{StaticResource WorkspaceSelectorStyle}"
-                         IsChecked="{Binding IsGameplayToolsWorkspace, Mode=OneWay}"
-                         Command="{Binding ShowGameplayToolsWorkspaceCommand}"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <RadioButton Content="Detailed Editor"
-                         GroupName="MainWorkspace"
-                         Style="{StaticResource WorkspaceSelectorStyle}"
-                         IsChecked="{Binding IsDetailedEditorWorkspace, Mode=OneWay}"
-                         Command="{Binding ShowDetailedEditorWorkspaceCommand}"/>
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal">
 
-        </StackPanel>
+                <RadioButton Content="Gameplay Tools"
+                             GroupName="MainWorkspace"
+                             Style="{StaticResource WorkspaceSelectorStyle}"
+                             IsChecked="{Binding IsGameplayToolsWorkspace, Mode=OneWay}"
+                             Command="{Binding ShowGameplayToolsWorkspaceCommand}"/>
+
+                <RadioButton Content="Detailed Editor"
+                             GroupName="MainWorkspace"
+                             Style="{StaticResource WorkspaceSelectorStyle}"
+                             IsChecked="{Binding IsDetailedEditorWorkspace, Mode=OneWay}"
+                             Command="{Binding ShowDetailedEditorWorkspaceCommand}"/>
+
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Name="QuickHelpButton"
+                    Content="Quick Help"
+                    Style="{StaticResource UtilityActionButtonStyle}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    ToolTip="Open quick instructions for common workflows."
+                    Command="{Binding ShowQuickHelpCommand}"/>
+
+        </Grid>
 
         <!-- No-project welcome state -->
         <Grid Grid.Row="3"

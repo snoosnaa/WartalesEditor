@@ -6,13 +6,24 @@ Public Release Preparation
 
 ## Current Status
 
-**Public Release Preparation is IN PROGRESS.** Phase 1 is COMPLETE. Legal/public
-metadata, repository hygiene, public onboarding, version 1.0.0 reconciliation,
-public release-note groundwork, and a non-executed Git-history privacy rewrite
-plan are implemented and repository-verified. See
+**Public Release Preparation is IN PROGRESS.** Phase 1 and Phase 2 are complete.
+Quick Help V1 completed its full engineering lifecycle, Focused Engineering
+Review (**PASS**), Project Owner Interactive Acceptance (**PASS**), footer
+correction, brief visual re-test (**PASS**), reconciliation, and final
+commit/push checkpoint. Quick Help V1 is **CLOSED**. See
 `PublicReleasePreparation.md` for the release model and remaining work.
 
 ## Most Recently Closed Batch
+
+Quick Help V1 adds one always-visible main-screen action and an owned, modeless,
+single-instance reference window with Import, Gameplay Tools, Profiles, Restore
+Previous Values, and Export tabs. One footer reminder points to the packaged
+`USER-GUIDE.pdf`; Open User Guide resolves that local file beside the executable
+through Windows shell association. The feature has no project dependency,
+persistence, first-run behavior, or network behavior. The final focused suite
+passes 41 checks, and the existing Export/MainWindow suite passes 202/202.
+
+## Previous Closed Batch
 
 Request Board Rewards V1 and the shared Restore Previous Values authority
 correction are complete, Engineering reviewed with non-blocking hardening notes,
@@ -455,9 +466,10 @@ configured 645-change state.
 
 ## Next Required Step
 
-Git-history sanitization, publish configuration, package and checksum creation,
-malware scanning, clean-machine validation, exact supported-version recording,
-tagging, and release publication remain separate later tasks requiring their
-own authorization. QuickBMS safe Import,
-Update Survival, Golden CDB Version 1, and QuickBMS Export Back to Wartales
-Version 1 remain complete, reviewed, accepted, and closed.
+Generate and validate the Wartales Editor 1.0.0 Release Candidate through its
+separately authorized release-execution lifecycle. This includes regenerating
+the final manual PDF from its updated source before staging. Package and
+checksum generation, malware scanning, clean-machine validation, exact
+supported-version recording, tagging, and publication remain separate later
+actions requiring their own authorization. Do not begin them as part of the
+Quick Help closeout.
