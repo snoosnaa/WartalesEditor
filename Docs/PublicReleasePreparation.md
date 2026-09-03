@@ -23,6 +23,24 @@ Implementation, Focused Engineering Review (**PASS**), Project Owner
 Interactive Acceptance (**PASS**), footer correction, brief visual re-test
 (**PASS**), reconciliation, and the final commit/push checkpoint are complete.
 
+**TyTech Green accent:** REJECTED AND ROLLED BACK. Investigation and
+implementation completed, and Engineering Review passed after the required
+corrections. Project Owner visual acceptance then failed, the Project Owner
+rejected the color update, and the implementation was fully restored to the
+pre-experiment UI. Production and tests match their accepted baseline, the
+rejected experiment lifecycle is closed, and no further color work is planned
+before Version 1.0.0.
+
+**Wartales Modding Community credit:** APPROVED and retained in the authoritative
+README and User Manual Markdown as a goodwill acknowledgement without a legal-
+attribution role. `README.pdf` must be regenerated because the README source
+changed. `USER-GUIDE.pdf` must be regenerated because Quick Help source changes
+postdated its prior PDF and the community credit changed the manual source.
+
+The rejected color experiment no longer blocks release preparation. The next
+activity is regenerating and visually validating both public PDFs, followed by
+Wartales Editor 1.0.0 Release Candidate generation.
+
 Phase 2 defines the process. It does not create the final release candidate,
 checksum, tag, GitHub Release, or Nexus publication.
 

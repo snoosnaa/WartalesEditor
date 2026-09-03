@@ -673,6 +673,9 @@ Wartales Editor is free. Optional support is available at
   requirements, architecture direction, UX decisions, testing, validation,
   engineering-review direction, and release preparation.
 - **TyTech Games** — public release and publishing identity.
+- **Wartales Modding Community** — for community knowledge, experimentation,
+  inspiration, and information that helped inform the development of Wartales
+  Editor.
 - **OpenAI ChatGPT and OpenAI Codex** — implementation generation and
   engineering/review assistance under human direction.
 - **James Newton-King** — Newtonsoft.Json.

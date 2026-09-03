@@ -7,6 +7,18 @@ Public Release Preparation
 ## Current Status
 
 **Public Release Preparation is IN PROGRESS.** Phase 1 and Phase 2 are complete.
+The TyTech Green accent investigation and implementation completed, and
+Engineering Review passed after the required corrections. Project Owner visual
+acceptance then failed, the Project Owner rejected the color update, and the
+implementation was fully rolled back to the pre-experiment UI. No further color
+work is planned before Version 1.0.0. The rejected experiment lifecycle is
+closed, with production and tests restored to their accepted baseline. The
+separately approved Wartales Modding Community credit remains in both
+authoritative public Markdown documents as a goodwill acknowledgement, not legal
+attribution. The color experiment no longer blocks release preparation. The next
+activity is regenerating and visually validating both public PDFs, followed by
+Wartales Editor 1.0.0 Release Candidate generation.
+
 Quick Help V1 completed its full engineering lifecycle, Focused Engineering
 Review (**PASS**), Project Owner Interactive Acceptance (**PASS**), footer
 correction, brief visual re-test (**PASS**), reconciliation, and final

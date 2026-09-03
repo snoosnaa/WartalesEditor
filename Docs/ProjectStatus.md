@@ -4,7 +4,7 @@ Application Version: 1.0.0 (Public Release Preparation)
 
 Status: Release Preparation In Progress
 
-Last Updated: 2026-09-01
+Last Updated: 2026-09-03
 
 Purpose
 
@@ -68,6 +68,18 @@ release-note groundwork, and Git-history privacy sanitization are complete
 locally and remotely.
 
 **History sanitization:** COMPLETE locally and remotely.
+
+The TyTech Green accent investigation and implementation completed, and
+Engineering Review passed after the required corrections. Project Owner visual
+acceptance then failed, the Project Owner rejected the color update, and the
+implementation was fully rolled back to the pre-experiment UI. No further color
+work is planned before Version 1.0.0. Production and tests are restored to their
+accepted baseline, and the rejected experiment lifecycle is closed. The
+separately approved Wartales Modding Community acknowledgement remains in the
+public README and User Manual Markdown as a goodwill acknowledgement without a
+legal-attribution role. The color experiment no longer blocks release
+preparation. Next, regenerate and visually validate both public PDFs, then resume
+Wartales Editor 1.0.0 Release Candidate generation.
 
 Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
 complete public User Manual, checksum and malware-scan procedures, clean-machine
