@@ -15,9 +15,14 @@ work is planned before Version 1.0.0. The rejected experiment lifecycle is
 closed, with production and tests restored to their accepted baseline. The
 separately approved Wartales Modding Community credit remains in both
 authoritative public Markdown documents as a goodwill acknowledgement, not legal
-attribution. The color experiment no longer blocks release preparation. The next
-activity is regenerating and visually validating both public PDFs, followed by
-Wartales Editor 1.0.0 Release Candidate generation.
+attribution. The color experiment no longer blocks release preparation. Both
+public PDFs were regenerated and visually validated. The first Release
+Candidate attempt was rejected before ZIP/checksum creation because its
+application DLL retained the local build-machine PDB path in CodeView metadata.
+The accepted Release-only `PathMap` correction maps project paths to `/_/`, and
+Focused Engineering Review returned **PASS** with no findings. The next activity
+after this correction's commit/push checkpoint is fresh replacement Release
+Candidate generation; rejected RC1 staging remains evidence only.
 
 Quick Help V1 completed its full engineering lifecycle, Focused Engineering
 Review (**PASS**), Project Owner Interactive Acceptance (**PASS**), footer

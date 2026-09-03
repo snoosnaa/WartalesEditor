@@ -78,8 +78,14 @@ accepted baseline, and the rejected experiment lifecycle is closed. The
 separately approved Wartales Modding Community acknowledgement remains in the
 public README and User Manual Markdown as a goodwill acknowledgement without a
 legal-attribution role. The color experiment no longer blocks release
-preparation. Next, regenerate and visually validate both public PDFs, then resume
-Wartales Editor 1.0.0 Release Candidate generation.
+preparation. Both public PDFs were subsequently regenerated and visually
+validated. The first Release Candidate attempt was stopped before ZIP/checksum
+creation because the application DLL exposed the local build-machine PDB path
+through its CodeView record. A Release-only `PathMap` correction now maps
+project paths to `/_/`; its Focused Engineering Review returned **PASS** with no
+findings. After the correction's commit/push checkpoint, the next activity is a
+fresh replacement Release Candidate generation pass. The rejected RC1 staging
+is evidence only and is not release input.
 
 Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
 complete public User Manual, checksum and malware-scan procedures, clean-machine
@@ -95,10 +101,10 @@ launcher, single-instance lifecycle, and focused WPF/STA coverage completed
 Focused Engineering Review (**PASS**) and Project Owner Interactive Acceptance
 (**PASS**), including the footer correction and brief visual re-test. The final
 focused suite passes 41 checks and the Export/MainWindow suite passes 202/202.
-The actual release candidate and checksum, final PDF regeneration, scan and
-clean-machine validation, exact supported Wartales/toolchain recording, GitHub
-Issues configuration, final release review, `v1.0.0` tag, GitHub Release, and
-any separately authorized Nexus publication remain pending.
+The replacement release candidate and checksum, scan and clean-machine
+validation, exact supported Wartales/toolchain recording, GitHub Issues
+configuration, final release review, `v1.0.0` tag, GitHub Release, and any
+separately authorized Nexus publication remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
 implementation, focused Engineering Review (**PASS WITH NON-BLOCKING NOTES**),

@@ -33,13 +33,20 @@ before Version 1.0.0.
 
 **Wartales Modding Community credit:** APPROVED and retained in the authoritative
 README and User Manual Markdown as a goodwill acknowledgement without a legal-
-attribution role. `README.pdf` must be regenerated because the README source
-changed. `USER-GUIDE.pdf` must be regenerated because Quick Help source changes
-postdated its prior PDF and the community credit changed the manual source.
+attribution role. The final `README.pdf` and `USER-GUIDE.pdf` were regenerated
+from those authoritative sources and visually validated.
 
-The rejected color experiment no longer blocks release preparation. The next
-activity is regenerating and visually validating both public PDFs, followed by
-Wartales Editor 1.0.0 Release Candidate generation.
+**Release-build path privacy correction:** ACCEPTED. The first Release Candidate
+attempt was rejected before ZIP/checksum creation because the application DLL's
+CodeView record contained the local build-machine PDB path. Release builds now
+map `$(MSBuildProjectDirectory)` to `/_/`. Focused Engineering Review returned
+**PASS** with no findings: the corrected application CodeView path and all 280
+portable-PDB document paths use `/_/`, and the corrected publish output contains
+no local repository, user-profile, Codex, or old-identity strings. The rejected
+RC1 staging is retained only as evidence and must not be packaged.
+
+The next activity after the correction's commit/push checkpoint is fresh
+replacement Wartales Editor 1.0.0 Release Candidate generation.
 
 Phase 2 defines the process. It does not create the final release candidate,
 checksum, tag, GitHub Release, or Nexus publication.
@@ -103,6 +110,18 @@ bin\Release\net10.0-windows\win-x64\publish\
 The explicit properties are release authority and must not be replaced by
 implicit SDK defaults. The final package must be assembled from one fresh
 publish invocation, not mixed with earlier output.
+
+Release builds also apply this repository-owned path-privacy mapping:
+
+```xml
+<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+  <PathMap>$(MSBuildProjectDirectory)=/_/</PathMap>
+</PropertyGroup>
+```
+
+This preserves portable debug metadata while preventing the repository's local
+absolute path from being embedded in application CodeView and PDB document
+records. Debug builds remain unchanged.
 
 ## Verified Publish Output
 
@@ -421,9 +440,8 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Regenerate and visually verify the final `README.pdf` and `USER-GUIDE.pdf` as
-  needed from their authoritative sources before RC staging.
-- Produce the actual release-candidate publish/package.
+- Produce a fresh replacement release-candidate publish/package without reusing
+  rejected RC1 staging.
 - Generate the final checksum.
 - Perform the final malware scan.
 - Complete clean-machine validation.
