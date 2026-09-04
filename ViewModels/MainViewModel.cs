@@ -166,6 +166,8 @@ public class MainViewModel : ObservableObject
 
     private Action? saveValidationStartedForTesting;
 
+    private bool isSaveInProgress;
+
     private Action<ProcessStartInfo> startUserGuideProcess =
         static startInfo =>
         {
@@ -1338,8 +1340,9 @@ public class MainViewModel : ObservableObject
 
         SaveCommand =
             new RelayCommand(
-                _ => SaveProject(),
+                _ => ExecuteSaveProject(),
                 _ => Project != null &&
+                     !isSaveInProgress &&
                      !IsQuickBmsOperationInProgress);
 
         ShowGameplayToolsWorkspaceCommand =
@@ -1534,6 +1537,37 @@ public class MainViewModel : ObservableObject
         }
     }
 
+    private void ExecuteSaveProject()
+    {
+        if (isSaveInProgress || Project == null)
+        {
+            return;
+        }
+
+        isSaveInProgress = true;
+        RefreshCommandStates();
+
+        try
+        {
+            Status = "Saving…";
+
+            Dispatcher.CurrentDispatcher.Invoke(
+                DispatcherPriority.Render,
+                static () => { });
+
+            SaveProject();
+        }
+        catch (Exception exception)
+        {
+            ReportSaveFailure(exception);
+        }
+        finally
+        {
+            isSaveInProgress = false;
+            RefreshCommandStates();
+        }
+    }
+
     private bool SaveProject()
     {
         if (Project == null)
@@ -1651,19 +1685,24 @@ public class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            messageDialogService.ShowError(
-                $"The Wartales file could not be saved." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                "Your unsaved changes remain open in the editor. Check the destination and try again." +
-                $"{Environment.NewLine}{Environment.NewLine}" +
-                $"Details: {exception.Message}",
-                "Save Modded File");
-
-            Status =
-                "Project save failed.";
+            ReportSaveFailure(exception);
 
             return false;
         }
+    }
+
+    private void ReportSaveFailure(Exception exception)
+    {
+        messageDialogService.ShowError(
+            $"The Wartales file could not be saved." +
+            $"{Environment.NewLine}{Environment.NewLine}" +
+            "Your unsaved changes remain open in the editor. Check the destination and try again." +
+            $"{Environment.NewLine}{Environment.NewLine}" +
+            $"Details: {exception.Message}",
+            "Save Modded File");
+
+        Status =
+            "Project save failed.";
     }
 
     public bool ConfirmAbandonUnsavedChanges()

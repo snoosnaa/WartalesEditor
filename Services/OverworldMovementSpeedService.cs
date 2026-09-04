@@ -17,8 +17,8 @@ public sealed class OverworldMovementSpeedService
         new[]
         {
             new OverworldMovementPresetOption(OverworldMovementPreset.Vanilla, "Vanilla", 6, 11),
-            new OverworldMovementPresetOption(OverworldMovementPreset.Faster, "Faster", 8, 14),
-            new OverworldMovementPresetOption(OverworldMovementPreset.Fast, "Fast", 9, 17),
+            new OverworldMovementPresetOption(OverworldMovementPreset.Faster, "Fast", 8, 14),
+            new OverworldMovementPresetOption(OverworldMovementPreset.Fast, "Faster", 9, 17),
             new OverworldMovementPresetOption(OverworldMovementPreset.VeryFast, "Very Fast", 12, 22)
         };
 

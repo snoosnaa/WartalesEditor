@@ -1565,8 +1565,20 @@ try
         },
         service,
         new GoldenCdbComparisonService());
+    int ordinarySaveStarts = 0;
+    bool savingStatusPrecededValidation = false;
+    bool reentrantSaveWasDisabled = false;
     ordinaryMain.UseSaveValidationStartedForTesting(
-        () => ordinarySaveOrder.Add("validation"));
+        () =>
+        {
+            ordinarySaveStarts++;
+            savingStatusPrecededValidation =
+                ordinaryMain.Status == "Saving…";
+            reentrantSaveWasDisabled =
+                !ordinaryMain.SaveCommand.CanExecute(null);
+            ordinaryMain.SaveCommand.Execute(null);
+            ordinarySaveOrder.Add("validation");
+        });
     ProjectModel ordinaryProject = json.LoadReferenceProject(ordinarySource);
     ordinaryMain.PromoteLoadedProject(ordinaryProject, ordinarySource);
     ordinaryProject.Sheets.Single().Entries.Single().Properties
@@ -1578,6 +1590,14 @@ try
           json.LoadReferenceProject(ordinaryTarget)
               .RootDocument["sheets"]![0]!["lines"]![0]!["value"]!.Value<long>() == 62,
         "ordinary non-Golden save selects destination then validates and saves normally");
+    Check(savingStatusPrecededValidation &&
+          reentrantSaveWasDisabled &&
+          ordinarySaveStarts == 1,
+        "Save presents in-progress status and rejects reentrant execution before persistence");
+    Check(ordinaryMain.Status == "Saved: ordinary-target.cdb" &&
+          ordinaryMain.SaveCommand.CanExecute(null) &&
+          !ordinaryMain.HasModifications,
+        "successful Save replaces in-progress status resets its guard and accepts the saved baseline");
 
     service.SetFromFile(sourceC);
     GoldenCdbComparisonService partialComparer = new();
@@ -1601,6 +1621,11 @@ try
     if (File.Exists(sidecarPath))
         File.Delete(sidecarPath);
     Directory.CreateDirectory(sidecarPath);
+    bool partialFailureSawSaving = false;
+    partialMain.UseSaveValidationStartedForTesting(
+        () => partialFailureSawSaving =
+            partialMain.Status == "Saving…" &&
+            !partialMain.SaveCommand.CanExecute(null));
     partialMain.SaveCommand.Execute(null);
     Directory.Delete(sidecarPath);
     Check(json.LoadReferenceProject(service.GetCanonicalPath())
@@ -1608,6 +1633,10 @@ try
           service.GetState().Identity == identities.Calculate(service.GetCanonicalPath()) &&
           partialMessages.LastError?.Contains("could not be saved", StringComparison.OrdinalIgnoreCase) == true,
         "partial sidecar failure truthfully reports failure and reconciles actual Golden bytes");
+    Check(partialFailureSawSaving &&
+          partialMain.Status == "Project save failed." &&
+          partialMain.SaveCommand.CanExecute(null),
+        "failed Save replaces in-progress status and resets its guard");
 
     service.Remove();
     TestMessages recreateMessages = new(

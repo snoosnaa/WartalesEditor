@@ -47,9 +47,22 @@ Focused Engineering Review passed. Project Owner runtime acceptance also passed
 on the secondary-drive Steam installation: automatic Wartales discovery, Import,
 the QuickBMS prerequisite flow, User Guide access, and Language Data all worked.
 The final QuickBMS-missing message now points players to the User Guide for
-detailed setup instructions. This accepted work is ready for closeout review and
-commit authorization. RC2 is superseded for publication, and no fresh candidate
-has been generated.
+detailed setup instructions. Wartales Installation Resolution is closed:
+implemented, reviewed, Project Owner accepted, committed, and pushed. RC2 is
+superseded for publication, and no fresh candidate has been generated.
+
+The bounded pre-release Save feedback and Run Speed presentation corrections
+are implemented and repository-verified. The normal Save command now presents
+`Saving…` through the existing status area, allows one render-priority dispatcher
+turn before the unchanged synchronous persistence pipeline begins, and rejects
+reentrant Save execution until the operation finishes. Internal saves used by
+unsaved-change and Export workflows retain their established synchronous
+contract. Run Speed retains the persisted `Vanilla`, `Faster`, `Fast`, and
+`VeryFast` identifiers and exact 6/11, 8/14, 9/17, and 12/22 values while the
+player-facing progression is now Vanilla, Fast, Faster, Very Fast with distinct
+descriptions. Focused Engineering Review passed and Project Owner interactive
+acceptance passed for both corrections. Save Feedback and Run Speed Presentation
+are closed and ready for their commit checkpoint.
 
 Quick Help V1 completed its full engineering lifecycle, Focused Engineering
 Review (**PASS**), Project Owner Interactive Acceptance (**PASS**), footer
@@ -510,7 +523,9 @@ configured 645-change state.
 
 ## Next Required Step
 
-Review and close out the accepted Wartales Installation Resolution work, then
-commit only after explicit authorization. Do not generate a fresh release
-candidate until separately authorized. RC2 remains superseded for publication;
-no `v1.0.0` tag, GitHub Release, or Nexus publication is authorized.
+Commit and push the accepted Save feedback and Run Speed presentation
+corrections, then determine the exact validated Wartales BuildID, QuickBMS
+version/hash, and Shiro script revision/hash. Public-document updates, PDF
+regeneration, and a fresh release candidate require separate authorization. RC2
+remains superseded for publication; no `v1.0.0` tag, GitHub Release, or Nexus
+publication is authorized.

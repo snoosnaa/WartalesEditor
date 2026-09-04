@@ -74,8 +74,8 @@ message coverage. Project Owner testing verified the secondary-drive Steam
 installation, automatic Wartales discovery, Import, the QuickBMS prerequisite
 flow, User Guide access, and Language Data. The QuickBMS-missing message now
 points players to the User Guide for detailed setup instructions. The work is
-ready for closeout review and commit authorization. RC2 is superseded for
-publication. No fresh candidate has been generated.
+closed: implemented, reviewed, Project Owner accepted, committed, and pushed.
+RC2 is superseded for publication. No fresh candidate has been generated.
 
 ## Release Authority
 
@@ -426,6 +426,19 @@ complete. The accepted feature is the always-visible main-screen action, owned
 modeless five-tab reference window, one shared footer reminder, local packaged
 User Guide launcher, and project-independent single-instance lifecycle.
 
+## Pre-Release Save and Run Speed Corrections
+
+Implementation and repository verification are complete. User-invoked Save
+shows `Saving…` in the existing status area before entering the unchanged
+synchronous persistence pipeline, with one render-priority dispatcher turn and
+a command-local reentrancy guard. Run Speed retains its persisted identifiers
+and gameplay values while presenting the numerically ascending player-facing
+labels Vanilla, Fast, Faster, and Very Fast with distinct descriptions. Focused
+Engineering Review passed and Project Owner interactive acceptance passed for
+both corrections. Save Feedback and Run Speed Presentation are closed and ready
+for their commit checkpoint. These corrections have not produced a new release
+candidate.
+
 ## Exact Later Release Process
 
 1. Verify clean, synchronized, sanitized release source and authorized version.
@@ -466,8 +479,8 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Review and close out the accepted Wartales Installation Resolution work, then
-  commit only after explicit authorization.
+- Commit and push the accepted Save feedback and Run Speed presentation
+  corrections.
 - Record the exact validated Wartales, QuickBMS, and Shiro script versions in all
   required public authorities.
 - Regenerate and visually review every affected public PDF.

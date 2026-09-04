@@ -110,9 +110,21 @@ Engineering Review passed. Project Owner runtime acceptance passed on the
 secondary-drive Steam installation, including automatic Wartales discovery,
 Import, the QuickBMS prerequisite flow, User Guide access, and Language Data.
 The QuickBMS-missing message now points players to the User Guide for detailed
-setup instructions. This accepted work is ready for closeout review and commit
-authorization. RC2 is superseded for publication; no fresh candidate has been
-generated.
+setup instructions. Wartales Installation Resolution is closed: implemented,
+reviewed, Project Owner accepted, committed, and pushed. RC2 is superseded for
+publication; no fresh candidate has been generated.
+
+The bounded pre-release Save feedback and Run Speed presentation corrections
+are implemented and locally verified. The user-invoked Save command now uses
+the existing status area to show `Saving…`, yields once at WPF render priority,
+and prevents reentrant Save execution while preserving the established
+synchronous persistence implementation and completion/failure messages. Run
+Speed keeps every persisted identifier and exact gameplay value; only the
+player-facing mapping is corrected to Vanilla, Fast, Faster, Very Fast and each
+preset now has a distinct proportional description. Focused Engineering Review
+passed and Project Owner interactive acceptance passed for both corrections.
+Save Feedback and Run Speed Presentation are closed and ready for their commit
+checkpoint. No fresh release candidate has been generated.
 
 Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
 complete public User Manual, checksum and malware-scan procedures, clean-machine
@@ -879,11 +891,12 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Review and close out the accepted Wartales Installation Resolution work, then
-commit only after explicit authorization. A fresh immutable release candidate
-remains separately authorized and has not been generated. RC2 remains immutable
-evidence and is superseded for publication. Tagging and publication remain
-pending.
+Commit and push the accepted Save feedback and Run Speed presentation
+corrections, then determine the exact validated Wartales BuildID, QuickBMS
+version/hash, and Shiro script revision/hash. Public-document updates, PDF
+regeneration, and a fresh immutable release candidate remain separately
+authorized and have not been performed. RC2 remains immutable evidence and is
+superseded for publication. Tagging and publication remain pending.
 
 Document Maintenance
 

@@ -51,18 +51,28 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
 
     public string CurrentStateText => detectedPreset switch
     {
-        OverworldMovementPreset.VeryFast => "Very Fast",
         OverworldMovementPreset.Custom => "Custom",
         OverworldMovementPreset.Unavailable => "Unavailable",
-        _ => detectedPreset.ToString()
+        _ => FindPreset(detectedPreset).Name
     };
 
     public string PreviewText => SelectedPreset == null
         ? detectedPreset == OverworldMovementPreset.Unavailable
             ? "Movement settings are not available for this project."
             : "Choose a preset to replace the current movement values."
-        : $"{SelectedPreset.Name}: your party travels faster across the world map. " +
-          "Other roaming parties keep their normal speeds.";
+        : SelectedPreset.Preset switch
+        {
+            OverworldMovementPreset.Vanilla =>
+                "Uses the standard Wartales movement speeds.",
+            OverworldMovementPreset.Faster =>
+                "Moderately increases overworld walking and running speed.",
+            OverworldMovementPreset.Fast =>
+                "Further increases overworld walking and running speed.",
+            OverworldMovementPreset.VeryFast =>
+                "Greatly increases overworld walking and running speed.",
+            _ =>
+                "Choose a supported movement speed preset."
+        };
 
     public void SelectVanilla() =>
         SelectedPreset = FindPreset(OverworldMovementPreset.Vanilla);

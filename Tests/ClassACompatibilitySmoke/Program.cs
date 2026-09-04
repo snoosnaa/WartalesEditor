@@ -2033,6 +2033,95 @@ static void VerifyMovementPreviousValues()
     OverworldMovementSpeedService service = new(mutation, states);
     ProjectOperationService executor = new();
 
+    Check(
+        OverworldMovementSpeedService.Presets
+            .Select(option =>
+                (option.Preset,
+                 option.Name,
+                 option.WalkSpeed,
+                 option.RunSpeed))
+            .SequenceEqual(new[]
+            {
+                (OverworldMovementPreset.Vanilla, "Vanilla", 6, 11),
+                (OverworldMovementPreset.Faster, "Fast", 8, 14),
+                (OverworldMovementPreset.Fast, "Faster", 9, 17),
+                (OverworldMovementPreset.VeryFast, "Very Fast", 12, 22)
+            }),
+        "movement display order preserves persisted identities and ascending gameplay values");
+
+    OverworldMovementSpeedDialogViewModel presentation =
+        new(project, service);
+    string[] expectedDescriptions =
+    {
+        "Uses the standard Wartales movement speeds.",
+        "Moderately increases overworld walking and running speed.",
+        "Further increases overworld walking and running speed.",
+        "Greatly increases overworld walking and running speed."
+    };
+    string[] actualDescriptions =
+        OverworldMovementSpeedService.Presets
+            .Select(option =>
+            {
+                presentation.SelectedPreset = option;
+                return presentation.PreviewText;
+            })
+            .ToArray();
+    Check(actualDescriptions.SequenceEqual(expectedDescriptions) &&
+          actualDescriptions.Distinct(StringComparer.Ordinal).Count() == 4,
+        "movement presets expose distinct value-proportionate player descriptions");
+    ProjectMutationService fastCurrentMutation = new();
+    ProjectMutationService fasterCurrentMutation = new();
+    OverworldMovementSpeedDialogViewModel fastCurrentPresentation =
+        new(
+            CreateMovementProject(8, 14),
+            new OverworldMovementSpeedService(
+                fastCurrentMutation,
+                new GameplayOperationStateService(fastCurrentMutation)));
+    OverworldMovementSpeedDialogViewModel fasterCurrentPresentation =
+        new(
+            CreateMovementProject(9, 17),
+            new OverworldMovementSpeedService(
+                fasterCurrentMutation,
+                new GameplayOperationStateService(fasterCurrentMutation)));
+    Check(fastCurrentPresentation.CurrentStateText == "Fast" &&
+          fasterCurrentPresentation.CurrentStateText == "Faster",
+        "movement current-state presentation uses approved display labels");
+
+    ProjectModel persistedFasterProject = WithUnknownSource(
+        CreateMovementProject(6, 11));
+    ProjectMutationService persistedFasterMutation = new();
+    GameplayOperationStateService persistedFasterStates =
+        new(persistedFasterMutation);
+    ProjectOperationResult persistedFasterApply = executor.Execute(
+        new OverworldMovementSpeedOperation(
+            new OverworldMovementSpeedService(
+                persistedFasterMutation,
+                persistedFasterStates),
+            OverworldMovementPreset.Faster),
+        persistedFasterProject);
+    Check(persistedFasterApply.Succeeded,
+        "movement Fast display applies through the preserved Faster identifier");
+    CheckNumber(
+        persistedFasterProject,
+        "constant",
+        "PlayerBaseSpeed",
+        "value",
+        8);
+    CheckNumber(
+        persistedFasterProject,
+        "constant",
+        "PlayerRunSpeed",
+        "value",
+        14);
+    CheckPresetState(
+        persistedFasterProject,
+        ProgressionType.OverworldMovementSpeed,
+        nameof(OverworldMovementPreset.Faster));
+    VerifyProfileStateRoundTrip(
+        persistedFasterProject,
+        ProgressionType.OverworldMovementSpeed,
+        2);
+
     Check(!service.CanRestorePreviousValues(project),
         "movement restore is unavailable before captured history exists");
     string before = Json(project);
@@ -2045,12 +2134,29 @@ static void VerifyMovementPreviousValues()
     Check(!missing.Succeeded && Json(project) == before,
         "missing movement history fails without mutation");
 
-    Check(executor.Execute(
-            new OverworldMovementSpeedOperation(
-                service,
-                OverworldMovementPreset.Fast),
-            project).Succeeded,
+    ProjectOperationResult apply = executor.Execute(
+        new OverworldMovementSpeedOperation(
+            service,
+            OverworldMovementPreset.Fast),
+        project);
+    Check(apply.Succeeded,
         "movement preset applies from non-catalog previous values");
+    CheckNumber(project, "constant", "PlayerBaseSpeed", "value", 9);
+    CheckNumber(project, "constant", "PlayerRunSpeed", "value", 17);
+    CheckPresetState(
+        project,
+        ProgressionType.OverworldMovementSpeed,
+        nameof(OverworldMovementPreset.Fast));
+    VerifyProfileStateRoundTrip(
+        project,
+        ProgressionType.OverworldMovementSpeed,
+        2);
+    VerifyUndoRedo(
+        "movement preset presentation compatibility",
+        apply,
+        project,
+        before,
+        Json(project));
     Check(states.CanRestorePreviousValues(
             project,
             ProgressionType.OverworldMovementSpeed),
