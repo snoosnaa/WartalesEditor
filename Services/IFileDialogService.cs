@@ -17,4 +17,9 @@ public interface IFileDialogService
     string? ShowSaveFileDialog(
         string filter,
         string? initialFileName = null);
+
+    string? ShowOpenFolderDialog(
+        string title,
+        string? initialDirectory = null) =>
+        null;
 }

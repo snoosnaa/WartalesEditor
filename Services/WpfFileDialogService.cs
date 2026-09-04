@@ -84,6 +84,28 @@ public sealed class WpfFileDialogService :
             : null;
     }
 
+    public string? ShowOpenFolderDialog(
+        string title,
+        string? initialDirectory = null)
+    {
+        OpenFolderDialog dialog = new()
+        {
+            Title = title
+        };
+
+        if (!string.IsNullOrWhiteSpace(initialDirectory))
+            dialog.InitialDirectory = initialDirectory;
+
+        Window? owner = ResolveOwner();
+        bool? result = owner == null
+            ? dialog.ShowDialog()
+            : dialog.ShowDialog(owner);
+
+        return result == true
+            ? dialog.FolderName
+            : null;
+    }
+
     private static Window? ResolveOwner()
     {
         Application? application =

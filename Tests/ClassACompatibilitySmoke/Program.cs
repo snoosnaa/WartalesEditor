@@ -566,6 +566,11 @@ static void VerifyLanguageDataSourceDiscovery(
         Path.Combine(root, "detected-installation");
     Directory.CreateDirectory(
         installationDirectory);
+    File.WriteAllText(
+        Path.Combine(
+            installationDirectory,
+            "Wartales.exe"),
+        "fixture executable");
     File.WriteAllBytes(
         Path.Combine(
             installationDirectory,
@@ -634,7 +639,12 @@ static void VerifyLanguageDataSourceDiscovery(
             fileDialogService: detectedDialog,
             languageDataService: languageDataService,
             wartalesInstallationService:
-                new WartalesInstallationService(),
+                new WartalesInstallationService(
+                    Path.Combine(
+                        root,
+                        "location",
+                        "location.json"),
+                    () => Array.Empty<string>()),
             quickBmsImportOptions:
                 new QuickBmsImportOptions
                 {
@@ -689,7 +699,12 @@ static void VerifyLanguageDataSourceDiscovery(
                     new LocalizationService(),
                     Path.Combine(root, "no-candidate-storage")),
             wartalesInstallationService:
-                new WartalesInstallationService(),
+                new WartalesInstallationService(
+                    Path.Combine(
+                        root,
+                        "no-candidate-location",
+                        "location.json"),
+                    () => Array.Empty<string>()),
             quickBmsImportOptions:
                 new QuickBmsImportOptions
                 {
@@ -720,7 +735,12 @@ static void VerifyLanguageDataSourceDiscovery(
                     new LocalizationService(),
                     Path.Combine(root, "detection-failure-storage")),
             wartalesInstallationService:
-                new WartalesInstallationService(),
+                new WartalesInstallationService(
+                    Path.Combine(
+                        root,
+                        "detection-failure-location",
+                        "location.json"),
+                    () => Array.Empty<string>()),
             quickBmsImportOptions:
                 new QuickBmsImportOptions
                 {
@@ -733,8 +753,11 @@ static void VerifyLanguageDataSourceDiscovery(
 
     Check(detectionFailureDialog.OpenCallCount == 1 &&
           detectionFailureDialog.LastOpenInitialFileName == null &&
-          detectionFailureDialog.LastOpenInitialDirectory == null,
-        "installation detection failure preserves the generic manual picker fallback");
+          string.Equals(
+              detectionFailureDialog.LastOpenInitialDirectory,
+              root,
+              StringComparison.OrdinalIgnoreCase),
+        "installation detection failure preserves the generic manual picker fallback near the stale path");
 }
 
 static void VerifyLanguageDataSuccessStyling()
@@ -5393,6 +5416,13 @@ static void VerifyApplyFeedbackState()
           mainXaml.Contains("Header=\"_Check Compatibility\"", StringComparison.Ordinal) &&
           mainXaml.Contains("Command=\"{Binding CheckCompatibilityCommand}\"", StringComparison.Ordinal),
         "compatibility window and command use the established modeless utility-window configuration");
+    Check(mainXaml.Contains(
+              "Header=\"_Wartales Location...\"",
+              StringComparison.Ordinal) &&
+          mainXaml.Contains(
+              "Command=\"{Binding SetWartalesLocationCommand}\"",
+              StringComparison.Ordinal),
+        "Tools exposes Wartales Location through the shared resolver command");
     Check(mainViewModelSource.Contains(
               "Owner = GetMainWindowOwner()",
               StringComparison.Ordinal) &&
@@ -6370,6 +6400,335 @@ static ModificationSnapshotModel SnapshotProperty(
 static string Json(ProjectModel project) =>
     project.RootDocument.ToString(Newtonsoft.Json.Formatting.None);
 
+static void VerifyWartalesInstallationResolution(string parentRoot)
+{
+    string root = Path.Combine(parentRoot, "location-resolution");
+    string locationFile = Path.Combine(root, "settings", "location.json");
+    string primarySteam = Path.Combine(root, "primary-steam");
+    string secondarySteam = Path.Combine(root, "secondary-steam");
+    string primaryInstall = CreateSteamWartalesInstallation(primarySteam);
+
+    WartalesInstallationService primaryService =
+        new(locationFile, () => new[] { primarySteam });
+    WartalesInstallationResolution primary =
+        primaryService.Resolve();
+    Check(primary.Installation?.InstallationDirectory ==
+              Path.GetFullPath(primaryInstall),
+        "primary Steam appmanifest resolves Wartales");
+
+    Check(WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  "Wartales",
+                  out string? simpleContained)
+          && simpleContained == Path.GetFullPath(primaryInstall),
+        "ordinary manifest install directory remains beneath Steam common");
+    Check(WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  Path.Combine("Publisher", "Wartales"),
+                  out string? nestedContained)
+          && nestedContained == Path.GetFullPath(
+              Path.Combine(
+                  primarySteam,
+                  "steamapps",
+                  "common",
+                  "Publisher",
+                  "Wartales")),
+        "ordinary relative manifest subpath remains supported");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  Path.Combine("..", "..", "EscapedWartales"),
+                  out _),
+        "manifest traversal outside Steam common is rejected");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  Path.Combine(root, "RootedWartales"),
+                  out _),
+        "rooted manifest installation path is rejected");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  @"\\server\share\Wartales",
+                  out _),
+        "UNC manifest installation path is rejected");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  Path.Combine("..", "common", "Wartales"),
+                  out _),
+        "manifest path that exits and re-enters Steam common is rejected");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  Path.Combine("..", "common-other", "Wartales"),
+                  out _),
+        "Steam common prefix collision is rejected");
+    Check(!WartalesInstallationService
+              .TryComposeManifestInstallationDirectory(
+                  primarySteam,
+                  "Invalid|Wartales",
+                  out _),
+        "manifest installation path with invalid filename characters is rejected");
+
+    string escapedSteam = Path.Combine(root, "escaped-steam");
+    string escapedInstallation =
+        Path.Combine(escapedSteam, "EscapedWartales");
+    Directory.CreateDirectory(escapedInstallation);
+    File.WriteAllText(
+        Path.Combine(escapedInstallation, "Wartales.exe"),
+        "fixture executable");
+    File.WriteAllBytes(
+        Path.Combine(escapedInstallation, "res.pak"),
+        new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
+    Directory.CreateDirectory(Path.Combine(escapedSteam, "steamapps"));
+    File.WriteAllText(
+        Path.Combine(
+            escapedSteam,
+            "steamapps",
+            "appmanifest_1527950.acf"),
+        "\"AppState\" { \"appid\" \"1527950\" \"installdir\" \"..\\\\..\\\\EscapedWartales\" }");
+    WartalesInstallationService escapedService =
+        new(
+            Path.Combine(root, "escaped", "location.json"),
+            () => new[] { escapedSteam });
+    Check(escapedService.Resolve().RequiresSelection,
+        "automatic discovery never accepts an escaped manifest candidate");
+
+    Directory.Delete(primaryInstall, recursive: true);
+    string secondaryInstall =
+        CreateSteamWartalesInstallation(secondarySteam);
+    Directory.CreateDirectory(Path.Combine(primarySteam, "steamapps"));
+    File.WriteAllText(
+        Path.Combine(primarySteam, "steamapps", "libraryfolders.vdf"),
+        "\"libraryfolders\"\n{\n  \"1\"\n  {\n    \"path\"    \"" +
+        secondarySteam.Replace("\\", "\\\\") +
+        "\"\n  }\n}");
+
+    WartalesInstallationResolution secondary =
+        primaryService.Resolve();
+    Check(secondary.Installation?.InstallationDirectory ==
+              Path.GetFullPath(secondaryInstall),
+        "secondary Steam library resolves through libraryfolders.vdf");
+
+    File.WriteAllText(
+        Path.Combine(primarySteam, "steamapps", "libraryfolders.vdf"),
+        "malformed metadata");
+    Check(primaryService.Resolve().RequiresSelection,
+        "malformed libraryfolders metadata falls through safely");
+
+    File.Delete(
+        Path.Combine(primarySteam, "steamapps", "libraryfolders.vdf"));
+    Check(primaryService.Resolve().RequiresSelection,
+        "missing libraryfolders metadata falls through safely");
+
+    WartalesInstallationService inaccessibleMetadata =
+        new(
+            Path.Combine(root, "inaccessible", "location.json"),
+            () => throw new UnauthorizedAccessException("fixture"));
+    Check(inaccessibleMetadata.Resolve().RequiresSelection,
+        "inaccessible Steam metadata falls through safely");
+
+    File.WriteAllText(
+        Path.Combine(primarySteam, "steamapps", "appmanifest_1527950.acf"),
+        "\"AppState\" { \"appid\" \"1527950\" \"installdir\" \"Missing\" }");
+    Check(primaryService.Resolve().RequiresSelection,
+        "stale appmanifest falls through safely");
+
+    string otherSteam = Path.Combine(root, "other-steam");
+    string otherInstall = CreateSteamWartalesInstallation(otherSteam);
+    WartalesInstallationService multipleService =
+        new(
+            Path.Combine(root, "multiple", "location.json"),
+            () => new[] { secondarySteam, otherSteam });
+    Check(multipleService.Resolve().RequiresSelection,
+        "multiple valid Wartales installations require explicit selection");
+
+    WartalesInstallationService duplicateService =
+        new(
+            Path.Combine(root, "duplicate", "location.json"),
+            () => new[]
+            {
+                secondarySteam,
+                secondarySteam + Path.DirectorySeparatorChar
+            });
+    Check(duplicateService.Resolve().Installation?.InstallationDirectory ==
+              Path.GetFullPath(secondaryInstall),
+        "normalized duplicate candidates resolve as one installation");
+
+    WartalesPackageInfo remembered =
+        primaryService.ValidateAndRemember(secondaryInstall);
+    Check(File.Exists(locationFile)
+          && primaryService.Resolve().Installation?.InstallationDirectory ==
+             remembered.InstallationDirectory,
+        "valid manual selection persists and is reused");
+
+    string invalidSelection = Path.Combine(root, "invalid-selection");
+    Directory.CreateDirectory(invalidSelection);
+    CheckImportFailure(
+        () => primaryService.ValidateAndRemember(invalidSelection),
+        QuickBmsImportFailureKind.WartalesInstallationInvalid,
+        "manual selection without Wartales.exe is rejected");
+    Check(primaryService.Resolve().Installation?.InstallationDirectory ==
+              remembered.InstallationDirectory,
+        "invalid manual selection does not replace a saved valid location");
+
+    Directory.Delete(secondaryInstall, recursive: true);
+    string rediscoveredInstall =
+        CreateSteamWartalesInstallation(otherSteam);
+    WartalesInstallationService staleSavedService =
+        new(locationFile, () => new[] { otherSteam });
+    Check(staleSavedService.Resolve().Installation?.InstallationDirectory ==
+              Path.GetFullPath(rediscoveredInstall),
+        "stale saved location falls through to Steam discovery");
+
+    string missingExe = Path.Combine(root, "missing-exe");
+    Directory.CreateDirectory(missingExe);
+    File.WriteAllBytes(
+        Path.Combine(missingExe, "res.pak"),
+        new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
+    CheckImportFailure(
+        () => primaryService.Validate(missingExe),
+        QuickBmsImportFailureKind.WartalesInstallationInvalid,
+        "installation without Wartales.exe is not recognized");
+
+    string uiLocationFile =
+        Path.Combine(root, "ui", "location.json");
+    WartalesInstallationService uiService =
+        new(uiLocationFile, () => Array.Empty<string>());
+    TestFileDialogService uiDialogs =
+        new(folderName: rediscoveredInstall);
+    TestMessageDialogService uiMessages = new();
+    MainViewModel uiMain = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        uiMessages,
+        uiDialogs,
+        wartalesInstallationService: uiService,
+        quickBmsImportOptions: new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                Path.Combine(root, "not-installed"),
+            QuickBmsExecutablePath = "quickbms.exe",
+            ShiroScriptPath = "script.bms",
+            StagingRootDirectory = Path.Combine(root, "staging")
+        });
+    Check(uiMain.SetWartalesLocationCommand.CanExecute(null),
+        "Tools Wartales Location command is enabled while idle");
+    uiMain.SetWartalesLocationCommand.Execute(null);
+    Check(uiDialogs.FolderCallCount == 1
+          && uiService.Resolve().Installation?.InstallationDirectory ==
+             Path.GetFullPath(rediscoveredInstall)
+          && uiMessages.LastInformation?.Contains(
+                 rediscoveredInstall,
+                 StringComparison.OrdinalIgnoreCase) == true,
+        "Tools Wartales Location validates, persists, and reports a valid selection");
+
+    TestMessageDialogService locationFailureMessages = new();
+    MainViewModel locationFailureMain = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        locationFailureMessages,
+        new TestFileDialogService(folderName: invalidSelection),
+        wartalesInstallationService: uiService,
+        quickBmsImportOptions: new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory = rediscoveredInstall
+        });
+    locationFailureMain.SetWartalesLocationCommand.Execute(null);
+    Check(locationFailureMessages.ErrorCount == 1
+          && locationFailureMain.Status ==
+             "The Wartales installation location could not be resolved."
+          && uiService.Resolve().Installation?.InstallationDirectory ==
+             Path.GetFullPath(rediscoveredInstall),
+        "Tools Wartales Location presents one validation error and preserves the prior valid location");
+
+    TestMessageDialogService locationCancelMessages = new();
+    MainViewModel locationCancelMain = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        locationCancelMessages,
+        new TestFileDialogService(folderName: null),
+        wartalesInstallationService: uiService,
+        quickBmsImportOptions: new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory = rediscoveredInstall
+        });
+    locationCancelMain.SetWartalesLocationCommand.Execute(null);
+    Check(locationCancelMessages.ErrorCount == 0
+          && locationCancelMain.Status ==
+             "Wartales location was not changed."
+          && uiService.Resolve().Installation?.InstallationDirectory ==
+             Path.GetFullPath(rediscoveredInstall),
+        "Tools Wartales Location cancellation is silent and preserves the prior valid location");
+
+    TestFileDialogService cancelDialogs = new(folderName: null);
+    TestMessageDialogService cancelMessages = new();
+    MainViewModel cancelMain = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        cancelMessages,
+        cancelDialogs,
+        wartalesInstallationService: new WartalesInstallationService(
+            Path.Combine(root, "cancel", "location.json"),
+            () => Array.Empty<string>()),
+        quickBmsImportOptions: new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory = Path.Combine(root, "absent")
+        });
+    cancelMain.ImportFromWartalesCommand.Execute(null);
+    Check(cancelDialogs.FolderCallCount == 1
+          && cancelMain.Project == null
+          && cancelMain.Status == "Wartales import cancelled."
+          && cancelMessages.ErrorCount == 0,
+        "operation-time folder selection cancel is clean and does not publish a project");
+
+    TestMessageDialogService failureMessages = new();
+    MainViewModel failureMain = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        failureMessages,
+        new TestFileDialogService(folderName: invalidSelection),
+        wartalesInstallationService: new WartalesInstallationService(
+            Path.Combine(root, "failure", "location.json"),
+            () => Array.Empty<string>()),
+        quickBmsImportOptions: new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory = Path.Combine(root, "absent-failure")
+        });
+    failureMain.ImportFromWartalesCommand.Execute(null);
+    Check(failureMessages.ErrorCount == 1
+          && failureMessages.LastError != null
+          && failureMain.Status ==
+             "The Wartales installation location could not be resolved."
+          && failureMain.Project == null,
+        "operation-time validation failure remains distinct from cancellation");
+
+    _ = otherInstall;
+    Console.WriteLine(
+        "PASS shared Wartales installation resolution and persistence");
+}
+
+static string CreateSteamWartalesInstallation(string steamRoot)
+{
+    string steamApps = Path.Combine(steamRoot, "steamapps");
+    string installation =
+        Path.Combine(steamApps, "common", "Wartales");
+    Directory.CreateDirectory(installation);
+    File.WriteAllText(
+        Path.Combine(installation, "Wartales.exe"),
+        "fixture executable");
+    File.WriteAllBytes(
+        Path.Combine(installation, "res.pak"),
+        new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
+    File.WriteAllText(
+        Path.Combine(steamApps, "appmanifest_1527950.acf"),
+        "\"AppState\"\n{\n  \"appid\" \"1527950\"\n  \"installdir\" \"Wartales\"\n}");
+    return installation;
+}
+
 static async Task VerifyQuickBmsImport()
 {
     string root = Path.Combine(
@@ -6387,6 +6746,9 @@ static async Task VerifyQuickBmsImport()
 
     Directory.CreateDirectory(installation);
     Directory.CreateDirectory(tools);
+    File.WriteAllText(
+        Path.Combine(installation, "Wartales.exe"),
+        "fixture executable");
     File.WriteAllBytes(
         package,
         new byte[]
@@ -6408,6 +6770,74 @@ static async Task VerifyQuickBmsImport()
 
     try
     {
+        VerifyWartalesInstallationResolution(root);
+        string manualInstallation =
+            Path.Combine(root, "manual-import", "Wartales");
+        Directory.CreateDirectory(manualInstallation);
+        File.WriteAllText(
+            Path.Combine(manualInstallation, "Wartales.exe"),
+            "fixture executable");
+        File.WriteAllBytes(
+            Path.Combine(manualInstallation, "res.pak"),
+            new byte[]
+            {
+                (byte)'P', (byte)'A', (byte)'K', 0,
+                1, 2, 3, 4
+            });
+        FakeExternalProcessRunner manualRunner = new(request =>
+        {
+            string extracted =
+                Path.Combine(request.Arguments[2], "content", "data.cdb");
+            Directory.CreateDirectory(Path.GetDirectoryName(extracted)!);
+            File.WriteAllText(extracted, validCdb);
+            return new ExternalProcessResult
+            {
+                Started = true,
+                ExitCode = 0
+            };
+        });
+        TestFileDialogService manualDialogs =
+            new(folderName: manualInstallation);
+        JsonDataService manualJson = new();
+        MainViewModel manualMain = CreateMainViewModel(
+            new LocalizationService(),
+            ReferenceDataService.Instance,
+            new TestMessageDialogService(),
+            manualDialogs,
+            wartalesInstallationService:
+                new WartalesInstallationService(
+                    Path.Combine(
+                        root,
+                        "manual-import-location",
+                        "location.json"),
+                    () => Array.Empty<string>()),
+            quickBmsImportOptions:
+                new QuickBmsImportOptions
+                {
+                    WartalesInstallationDirectory =
+                        Path.Combine(root, "missing-manual-import"),
+                    QuickBmsExecutablePath = executable,
+                    ShiroScriptPath = script,
+                    StagingRootDirectory =
+                        Path.Combine(root, "manual-import-staging"),
+                    ProcessTimeout = TimeSpan.FromSeconds(10)
+                });
+        manualMain.UseQuickBmsImportServiceForTesting(
+            new QuickBmsImportService(
+                manualJson,
+                new WartalesInstallationService(),
+                new QuickBmsToolchainService(),
+                manualRunner,
+                new ExtractionWorkspaceService(),
+                new FileFingerprintService()));
+        manualMain.ImportFromWartalesCommand.Execute(null);
+        Check(manualDialogs.FolderCallCount == 1
+              && manualRunner.Requests.Count == 1
+              && manualRunner.Requests[0].Arguments[1] ==
+                 Path.Combine(manualInstallation, "res.pak")
+              && manualMain.Project != null,
+            "valid manual selection continues the same Import action with the exact selected root");
+
         await VerifyExternalProcessTermination();
         VerifyStagingReparseSafety(root);
 
@@ -6430,6 +6860,9 @@ static async Task VerifyQuickBmsImport()
 
         string missingPackageInstall = Path.Combine(root, "missing-package");
         Directory.CreateDirectory(missingPackageInstall);
+        File.WriteAllText(
+            Path.Combine(missingPackageInstall, "Wartales.exe"),
+            "fixture executable");
         CheckImportFailure(
             () => new WartalesInstallationService().Validate(missingPackageInstall),
             QuickBmsImportFailureKind.PackageMissing,
@@ -6437,6 +6870,9 @@ static async Task VerifyQuickBmsImport()
 
         string invalidInstall = Path.Combine(root, "invalid-package");
         Directory.CreateDirectory(invalidInstall);
+        File.WriteAllText(
+            Path.Combine(invalidInstall, "Wartales.exe"),
+            "fixture executable");
         File.WriteAllText(Path.Combine(invalidInstall, "res.pak"), "invalid");
         CheckImportFailure(
             () => new WartalesInstallationService().Validate(invalidInstall),
@@ -6448,6 +6884,21 @@ static async Task VerifyQuickBmsImport()
                 Path.Combine(root, "missing.exe"), script),
             QuickBmsImportFailureKind.QuickBmsExecutableMissing,
             "missing QuickBMS executable is rejected");
+        try
+        {
+            _ = new QuickBmsToolchainService().Validate(
+                Path.Combine(root, "missing.exe"),
+                script);
+            Check(false,
+                "missing QuickBMS message points to the User Guide");
+        }
+        catch (QuickBmsImportException exception)
+        {
+            Check(exception.Message.Contains(
+                      "For detailed QuickBMS setup instructions, see the User Guide.",
+                      StringComparison.Ordinal),
+                "missing QuickBMS message points to the User Guide");
+        }
         CheckImportFailure(
             () => new QuickBmsToolchainService().Validate(
                 executable, Path.Combine(root, "missing.bms")),
@@ -6882,6 +7333,9 @@ static async Task VerifyQuickBmsImport()
         string blockedInstallation =
             Path.Combine(root, "promotion-blocked");
         Directory.CreateDirectory(blockedInstallation);
+        File.WriteAllText(
+            Path.Combine(blockedInstallation, "Wartales.exe"),
+            "fixture executable");
         File.Copy(
             package,
             Path.Combine(blockedInstallation, "res.pak"));
@@ -7735,14 +8189,19 @@ sealed class FakeExternalProcessRunner : IExternalProcessRunner
 sealed class TestFileDialogService : IFileDialogService
 {
     private readonly string? openFileName;
+    private readonly string? folderName;
 
     public TestFileDialogService(
-        string? openFileName = null)
+        string? openFileName = null,
+        string? folderName = null)
     {
         this.openFileName = openFileName;
+        this.folderName = folderName;
     }
 
     public int OpenCallCount { get; private set; }
+
+    public int FolderCallCount { get; private set; }
 
     public string? LastOpenInitialFileName { get; private set; }
 
@@ -7776,6 +8235,14 @@ sealed class TestFileDialogService : IFileDialogService
         string filter,
         string? initialFileName = null) =>
         null;
+
+    public string? ShowOpenFolderDialog(
+        string title,
+        string? initialDirectory = null)
+    {
+        FolderCallCount++;
+        return folderName;
+    }
 }
 
 sealed class TestMessageDialogService : IMessageDialogService
@@ -7790,6 +8257,8 @@ sealed class TestMessageDialogService : IMessageDialogService
     }
 
     public int ConfirmationCount { get; private set; }
+
+    public int ErrorCount { get; private set; }
 
     public string? LastInformation { get; private set; }
 
@@ -7815,6 +8284,7 @@ sealed class TestMessageDialogService : IMessageDialogService
         string message,
         string title)
     {
+        ErrorCount++;
         LastError = message;
     }
 

@@ -79,13 +79,40 @@ separately approved Wartales Modding Community acknowledgement remains in the
 public README and User Manual Markdown as a goodwill acknowledgement without a
 legal-attribution role. The color experiment no longer blocks release
 preparation. Both public PDFs were subsequently regenerated and visually
-validated. The first Release Candidate attempt was stopped before ZIP/checksum
-creation because the application DLL exposed the local build-machine PDB path
-through its CodeView record. A Release-only `PathMap` correction now maps
-project paths to `/_/`; its Focused Engineering Review returned **PASS** with no
-findings. After the correction's commit/push checkpoint, the next activity is a
-fresh replacement Release Candidate generation pass. The rejected RC1 staging
-is evidence only and is not release input.
+validated. RC1 was rejected before ZIP/checksum creation because the application
+DLL exposed the local build-machine PDB path through its CodeView record. The
+accepted Release-only `PathMap` correction maps project paths to `/_/`; its
+review, commit, and push lifecycle is **CLOSED**. Rejected RC1 material remains
+evidence only and is not release input.
+
+RC2 was generated from commit
+`4bd349834585075bf5a02bdce841e4b31d47a751`. Repository regression, publish,
+path-privacy, package, Defender, extracted-package smoke, and clean-machine
+validation passed. Its immutable ZIP SHA-256 is
+`4607F2E1F33F17CCC4FA77ADACF07904B07D7622A72E0EE6AE3D3F976622F26E`.
+Final publication-readiness review found one public-metadata blocker: packaged
+`README.pdf` still contains the unresolved validated-Wartales-build placeholder,
+and the final release notes do not record the exact validated Wartales, QuickBMS,
+and Shiro script versions promised by the public documentation. RC2 must not be
+published, relabeled, or mutated. Corrected public documents and a new candidate
+require separate authorization. No `v1.0.0` tag or GitHub Release exists; Nexus
+remains unauthorized pending a separate Project Owner decision.
+
+Non-default Wartales installation support is implemented and locally verified.
+One shared resolver now supplies Import, Export Back to Wartales, Golden CDB
+convenience import, and Language Data automatic discovery through saved player
+choice, local Steam-library metadata, legacy-path compatibility, and manual
+folder fallback. The initial Engineering Review findings have been corrected and
+locally verified. The first renewed review found one duplicate Golden
+installation-resolution error presentation; operation-level error ownership and
+deterministic regression coverage were corrected, and the renewed Focused
+Engineering Review passed. Project Owner runtime acceptance passed on the
+secondary-drive Steam installation, including automatic Wartales discovery,
+Import, the QuickBMS prerequisite flow, User Guide access, and Language Data.
+The QuickBMS-missing message now points players to the User Guide for detailed
+setup instructions. This accepted work is ready for closeout review and commit
+authorization. RC2 is superseded for publication; no fresh candidate has been
+generated.
 
 Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
 complete public User Manual, checksum and malware-scan procedures, clean-machine
@@ -101,9 +128,8 @@ launcher, single-instance lifecycle, and focused WPF/STA coverage completed
 Focused Engineering Review (**PASS**) and Project Owner Interactive Acceptance
 (**PASS**), including the footer correction and brief visual re-test. The final
 focused suite passes 41 checks and the Export/MainWindow suite passes 202/202.
-The replacement release candidate and checksum, scan and clean-machine
-validation, exact supported Wartales/toolchain recording, GitHub Issues
-configuration, final release review, `v1.0.0` tag, GitHub Release, and any
+Exact supported Wartales/toolchain version recording, a corrected replacement
+candidate, GitHub Issues configuration, `v1.0.0`, the GitHub Release, and any
 separately authorized Nexus publication remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
@@ -853,11 +879,11 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Generate and validate the **Wartales Editor 1.0.0 Release Candidate** through a
-separately authorized release-execution lifecycle. Regenerate and visually
-verify the updated User Manual PDF before final package staging. Packaging,
-checksum, malware scan, clean-machine validation, exact supported-version
-recording, tagging, and publication remain separately authorized and pending.
+Review and close out the accepted Wartales Installation Resolution work, then
+commit only after explicit authorization. A fresh immutable release candidate
+remains separately authorized and has not been generated. RC2 remains immutable
+evidence and is superseded for publication. Tagging and publication remain
+pending.
 
 Document Maintenance
 

@@ -577,19 +577,38 @@ try
     TestMessages importSuccessMessages = new(
         UnsavedChangesResult.Discard,
         confirmation: true);
+    TestFileDialogs importSuccessDialogs = new()
+    {
+        FolderName = importSuccessFixture.InstallationDirectory
+    };
+    WartalesInstallationService importSuccessResolver =
+        new(
+            Path.Combine(
+                root,
+                "Golden Import Manual Location",
+                "location.json"),
+            () => Array.Empty<string>());
     MainViewModel importSuccessMain = CreateMain(
         json,
-        new TestFileDialogs(),
+        importSuccessDialogs,
         importSuccessMessages,
         importSuccessGolden,
         new GoldenCdbComparisonService(),
-        quickBmsImportOptions: importSuccessFixture.Options);
+        quickBmsImportOptions: importSuccessFixture.Options
+            .WithWartalesInstallationDirectory(
+                Path.Combine(root, "Missing Golden Wartales")),
+        wartalesInstallationService: importSuccessResolver);
     importSuccessMain.UseQuickBmsImportServiceForTesting(
         importSuccessFixture.Service);
     Check(await importSuccessMain.ImportCurrentWartalesAsGoldenAsync() &&
           importSuccessFixture.Runner.Requests.Count == 1 &&
           importSuccessMain.Project == null &&
           importSuccessMain.CurrentFile == string.Empty &&
+          importSuccessDialogs.FolderCount == 1 &&
+          importSuccessFixture.Runner.Requests.Single().Arguments[1] ==
+              Path.Combine(
+                  importSuccessFixture.InstallationDirectory,
+                  "res.pak") &&
           importSuccessMessages.UnsavedPromptCount == 0 &&
           importSuccessMessages.ConfirmationCount == 1,
         "Golden import with no active project acquires and designates without opening a project");
@@ -1960,6 +1979,81 @@ try
                 "QuickBMS import failure displays its existing meaningful summary locally");
             failedImportWindow.Close();
 
+            GoldenQuickBmsFixture resolutionFailureFixture = new(
+                json,
+                Path.Combine(root, "Golden Window Resolution Failure"),
+                BaseJson(94));
+            string invalidInstallation = Path.Combine(
+                root,
+                "Golden Window Invalid Installation");
+            Directory.CreateDirectory(invalidInstallation);
+            GoldenCdbService resolutionFailureGolden = new(
+                json,
+                Path.Combine(root, "Golden Window Resolution Failure Storage"));
+            resolutionFailureGolden.SetFromFile(sourceB);
+            string resolutionFailureGoldenIdentity =
+                resolutionFailureGolden.GetState().Identity;
+            byte[] resolutionFailureGoldenBytes =
+                File.ReadAllBytes(resolutionFailureGolden.GetCanonicalPath());
+            TestMessages resolutionFailureMessages = new(
+                UnsavedChangesResult.Discard,
+                confirmation: true);
+            MainViewModel resolutionFailureMain = CreateMain(
+                json,
+                new TestFileDialogs { FolderName = invalidInstallation },
+                resolutionFailureMessages,
+                resolutionFailureGolden,
+                new GoldenCdbComparisonService(),
+                quickBmsImportOptions: resolutionFailureFixture.Options
+                    .WithWartalesInstallationDirectory(
+                        Path.Combine(root, "Missing Golden Wartales")),
+                wartalesInstallationService: new WartalesInstallationService(
+                    Path.Combine(
+                        root,
+                        "Golden Resolution Failure Location",
+                        "location.json"),
+                    () => Array.Empty<string>()));
+            ProjectModel resolutionFailureProject =
+                json.LoadReferenceProject(windowSourceA);
+            resolutionFailureMain.PromoteLoadedProject(
+                resolutionFailureProject,
+                windowSourceA);
+            resolutionFailureMain.UseQuickBmsImportServiceForTesting(
+                resolutionFailureFixture.Service);
+            GoldenCdbWindow resolutionFailureWindow =
+                OpenGoldenWindow(resolutionFailureMain);
+            GoldenCdbViewModel resolutionFailureViewModel =
+                GoldenViewModel(resolutionFailureWindow);
+            FindButton(
+                    resolutionFailureWindow,
+                    "Import Current Wartales CDB as Golden")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            const string expectedResolutionFailure =
+                "The selected folder was not recognized as a Wartales installation. Select the folder containing Wartales.exe and res.pak.";
+            int resolutionFailurePresentationCount =
+                resolutionFailureMessages.ErrorCount +
+                (resolutionFailureViewModel.IsOperationStatusError ? 1 : 0);
+            Check(resolutionFailurePresentationCount == 1
+                  && resolutionFailureMessages.ErrorCount == 0
+                  && resolutionFailureViewModel.OperationStatus ==
+                     expectedResolutionFailure
+                  && resolutionFailureMain.Status ==
+                     "The Wartales installation location could not be resolved."
+                  && resolutionFailureFixture.Runner.Requests.Count == 0
+                  && resolutionFailureFixture.DetachedWorkspaceCount == 0
+                  && resolutionFailureGolden.GetState().Identity ==
+                     resolutionFailureGoldenIdentity
+                  && File.ReadAllBytes(
+                         resolutionFailureGolden.GetCanonicalPath())
+                     .SequenceEqual(resolutionFailureGoldenBytes)
+                  && ReferenceEquals(
+                      resolutionFailureMain.Project,
+                      resolutionFailureProject)
+                  && resolutionFailureMain.CurrentFile == windowSourceA
+                  && resolutionFailureMessages.ConfirmationCount == 0,
+                "Golden installation-resolution failure has exactly one local error and performs no acquisition or state change");
+            resolutionFailureWindow.Close();
+
             GoldenQuickBmsFixture designationFixture = new(
                 json,
                 Path.Combine(root, "Golden Window Designation Failure"),
@@ -2232,7 +2326,9 @@ try
         EditHistoryService? editHistory = null,
         QuickBmsImportOptions? quickBmsImportOptions = null,
         ModProfileLibraryService? profileLibrary = null,
-        LocalizationService? localizationService = null)
+        LocalizationService? localizationService = null,
+        WartalesInstallationService?
+            wartalesInstallationService = null)
     {
         LocalizationService localization =
             localizationService ?? new LocalizationService();
@@ -2282,7 +2378,14 @@ try
             new LanguageDataService(
                 localization,
                 Path.Combine(root, "Language Data")),
-            new WartalesInstallationService(),
+            wartalesInstallationService
+            ?? new WartalesInstallationService(
+                Path.Combine(
+                    root,
+                    "Wartales Locations",
+                    Guid.NewGuid().ToString("N"),
+                    "location.json"),
+                () => Array.Empty<string>()),
             quickBmsImportOptions ??
                 QuickBmsImportOptions.CreateDefault());
         main.UseGoldenCdbServicesForTesting(
@@ -2542,11 +2645,15 @@ sealed class GoldenQuickBmsFixture
     {
         ExtractedCdbJson = extractedCdbJson;
         string installation = Path.Combine(root, "Wartales");
+        InstallationDirectory = installation;
         string tools = Path.Combine(root, "quickbms");
         string executable = Path.Combine(tools, "quickbms.exe");
         string script = Path.Combine(tools, "Shiro_Games_PAK_script.bms");
         Directory.CreateDirectory(installation);
         Directory.CreateDirectory(tools);
+        File.WriteAllText(
+            Path.Combine(installation, "Wartales.exe"),
+            "fixture executable");
         File.WriteAllBytes(
             Path.Combine(installation, "res.pak"),
             new byte[]
@@ -2603,6 +2710,8 @@ sealed class GoldenQuickBmsFixture
     }
 
     public QuickBmsImportOptions Options { get; }
+
+    public string InstallationDirectory { get; }
 
     public string PromotedCdbPath { get; }
 
@@ -2699,8 +2808,10 @@ sealed class TestFileDialogs : IFileDialogService
 {
     public string? OpenFileName { get; init; }
     public string? SaveFileName { get; init; }
+    public string? FolderName { get; init; }
     public List<string>? EventLog { get; init; }
     public int SaveCount { get; private set; }
+    public int FolderCount { get; private set; }
 
     public string? ShowOpenFileDialog(
         string filter,
@@ -2713,6 +2824,14 @@ sealed class TestFileDialogs : IFileDialogService
         SaveCount++;
         EventLog?.Add("picker");
         return SaveFileName;
+    }
+
+    public string? ShowOpenFolderDialog(
+        string title,
+        string? initialDirectory = null)
+    {
+        FolderCount++;
+        return FolderName;
     }
 }
 
@@ -2732,6 +2851,7 @@ sealed class TestMessages : IMessageDialogService
 
     public int ConfirmationCount { get; private set; }
     public int InformationCount { get; private set; }
+    public int ErrorCount { get; private set; }
     public int UnsavedPromptCount { get; private set; }
     public string? LastWarning { get; private set; }
     public string? LastError { get; private set; }
@@ -2751,8 +2871,11 @@ sealed class TestMessages : IMessageDialogService
     public void ShowWarning(string message, string title) =>
         LastWarning = message;
 
-    public void ShowError(string message, string title) =>
+    public void ShowError(string message, string title)
+    {
+        ErrorCount++;
         LastError = message;
+    }
 
     public bool ShowConfirmation(string message, string title)
     {

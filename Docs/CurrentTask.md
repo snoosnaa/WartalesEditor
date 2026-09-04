@@ -16,13 +16,40 @@ closed, with production and tests restored to their accepted baseline. The
 separately approved Wartales Modding Community credit remains in both
 authoritative public Markdown documents as a goodwill acknowledgement, not legal
 attribution. The color experiment no longer blocks release preparation. Both
-public PDFs were regenerated and visually validated. The first Release
-Candidate attempt was rejected before ZIP/checksum creation because its
-application DLL retained the local build-machine PDB path in CodeView metadata.
-The accepted Release-only `PathMap` correction maps project paths to `/_/`, and
-Focused Engineering Review returned **PASS** with no findings. The next activity
-after this correction's commit/push checkpoint is fresh replacement Release
-Candidate generation; rejected RC1 staging remains evidence only.
+public PDFs were regenerated and visually validated. RC1 was rejected before
+ZIP/checksum creation because its application DLL retained the local build-
+machine PDB path in CodeView metadata. The accepted Release-only `PathMap`
+correction maps project paths to `/_/`; its review, commit, and push lifecycle
+is **CLOSED**.
+
+RC2 was generated from commit
+`4bd349834585075bf5a02bdce841e4b31d47a751`. Repository regression, publish,
+path-privacy, package, Defender, extracted-package smoke, and clean-machine
+validation all passed. The immutable ZIP SHA-256 is
+`4607F2E1F33F17CCC4FA77ADACF07904B07D7622A72E0EE6AE3D3F976622F26E`.
+Final publication-readiness review nevertheless found that the packaged
+`README.pdf` still contains the unresolved “Validated Wartales build: to be
+recorded” placeholder, while the final release notes do not record the exact
+validated Wartales, QuickBMS, and Shiro script versions promised by the public
+documentation. RC2 therefore remains validated evidence but is not publishable.
+No tag or GitHub Release exists. Nexus remains unauthorized and pending a
+separate Project Owner decision.
+
+The shared non-default Wartales installation-location correction is now
+implemented and locally verified. Import, Export Back to Wartales, Golden CDB
+convenience import, and Language Data automatic discovery use one resolver with
+saved player choice, local Steam-library discovery, legacy-path compatibility,
+and manual folder fallback. The initial Engineering Review findings have been
+corrected and locally verified. The first renewed review found one duplicate
+Golden installation-resolution error presentation; operation-level error
+ownership and deterministic regression coverage were corrected, and the renewed
+Focused Engineering Review passed. Project Owner runtime acceptance also passed
+on the secondary-drive Steam installation: automatic Wartales discovery, Import,
+the QuickBMS prerequisite flow, User Guide access, and Language Data all worked.
+The final QuickBMS-missing message now points players to the User Guide for
+detailed setup instructions. This accepted work is ready for closeout review and
+commit authorization. RC2 is superseded for publication, and no fresh candidate
+has been generated.
 
 Quick Help V1 completed its full engineering lifecycle, Focused Engineering
 Review (**PASS**), Project Owner Interactive Acceptance (**PASS**), footer
@@ -483,10 +510,7 @@ configured 645-change state.
 
 ## Next Required Step
 
-Generate and validate the Wartales Editor 1.0.0 Release Candidate through its
-separately authorized release-execution lifecycle. This includes regenerating
-the final manual PDF from its updated source before staging. Package and
-checksum generation, malware scanning, clean-machine validation, exact
-supported-version recording, tagging, and publication remain separate later
-actions requiring their own authorization. Do not begin them as part of the
-Quick Help closeout.
+Review and close out the accepted Wartales Installation Resolution work, then
+commit only after explicit authorization. Do not generate a fresh release
+candidate until separately authorized. RC2 remains superseded for publication;
+no `v1.0.0` tag, GitHub Release, or Nexus publication is authorized.

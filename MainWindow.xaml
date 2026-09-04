@@ -252,6 +252,10 @@
                           Command="{Binding ShowGoldenCdbCommand}"
                           ToolTip="Manage and compare against your reference CDB."/>
 
+                <MenuItem Header="_Wartales Location..."
+                          Command="{Binding SetWartalesLocationCommand}"
+                          ToolTip="Find or choose the Wartales installation used for import and export."/>
+
                 <Separator/>
 
                 <MenuItem Header="_Check Project"

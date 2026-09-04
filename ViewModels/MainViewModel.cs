@@ -896,6 +896,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand ExportBackToWartalesCommand { get; }
 
+    public RelayCommand SetWartalesLocationCommand { get; }
+
     public RelayCommand SaveCommand { get; }
 
     public RelayCommand ShowGameplayToolsWorkspaceCommand
@@ -1328,6 +1330,11 @@ public class MainViewModel : ObservableObject
                 _ => ExportBackToWartales(),
                 _ => Project != null &&
                      !IsQuickBmsOperationInProgress);
+
+        SetWartalesLocationCommand =
+            new RelayCommand(
+                _ => SetWartalesLocation(),
+                _ => !IsQuickBmsOperationInProgress);
 
         SaveCommand =
             new RelayCommand(
@@ -2331,6 +2338,87 @@ public class MainViewModel : ObservableObject
         _ = await ImportFromWartalesAsync();
     }
 
+    private void SetWartalesLocation()
+    {
+        WartalesOptionsResolution resolution =
+            ResolveWartalesOptions(
+                alwaysPrompt: true);
+        if (resolution.Outcome ==
+            WartalesOptionsResolutionOutcome.Cancelled)
+        {
+            Status = "Wartales location was not changed.";
+            return;
+        }
+
+        if (resolution.Outcome ==
+            WartalesOptionsResolutionOutcome.Failed)
+        {
+            messageDialogService.ShowError(
+                resolution.FailureMessage
+                ?? "The Wartales installation location could not be resolved.",
+                "Wartales Location");
+            Status =
+                "The Wartales installation location could not be resolved.";
+            return;
+        }
+
+        QuickBmsImportOptions resolvedOptions =
+            resolution.Options!;
+
+        Status = "Wartales location saved.";
+        messageDialogService.ShowInformation(
+            "The Wartales installation location is ready." +
+            Environment.NewLine + Environment.NewLine +
+            resolvedOptions.WartalesInstallationDirectory,
+            "Wartales Location");
+    }
+
+    private WartalesOptionsResolution ResolveWartalesOptions(
+        bool alwaysPrompt)
+    {
+        try
+        {
+            WartalesInstallationResolution resolution =
+                wartalesInstallationService.Resolve(
+                    quickBmsImportOptions
+                        .WartalesInstallationDirectory);
+
+            if (!alwaysPrompt &&
+                resolution.Installation != null)
+            {
+                return WartalesOptionsResolution.Success(
+                    quickBmsImportOptions
+                        .WithWartalesInstallationDirectory(
+                            resolution.Installation
+                                .InstallationDirectory));
+            }
+
+            string? selectedDirectory =
+                fileDialogService.ShowOpenFolderDialog(
+                    "Select the Wartales installation folder—the folder containing Wartales.exe and res.pak.",
+                    resolution.Installation?
+                        .InstallationDirectory
+                    ?? resolution.SuggestedDirectory);
+            if (string.IsNullOrWhiteSpace(selectedDirectory))
+                return WartalesOptionsResolution.Cancelled();
+
+            WartalesPackageInfo installation =
+                wartalesInstallationService
+                    .ValidateAndRemember(
+                        selectedDirectory);
+            return WartalesOptionsResolution.Success(
+                quickBmsImportOptions
+                    .WithWartalesInstallationDirectory(
+                        installation
+                            .InstallationDirectory));
+        }
+        catch (Exception exception)
+        {
+            return WartalesOptionsResolution.Failed(
+                exception.Message);
+        }
+    }
+
     private async Task<QuickBmsImportResult?>
         ImportFromWartalesAsync()
     {
@@ -2417,6 +2505,38 @@ public class MainViewModel : ObservableObject
                 OwnsBusyState: false);
         }
 
+        WartalesOptionsResolution resolution =
+            ResolveWartalesOptions(
+                alwaysPrompt: false);
+        if (resolution.Outcome !=
+            WartalesOptionsResolutionOutcome.Succeeded)
+        {
+            if (resolution.Outcome ==
+                WartalesOptionsResolutionOutcome.Cancelled)
+            {
+                Status = "Wartales import cancelled.";
+            }
+            else
+            {
+                lastQuickBmsImportAttemptOutcome =
+                    QuickBmsImportAttemptOutcome.Failed;
+                lastQuickBmsImportAttemptMessage =
+                    resolution.FailureMessage
+                    ?? "The Wartales installation location could not be resolved.";
+                messageDialogService.ShowError(
+                    lastQuickBmsImportAttemptMessage,
+                    "Import From Wartales");
+                Status =
+                    "The Wartales installation location could not be resolved.";
+            }
+            return new QuickBmsImportAcquisitionAttempt(
+                null,
+                OwnsBusyState: false);
+        }
+
+        QuickBmsImportOptions resolvedOptions =
+            resolution.Options!;
+
         SetQuickBmsOperation(
             QuickBmsOperationKind.Importing);
 
@@ -2424,7 +2544,7 @@ public class MainViewModel : ObservableObject
         {
             string promotedCdbPath =
                 quickBmsImportService.GetPromotedCdbPath(
-                    quickBmsImportOptions);
+                    resolvedOptions);
             bool replaceExistingExtractedCdb =
                 File.Exists(promotedCdbPath);
 
@@ -2443,7 +2563,7 @@ public class MainViewModel : ObservableObject
 
             QuickBmsImportResult result =
                 await quickBmsImportService.ImportAsync(
-                    quickBmsImportOptions,
+                    resolvedOptions,
                     replaceExistingExtractedCdb);
 
             lastQuickBmsImportAttemptOutcome =
@@ -2505,6 +2625,35 @@ public class MainViewModel : ObservableObject
                 OwnsBusyState: false);
         }
 
+        WartalesOptionsResolution resolution =
+            ResolveWartalesOptions(
+                alwaysPrompt: false);
+        if (resolution.Outcome !=
+            WartalesOptionsResolutionOutcome.Succeeded)
+        {
+            if (resolution.Outcome ==
+                WartalesOptionsResolutionOutcome.Cancelled)
+            {
+                Status = "Wartales import cancelled.";
+            }
+            else
+            {
+                lastQuickBmsImportAttemptOutcome =
+                    QuickBmsImportAttemptOutcome.Failed;
+                lastQuickBmsImportAttemptMessage =
+                    resolution.FailureMessage
+                    ?? "The Wartales installation location could not be resolved.";
+                Status =
+                    "The Wartales installation location could not be resolved.";
+            }
+            return new QuickBmsDetachedAcquisitionAttempt(
+                null,
+                OwnsBusyState: false);
+        }
+
+        QuickBmsImportOptions resolvedOptions =
+            resolution.Options!;
+
         SetQuickBmsOperation(
             QuickBmsOperationKind.Importing);
 
@@ -2515,9 +2664,9 @@ public class MainViewModel : ObservableObject
 
             QuickBmsDetachedAcquisitionResult result =
                 await quickBmsImportService.AcquireDetachedAsync(
-                    quickBmsImportOptions,
+                    resolvedOptions,
                     GetGoldenAcquisitionStagingRoot(
-                        quickBmsImportOptions));
+                        resolvedOptions));
 
             lastQuickBmsImportAttemptOutcome =
                 QuickBmsImportAttemptOutcome.Succeeded;
@@ -2620,6 +2769,32 @@ public class MainViewModel : ObservableObject
             return;
         }
 
+        WartalesOptionsResolution resolution =
+            ResolveWartalesOptions(
+                alwaysPrompt: false);
+        if (resolution.Outcome !=
+            WartalesOptionsResolutionOutcome.Succeeded)
+        {
+            if (resolution.Outcome ==
+                WartalesOptionsResolutionOutcome.Cancelled)
+            {
+                Status = "Export Back to Wartales cancelled.";
+            }
+            else
+            {
+                messageDialogService.ShowError(
+                    resolution.FailureMessage
+                    ?? "The Wartales installation location could not be resolved.",
+                    "Export Back to Wartales");
+                Status =
+                    "The Wartales installation location could not be resolved.";
+            }
+            return;
+        }
+
+        QuickBmsImportOptions resolvedOptions =
+            resolution.Options!;
+
         bool saveRequired =
             Project.IsModified ||
             Project.IsGameplayOperationStateModified ||
@@ -2702,7 +2877,7 @@ public class MainViewModel : ObservableObject
                 await quickBmsExportService.PrepareAsync(
                     Project.FileName,
                     Project.CurrentCdbContentIdentity,
-                    quickBmsImportOptions,
+                    resolvedOptions,
                     preparationCancellation.Token);
 
             preparationCancellation.Token
@@ -5326,6 +5501,39 @@ public class MainViewModel : ObservableObject
         Succeeded
     }
 
+    private enum WartalesOptionsResolutionOutcome
+    {
+        Cancelled,
+        Failed,
+        Succeeded
+    }
+
+    private sealed record WartalesOptionsResolution(
+        WartalesOptionsResolutionOutcome Outcome,
+        QuickBmsImportOptions? Options,
+        string? FailureMessage)
+    {
+        public static WartalesOptionsResolution Success(
+            QuickBmsImportOptions options) =>
+            new(
+                WartalesOptionsResolutionOutcome.Succeeded,
+                options,
+                null);
+
+        public static WartalesOptionsResolution Cancelled() =>
+            new(
+                WartalesOptionsResolutionOutcome.Cancelled,
+                null,
+                null);
+
+        public static WartalesOptionsResolution Failed(
+            string failureMessage) =>
+            new(
+                WartalesOptionsResolutionOutcome.Failed,
+                null,
+                failureMessage);
+    }
+
     private sealed record QuickBmsImportAcquisitionAttempt(
         QuickBmsImportResult? Result,
         bool OwnsBusyState);
@@ -5409,10 +5617,18 @@ public class MainViewModel : ObservableObject
     {
         try
         {
-            WartalesPackageInfo installation =
-                wartalesInstallationService.Validate(
+            WartalesInstallationResolution resolution =
+                wartalesInstallationService.Resolve(
                     quickBmsImportOptions
                         .WartalesInstallationDirectory);
+            WartalesPackageInfo? installation =
+                resolution.Installation;
+            if (installation == null)
+            {
+                return (
+                    null,
+                    resolution.SuggestedDirectory);
+            }
 
             IReadOnlyList<string> candidates =
                 languageDataService.DiscoverValidSources(
@@ -5896,6 +6112,8 @@ public class MainViewModel : ObservableObject
         ImportFromWartalesCommand?
             .NotifyCanExecuteChanged();
         ExportBackToWartalesCommand?
+            .NotifyCanExecuteChanged();
+        SetWartalesLocationCommand?
             .NotifyCanExecuteChanged();
         SaveCommand?.NotifyCanExecuteChanged();
 

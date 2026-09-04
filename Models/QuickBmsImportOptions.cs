@@ -19,6 +19,22 @@ public sealed class QuickBmsImportOptions
     public TimeSpan ProcessTimeout { get; init; } =
         TimeSpan.FromMinutes(10);
 
+    public QuickBmsImportOptions WithWartalesInstallationDirectory(
+        string installationDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(installationDirectory);
+
+        return new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                Path.GetFullPath(installationDirectory),
+            QuickBmsExecutablePath = QuickBmsExecutablePath,
+            ShiroScriptPath = ShiroScriptPath,
+            StagingRootDirectory = StagingRootDirectory,
+            ProcessTimeout = ProcessTimeout
+        };
+    }
+
     public static QuickBmsImportOptions CreateDefault()
     {
         string quickBmsDirectory =

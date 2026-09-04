@@ -16,7 +16,7 @@ public sealed class QuickBmsToolchainService
             ValidateReadableFile(
                 executablePath,
                 QuickBmsImportFailureKind.QuickBmsExecutableMissing,
-                "QuickBMS could not be found. Place quickbms.exe in the configured QuickBMS folder and try again.");
+                "QuickBMS could not be found. Place quickbms.exe in the configured QuickBMS folder and try again. For detailed QuickBMS setup instructions, see the User Guide.");
 
         string script =
             ValidateReadableFile(

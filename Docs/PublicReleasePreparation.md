@@ -45,11 +45,37 @@ portable-PDB document paths use `/_/`, and the corrected publish output contains
 no local repository, user-profile, Codex, or old-identity strings. The rejected
 RC1 staging is retained only as evidence and must not be packaged.
 
-The next activity after the correction's commit/push checkpoint is fresh
-replacement Wartales Editor 1.0.0 Release Candidate generation.
+**Release-build path privacy correction lifecycle:** CLOSED after review, commit,
+and push.
 
-Phase 2 defines the process. It does not create the final release candidate,
-checksum, tag, GitHub Release, or Nexus publication.
+**RC2:** GENERATED AND VALIDATED from
+`4bd349834585075bf5a02bdce841e4b31d47a751`. Full repository regression, fresh
+publish, path-privacy audit, package audit, Defender scans, extracted-package
+smoke validation, and clean-machine validation passed. Its immutable SHA-256 is
+`4607F2E1F33F17CCC4FA77ADACF07904B07D7622A72E0EE6AE3D3F976622F26E`.
+
+**Final publication-readiness review:** RELEASE BLOCKER. The immutable RC2
+`README.pdf` contains the unresolved “Validated Wartales build: to be recorded”
+placeholder inherited from the authoritative README. The final release notes also
+do not record the exact validated Wartales, QuickBMS, and Shiro script versions
+promised by the public documentation. RC2 must not be mutated, relabeled, tagged,
+or published. Correcting the public authorities/PDF and producing a new candidate
+require separate Project Owner authorization.
+
+**Tag:** NOT CREATED. **GitHub Release:** NOT CREATED. **Nexus:** NOT AUTHORIZED;
+PENDING SEPARATE PROJECT OWNER DECISION.
+
+**Non-default Wartales installation support:** IMPLEMENTATION COMPLETE;
+ENGINEERING REVIEW PASS; PROJECT OWNER RUNTIME ACCEPTANCE PASS. The shared
+resolver is wired to Import, Export Back to Wartales, Golden CDB convenience
+import, and Language Data automatic source discovery. Operation-level callers
+own installation-resolution failure presentation, with deterministic single-
+message coverage. Project Owner testing verified the secondary-drive Steam
+installation, automatic Wartales discovery, Import, the QuickBMS prerequisite
+flow, User Guide access, and Language Data. The QuickBMS-missing message now
+points players to the User Guide for detailed setup instructions. The work is
+ready for closeout review and commit authorization. RC2 is superseded for
+publication. No fresh candidate has been generated.
 
 ## Release Authority
 
@@ -440,14 +466,15 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Produce a fresh replacement release-candidate publish/package without reusing
-  rejected RC1 staging.
-- Generate the final checksum.
-- Perform the final malware scan.
-- Complete clean-machine validation.
-- Record exact Wartales/QuickBMS/script versions.
+- Review and close out the accepted Wartales Installation Resolution work, then
+  commit only after explicit authorization.
+- Record the exact validated Wartales, QuickBMS, and Shiro script versions in all
+  required public authorities.
+- Regenerate and visually review every affected public PDF.
+- Produce and fully validate a new immutable release candidate without mutating
+  or relabeling RC2.
 - Enable/configure GitHub Issues.
-- Complete final release review and reconciliation.
+- Repeat final release review and reconciliation for the replacement candidate.
 - Create `v1.0.0` only after authorization.
 - Publish the GitHub Release only after authorization.
 - Publish to Nexus only if separately authorized.

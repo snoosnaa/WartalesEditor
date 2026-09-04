@@ -326,6 +326,7 @@ void TestFileReparseBoundaries(
 
         string install = Path.Combine(matrixRoot, "package-link-install");
         Directory.CreateDirectory(install);
+        File.WriteAllText(Path.Combine(install, "Wartales.exe"), "fixture");
         string externalPackage = Path.Combine(matrixRoot, "external-res.pak");
         File.WriteAllBytes(externalPackage,
             new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
@@ -350,6 +351,7 @@ void TestPackagePreflight()
     WartalesInstallationService service = new();
     string install = Path.Combine(testRoot, "package-preflight");
     Directory.CreateDirectory(install);
+    File.WriteAllText(Path.Combine(install, "Wartales.exe"), "fixture");
     string package = Path.Combine(install, "res.pak");
     File.WriteAllBytes(package, new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
     WartalesPackageInfo info = service.ValidateForExport(install);
@@ -1091,6 +1093,112 @@ async Task TestMainViewModelBehaviorAsync(Window owner)
     await TestActualMainWindowCloseLifecycleAsync(owner, uiRoot);
     await TestCompleteStateNeutralityAsync(uiRoot);
 
+    string manualDirectory =
+        Path.Combine(uiRoot, "manual-export");
+    Directory.CreateDirectory(manualDirectory);
+    string manualSource =
+        Path.Combine(manualDirectory, "source.cdb");
+    File.WriteAllText(
+        manualSource,
+        BaseJson(3),
+        new UTF8Encoding(false));
+    string manualInstallation =
+        CreateValidWartalesInstallation(
+            Path.Combine(manualDirectory, "Selected Wartales"));
+    UiFileDialogs manualDialogs = new()
+    {
+        FolderName = manualInstallation
+    };
+    UiMessages manualMessages = new();
+    JsonDataService manualJson = new();
+    MainViewModel manualViewModel = CreateMainViewModel(
+        manualJson,
+        manualDialogs,
+        manualMessages,
+        Path.Combine(manualDirectory, "language"),
+        new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                Path.Combine(manualDirectory, "Missing Wartales")
+        });
+    manualViewModel.PromoteLoadedProject(
+        manualJson.LoadProject(manualSource),
+        manualSource);
+    UiExportService manualExport = new(manualDirectory);
+    manualViewModel.UseQuickBmsExportServiceForTesting(manualExport);
+    await manualViewModel.ExportBackToWartalesAsync();
+    Check(manualDialogs.FolderCount == 1
+          && manualExport.PrepareCount == 1
+          && manualExport.ExportCount == 1
+          && manualExport.LastWartalesInstallationDirectory ==
+             Path.GetFullPath(manualInstallation)
+          && manualExport.LastPreparedPackagePath ==
+             Path.Combine(manualInstallation, "res.pak"),
+        "valid manual selection continues the same Export action with the exact selected root");
+
+    string invalidInstallation = Path.Combine(
+        manualDirectory,
+        "Invalid Wartales");
+    Directory.CreateDirectory(invalidInstallation);
+    UiFileDialogs resolutionFailureDialogs = new()
+    {
+        FolderName = invalidInstallation
+    };
+    UiMessages resolutionFailureMessages = new();
+    MainViewModel resolutionFailureViewModel = CreateMainViewModel(
+        manualJson,
+        resolutionFailureDialogs,
+        resolutionFailureMessages,
+        Path.Combine(manualDirectory, "failure-language"),
+        new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                Path.Combine(manualDirectory, "Missing Failure Wartales")
+        });
+    resolutionFailureViewModel.PromoteLoadedProject(
+        manualJson.LoadProject(manualSource),
+        manualSource);
+    UiExportService resolutionFailureExport = new(manualDirectory);
+    resolutionFailureViewModel.UseQuickBmsExportServiceForTesting(
+        resolutionFailureExport);
+    await resolutionFailureViewModel.ExportBackToWartalesAsync();
+    Check(resolutionFailureDialogs.FolderCount == 1
+          && resolutionFailureMessages.Errors.Count == 1
+          && resolutionFailureExport.PrepareCount == 0
+          && resolutionFailureExport.ExportCount == 0
+          && resolutionFailureMessages.ConfirmationCount == 0
+          && resolutionFailureViewModel.Status ==
+             "The Wartales installation location could not be resolved.",
+        "Export installation-resolution failure presents one error and performs no export work");
+
+    UiFileDialogs resolutionCancelDialogs = new();
+    UiMessages resolutionCancelMessages = new();
+    MainViewModel resolutionCancelViewModel = CreateMainViewModel(
+        manualJson,
+        resolutionCancelDialogs,
+        resolutionCancelMessages,
+        Path.Combine(manualDirectory, "cancel-language"),
+        new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                Path.Combine(manualDirectory, "Missing Cancel Wartales")
+        });
+    resolutionCancelViewModel.PromoteLoadedProject(
+        manualJson.LoadProject(manualSource),
+        manualSource);
+    UiExportService resolutionCancelExport = new(manualDirectory);
+    resolutionCancelViewModel.UseQuickBmsExportServiceForTesting(
+        resolutionCancelExport);
+    await resolutionCancelViewModel.ExportBackToWartalesAsync();
+    Check(resolutionCancelDialogs.FolderCount == 1
+          && resolutionCancelMessages.Errors.Count == 0
+          && resolutionCancelExport.PrepareCount == 0
+          && resolutionCancelExport.ExportCount == 0
+          && resolutionCancelMessages.ConfirmationCount == 0
+          && resolutionCancelViewModel.Status ==
+             "Export Back to Wartales cancelled.",
+        "Export installation selection cancellation is silent and performs no export work");
+
     // Dirty CDB and missing-durable-path Save success.
     UiFixture dirty = CreateUiFixture(uiRoot, "dirty-save");
     ProjectTransportState? dirtyBeforeTransport = null;
@@ -1702,6 +1810,7 @@ async Task TestImportBlocksExportAsync(string uiRoot)
     string tool = Path.Combine(root, "tool");
     Directory.CreateDirectory(install);
     Directory.CreateDirectory(tool);
+    File.WriteAllText(Path.Combine(install, "Wartales.exe"), "fixture");
     File.WriteAllBytes(Path.Combine(install, "res.pak"),
         new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
     string executable = Path.Combine(tool, "quickbms.exe");
@@ -2011,6 +2120,14 @@ MainViewModel CreateMainViewModel(
     QuickBmsImportOptions? importOptions = null,
     UiStateServices? stateServices = null)
 {
+    QuickBmsImportOptions resolvedImportOptions =
+        importOptions
+        ?? new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory =
+                CreateValidWartalesInstallation(
+                    Path.Combine(languagePath, "Wartales"))
+        };
     LocalizationService localization = new();
     ModificationSnapshotWorkflowService snapshotWorkflow =
         stateServices?.SnapshotWorkflow ?? new();
@@ -2060,8 +2177,25 @@ MainViewModel CreateMainViewModel(
         dialogs,
         messages,
         new LanguageDataService(localization, languagePath),
-        new WartalesInstallationService(),
-        importOptions ?? QuickBmsImportOptions.CreateDefault());
+        new WartalesInstallationService(
+            Path.Combine(
+                languagePath,
+                "Wartales Location",
+                "location.json"),
+            () => Array.Empty<string>()),
+        resolvedImportOptions);
+}
+
+string CreateValidWartalesInstallation(string installationDirectory)
+{
+    Directory.CreateDirectory(installationDirectory);
+    File.WriteAllText(
+        Path.Combine(installationDirectory, "Wartales.exe"),
+        "fixture executable");
+    File.WriteAllBytes(
+        Path.Combine(installationDirectory, "res.pak"),
+        new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 1 });
+    return Path.GetFullPath(installationDirectory);
 }
 
 string BaseJson(object value) =>
@@ -2077,6 +2211,7 @@ Fixture CreateFixture(string name)
     string tool = Path.Combine(root, "tool");
     Directory.CreateDirectory(install);
     Directory.CreateDirectory(tool);
+    File.WriteAllText(Path.Combine(install, "Wartales.exe"), "fixture");
     string package = Path.Combine(install, "res.pak");
     File.WriteAllBytes(package,
         new byte[] { (byte)'P', (byte)'A', (byte)'K', 0, 10, 20, 30 });
@@ -2405,7 +2540,9 @@ sealed record ProjectTransportState(
 sealed class UiFileDialogs : IFileDialogService
 {
     public string? SaveFileName { get; set; }
+    public string? FolderName { get; set; }
     public int SaveCount { get; private set; }
+    public int FolderCount { get; private set; }
 
     public string? ShowOpenFileDialog(
         string filter,
@@ -2417,6 +2554,14 @@ sealed class UiFileDialogs : IFileDialogService
     {
         SaveCount++;
         return SaveFileName;
+    }
+
+    public string? ShowOpenFolderDialog(
+        string title,
+        string? initialDirectory = null)
+    {
+        FolderCount++;
+        return FolderName;
     }
 }
 
@@ -2512,6 +2657,8 @@ sealed class UiExportService : IQuickBmsExportService
     public List<string> Events { get; } = new();
     public List<CancellationToken> ExportCancellationTokens { get; } = new();
     public QuickBmsExportWorkspace? LastWorkspace { get; private set; }
+    public string? LastWartalesInstallationDirectory { get; private set; }
+    public string? LastPreparedPackagePath { get; private set; }
 
     public async Task<QuickBmsExportPreparation> PrepareAsync(
         string sourceCdbPath,
@@ -2520,6 +2667,8 @@ sealed class UiExportService : IQuickBmsExportService
         CancellationToken cancellationToken = default)
     {
         PrepareCount++;
+        LastWartalesInstallationDirectory =
+            options.WartalesInstallationDirectory;
         Events.Add("prepare");
         PreparationStarted?.Invoke();
         if (PrepareException != null)
@@ -2535,13 +2684,16 @@ sealed class UiExportService : IQuickBmsExportService
         File.WriteAllBytes(LastWorkspace.StagedCdbPath, bytes);
         FileFingerprint fingerprint =
             new FileFingerprintService().Calculate(bytes);
+        LastPreparedPackagePath = Path.Combine(
+            options.WartalesInstallationDirectory,
+            "res.pak");
         return new QuickBmsExportPreparation(LastWorkspace)
         {
             SourceCdbPath = sourceCdbPath,
             StagedCdbPath = LastWorkspace.StagedCdbPath,
             ModdedDirectory = LastWorkspace.ModdedDirectory,
             VerificationDirectory = LastWorkspace.VerificationDirectory,
-            PackagePath = Path.Combine(root, "isolated-res.pak"),
+            PackagePath = LastPreparedPackagePath,
             QuickBmsExecutablePath = "quickbms.exe",
             ShiroScriptPath = "Shiro_Games_PAK_script.bms",
             SourceFingerprint = fingerprint,
