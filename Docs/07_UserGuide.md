@@ -21,16 +21,21 @@ The initial supported environment is:
 
 - Windows 11 x64.
 - The Steam version of Wartales.
-- Wartales installed at
-  `C:\Program Files (x86)\Steam\steamapps\common\Wartales`.
-- The exact Wartales build recorded in the final 1.0.0 release notes.
-- The user-supplied QuickBMS and Shiro Games PAK script versions recorded in
-  the final release notes when integrated Import or Export is used.
+- Wartales installed in a Steam library that the editor can detect, or selected
+  manually by choosing the installation folder containing `Wartales.exe` and
+  `res.pak`.
+- Wartales Steam BuildID 23361327.
+- QuickBMS 0.12.0 (SHA-256
+  `FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`).
+- `Shiro_Games_PAK_script.bms` v0.2, dated 10.03.2022 (SHA-256
+  `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
 
 Other Windows versions, operating systems, processor architectures, stores,
-nonstandard Steam library paths, unverified Wartales builds, co-op behavior,
-and arbitrary combinations of third-party CDB changes are not currently part
-of the verified support claim.
+unverified Wartales builds, co-op behavior, and arbitrary combinations of
+third-party CDB changes are not currently part of the verified support claim.
+Wartales Editor 1.0.0 was validated with this specific Wartales, QuickBMS, and
+Shiro script combination. Later game or toolchain updates may require renewed
+compatibility validation.
 
 ## 3. Installation
 
@@ -71,8 +76,8 @@ are not bundled, mirrored, or licensed as part of Wartales Editor.
 ```
 
 Avoid arbitrary repackaged binaries or scripts. Integrated Import and Export
-remain unavailable until both expected files and the standard Wartales
-installation are present.
+remain unavailable until both expected files and a valid Steam Wartales
+installation are available.
 
 ## 6. Recommended Workflow
 
@@ -521,12 +526,17 @@ still shows older labels. Language Data never changes project data.
 2. Complete the QuickBMS setup in Section 5.
 3. Choose **File → Import From Wartales...**.
 
-The editor validates the standard installation and toolchain, extracts one
-valid CDB without changing `res.pak`, stores it at the durable path, and opens
-it:
+The editor automatically searches local Steam libraries for Wartales. If it
+cannot find the game, select the Wartales installation folder containing
+`Wartales.exe` and `res.pak`. You can change that selection later through
+**Tools → Wartales Location…**.
+
+The editor validates the selected installation and toolchain, extracts one
+valid CDB without changing `res.pak`, stores it in that installation's durable
+location, and opens it:
 
 ```text
-C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb
+<Wartales installation>\Extracted\data.cdb
 ```
 
 Existing Extracted data and unsaved work are protected by confirmation. Import
@@ -566,7 +576,7 @@ saved edited CDB if Export fails.
 Profiles:      <Documents>\Wartales Editor\Profiles\
 Language Data:<Documents>\Wartales Editor\Language Data\export.xml
 Golden CDB:   <Documents>\Wartales Editor\Golden CDB\data.cdb
-Imported CDB: C:\Program Files (x86)\Steam\steamapps\common\Wartales\Extracted\data.cdb
+Imported CDB: <Wartales installation>\Extracted\data.cdb
 QuickBMS:     <Desktop>\quickbms\quickbms.exe
 Shiro script: <Desktop>\quickbms\Shiro_Games_PAK_script.bms
 ```
@@ -599,8 +609,10 @@ workflow in Section 19 and record the Wartales build in any issue report.
 - **QuickBMS not found:** verify `<Desktop>\quickbms\quickbms.exe`.
 - **Script not found:** verify the exact upstream
   `Shiro_Games_PAK_script.bms` filename and location.
-- **Wartales not found:** integrated workflows require the standard Steam path;
-  manually Open an already extracted valid CDB if appropriate.
+- **Wartales not found:** select the Steam Wartales installation folder that
+  contains `Wartales.exe` and `res.pak`. Use **Tools → Wartales Location…** to
+  change the saved folder later. You can also manually Open an already extracted
+  valid CDB if appropriate.
 - **Permission/write failure:** use a user-writable save folder, extract the
   application fully, close Wartales for Export, and read the exact error.
 - **Language Data missing:** set valid `export_*.xml` or continue with raw IDs.
@@ -615,10 +627,10 @@ workflow in Section 19 and record the Wartales build in any issue report.
 ## 29. Supported and Unsupported Configurations
 
 The supported boundary is Section 2. Unsupported/unclaimed areas include
-non-Windows/non-x64 platforms, non-Steam or nonstandard integrated paths,
-unverified builds/toolchains, bundled external tools, automatic updates, an
-installer, arbitrary third-party combinations, guaranteed future
-compatibility, and certification of Golden as pristine.
+non-Windows/non-x64 platforms, non-Steam installations, unverified
+builds/toolchains, bundled external tools, automatic updates, an installer,
+arbitrary third-party combinations, guaranteed future compatibility, and
+certification of Golden as pristine.
 
 ## 30. Privacy and Offline Behavior
 

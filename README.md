@@ -40,17 +40,25 @@ validation, and lifecycle reconciliation before accepted commits.
 ## Supported Platform and Game Version
 
 Wartales Editor 1.0.0 supports **Windows 11 x64** and the **Steam version of
-Wartales installed at the standard path**
-`C:\Program Files (x86)\Steam\steamapps\common\Wartales`. Integrated Import and Export
-require the documented user-supplied QuickBMS toolchain. This release will be
-validated against the Wartales build recorded in the final release notes.
+Wartales**. It can automatically locate Wartales across Steam libraries. If
+automatic detection fails, select the Wartales installation folder containing
+`Wartales.exe` and `res.pak`; use **Tools → Wartales Location…** to change that
+selection later. Integrated Import and Export require the documented
+user-supplied QuickBMS toolchain.
 
-Validated Wartales build: **to be recorded during final release-candidate
-validation**.
+Validated with Wartales Steam BuildID **23361327**.
 
-Other operating systems, CPU architectures, stores, nonstandard Steam library
-paths, unverified Wartales builds, co-op behavior, and arbitrary third-party
-CDB combinations are not currently claimed as supported. Ordinary manual CDB
+Validated with QuickBMS **0.12.0** (SHA-256
+`FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`).
+
+Validated with `Shiro_Games_PAK_script.bms` **v0.2**, dated **10.03.2022**
+(SHA-256 `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
+
+Wartales Editor 1.0.0 was validated with this specific Wartales, QuickBMS, and
+Shiro script combination. Later game or toolchain updates may require renewed
+compatibility validation. Other operating systems, CPU architectures, stores,
+unverified Wartales builds, co-op behavior, and arbitrary third-party CDB
+combinations are not currently claimed as supported. Ordinary manual CDB
 editing outside this boundary may work, but it is not part of the verified
 integrated-support claim.
 
@@ -113,8 +121,8 @@ The current release expects:
 Obtain QuickBMS from [Luigi Auriemma's official QuickBMS site](https://aluigi.altervista.org/quickbms.htm).
 Obtain the script from the [upstream Bartlomiej Duda Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
 Avoid arbitrary repackaged binaries. Integrated Import and Export remain
-unavailable until both expected files exist. The exact versions validated for
-the final release will be listed in its release notes.
+unavailable until both expected files exist. The validated versions and hashes
+are recorded in **Supported Platform and Game Version** above.
 
 ## Profiles and Restore Previous Values
 

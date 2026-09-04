@@ -54,13 +54,17 @@ publish, path-privacy audit, package audit, Defender scans, extracted-package
 smoke validation, and clean-machine validation passed. Its immutable SHA-256 is
 `4607F2E1F33F17CCC4FA77ADACF07904B07D7622A72E0EE6AE3D3F976622F26E`.
 
-**Final publication-readiness review:** RELEASE BLOCKER. The immutable RC2
-`README.pdf` contains the unresolved “Validated Wartales build: to be recorded”
-placeholder inherited from the authoritative README. The final release notes also
-do not record the exact validated Wartales, QuickBMS, and Shiro script versions
-promised by the public documentation. RC2 must not be mutated, relabeled, tagged,
-or published. Correcting the public authorities/PDF and producing a new candidate
-require separate Project Owner authorization.
+**External version metadata:** CLOSED. Project Owner validation establishes
+Wartales Steam BuildID `23361327` as the game build used for accepted
+secondary-drive installation resolution, Import, QuickBMS prerequisite setup,
+Language Data, full-mod loading, new-game startup, and successful gameplay.
+The proven external toolchain is QuickBMS `0.12.0` (SHA-256
+`FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`) with
+`Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022 (SHA-256
+`3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
+The public authorities and review PDFs now record this exact combination. RC2
+remains immutable, rejected/superseded for publication, and must not be mutated,
+relabeled, tagged, or published. No fresh candidate has been generated.
 
 **Tag:** NOT CREATED. **GitHub Release:** NOT CREATED. **Nexus:** NOT AUTHORIZED;
 PENDING SEPARATE PROJECT OWNER DECISION.
@@ -82,8 +86,9 @@ RC2 is superseded for publication. No fresh candidate has been generated.
 - Free and MIT licensed.
 - Copyright © 2026 M. Tyler Spencer.
 - Released by TyTech Games.
-- Windows 11 x64 and Steam Wartales at the standard installation path.
-- Exact release-tested Wartales build only, recorded during final validation.
+- Windows 11 x64 and Steam Wartales across detected Steam libraries, with manual
+  installation-folder selection when needed.
+- Release-tested Wartales Steam BuildID `23361327`.
 - Self-contained, untrimmed, multi-file `win-x64` portable ZIP.
 - No installer, updater, single-file publish, trimming, or ReadyToRun.
 - Unsigned V1 with a published SHA-256 checksum.
@@ -294,8 +299,8 @@ Manual**. README links to it from a visible **Full User Manual** section. During
 packaging the authoritative Markdown is rendered and visually verified, then
 the accepted PDF is copied to ZIP root as `USER-GUIDE.pdf`. The Markdown remains
 the single editable source and is not independently forked into a second manual.
-The Quick Help documentation added after the earlier PDF review requires the
-final review PDF to be regenerated and visually checked before RC packaging.
+The Quick Help documentation added after the earlier PDF review is included in
+the regenerated and visually validated final review PDF for RC packaging.
 
 The manual contains all 37 required subjects: platform/install/first launch,
 QuickBMS setup, recommended workflow, Main Window, Profiles, every Gameplay
@@ -406,15 +411,17 @@ Use the actual future immutable release ZIP, never development output:
 
 ## Supported Version Recording
 
-After final clean-machine validation, record the exact accepted Wartales build,
-QuickBMS version, and Shiro script version in all four public authorities:
+The validated release combination is Wartales Steam BuildID `23361327`,
+QuickBMS `0.12.0`, and `Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022. The
+validated hashes are recorded in the public documents. Keep this exact
+combination consistent across all four public authorities:
 
 - Root `README.md` / packaged `README.pdf`.
 - `Docs/07_UserGuide.md` / packaged `USER-GUIDE.pdf`.
 - `Docs/CHANGELOG.md` or the final release notes source.
 - The GitHub Release body.
 
-Do not guess or prefill these values.
+Do not broaden the support claim to unvalidated later versions.
 
 ## Quick Help V1 Lifecycle
 
@@ -435,8 +442,8 @@ a command-local reentrancy guard. Run Speed retains its persisted identifiers
 and gameplay values while presenting the numerically ascending player-facing
 labels Vanilla, Fast, Faster, and Very Fast with distinct descriptions. Focused
 Engineering Review passed and Project Owner interactive acceptance passed for
-both corrections. Save Feedback and Run Speed Presentation are closed and ready
-for their commit checkpoint. These corrections have not produced a new release
+both corrections. Save Feedback and Run Speed Presentation are closed,
+committed, and pushed. These corrections have not produced a new release
 candidate.
 
 ## Exact Later Release Process
@@ -454,7 +461,8 @@ candidate.
 10. Generate the immutable ZIP SHA-256 file.
 11. Scan extracted staging and ZIP with updated Windows Defender.
 12. Perform the complete clean-machine validation plan.
-13. Record exact supported Wartales/toolchain versions in all authorities.
+13. Verify the recorded Wartales/toolchain versions remain consistent in all
+    authorities.
 14. Perform final release reconciliation and obtain Project Owner acceptance.
 15. Commit/push only the separately approved final source/document state.
 16. Create annotated/lightweight `v1.0.0` only as separately authorized.
@@ -479,11 +487,7 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Commit and push the accepted Save feedback and Run Speed presentation
-  corrections.
-- Record the exact validated Wartales, QuickBMS, and Shiro script versions in all
-  required public authorities.
-- Regenerate and visually review every affected public PDF.
+- Commit and push the reconciled public documentation after approval.
 - Produce and fully validate a new immutable release candidate without mutating
   or relabeling RC2.
 - Enable/configure GitHub Issues.

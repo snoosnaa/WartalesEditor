@@ -191,12 +191,10 @@ Planned features include:
 
 # Current Priorities
 
-1. Sanitize Git history in a separately authorized task.
-2. Define and verify the publish process.
-3. Create and scan the release candidate, publish its SHA-256 checksum, and
-   complete clean-machine validation.
-4. Record final supported Wartales/toolchain versions, tag `v1.0.0`, and publish
-   only when authorized.
+1. Commit and push the reconciled public documentation after approval.
+2. Generate and fully validate a fresh immutable release candidate.
+3. Configure GitHub Issues and complete final release review.
+4. Tag `v1.0.0` and publish only when separately authorized.
 
 ---
 

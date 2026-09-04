@@ -8,7 +8,8 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 # Version 1.0.0 — Public Release Preparation
 
-**Status:** Phase 1 complete; final package validation and publication pending
+**Status:** Public documentation complete; fresh package validation and
+publication pending
 
 ## User-facing release scope
 
@@ -24,6 +25,9 @@ The format is inspired by Keep a Changelog and adapted for this project.
 - Optional Language Data setup for localized Wartales names.
 - Safe QuickBMS Import From Wartales and directly verified Export Back to
   Wartales using an external, user-supplied toolchain.
+- Automatic Wartales discovery across Steam libraries, with a manual
+  installation-folder fallback and **Tools → Wartales Location…** for changing
+  the saved selection.
 
 ## Release preparation
 
@@ -34,10 +38,22 @@ The format is inspired by Keep a Changelog and adapted for this project.
   support boundaries, QuickBMS setup, export recovery, and portable removal.
 - Reconciled application and public metadata to version 1.0.0 and hardened
   repository ignore rules against proprietary game data and user-local state.
+- Added visible Save-in-progress feedback and corrected the player-facing Run
+  Speed preset ordering and descriptions without changing gameplay values.
+- Validated the full mod set and successful new-game play against Wartales Steam
+  BuildID 23361327 on a secondary-drive Steam installation.
 
-The self-contained release package, checksum, final supported Wartales/toolchain
-version record, clean-machine validation, tag, and public release publication
-remain pending. No package has been published by this entry.
+Validated toolchain: QuickBMS 0.12.0 (SHA-256
+`FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`) and
+`Shiro_Games_PAK_script.bms` v0.2, dated 10.03.2022 (SHA-256
+`3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
+Wartales Editor 1.0.0 was validated with this specific Wartales, QuickBMS, and
+Shiro script combination. Later game or toolchain updates may require renewed
+compatibility validation.
+
+A fresh self-contained release package, checksum, clean-machine validation,
+tag, and public release publication remain pending. No package has been
+published by this entry.
 
 ---
 

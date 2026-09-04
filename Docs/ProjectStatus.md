@@ -90,13 +90,18 @@ RC2 was generated from commit
 path-privacy, package, Defender, extracted-package smoke, and clean-machine
 validation passed. Its immutable ZIP SHA-256 is
 `4607F2E1F33F17CCC4FA77ADACF07904B07D7622A72E0EE6AE3D3F976622F26E`.
-Final publication-readiness review found one public-metadata blocker: packaged
-`README.pdf` still contains the unresolved validated-Wartales-build placeholder,
-and the final release notes do not record the exact validated Wartales, QuickBMS,
-and Shiro script versions promised by the public documentation. RC2 must not be
-published, relabeled, or mutated. Corrected public documents and a new candidate
-require separate authorization. No `v1.0.0` tag or GitHub Release exists; Nexus
-remains unauthorized pending a separate Project Owner decision.
+The public-metadata blocker found during final publication-readiness review is
+closed. Project Owner validation establishes Wartales Steam BuildID `23361327`
+as the build used for accepted secondary-drive installation resolution, Import,
+QuickBMS prerequisite setup, Language Data, full-mod loading, new-game startup,
+and successful gameplay. The proven toolchain is QuickBMS `0.12.0` (SHA-256
+`FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`) with
+`Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022 (SHA-256
+`3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
+The public authorities and review PDFs now record that exact combination. RC2
+remains immutable and superseded for publication. No `v1.0.0` tag or GitHub
+Release exists; Nexus remains unauthorized pending a separate Project Owner
+decision.
 
 Non-default Wartales installation support is implemented and locally verified.
 One shared resolver now supplies Import, Export Back to Wartales, Golden CDB
@@ -108,7 +113,8 @@ installation-resolution error presentation; operation-level error ownership and
 deterministic regression coverage were corrected, and the renewed Focused
 Engineering Review passed. Project Owner runtime acceptance passed on the
 secondary-drive Steam installation, including automatic Wartales discovery,
-Import, the QuickBMS prerequisite flow, User Guide access, and Language Data.
+Import, the QuickBMS prerequisite flow, User Guide access, Language Data,
+loading the full mod set, starting a new game, and successful gameplay.
 The QuickBMS-missing message now points players to the User Guide for detailed
 setup instructions. Wartales Installation Resolution is closed: implemented,
 reviewed, Project Owner accepted, committed, and pushed. RC2 is superseded for
@@ -123,8 +129,8 @@ Speed keeps every persisted identifier and exact gameplay value; only the
 player-facing mapping is corrected to Vanilla, Fast, Faster, Very Fast and each
 preset now has a distinct proportional description. Focused Engineering Review
 passed and Project Owner interactive acceptance passed for both corrections.
-Save Feedback and Run Speed Presentation are closed and ready for their commit
-checkpoint. No fresh release candidate has been generated.
+Save Feedback and Run Speed Presentation are closed, committed, and pushed. No
+fresh release candidate has been generated.
 
 Phase 2 is COMPLETE and closed: the exact publish process, package manifest,
 complete public User Manual, checksum and malware-scan procedures, clean-machine
@@ -140,9 +146,8 @@ launcher, single-instance lifecycle, and focused WPF/STA coverage completed
 Focused Engineering Review (**PASS**) and Project Owner Interactive Acceptance
 (**PASS**), including the footer correction and brief visual re-test. The final
 focused suite passes 41 checks and the Export/MainWindow suite passes 202/202.
-Exact supported Wartales/toolchain version recording, a corrected replacement
-candidate, GitHub Issues configuration, `v1.0.0`, the GitHub Release, and any
-separately authorized Nexus publication remain pending.
+A corrected replacement candidate, GitHub Issues configuration, `v1.0.0`, the
+GitHub Release, and any separately authorized Nexus publication remain pending.
 
 Request Board Rewards V1 completed investigation, approved design,
 implementation, focused Engineering Review (**PASS WITH NON-BLOCKING NOTES**),
@@ -891,12 +896,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Commit and push the accepted Save feedback and Run Speed presentation
-corrections, then determine the exact validated Wartales BuildID, QuickBMS
-version/hash, and Shiro script revision/hash. Public-document updates, PDF
-regeneration, and a fresh immutable release candidate remain separately
-authorized and have not been performed. RC2 remains immutable evidence and is
-superseded for publication. Tagging and publication remain pending.
+Commit and push the reconciled public metadata documentation, then generate and
+fully validate a fresh immutable release candidate from that final committed
+source. RC2 remains immutable evidence and is superseded for publication.
+Tagging and publication remain pending.
 
 Document Maintenance
 

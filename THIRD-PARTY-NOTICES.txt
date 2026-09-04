@@ -74,11 +74,11 @@ Import From Wartales and Export Back to Wartales workflows.
 
 Author: Luigi Auriemma
 Version validated during pre-release engineering: 0.12.0
+Validated SHA-256: FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948
 Upstream licensing: GNU General Public License version 2 (GPL-2.0)
 Trusted upstream source: https://aluigi.altervista.org/quickbms.htm
 
-Users must obtain QuickBMS themselves from the trusted upstream source. The
-final release notes will record the exact version validated for that release.
+Users must obtain QuickBMS themselves from the trusted upstream source.
 
 Shiro Games PAK QuickBMS script
 -------------------------------
@@ -95,6 +95,8 @@ Credits recorded by the script:
 - Applicable current contributors to the upstream Tools repository
 
 Version validated locally during pre-release engineering: v0.2
+Validated revision date: 10.03.2022
+Validated SHA-256: 3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6
 Version observed upstream during release preparation: v0.3
 Trusted upstream source:
 https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms
