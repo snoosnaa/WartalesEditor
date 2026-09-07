@@ -5,15 +5,12 @@ using Newtonsoft.Json.Linq;
 using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
+using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
 public sealed class EffectiveChangeCountService
 {
-    private const int UpgradeableEquipmentFlag = 128;
-
-    private readonly CampFacilityJsonBuilder campBuilder;
-
     public EffectiveChangeCountService()
         : this(new CampFacilityJsonBuilder())
     {
@@ -22,17 +19,14 @@ public sealed class EffectiveChangeCountService
     public EffectiveChangeCountService(
         CampFacilityJsonBuilder campBuilder)
     {
-        this.campBuilder = campBuilder
-            ?? throw new ArgumentNullException(
-                nameof(campBuilder));
+        ArgumentNullException.ThrowIfNull(campBuilder);
     }
 
     public int Calculate(ModProfileModel profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
 
-        HashSet<string> effectiveChanges =
-            profile.Snapshot.Categories
+        return profile.Snapshot.Categories
                 .SelectMany(category =>
                     category.Settings.SelectMany(setting =>
                         setting.Properties.Select(property =>
@@ -40,81 +34,87 @@ public sealed class EffectiveChangeCountService
                                 category.Name,
                                 setting.Id,
                                 GetPropertyIdentity(property)))))
-                .ToHashSet(StringComparer.Ordinal);
-
-        AddRandomTraitExclusionChanges(
-            profile.Snapshot,
-            effectiveChanges);
-
-        int count = effectiveChanges.Count;
-
-        foreach (ProfileOperationRequestModel request in
-                 profile.OperationRequests)
-        {
-            count += request.OperationId switch
-            {
-                ProfileOperationIds.AddCampFacilities =>
-                    campBuilder.GetEffectivePropertyChangeCount()
-                    - CountCampSnapshotOverlap(profile.Snapshot),
-
-                ProfileOperationIds.UpgradeAllEquipment =>
-                    UpgradeAllEquipmentTargetCatalog.Count
-                    - CountUpgradeSnapshotOverlap(profile.Snapshot),
-
-                ProfileOperationIds.RequestBoardRewards =>
-                    RequestBoardRewardsService.TargetDefinitions.Count
-                    - CountRequestBoardSnapshotOverlap(profile.Snapshot),
-
-                _ => 0
-            };
-        }
-
-        return Math.Max(0, count);
+                .Distinct(StringComparer.Ordinal)
+                .Count();
     }
 
-    private static void AddRandomTraitExclusionChanges(
-        ModificationSnapshotModel snapshot,
-        ISet<string> effectiveChanges)
+    public int Calculate(
+        ProjectModel targetProject,
+        ModProfileModel profile,
+        out bool isExact)
     {
-        GameplayOperationStateModel? state =
-            snapshot.GameplayOperationStates.SingleOrDefault(candidate =>
-                candidate.OperationType ==
-                ProgressionType.RandomTraitExclusions);
-        if (state == null)
+        ArgumentNullException.ThrowIfNull(targetProject);
+        ArgumentNullException.ThrowIfNull(profile);
+
+        GameplayStateObservation[] stateObservations =
+            CaptureStateObservations(targetProject.GameplayOperationStates);
+        ModificationSnapshotImportResultModel? result = null;
+        using IDisposable observationScope =
+            ProjectObservationSuppressionService.Suppress(targetProject);
+        try
         {
-            return;
+            result = new ModProfileWorkflowService().ApplyProfile(
+                targetProject,
+                profile);
+            isExact = true;
+            return Calculate(result.MutationResult);
         }
-
-        HashSet<string> allowed =
-            RandomTraitExclusionsService.ReadAllowedIds(state);
-
-        foreach (JObject baseline in
-                 state.BaselineArray.OfType<JObject>())
+        catch (ProjectRollbackIntegrityException)
         {
-            string? id = baseline.Value<string>("id");
-            string? baselineState = baseline.Value<string>("doneState");
-            if (string.IsNullOrWhiteSpace(id) ||
-                string.IsNullOrWhiteSpace(baselineState))
+            throw;
+        }
+        catch
+        {
+            isExact = false;
+            return Calculate(profile);
+        }
+        finally
+        {
+            ProjectRollbackIntegrityException? integrityFailure = null;
+            if (result?.MutationResult.WasModified == true)
             {
-                continue;
+                try
+                {
+                    new ProjectOperationTransactionService().Rollback(
+                        result.MutationResult);
+                }
+                catch (Exception rollbackException)
+                {
+                    integrityFailure =
+                        new ProjectRollbackIntegrityException(
+                            "Profile count evaluation completed, but its " +
+                            "temporary changes could not be fully rolled back.",
+                            new InvalidOperationException(
+                                "The profile evaluation completed before cleanup failed."),
+                            rollbackException);
+                }
             }
 
-            string expectedState = allowed.Contains(id)
-                ? string.Equals(
-                    baselineState,
-                    "Absent",
-                    StringComparison.Ordinal)
-                    ? "Absent"
-                    : "True"
-                : "False";
-
-            if (!string.Equals(
-                    baselineState,
-                    expectedState,
-                    StringComparison.Ordinal))
+            try
             {
-                effectiveChanges.Add(
-                    CreateIdentity("trait", id, "done"));
+                RestoreStateObservations(
+                    targetProject.GameplayOperationStates,
+                    stateObservations);
+            }
+            catch (Exception restorationException)
+            {
+                integrityFailure = integrityFailure == null
+                    ? new ProjectRollbackIntegrityException(
+                        "Profile count evaluation could not restore its " +
+                        "gameplay-state observations.",
+                        new InvalidOperationException(
+                            "Profile evaluation cleanup was incomplete."),
+                        restorationException)
+                    : new ProjectRollbackIntegrityException(
+                        "Profile count evaluation encountered more than one " +
+                        "cleanup-integrity failure.",
+                        integrityFailure,
+                        restorationException);
+            }
+
+            if (integrityFailure != null)
+            {
+                throw integrityFailure;
             }
         }
     }
@@ -235,157 +235,6 @@ public sealed class EffectiveChangeCountService
         }
     }
 
-    private int CountCampSnapshotOverlap(
-        ModificationSnapshotModel snapshot)
-    {
-        return CountFacilityOverlap(
-                   snapshot,
-                   "Anvil",
-                   campBuilder.BuildAnvilProps(
-                       new JObject()),
-                   campBuilder.BuildAnvilTool(),
-                   campBuilder.BuildAnvilIcon())
-               +
-               CountFacilityOverlap(
-                   snapshot,
-                   "ApothecaryTable",
-                   campBuilder.BuildApothecaryProps(
-                       new JObject()),
-                   campBuilder.BuildApothecaryTool(),
-                   campBuilder.BuildApothecaryIcon());
-    }
-
-    private static int CountFacilityOverlap(
-        ModificationSnapshotModel snapshot,
-        string entryId,
-        JObject props,
-        JObject tool,
-        JObject icon)
-    {
-        Dictionary<string, JToken> ownedValues =
-            new(StringComparer.Ordinal)
-            {
-                ["props.model"] = props["model"]!.DeepClone(),
-                ["props.bonuses"] = props["bonuses"]!.DeepClone()
-            };
-
-        AddValues("tool", tool, ownedValues);
-        AddValues("icon", icon, ownedValues);
-
-        ModificationSnapshotSettingModel? setting =
-            FindItemSetting(snapshot, entryId);
-
-        return setting?.Properties
-            .Where(property =>
-                ownedValues.TryGetValue(
-                    GetPropertyIdentity(property),
-                    out JToken? expected)
-                &&
-                JToken.DeepEquals(
-                    property.CurrentValue,
-                    expected))
-            .Select(GetPropertyIdentity)
-            .Distinct(StringComparer.Ordinal)
-            .Count()
-            ?? 0;
-    }
-
-    private static void AddValues(
-        string parentPath,
-        JObject source,
-        IDictionary<string, JToken> values)
-    {
-        foreach (JProperty property in source.Properties())
-        {
-            values[$"{parentPath}.{property.Name}"] =
-                property.Value.DeepClone();
-        }
-    }
-
-    private static int CountUpgradeSnapshotOverlap(
-        ModificationSnapshotModel snapshot)
-    {
-        ModificationSnapshotCategoryModel? itemCategory =
-            snapshot.Categories.FirstOrDefault(category =>
-                string.Equals(
-                    category.Name,
-                    "item",
-                    StringComparison.Ordinal));
-
-        if (itemCategory == null)
-        {
-            return 0;
-        }
-
-        return itemCategory.Settings
-            .Where(setting =>
-                UpgradeAllEquipmentTargetCatalog.Contains(
-                    setting.Id))
-            .SelectMany(setting => setting.Properties
-                .Where(IsUpgradeOwnedFlagChange)
-                .Select(property => CreateIdentity(
-                    "item",
-                    setting.Id,
-                    GetPropertyIdentity(property))))
-            .Distinct(StringComparer.Ordinal)
-            .Count();
-    }
-
-    private static int CountRequestBoardSnapshotOverlap(
-        ModificationSnapshotModel snapshot)
-    {
-        ModificationSnapshotCategoryModel? category =
-            snapshot.Categories.FirstOrDefault(candidate =>
-                string.Equals(
-                    candidate.Name,
-                    "constant",
-                    StringComparison.Ordinal));
-        if (category == null)
-            return 0;
-
-        HashSet<string> entryIds =
-            RequestBoardRewardsService.TargetDefinitions
-                .Select(target => target.EntryId)
-                .ToHashSet(StringComparer.Ordinal);
-        return category.Settings
-            .Where(setting => entryIds.Contains(setting.Id))
-            .SelectMany(setting => setting.Properties)
-            .Count(property => string.Equals(
-                GetPropertyIdentity(property),
-                RequestBoardRewardsService.PropertyPath,
-                StringComparison.Ordinal));
-    }
-
-    private static bool IsUpgradeOwnedFlagChange(
-        ModificationSnapshotPropertyModel property)
-    {
-        if (!string.Equals(
-                property.Name,
-                "flags",
-                StringComparison.Ordinal)
-            ||
-            !string.Equals(
-                property.PropertyPath,
-                "props.flags",
-                StringComparison.Ordinal)
-            ||
-            property.CurrentValue.Type != JTokenType.Integer
-            ||
-            property.OriginalValue.Type is not
-                (JTokenType.Integer or JTokenType.Null))
-        {
-            return false;
-        }
-
-        int originalFlags =
-            property.OriginalValue.Type == JTokenType.Integer
-                ? property.OriginalValue.Value<int>()
-                : 0;
-
-        return property.CurrentValue.Value<int>() ==
-               (originalFlags | UpgradeableEquipmentFlag);
-    }
-
     private static string GetPropertyIdentity(
         ModificationSnapshotPropertyModel property) =>
         string.IsNullOrWhiteSpace(property.PropertyPath)
@@ -398,22 +247,53 @@ public sealed class EffectiveChangeCountService
         string propertyPath) =>
         $"{categoryName}\u001f{settingId}\u001f{propertyPath}";
 
-    private static ModificationSnapshotSettingModel?
-        FindItemSetting(
-            ModificationSnapshotModel snapshot,
-            string entryId)
+    private static GameplayStateObservation[] CaptureStateObservations(
+        IEnumerable<GameplayOperationStateModel> states) =>
+        states.Select(state => new GameplayStateObservation(
+                state.OperationType,
+                state.IsCompatible,
+                state.CompatibilityMessage,
+                state.PersistedStateFingerprint))
+            .ToArray();
+
+    private static void RestoreStateObservations(
+        System.Collections.ObjectModel.ObservableCollection<
+            GameplayOperationStateModel> states,
+        IReadOnlyList<GameplayStateObservation> observations)
     {
-        return snapshot.Categories
-            .FirstOrDefault(category =>
-                string.Equals(
-                    category.Name,
-                    "item",
-                    StringComparison.Ordinal))
-            ?.Settings
-            .FirstOrDefault(setting =>
-                string.Equals(
-                    setting.Id,
-                    entryId,
-                    StringComparison.Ordinal));
+        if (states.Count != observations.Count)
+        {
+            throw new InvalidOperationException(
+                "Profile count evaluation did not restore gameplay state.");
+        }
+
+        for (int targetIndex = 0;
+             targetIndex < observations.Count;
+             targetIndex++)
+        {
+            GameplayStateObservation observation = observations[targetIndex];
+            int currentIndex = states
+                .Select((state, index) => (state, index))
+                .Single(pair =>
+                    pair.state.OperationType == observation.OperationType)
+                .index;
+            if (currentIndex != targetIndex)
+            {
+                states.Move(currentIndex, targetIndex);
+            }
+
+            GameplayOperationStateModel state = states[targetIndex];
+            state.IsCompatible = observation.IsCompatible;
+            state.CompatibilityMessage = observation.CompatibilityMessage;
+            state.PersistedStateFingerprint =
+                observation.PersistedStateFingerprint;
+        }
     }
+
+    private sealed record GameplayStateObservation(
+        ProgressionType OperationType,
+        bool IsCompatible,
+        string CompatibilityMessage,
+        string PersistedStateFingerprint);
+
 }

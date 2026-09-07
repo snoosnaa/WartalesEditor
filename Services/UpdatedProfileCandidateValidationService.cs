@@ -51,7 +51,7 @@ public sealed class UpdatedProfileCandidateValidationService
         ArgumentNullException.ThrowIfNull(candidate);
 
         ValidateMetadata(existingProfile, candidate);
-        stateService.ValidateProjectStates(intendedProject);
+        stateService.ValidateProjectStatesReadOnly(intendedProject);
 
         ModificationSnapshotModel currentDelta =
             snapshotService.CreateSnapshot(
@@ -59,15 +59,32 @@ public sealed class UpdatedProfileCandidateValidationService
                 candidate.Snapshot.EditorVersion);
         IReadOnlyList<ProfileOperationRequestModel> currentRequests =
             operationCaptureService.Capture(intendedProject, currentDelta);
+        IReadOnlyList<ProfileOperationRequestModel> expectedRequests =
+            operationCaptureService.ReconcileForUpdate(
+                intendedProject,
+                existingProfile,
+                currentRequests);
+        operationCaptureService.ValidateNoUnresolvedOwnedLeafConflicts(
+            intendedProject,
+            currentDelta,
+            expectedRequests);
+        operationCaptureService.FilterOwnedLeavesForUpdate(
+            intendedProject,
+            currentDelta,
+            expectedRequests);
 
-        ValidateSnapshotMetadata(intendedProject, currentDelta, candidate.Snapshot);
+        ValidateSnapshotMetadata(
+            intendedProject,
+            currentDelta,
+            candidate);
         ValidateOperationStates(intendedProject, currentDelta, candidate.Snapshot);
-        ValidateOperationRequests(currentRequests, candidate.OperationRequests);
+        ValidateOperationRequests(expectedRequests, candidate.OperationRequests);
         ValidateProperties(
             intendedProject,
             existingProfile.Snapshot,
             currentDelta,
-            candidate.Snapshot);
+            candidate.Snapshot,
+            expectedRequests);
     }
 
     private static void ValidateMetadata(
@@ -98,8 +115,9 @@ public sealed class UpdatedProfileCandidateValidationService
     private static void ValidateSnapshotMetadata(
         ProjectModel intendedProject,
         ModificationSnapshotModel currentDelta,
-        ModificationSnapshotModel candidate)
+        ModProfileModel candidateProfile)
     {
+        ModificationSnapshotModel candidate = candidateProfile.Snapshot;
         string expectedSourceFile = string.IsNullOrWhiteSpace(intendedProject.FileName)
             ? string.Empty
             : Path.GetFileName(intendedProject.FileName);
@@ -107,7 +125,15 @@ public sealed class UpdatedProfileCandidateValidationService
         if (candidate.FormatVersion != currentDelta.FormatVersion ||
             !string.Equals(candidate.SourceFileName, expectedSourceFile, StringComparison.Ordinal) ||
             !string.Equals(candidate.EditorVersion, currentDelta.EditorVersion, StringComparison.Ordinal) ||
-            !string.Equals(candidate.GameVersion, currentDelta.GameVersion, StringComparison.Ordinal))
+            !string.Equals(candidate.GameVersion, currentDelta.GameVersion, StringComparison.Ordinal) ||
+            !string.Equals(
+                candidate.SourceCdbGenerationIdentity,
+                intendedProject.SourceCdbGenerationIdentity,
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                candidateProfile.SourceCdbGenerationIdentity,
+                intendedProject.SourceCdbGenerationIdentity,
+                StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 "The updated profile snapshot metadata does not match the current project.");
@@ -188,7 +214,8 @@ public sealed class UpdatedProfileCandidateValidationService
         ProjectModel project,
         ModificationSnapshotModel previousSnapshot,
         ModificationSnapshotModel currentDelta,
-        ModificationSnapshotModel candidateSnapshot)
+        ModificationSnapshotModel candidateSnapshot,
+        IReadOnlyList<ProfileOperationRequestModel> expectedRequests)
     {
         Dictionary<string, ModificationSnapshotPropertyModel> candidate =
             CreateCandidatePropertyMap(candidateSnapshot);
@@ -202,6 +229,16 @@ public sealed class UpdatedProfileCandidateValidationService
                   ModificationSnapshotPropertyModel property) in
                  EnumerateProperties(previousSnapshot))
         {
+            if (operationCaptureService.IsOwnedLeafForUpdate(
+                    project,
+                    category.Name,
+                    setting.Id,
+                    property,
+                    expectedRequests))
+            {
+                continue;
+            }
+
             EntryModel? liveEntry = FindEntry(project, category.Name, setting.Id);
             SnapshotPropertyResolutionResult resolution = liveEntry == null
                 ? new SnapshotPropertyResolutionResult(

@@ -2,6 +2,8 @@
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 
 namespace WartalesEditor.Services;
@@ -15,20 +17,39 @@ public sealed class ModProfileSerializationService
     private readonly ModificationSnapshotSerializationService
         snapshotSerializationService;
 
+    private readonly ProfileOperationIntentRegistry
+        intentRegistry;
+
     public ModProfileSerializationService()
         : this(
-            new ModificationSnapshotSerializationService())
+            new ModificationSnapshotSerializationService(),
+            new ProfileOperationIntentRegistry())
     {
     }
 
     public ModProfileSerializationService(
         ModificationSnapshotSerializationService
             snapshotSerializationService)
+        : this(
+            snapshotSerializationService,
+            new ProfileOperationIntentRegistry())
+    {
+    }
+
+    public ModProfileSerializationService(
+        ModificationSnapshotSerializationService
+            snapshotSerializationService,
+        ProfileOperationIntentRegistry intentRegistry)
     {
         this.snapshotSerializationService =
             snapshotSerializationService
             ?? throw new ArgumentNullException(
                 nameof(snapshotSerializationService));
+
+        this.intentRegistry =
+            intentRegistry
+            ?? throw new ArgumentNullException(
+                nameof(intentRegistry));
     }
 
     public string Serialize(
@@ -328,7 +349,7 @@ public sealed class ModProfileSerializationService
         try
         {
             if (profile.FormatVersion <
-                ModProfileFormat.CurrentVersion)
+                ModProfileFormat.ProvenanceVersion)
             {
                 snapshotSerializationService.ValidateCompatibleSnapshot(
                     profile.Snapshot);
@@ -350,7 +371,7 @@ public sealed class ModProfileSerializationService
         }
     }
 
-    private static void ValidateOperationRequests(
+    private void ValidateOperationRequests(
         ModProfileModel profile)
     {
         if (profile.OperationRequests == null)
@@ -367,71 +388,93 @@ public sealed class ModProfileSerializationService
                 "Version 1 profiles cannot contain gameplay-tool requests.");
         }
 
-        System.Collections.Generic.HashSet<string> operationIds =
+        Dictionary<string, ProfileOperationRequestModel> requestsById =
             new(StringComparer.Ordinal);
 
         foreach (ProfileOperationRequestModel request in
                  profile.OperationRequests)
         {
-            if (request == null ||
-                request.FormatVersion !=
-                    ProfileOperationRequestModel
-                        .CurrentFormatVersion ||
-                string.IsNullOrWhiteSpace(
-                    request.OperationId))
+            if (request == null)
             {
                 throw new ModProfileSerializationException(
                     "The mod profile contains an invalid " +
                     "gameplay-tool request.");
             }
 
-            if (request.OperationId is not
-                (ProfileOperationIds.AddCampFacilities or
-                 ProfileOperationIds.UpgradeAllEquipment or
-                 ProfileOperationIds.RequestBoardRewards))
+            try
+            {
+                intentRegistry.ValidateRequest(
+                    request,
+                    profile.FormatVersion);
+            }
+            catch (Exception exception)
+                when (exception is InvalidOperationException
+                      or ArgumentException
+                      or OverflowException
+                      or FormatException)
             {
                 throw new ModProfileSerializationException(
-                    $"The profile requests an unsupported gameplay " +
-                    $"tool '{request.OperationId}'.");
+                    $"The profile contains an invalid gameplay-tool " +
+                    $"request: {exception.Message}",
+                    exception);
             }
 
-            if (request.OperationId ==
-                ProfileOperationIds.RequestBoardRewards)
-            {
-                if (request.Settings?["percentage"]?.Type !=
-                        Newtonsoft.Json.Linq.JTokenType.Integer ||
-                    request.Settings.Properties().Count() != 1)
-                {
-                    throw new ModProfileSerializationException(
-                        "The Request Board Rewards profile preset is invalid.");
-                }
-
-                try
-                {
-                    RequestBoardRewardsService.ValidateProfilePercentage(
-                        request.Settings["percentage"]!.ToObject<int>());
-                }
-                catch (Exception exception)
-                {
-                    throw new ModProfileSerializationException(
-                        "The Request Board Rewards profile preset is invalid.",
-                        exception);
-                }
-            }
-            else if (request.Settings != null &&
-                     request.Settings.HasValues)
-            {
-                throw new ModProfileSerializationException(
-                    $"The gameplay tool '{request.OperationId}' " +
-                    "does not support saved settings.");
-            }
-
-            if (!operationIds.Add(
-                    request.OperationId))
+            if (!requestsById.TryAdd(request.OperationId, request))
             {
                 throw new ModProfileSerializationException(
                     $"The profile contains more than one request " +
                     $"for gameplay tool '{request.OperationId}'.");
+            }
+        }
+
+        if (profile.FormatVersion >=
+            ModProfileFormat.ProfileOperationIntentVersion)
+        {
+            ValidateStateIntentConsistency(
+                profile,
+                requestsById);
+        }
+    }
+
+    private void ValidateStateIntentConsistency(
+        ModProfileModel profile,
+        IReadOnlyDictionary<string, ProfileOperationRequestModel>
+            requestsById)
+    {
+        HashSet<ProgressionType> stateTypes = new();
+        foreach (GameplayOperationStateModel state in
+                 profile.Snapshot.GameplayOperationStates)
+        {
+            if (!stateTypes.Add(state.OperationType))
+            {
+                throw new ModProfileSerializationException(
+                    $"The profile contains more than one gameplay state " +
+                    $"for '{state.OperationType}'.");
+            }
+
+            if (!intentRegistry.TryProjectLegacyIntent(
+                    state,
+                    out ProfileOperationRequestModel? projected,
+                    out string error))
+            {
+                throw new ModProfileSerializationException(error);
+            }
+
+            if (projected == null)
+            {
+                continue;
+            }
+
+            if (!requestsById.TryGetValue(
+                    projected.OperationId,
+                    out ProfileOperationRequestModel? explicitIntent) ||
+                !JToken.DeepEquals(
+                    projected.Settings,
+                    explicitIntent.Settings))
+            {
+                throw new ModProfileSerializationException(
+                    $"Profile intent '{projected.OperationId}' does not " +
+                    "match its retained gameplay state.");
             }
         }
     }

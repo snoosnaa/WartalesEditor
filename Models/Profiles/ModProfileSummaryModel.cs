@@ -40,6 +40,41 @@ public sealed class ModProfileSummaryModel
 
     public int EffectiveChangeCount { get; init; }
 
+    public bool IsEffectiveChangeCountExact { get; init; }
+
+    public string ChangeSummaryText
+    {
+        get
+        {
+            if (IsEffectiveChangeCountExact)
+            {
+                return EffectiveChangeCount == 1
+                    ? "1 change"
+                    : $"{EffectiveChangeCount:N0} changes";
+            }
+
+            string propertyText = EffectiveChangeCount == 1
+                ? "1 property change"
+                : $"{EffectiveChangeCount:N0} property changes";
+            string operationText = OperationCount == 1
+                ? "1 gameplay setting"
+                : $"{OperationCount:N0} gameplay settings";
+
+            if (EffectiveChangeCount == 0)
+            {
+                return operationText;
+            }
+
+            if (OperationCount == 0)
+            {
+                return propertyText;
+            }
+
+            return $"{propertyText} + {operationText}";
+        }
+    }
+
     public bool HasChanges =>
-        EffectiveChangeCount > 0;
+        EffectiveChangeCount > 0 ||
+        OperationCount > 0;
 }

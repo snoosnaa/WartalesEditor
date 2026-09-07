@@ -18,6 +18,10 @@ public sealed class ProfileOperationCaptureService
     private readonly AddCampFacilitiesOperation addCampOperation;
     private readonly UpgradeAllEquipmentOperation upgradeOperation;
     private readonly CampFacilityJsonBuilder campBuilder;
+    private readonly ProfileOperationIntentRegistry intentRegistry;
+    private readonly ProfileOperationReplayService replayService = new();
+    private readonly GameplayOperationStateService stateService = new();
+    private readonly CdbGenerationIdentityService identityService = new();
 
     public static ProfileOperationCaptureService CreateDefault()
     {
@@ -38,7 +42,8 @@ public sealed class ProfileOperationCaptureService
             validatorProvider,
             addCampOperation,
             upgradeOperation,
-            new CampFacilityJsonBuilder())
+            new CampFacilityJsonBuilder(),
+            new ProfileOperationIntentRegistry())
     {
     }
 
@@ -47,6 +52,21 @@ public sealed class ProfileOperationCaptureService
         AddCampFacilitiesOperation addCampOperation,
         UpgradeAllEquipmentOperation upgradeOperation,
         CampFacilityJsonBuilder campBuilder)
+        : this(
+            validatorProvider,
+            addCampOperation,
+            upgradeOperation,
+            campBuilder,
+            new ProfileOperationIntentRegistry())
+    {
+    }
+
+    public ProfileOperationCaptureService(
+        IOperationValidatorProvider validatorProvider,
+        AddCampFacilitiesOperation addCampOperation,
+        UpgradeAllEquipmentOperation upgradeOperation,
+        CampFacilityJsonBuilder campBuilder,
+        ProfileOperationIntentRegistry intentRegistry)
     {
         this.validatorProvider = validatorProvider
             ?? throw new ArgumentNullException(
@@ -60,6 +80,9 @@ public sealed class ProfileOperationCaptureService
         this.campBuilder = campBuilder
             ?? throw new ArgumentNullException(
                 nameof(campBuilder));
+        this.intentRegistry = intentRegistry
+            ?? throw new ArgumentNullException(
+                nameof(intentRegistry));
     }
 
     public IReadOnlyList<ProfileOperationRequestModel> Capture(
@@ -87,22 +110,387 @@ public sealed class ProfileOperationCaptureService
             FilterUpgradeProperties(snapshot);
         }
 
-        if (RequestBoardRewardsService.TryGetProfilePercentage(
-                project,
-                out int requestBoardPercentage))
+        CaptureStatefulIntents(
+            project,
+            snapshot,
+            requests);
+
+        RemoveEmptySnapshotContainers(snapshot);
+        return requests
+            .OrderBy(
+                request => request.OperationId,
+                StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    internal IReadOnlyList<ProfileOperationRequestModel>
+        ReconcileForUpdate(
+            ProjectModel project,
+            ModProfileModel existingProfile,
+            IReadOnlyList<ProfileOperationRequestModel> currentRequests)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(existingProfile);
+        ArgumentNullException.ThrowIfNull(currentRequests);
+
+        Dictionary<string, ProfileOperationRequestModel> reconciled =
+            GetExistingRequests(existingProfile);
+        Dictionary<string, ProfileOperationRequestModel> current =
+            currentRequests.ToDictionary(
+                request => request.OperationId,
+                CloneRequest,
+                StringComparer.Ordinal);
+        HashSet<string> observedStateful =
+            GetAuthoritativeStateOperationIds(project);
+
+        foreach (string operationId in observedStateful)
         {
-            requests.Add(
-                CreateRequest(
-                    ProfileOperationIds.RequestBoardRewards,
-                    new JObject
-                    {
-                        ["percentage"] = requestBoardPercentage
-                    }));
-            FilterRequestBoardRewards(snapshot);
+            if (!current.ContainsKey(operationId))
+            {
+                reconciled.Remove(operationId);
+            }
+        }
+
+        foreach ((string operationId, ProfileOperationRequestModel request)
+                 in current)
+        {
+            reconciled[operationId] = request;
+        }
+
+        return reconciled.Values
+            .OrderBy(request => request.OperationId, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    internal void FilterOwnedLeavesForUpdate(
+        ProjectModel project,
+        ModificationSnapshotModel snapshot,
+        IReadOnlyList<ProfileOperationRequestModel> requests)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(requests);
+
+        foreach (GameplayOperationStateModel state in
+                 GetAuthoritativeStates(project))
+        {
+            RemoveOwnedLeaves(
+                snapshot,
+                replayService.GetOwnedSnapshotLeaves(project, state));
+        }
+
+        foreach (ProfileOperationRequestModel request in requests)
+        {
+            ProgressionType? type = intentRegistry.GetOperationType(
+                request.OperationId);
+            if (type != null)
+            {
+                RemoveOwnedLeaves(
+                    snapshot,
+                    replayService.GetOwnedSnapshotLeaves(project, request));
+            }
+        }
+
+        if (requests.Any(request => request.OperationId ==
+                ProfileOperationIds.AddCampFacilities))
+        {
+            FilterAddCampProperties(project, snapshot);
+        }
+
+        if (requests.Any(request => request.OperationId ==
+                ProfileOperationIds.UpgradeAllEquipment))
+        {
+            FilterUpgradeProperties(snapshot);
         }
 
         RemoveEmptySnapshotContainers(snapshot);
+    }
+
+    internal void ValidateNoUnresolvedOwnedLeafConflicts(
+        ProjectModel project,
+        ModificationSnapshotModel currentDelta,
+        IReadOnlyList<ProfileOperationRequestModel> reconciledRequests)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(currentDelta);
+        ArgumentNullException.ThrowIfNull(reconciledRequests);
+
+        HashSet<string> authoritativeOperationIds =
+            GetAuthoritativeStateOperationIds(project);
+
+        foreach (ProfileOperationRequestModel request in
+                 reconciledRequests)
+        {
+            ProgressionType? type = intentRegistry.GetOperationType(
+                request.OperationId);
+            if (type == null ||
+                authoritativeOperationIds.Contains(request.OperationId))
+            {
+                continue;
+            }
+
+            HashSet<ProfileOwnedSnapshotLeaf> owned = replayService
+                .GetOwnedSnapshotLeaves(project, request)
+                .ToHashSet();
+            ProfileOwnedSnapshotLeaf[] conflicts = currentDelta.Categories
+                .SelectMany(category => category.Settings.SelectMany(setting =>
+                    setting.Properties.Select(property =>
+                        new ProfileOwnedSnapshotLeaf(
+                            category.Name,
+                            setting.Id,
+                            GetPropertyIdentity(property)))))
+                .Where(owned.Contains)
+                .OrderBy(leaf => leaf.SheetName, StringComparer.Ordinal)
+                .ThenBy(leaf => leaf.EntryId, StringComparer.Ordinal)
+                .ThenBy(leaf => leaf.PropertyPath, StringComparer.Ordinal)
+                .ToArray();
+
+            if (conflicts.Length == 0)
+            {
+                continue;
+            }
+
+            string featureName = replayService.GetDisplayName(request);
+            throw new InvalidOperationException(
+                $"{featureName} cannot be reconciled because current " +
+                "direct edits overlap values controlled by that " +
+                $"gameplay setting. Open {featureName} and apply the intended " +
+                "setting, restore its previous values, or undo the " +
+                "direct edits before updating this profile.");
+        }
+    }
+
+    internal bool IsOwnedLeafForUpdate(
+        ProjectModel project,
+        string sheetName,
+        string entryId,
+        ModificationSnapshotPropertyModel property,
+        IReadOnlyList<ProfileOperationRequestModel> requests)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+
+        ModificationSnapshotModel probe = new()
+        {
+            Categories = new()
+            {
+                new ModificationSnapshotCategoryModel
+                {
+                    Name = sheetName,
+                    Settings = new()
+                    {
+                        new ModificationSnapshotSettingModel
+                        {
+                            Id = entryId,
+                            Properties = new()
+                            {
+                                new ModificationSnapshotPropertyModel
+                                {
+                                    Name = property.Name,
+                                    PropertyPath = property.PropertyPath,
+                                    OriginalPropertyExisted =
+                                        property.OriginalPropertyExisted,
+                                    OriginalValue =
+                                        property.OriginalValue.DeepClone(),
+                                    CurrentValue =
+                                        property.CurrentValue.DeepClone()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        FilterOwnedLeavesForUpdate(project, probe, requests);
+        return probe.Categories.Count == 0;
+    }
+
+    private void CaptureStatefulIntents(
+        ProjectModel project,
+        ModificationSnapshotModel snapshot,
+        ICollection<ProfileOperationRequestModel> requests)
+    {
+        HashSet<string> operationIds = requests
+            .Select(request => request.OperationId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        snapshot.GameplayOperationStates.Clear();
+
+        foreach (GameplayOperationStateModel state in
+                 GetAuthoritativeStates(project)
+                     .OrderBy(state => state.OperationType))
+        {
+            RemoveOwnedLeaves(
+                snapshot,
+                replayService.GetOwnedSnapshotLeaves(project, state));
+
+            if (!IsEffectiveState(state))
+            {
+                continue;
+            }
+
+            if (!intentRegistry.TryProjectLegacyIntent(
+                    state,
+                    out ProfileOperationRequestModel? intent,
+                    out string error))
+            {
+                throw new InvalidOperationException(error);
+            }
+
+            if (intent == null)
+            {
+                throw new InvalidOperationException(
+                    $"Gameplay state '{state.OperationType}' represents " +
+                    "an effective outcome but has no canonical profile intent.");
+            }
+
+            if (!operationIds.Add(intent.OperationId))
+            {
+                throw new InvalidOperationException(
+                    $"The current project contains more than one " +
+                    $"profile intent for '{intent.OperationId}'.");
+            }
+
+            requests.Add(intent);
+
+            if (CanRetainExactSourceState(project, state))
+            {
+                GameplayOperationStateModel retained = state.DeepClone();
+                retained.LocalRestoreContentIdentity = string.Empty;
+                snapshot.GameplayOperationStates.Add(retained);
+            }
+        }
+    }
+
+    private Dictionary<string, ProfileOperationRequestModel>
+        GetExistingRequests(ModProfileModel profile)
+    {
+        Dictionary<string, ProfileOperationRequestModel> requests =
+            new(StringComparer.Ordinal);
+
+        foreach (ProfileOperationRequestModel request in
+                 profile.OperationRequests)
+        {
+            intentRegistry.ValidateRequest(request, profile.FormatVersion);
+            if (!requests.TryAdd(request.OperationId, CloneRequest(request)))
+            {
+                throw new InvalidOperationException(
+                    $"The selected profile contains more than one request " +
+                    $"for '{request.OperationId}'.");
+            }
+        }
+
+        if (profile.FormatVersion >=
+            ModProfileFormat.ProfileOperationIntentVersion)
+        {
+            return requests;
+        }
+
+        foreach (GameplayOperationStateModel state in
+                 profile.Snapshot.GameplayOperationStates)
+        {
+            if (!intentRegistry.TryProjectLegacyIntent(
+                    state,
+                    out ProfileOperationRequestModel? projected,
+                    out string error))
+            {
+                throw new InvalidOperationException(error);
+            }
+
+            if (projected == null)
+            {
+                continue;
+            }
+
+            if (requests.TryGetValue(
+                    projected.OperationId,
+                    out ProfileOperationRequestModel? existing))
+            {
+                if (!JToken.DeepEquals(existing.Settings, projected.Settings))
+                {
+                    throw new InvalidOperationException(
+                        $"Legacy profile intent '{projected.OperationId}' " +
+                        "is ambiguous.");
+                }
+
+                continue;
+            }
+
+            requests.Add(projected.OperationId, CloneRequest(projected));
+        }
+
         return requests;
+    }
+
+    private HashSet<string> GetAuthoritativeStateOperationIds(
+        ProjectModel project) => GetAuthoritativeStates(project)
+        .Select(state => intentRegistry.GetOperationId(state.OperationType))
+        .ToHashSet(StringComparer.Ordinal);
+
+    private IReadOnlyList<GameplayOperationStateModel>
+        GetAuthoritativeStates(ProjectModel project)
+    {
+        List<GameplayOperationStateModel> states = new();
+
+        foreach (GameplayOperationStateModel state in
+                 project.GameplayOperationStates)
+        {
+            GameplayOperationStateModel validated = state.DeepClone();
+            stateService.ValidateState(project, validated);
+            if (!validated.IsCompatible ||
+                !stateService.HasRestoreAuthority(project, state))
+            {
+                continue;
+            }
+
+            states.Add(validated);
+        }
+
+        return states;
+    }
+
+    private bool CanRetainExactSourceState(
+        ProjectModel project,
+        GameplayOperationStateModel state) =>
+        project.SourceProvenanceStatus == SourceProvenanceStatus.Verified &&
+        identityService.IsValid(project.SourceCdbGenerationIdentity) &&
+        identityService.AreEqual(
+            project.SourceCdbGenerationIdentity,
+            state.ProjectCompatibilityIdentity);
+
+    private static bool IsEffectiveState(
+        GameplayOperationStateModel state) =>
+        !string.Equals(
+            state.BaselineFingerprint,
+            state.ExpectedCurrentFingerprint,
+            StringComparison.Ordinal);
+
+    private static ProfileOperationRequestModel CloneRequest(
+        ProfileOperationRequestModel request) => new()
+    {
+        FormatVersion = request.FormatVersion,
+        OperationId = request.OperationId,
+        Settings = (JObject?)request.Settings?.DeepClone()
+    };
+
+    private static void RemoveOwnedLeaves(
+        ModificationSnapshotModel snapshot,
+        IEnumerable<ProfileOwnedSnapshotLeaf> leaves)
+    {
+        HashSet<ProfileOwnedSnapshotLeaf> owned = leaves.ToHashSet();
+        foreach (ModificationSnapshotCategoryModel category in
+                 snapshot.Categories)
+        {
+            foreach (ModificationSnapshotSettingModel setting in
+                     category.Settings)
+            {
+                setting.Properties.RemoveAll(property => owned.Contains(
+                    new ProfileOwnedSnapshotLeaf(
+                        category.Name,
+                        setting.Id,
+                        GetPropertyIdentity(property))));
+            }
+        }
     }
 
     private bool IsApplied(
@@ -342,6 +730,35 @@ public sealed class ProfileOperationCaptureService
 
         return property.CurrentValue.Value<int>() ==
                (originalFlags | UpgradeableEquipmentFlag);
+    }
+
+    internal static bool TryCreatePostUpgradeOriginalValue(
+        ModificationSnapshotPropertyModel property,
+        out JToken adjustedOriginal)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+        adjustedOriginal = property.OriginalValue.DeepClone();
+
+        if (property.CurrentValue.Type != JTokenType.Integer ||
+            property.OriginalValue.Type is not
+                (JTokenType.Integer or JTokenType.Null))
+        {
+            return false;
+        }
+
+        int currentFlags = property.CurrentValue.Value<int>();
+        if ((currentFlags & UpgradeableEquipmentFlag) == 0)
+        {
+            return false;
+        }
+
+        int originalFlags =
+            property.OriginalValue.Type == JTokenType.Integer
+                ? property.OriginalValue.Value<int>()
+                : 0;
+        adjustedOriginal = new JValue(
+            originalFlags | UpgradeableEquipmentFlag);
+        return true;
     }
 
     private static string GetPropertyIdentity(

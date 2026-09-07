@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Status:** Active  
-**Last Updated:** 2026-07-20  
+**Last Updated:** 2026-09-07
 **Applies To:** Entire Project
 
 ---
@@ -486,6 +486,102 @@ Rollback and Undo reattach the original instances at their original positions;
 Redo detaches those same instances again. Empty parent objects are preserved.
 This capability does not authorize object removal, array-element removal, entry
 removal, recursive pruning, or generalized JSON deletion.
+
+---
+
+# Profile Operation Intent and Update Survival
+
+Format-4 profiles separate two authorities that must not be conflated. The
+profile root carries `FormatVersion`; each item in `OperationRequests` carries
+the canonical `OperationId` and operation-specific `Settings` that represent
+portable, source-independent player intent. The requests contain no
+restore baseline, source identity, target fingerprint, or Restore Previous
+Values authority. Gameplay Operation State is source-bound runtime authority;
+as applicable it owns the captured baseline, applied setting, expected-current
+fingerprint, target identity and shape, source-generation identity, and local
+restore authority.
+
+New profiles use format 4. Recognized stateful gameplay outcomes are captured
+as canonical operation requests, including after Save has accepted raw
+`PropertyModel.IsModified` values. Operation-owned raw snapshot leaves are
+excluded so they cannot compete with semantic replay; unrelated ordinary edits
+remain ordinary profile content. Current-source state may be retained for
+strictly validated exact-source baseline fidelity, but it is never the portable
+authority. No intent is inferred from unsupported raw values alone.
+
+Formats 1–3 remain readable. Recognized legacy gameplay state is projected into
+canonical intent only when it can be validated safely. Update Existing Profile
+may migrate an old profile to format 4; metadata-only editing does not silently
+migrate it, and an old restore baseline never becomes portable authority.
+
+On a structurally compatible new source generation, Profile Apply replays
+portable intent through the existing authoritative feature services. Output is
+calculated from the new source, a fresh baseline is captured there, and fresh
+Gameplay Operation State is bound to that source. Old source-bound state is not
+rebound, operation-owned raw leaves do not overwrite replay output, incompatible
+semantic intent fails safely, and the complete Profile Apply remains one atomic
+Undo/Redo action. On the same source, retained state may seed exact baseline
+fidelity only after the normal source, shape, fingerprint, and state validation
+passes; stale or malformed state is never trusted.
+
+When valid intent already matches raw values but compatible state is absent,
+Apply creates no synthetic property mutation. It may establish fresh state and
+classifies the operation as already configured, making Restore Previous Values
+available when the new state provides authority. Matching values plus matching
+valid state permit a true no-op while retaining the same semantic result.
+
+## Format-4 Profile Reconciliation
+
+Profile Create captures canonical intent from compatible authoritative Gameplay
+Operation State, excludes owned raw leaves, retains unrelated ordinary edits,
+and writes format 4. Update Existing Profile reconciles by stable `OperationId`:
+unchanged intent is preserved, changed authoritative intent replaces it, new
+intent is added, and authoritatively restored intent is removed. Historical
+intent remains when there is no new authoritative semantic state.
+
+If historical intent exists, current authoritative state is absent, and a
+direct edit overlaps an operation-owned raw property, Update fails as ambiguous
+before replacement. It never silently discards the raw edit, replaces the
+historical intent, or persists conflicting dual authority. Candidate creation,
+independent validation, and managed-file replacement remain atomic.
+
+## Effective Profile Change Counting
+
+Profiles carry no comparison-baseline or count metadata solely for
+presentation. Exact semantic counts require a concrete target project. With a
+target, the authoritative Apply behavior is evaluated observationally and the
+distinct actual property mutations determine the exact impact. Without a
+target, intrinsically knowable ordinary changes remain exact, while semantic
+operations are described as configured gameplay settings rather than assigned
+a fabricated property count. Ownership breadth, fixed target totals, and
+candidate counts are not effective-change authority.
+
+Observational evaluation leaves project data, Gameplay Operation State,
+Undo/Redo, open-dialog presentation, and pending input unchanged. If rollback
+integrity cannot be proven, the failure is fatal rather than converted to a
+normal non-exact result.
+
+## Profile Apply Presentation Synchronization
+
+After a successful Apply, currently open gameplay dialogs refresh from the
+authoritative final project. Closed dialogs are not recreated, and a failed or
+rolled-back Apply does not refresh dialogs. Current settings, Restore Previous
+Values availability, preview, and validation refresh while compatible pending
+unapplied input is preserved. Random Trait Exclusions rediscovers membership by
+stable trait ID, personality, and semantic group: new candidates receive fresh
+defaults, removed candidates disappear, and incompatible reused identities do
+not retain stale selections. Array position is never semantic authority.
+
+Semantic completion reporting is grouped by canonical operation identity, not
+raw property path or display wording. Different operations with identical text
+remain distinct, while one operation produces one player-facing result. Normal
+completion text does not expose JSON, fingerprint, replay, snapshot, source-
+identity, or mutation-journal terminology.
+
+Run Speed storage remains unchanged. `Vanilla` maps to the player-facing
+Vanilla preset; persisted `Faster` with values 8/14 displays as **Fast**;
+persisted `Fast` with values 9/17 displays as **Faster**; and `VeryFast`
+displays as **Very Fast**.
 
 ---
 

@@ -160,9 +160,8 @@
                                         Binding="{Binding ProfileVersion}"
                                         Width="85"/>
                     <DataGridTextColumn Header="Changes"
-                                        Binding="{Binding EffectiveChangeCount,
-                                                          StringFormat={}{0:N0}}"
-                                        Width="80"/>
+                                        Binding="{Binding ChangeSummaryText}"
+                                        Width="150"/>
                 </DataGrid.Columns>
 
             </DataGrid>

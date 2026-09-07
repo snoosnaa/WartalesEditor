@@ -272,6 +272,19 @@ public sealed class GameplayOperationStateService
         }
     }
 
+    public void ValidateProjectStatesReadOnly(
+        ProjectModel project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        foreach (GameplayOperationStateModel state in
+                 project.GameplayOperationStates)
+        {
+            GameplayOperationStateModel validated = state.DeepClone();
+            ValidateState(project, validated);
+        }
+    }
+
     private static string CreatePersistedStateFingerprint(
         GameplayOperationStateModel state)
     {
@@ -519,7 +532,7 @@ public sealed class GameplayOperationStateService
         }
     }
 
-    private static GameplayOperationStateModel CreateState(
+    internal static GameplayOperationStateModel CreateState(
         ProgressionType progressionType,
         ProgressionTableBinding binding,
         JArray baseline,

@@ -6,6 +6,68 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Profile Operation Intent / Update Survival Correction
+
+**Status:** Complete; all five Engineering Reviews passed and Project Owner
+Interactive Acceptance passed. Documentation is reconciled; commit, push, and
+any later release decision remain pending.
+
+## Changed
+
+- Introduced format-4 profiles with canonical source-independent
+  `OperationRequests` for recognized gameplay outcomes while keeping Gameplay
+  Operation State source-bound as baseline and Restore Previous Values
+  authority.
+- Changed-source Profile Apply now evaluates intent through authoritative
+  feature services against the new source, captures fresh target baselines,
+  creates fresh target-bound state, filters competing owned raw leaves, and
+  remains one atomic Undo/Redo action.
+- Profile Create and Update now capture saved-clean semantic intent, reconcile
+  by stable operation ID, preserve unrelated ordinary edits, remove restored
+  intent, migrate formats 1–3 safely when explicitly updated, and reject
+  ambiguous direct-edit conflicts before replacement.
+- Exact effective semantic counts now require target context and are evaluated
+  observationally; no-target presentation does not fabricate property counts.
+- Successful Profile Apply refreshes open Gameplay Tool presentation while
+  preserving compatible pending input. Failed or rolled-back Apply does not
+  refresh dialogs. Random Trait Exclusions also reconciles added, removed, and
+  semantically changed candidates without position-based identity.
+- Already-configured reporting now groups by canonical operation identity and
+  uses player-facing feature descriptions for stateful, Upgrade All Equipment,
+  and Add Camp Facilities outcomes.
+
+## Accepted
+
+- Automated regression passed Debug and Release builds with zero warnings and
+  errors; phase totals 83/199/83/123/75; 26 Class A/Profile groups; Update
+  Survival 180; Request Board 101; Golden 203; Export 205/205; Quick Help 41;
+  and the focused Import, Language Data, and Restore suites.
+- Project Owner testing passed on updated and subsequently newer Wartales data,
+  including Import, Check Compatibility, the existing All Mods profile, key
+  gameplay-setting reconstruction, Undo/Redo, Save/reopen, Export Back to
+  Wartales, game launch, and loading into gameplay.
+
+## Accepted startup-button polish
+
+- Corrected the clipped **Import From Wartales** welcome action by overriding
+  its inherited 100-DIP utility width locally to 150 DIPs. The exact label,
+  shared style, neighboring controls, command, and Import workflow are
+  unchanged.
+- Engineering Review and Project Owner Visual Acceptance passed. Focused
+  verification passed zero-warning Debug and Release builds, MainWindow/WPF
+  layout coverage, Quick Help 44, QuickBMS Import, Export/MainWindow 205/205,
+  and `git diff --check`.
+
+Final Integrated Regression passed with zero-warning Debug and Release builds;
+Phase totals 83/199/83/123/75; all 26 Class A/Profile groups; Update Survival
+180; Request Board 101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and
+the focused QuickBMS Import, Language Data, and Restore suites. The only skips
+were the established Windows file-link cases when symbolic-link privilege was
+unavailable. No commit, push, new release, tag, package, or publication is
+claimed by this entry.
+
+---
+
 # Version 1.0.0 — Public Release Preparation
 
 **Status:** Public documentation complete; fresh package validation and

@@ -7,7 +7,7 @@ using WartalesEditor.Services;
 namespace WartalesEditor.ViewModels;
 
 public sealed class ProgressionScalingDialogViewModel :
-    ObservableObject
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
 
@@ -32,6 +32,10 @@ public sealed class ProgressionScalingDialogViewModel :
     private bool hasTrustedCharacterBaseline;
 
     private bool hasTrustedProfessionBaseline;
+
+    private int loadedCharacterPercentage = 100;
+
+    private int loadedProfessionPercentage = 100;
 
     public ProgressionScalingDialogViewModel(
         ProjectModel project,
@@ -206,6 +210,31 @@ public sealed class ProgressionScalingDialogViewModel :
 
         RefreshCharacterPreview();
         RefreshProfessionPreview();
+
+        loadedCharacterPercentage = characterPercentage;
+        loadedProfessionPercentage = professionPercentage;
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        int pendingCharacter = CharacterPercentage;
+        int pendingProfession = ProfessionPercentage;
+        bool preserveCharacter =
+            pendingCharacter != loadedCharacterPercentage;
+        bool preserveProfession =
+            pendingProfession != loadedProfessionPercentage;
+
+        RefreshFromProject();
+
+        if (preserveCharacter)
+        {
+            CharacterPercentage = pendingCharacter;
+        }
+
+        if (preserveProfession)
+        {
+            ProfessionPercentage = pendingProfession;
+        }
     }
 
     private void RefreshCharacterPreview()

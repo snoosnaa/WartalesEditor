@@ -6,7 +6,8 @@ using WartalesEditor.Services;
 
 namespace WartalesEditor.ViewModels;
 
-public sealed class PartyEconomyDialogViewModel : ObservableObject
+public sealed class PartyEconomyDialogViewModel :
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly PartyEconomyService service;
@@ -29,6 +30,7 @@ public sealed class PartyEconomyDialogViewModel : ObservableObject
     private bool customExpandedValuesConfirmed;
     private bool inputBindingValid = true;
     private string validationMessage = string.Empty;
+    private PartyEconomySettings loadedSettings = new();
 
     public PartyEconomyDialogViewModel(
         ProjectModel project,
@@ -190,7 +192,44 @@ public sealed class PartyEconomyDialogViewModel : ObservableObject
         Assign(service.GetSettings(project, OperationType), false);
         Validate();
         NotifyAll();
+        loadedSettings = CreateSettings();
     }
+
+    public void RefreshAfterProjectOperation()
+    {
+        PartyEconomySettings pending = CreateSettings();
+        bool preservePending = !SettingsEqual(pending, loadedSettings);
+        bool customWasConfirmed = customExpandedValuesConfirmed;
+        bool bindingWasValid = inputBindingValid;
+
+        RefreshFromProject();
+
+        if (preservePending)
+        {
+            Assign(pending, customWasConfirmed);
+            inputBindingValid = bindingWasValid;
+            Validate();
+            NotifyAll();
+        }
+    }
+
+    private static bool SettingsEqual(
+        PartyEconomySettings left,
+        PartyEconomySettings right) =>
+        left.VolunteerPercentage == right.VolunteerPercentage &&
+        left.MaximumValour == right.MaximumValour &&
+        left.RestoredValour == right.RestoredValour &&
+        left.SaddlebagCapacity == right.SaddlebagCapacity &&
+        left.PonyStartingCapacity == right.PonyStartingCapacity &&
+        left.TentTier1Valour == right.TentTier1Valour &&
+        left.TentTier2Valour == right.TentTier2Valour &&
+        left.TentTier3Valour == right.TentTier3Valour &&
+        left.HitchingPostTier1Base == right.HitchingPostTier1Base &&
+        left.HitchingPostTier2Base == right.HitchingPostTier2Base &&
+        left.HitchingPostTier3Base == right.HitchingPostTier3Base &&
+        left.HitchingPostTier1Trait == right.HitchingPostTier1Trait &&
+        left.HitchingPostTier2Trait == right.HitchingPostTier2Trait &&
+        left.HitchingPostTier3Trait == right.HitchingPostTier3Trait;
 
     public void SetInputBindingValid(bool value)
     {

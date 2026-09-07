@@ -2,9 +2,54 @@
 
 ## Current Milestone
 
-Public Release Preparation
+Commit / Push Preparation
 
 ## Current Status
+
+**The Profile Operation Intent / Update Survival correction is COMPLETE and
+accepted.** All five implementation phases completed Engineering Review with a
+**PASS**, and Project Owner Interactive Acceptance also returned **PASS**.
+Documentation reconciliation is complete; commit and push are not yet
+authorized.
+
+The accepted workflow stores portable gameplay preferences as canonical
+format-4 `OperationRequests` while retaining Gameplay Operation State as
+source-bound baseline and Restore Previous Values authority. Changed-source
+Profile Apply replays intent through the authoritative feature services,
+captures a fresh baseline from the newly imported Wartales data, creates fresh
+target-bound state, and records the complete Apply as one Undo/Redo action.
+Profile Create/Update, exact target-context counting, success-only open-dialog
+refresh, semantic already-configured reporting, and Random Trait candidate
+reconciliation are complete and verified.
+
+The Project Owner verified the workflow twice against updated Wartales data.
+The accepted evidence includes Import From Wartales, Check Compatibility,
+applying the existing All Mods profile, correct Character XP (40%), Profession
+XP (50%), Run Speed (Fast), Positive Random Traits (Positive Only), Request
+Board and Restore presentation, one-step Undo/Redo, Save/reopen persistence,
+Export Back to Wartales, successful game launch, and loading into gameplay.
+
+The separate **Import From Wartales** startup button-clipping polish is also
+complete and accepted. The shared utility style remains 100 DIPs wide with 20
+DIPs of horizontal padding; the longer welcome label now uses a bounded local
+150-DIP width while retaining the exact label, shared style, neighboring
+controls, command, and Import workflow. Engineering Review returned **PASS**,
+and Project Owner Visual Acceptance returned **PASS**. Focused verification
+passed zero-warning Debug and Release builds, MainWindow/WPF layout coverage,
+Quick Help 44, QuickBMS Import, Export/MainWindow 205/205, and
+`git diff --check`.
+
+Final Integrated Regression passed the complete accepted matrix: zero-warning
+Debug and Release builds; Phase 1 83, Phase 2 199, Phase 3 83, Phase 4 123, and
+Phase 5 75; all 26 Class A/Profile groups; Update Survival 180; Request Board
+101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and the focused
+QuickBMS Import, Language Data, and Restore suites. The only skips were the
+established Windows file-link cases when symbolic-link privilege was
+unavailable. Commit / Push preparation is now the immediate lifecycle step.
+Commit and push are not yet authorized; any publication decision remains
+separate.
+
+## Prior Public Release Preparation Context
 
 **Public Release Preparation is IN PROGRESS.** Phase 1 and Phase 2 are complete.
 The TyTech Green accent investigation and implementation completed, and

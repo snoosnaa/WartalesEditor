@@ -411,7 +411,9 @@
                 <StackPanel Margin="0,20,0,0"
                             HorizontalAlignment="Center"
                             Orientation="Horizontal">
-                    <Button Content="Import From Wartales"
+                    <Button Name="ImportFromWartalesWelcomeButton"
+                            Content="Import From Wartales"
+                            Width="150"
                             Style="{StaticResource UtilityActionButtonStyle}"
                             Command="{Binding ImportFromWartalesCommand}"/>
                     <Button Content="Open Extracted File"

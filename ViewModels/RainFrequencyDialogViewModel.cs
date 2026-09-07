@@ -8,12 +8,13 @@ using WartalesEditor.Services;
 namespace WartalesEditor.ViewModels;
 
 public sealed class RainFrequencyDialogViewModel
-    : ObservableObject
+    : ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly RainFrequencyService service;
     private RainFrequencyPresetOption? selectedPreset;
     private RainFrequencyPreset detectedPreset;
+    private RainFrequencyPreset? loadedSelectedPreset;
 
     public RainFrequencyDialogViewModel(
         ProjectModel project,
@@ -89,6 +90,24 @@ public sealed class RainFrequencyDialogViewModel
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRestorePreviousValues));
+        loadedSelectedPreset = SelectedPreset?.Preset;
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        RainFrequencyPreset? pending = SelectedPreset?.Preset;
+        bool preservePending = pending != loadedSelectedPreset;
+
+        RefreshFromProject();
+
+        if (preservePending && pending.HasValue &&
+            pending.Value is RainFrequencyPreset.Vanilla or
+                RainFrequencyPreset.LessRain or
+                RainFrequencyPreset.RareRain or
+                RainFrequencyPreset.NoRain)
+        {
+            SelectedPreset = FindPreset(pending.Value);
+        }
     }
 
     private static RainFrequencyPresetOption FindPreset(

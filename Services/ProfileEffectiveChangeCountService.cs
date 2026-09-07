@@ -23,6 +23,15 @@ public sealed class ProfileEffectiveChangeCountService
     public int Calculate(ModProfileModel profile) =>
         accountingService.Calculate(profile);
 
+    public int Calculate(
+        ProjectModel targetProject,
+        ModProfileModel profile,
+        out bool isExact) =>
+        accountingService.Calculate(
+            targetProject,
+            profile,
+            out isExact);
+
     public int Calculate(ProjectModel project) =>
         accountingService.Calculate(project);
 

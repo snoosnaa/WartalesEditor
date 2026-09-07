@@ -65,13 +65,20 @@ public sealed class RandomTraitExclusionItemViewModel : ObservableObject
     }
 }
 
-public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
+public sealed class RandomTraitExclusionsDialogViewModel :
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly RandomTraitExclusionsService service;
+    private readonly LocalizationService localizationService;
     private string searchText = string.Empty;
     private RandomTraitExclusionRestoreStatus lastRestoreStatus =
         RandomTraitExclusionRestoreStatus.Unavailable;
+    private HashSet<string> loadedAllowedTraitIds =
+        new(StringComparer.Ordinal);
+    private Dictionary<string, RandomTraitCandidateIdentity>
+        loadedCandidateIdentities =
+            new(StringComparer.Ordinal);
 
     public RandomTraitExclusionsDialogViewModel(
         ProjectModel project,
@@ -84,6 +91,7 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
 
         this.project = project;
         this.service = service;
+        this.localizationService = localizationService;
 
         IReadOnlyList<RandomTraitExclusionCandidate> candidates = service.Discover(project);
         PositiveTraits = new ObservableCollection<RandomTraitExclusionItemViewModel>(
@@ -96,6 +104,9 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
         NegativeTraitsView = CollectionViewSource.GetDefaultView(NegativeTraits);
         PositiveTraitsView.Filter = MatchesSearch;
         NegativeTraitsView.Filter = MatchesSearch;
+        loadedAllowedTraitIds = GetAllowedTraitIds()
+            .ToHashSet(StringComparer.Ordinal);
+        loadedCandidateIdentities = CreateCandidateIdentityMap(candidates);
     }
 
     public ObservableCollection<RandomTraitExclusionItemViewModel> PositiveTraits { get; }
@@ -168,13 +179,107 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
         ProjectModel project,
         RandomTraitExclusionsService service)
     {
-        IReadOnlyDictionary<string, RandomTraitExclusionCandidate> current =
-            service.Discover(project).ToDictionary(candidate => candidate.Id, StringComparer.Ordinal);
-        foreach (RandomTraitExclusionItemViewModel item in PositiveTraits.Concat(NegativeTraits))
-            if (current.TryGetValue(item.Id, out RandomTraitExclusionCandidate? candidate))
-                item.Refresh(candidate);
+        IReadOnlyList<RandomTraitExclusionCandidate> candidates =
+            service.Discover(project);
+        ReconcileCandidates(candidates, null, null);
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        HashSet<string> pending = GetAllowedTraitIds()
+            .ToHashSet(StringComparer.Ordinal);
+        bool preservePending =
+            !pending.SetEquals(loadedAllowedTraitIds);
+        Dictionary<string, RandomTraitCandidateIdentity> previousIdentities =
+            new(loadedCandidateIdentities, StringComparer.Ordinal);
+        IReadOnlyList<RandomTraitExclusionCandidate> candidates =
+            service.Discover(project);
+
+        ReconcileCandidates(
+            candidates,
+            preservePending ? pending : null,
+            preservePending ? previousIdentities : null);
+    }
+
+    private void ReconcileCandidates(
+        IReadOnlyList<RandomTraitExclusionCandidate> candidates,
+        IReadOnlySet<string>? pendingAllowedTraitIds,
+        IReadOnlyDictionary<string, RandomTraitCandidateIdentity>?
+            previousIdentities)
+    {
+        List<RandomTraitExclusionItemViewModel> positive = new();
+        List<RandomTraitExclusionItemViewModel> negative = new();
+
+        foreach (RandomTraitExclusionCandidate candidate in candidates)
+        {
+            RandomTraitExclusionItemViewModel item = CreateItem(candidate);
+            if (pendingAllowedTraitIds != null &&
+                previousIdentities != null &&
+                previousIdentities.TryGetValue(
+                    candidate.Id,
+                    out RandomTraitCandidateIdentity previousIdentity) &&
+                previousIdentity == CreateCandidateIdentity(candidate))
+            {
+                item.IsAllowed = pendingAllowedTraitIds.Contains(candidate.Id);
+            }
+
+            (candidate.Personality == RandomTraitPersonality.Positive
+                    ? positive
+                    : negative)
+                .Add(item);
+        }
+
+        SynchronizeCollection(PositiveTraits, positive);
+        SynchronizeCollection(NegativeTraits, negative);
+        PositiveTraitsView.Refresh();
+        NegativeTraitsView.Refresh();
+
+        loadedAllowedTraitIds = candidates
+            .Where(candidate => candidate.IsAllowed)
+            .Select(candidate => candidate.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        loadedCandidateIdentities = CreateCandidateIdentityMap(candidates);
+
+        ApplyFeedback.Clear();
+        OnPropertyChanged(nameof(PositiveHeading));
+        OnPropertyChanged(nameof(NegativeHeading));
+        OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRestorePreviousValues));
     }
+
+    private RandomTraitExclusionItemViewModel CreateItem(
+        RandomTraitExclusionCandidate candidate) =>
+        new(
+            candidate,
+            localizationService.GetLocalizedName(candidate.DisplayNameKey)
+                ?? candidate.DisplayNameKey,
+            OnSelectionChanged);
+
+    private static void SynchronizeCollection(
+        ObservableCollection<RandomTraitExclusionItemViewModel> target,
+        IEnumerable<RandomTraitExclusionItemViewModel> source)
+    {
+        target.Clear();
+        foreach (RandomTraitExclusionItemViewModel item in
+                 source.OrderBy(
+                     item => item.DisplayName,
+                     StringComparer.CurrentCultureIgnoreCase))
+        {
+            target.Add(item);
+        }
+    }
+
+    private static Dictionary<string, RandomTraitCandidateIdentity>
+        CreateCandidateIdentityMap(
+            IEnumerable<RandomTraitExclusionCandidate> candidates) =>
+        candidates.ToDictionary(
+            candidate => candidate.Id,
+            CreateCandidateIdentity,
+            StringComparer.Ordinal);
+
+    private static RandomTraitCandidateIdentity CreateCandidateIdentity(
+        RandomTraitExclusionCandidate candidate) =>
+        new(candidate.Personality, candidate.SemanticGroup);
 
     private IEnumerable<RandomTraitExclusionItemViewModel> CreateItems(
         IEnumerable<RandomTraitExclusionCandidate> candidates,
@@ -203,4 +308,8 @@ public sealed class RandomTraitExclusionsDialogViewModel : ObservableObject
     }
 
     private void OnSelectionChanged() => ApplyFeedback.Clear();
+
+    private readonly record struct RandomTraitCandidateIdentity(
+        RandomTraitPersonality Personality,
+        string Group);
 }

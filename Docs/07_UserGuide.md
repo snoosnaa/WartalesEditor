@@ -160,6 +160,26 @@ Profile-applied changes appear in **Review Changes** and can be undone with
 Undo. If part of a Profile is not compatible with the open CDB, the editor
 reports it instead of guessing.
 
+Profiles store supported Gameplay Tool choices as portable preferences. When
+you apply one to compatible data from a newer Wartales update, the editor uses
+that new data as the starting point and reapplies the preference through the
+same Gameplay Tool rules. Previous values and Restore availability are then
+captured for the newly opened data rather than copied from the older game
+version. One Profile Apply remains one Undo/Redo action.
+
+Open Gameplay Tool windows refresh after a successful Profile Apply. Current
+settings and Restore availability update while valid selections you have not
+yet applied are preserved where possible. A failed Apply leaves those windows
+unchanged. If settings are already active, the completion message identifies
+them in gameplay terms—for example Character XP at 40%, Run Speed as Fast, or
+Positive Random Traits as Positive Only—instead of listing internal fields.
+
+When updating an existing Profile, current supported Gameplay Tool choices are
+reconciled with its saved preferences. If an unsupported direct Detailed Editor
+change conflicts with a saved Gameplay Tool preference and the editor cannot
+determine which should win safely, the update is stopped and no profile file is
+replaced.
+
 Saving a CDB and saving a Profile are not the same thing:
 
 - A **CDB** is the actual edited game-data file.
@@ -337,7 +357,7 @@ including a trait that originally had no explicit setting.
 #### Movement Speed
 
 Changes only player overworld walking/running speed. Presets are **Vanilla**,
-**Faster**, **Fast**, and **Very Fast**. Other roaming parties are unchanged.
+**Fast**, **Faster**, and **Very Fast**. Other roaming parties are unchanged.
 Faster motion may appear blurry; this is visual only.
 
 #### Rain Frequency
@@ -480,6 +500,10 @@ After Wartales updates:
 If a Gameplay Tool is still compatible with the updated game data, the editor
 can continue using it. If Wartales changed the relevant data in a way the
 editor cannot safely recognize, that tool is blocked rather than guessed.
+
+Compatible Profiles replay supported Gameplay Tool preferences against the new
+Wartales data and capture new previous-value information for that data. They do
+not transplant previous-value history from an older Wartales version.
 
 ## 20. Golden CDB
 

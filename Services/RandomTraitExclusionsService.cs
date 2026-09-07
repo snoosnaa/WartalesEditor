@@ -81,6 +81,7 @@ public sealed class RandomTraitExclusionsService
                 Id = candidate.Entry.Id,
                 DisplayNameKey = candidate.Entry.DisplayName,
                 Personality = candidate.Personality,
+                SemanticGroup = candidate.Group,
                 BaselineDone = baseline,
                 IsAllowed = candidate.CurrentDone != RandomTraitDoneBaseline.False
             };
@@ -166,6 +167,213 @@ public sealed class RandomTraitExclusionsService
         ArgumentNullException.ThrowIfNull(context);
         return ApplyCore(project, allowedTraitIds, context.MutationResult);
     }
+
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        JArray semanticSelections,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        ReplayPreparation preparation = PrepareReplay(
+            project,
+            semanticSelections,
+            exactSourceBaseline);
+
+        GameplayOperationStateModel? existing = stateService.FindState(
+            project,
+            ProgressionType.RandomTraitExclusions);
+        GameplayOperationStateModel replacement = CreateState(
+            preparation.Baseline,
+            preparation.Expected,
+            preparation.Allowed);
+
+        if (existing != null &&
+            JToken.DeepEquals(
+                existing.BaselineArray,
+                preparation.Baseline) &&
+            JToken.DeepEquals(
+                existing.GameplaySettings,
+                replacement.GameplaySettings) &&
+            JToken.DeepEquals(
+                CaptureCurrent(preparation.Candidates),
+                preparation.Expected))
+        {
+            return context.MutationResult;
+        }
+
+        return ApplyResolved(
+            project,
+            preparation.Candidates,
+            preparation.Expected,
+            existing,
+            replacement,
+            context.MutationResult);
+    }
+
+    internal void PreflightReplay(
+        ProjectModel project,
+        JArray semanticSelections,
+        JArray? exactSourceBaseline)
+    {
+        _ = PrepareReplay(
+            project,
+            semanticSelections,
+            exactSourceBaseline);
+    }
+
+    internal static bool CurrentMatchesBaseline(
+        ProjectModel project,
+        GameplayOperationStateModel state)
+    {
+        IReadOnlyList<ResolvedTrait> candidates = ResolveCandidates(project);
+        return state.ElementCount == state.BaselineArray.Count &&
+            string.Equals(
+                state.TargetSheet,
+                TraitSheetName,
+                StringComparison.Ordinal) &&
+            string.Equals(
+                state.TargetEntry,
+                JoinIds(state.BaselineArray),
+                StringComparison.Ordinal) &&
+            string.Equals(
+                state.TargetPath,
+                string.Join("|", state.BaselineArray
+                    .OfType<JObject>()
+                    .Select(record =>
+                        $"{ReadRequiredString(record, "id")}.{DonePath}")),
+                StringComparison.Ordinal) &&
+            JToken.DeepEquals(
+                CaptureCurrent(candidates),
+                state.BaselineArray);
+    }
+
+    private static ReplayPreparation PrepareReplay(
+        ProjectModel project,
+        JArray semanticSelections,
+        JArray? exactSourceBaseline)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(semanticSelections);
+
+        IReadOnlyList<ResolvedTrait> candidates = ResolveCandidates(project);
+        Dictionary<string, ResolvedTrait> byId = candidates.ToDictionary(
+            candidate => candidate.Entry.Id,
+            StringComparer.Ordinal);
+        Dictionary<string, JObject> requested = semanticSelections
+            .OfType<JObject>()
+            .ToDictionary(
+                selection => ReadRequiredString(selection, "id"),
+                StringComparer.Ordinal);
+
+        string[] missing = requested.Keys
+            .Where(id => !byId.ContainsKey(id))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        if (missing.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "These profile traits are not available in the current " +
+                $"game data: {string.Join(", ", missing)}.");
+        }
+
+        foreach ((string id, JObject selection) in requested)
+        {
+            ResolvedTrait candidate = byId[id];
+            string personality = ReadRequiredString(
+                selection,
+                "personality");
+            string group = ReadRequiredString(selection, GroupField);
+            if (!string.Equals(
+                    personality,
+                    candidate.Personality.ToString(),
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    group,
+                    candidate.Group,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Profile trait '{id}' has changed semantic identity.");
+            }
+        }
+
+        Dictionary<string, RandomTraitDoneBaseline> baselines = new(
+            StringComparer.Ordinal);
+        if (exactSourceBaseline != null)
+        {
+            foreach (JObject record in exactSourceBaseline.OfType<JObject>())
+            {
+                string id = ReadRequiredString(record, "id");
+                if (!byId.TryGetValue(id, out ResolvedTrait? candidate) ||
+                    record.Value<int?>("personality") !=
+                        (int)candidate.Personality ||
+                    !string.Equals(
+                        ReadRequiredString(record, GroupField),
+                        candidate.Group,
+                        StringComparison.Ordinal) ||
+                    !baselines.TryAdd(id, ReadBaseline(record)))
+                {
+                    throw new InvalidOperationException(
+                        $"Exact-source trait baseline '{id}' is not " +
+                        "compatible with the current candidate structure.");
+                }
+            }
+
+            if (requested.Keys.Any(id => !baselines.ContainsKey(id)))
+            {
+                throw new InvalidOperationException(
+                    "The exact-source trait baseline does not contain " +
+                    "every previously targeted candidate.");
+            }
+        }
+
+        foreach (ResolvedTrait candidate in candidates)
+        {
+            baselines.TryAdd(candidate.Entry.Id, candidate.CurrentDone);
+        }
+
+        HashSet<string> allowed = new(StringComparer.Ordinal);
+        foreach (ResolvedTrait candidate in candidates)
+        {
+            if (requested.TryGetValue(
+                    candidate.Entry.Id,
+                    out JObject? selection))
+            {
+                if (selection["allowed"]?.Type != JTokenType.Boolean)
+                {
+                    throw new InvalidOperationException(
+                        $"Profile trait '{candidate.Entry.Id}' has no " +
+                        "valid allowed state.");
+                }
+
+                if (selection.Value<bool>("allowed"))
+                {
+                    allowed.Add(candidate.Entry.Id);
+                }
+            }
+            else if (candidate.CurrentDone !=
+                     RandomTraitDoneBaseline.False)
+            {
+                allowed.Add(candidate.Entry.Id);
+            }
+        }
+
+        JArray baseline = CreateBaseline(candidates, baselines);
+        JArray expected = CreateExpected(baseline, allowed);
+        return new ReplayPreparation(
+            candidates,
+            baseline,
+            expected,
+            allowed);
+    }
+
+    private sealed record ReplayPreparation(
+        IReadOnlyList<ResolvedTrait> Candidates,
+        JArray Baseline,
+        JArray Expected,
+        HashSet<string> Allowed);
 
     private ProjectMutationResult ApplyCore(
         ProjectModel project,

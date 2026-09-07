@@ -8,12 +8,13 @@ using WartalesEditor.Services;
 namespace WartalesEditor.ViewModels;
 
 public sealed class RequestBoardRewardsDialogViewModel
-    : ObservableObject
+    : ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly RequestBoardRewardsService service;
     private RequestBoardRewardsPresetOption? selectedPreset;
     private int detectedPercentage;
+    private int? loadedSelectedPercentage;
 
     public RequestBoardRewardsDialogViewModel(
         ProjectModel project,
@@ -84,5 +85,28 @@ public sealed class RequestBoardRewardsDialogViewModel
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRestorePreviousValues));
+        loadedSelectedPercentage = SelectedPreset?.Percentage;
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        int? pendingPercentage = SelectedPreset?.Percentage;
+        bool preservePending =
+            pendingPercentage != loadedSelectedPercentage;
+
+        RefreshFromProject();
+
+        if (!preservePending || !pendingPercentage.HasValue)
+        {
+            return;
+        }
+
+        RequestBoardRewardsPresetOption? pending = Presets
+            .FirstOrDefault(option =>
+                option.Percentage == pendingPercentage.Value);
+        if (pending != null)
+        {
+            SelectedPreset = pending;
+        }
     }
 }

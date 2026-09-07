@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using WartalesEditor.Helpers;
 using WartalesEditor.Models;
 using WartalesEditor.Services;
 
 namespace WartalesEditor.ViewModels;
 
-public sealed class GameplayPresetDialogViewModel : ObservableObject
+public sealed class GameplayPresetDialogViewModel :
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly GameplayPresetService service;
     private GameplayPresetOption? selectedPreset;
     private string currentStateText = "Unavailable";
+    private string? loadedPresetName;
 
     public GameplayPresetDialogViewModel(
         ProjectModel project,
@@ -76,5 +79,32 @@ public sealed class GameplayPresetDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRestorePreviousValues));
+        loadedPresetName = selectedPreset?.Name;
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        string? pendingPresetName = SelectedPreset?.Name;
+        bool preservePending = !string.Equals(
+            pendingPresetName,
+            loadedPresetName,
+            StringComparison.Ordinal);
+
+        RefreshFromProject();
+
+        if (!preservePending || pendingPresetName == null)
+        {
+            return;
+        }
+
+        GameplayPresetOption? pending = Definition.Presets
+            .FirstOrDefault(option => string.Equals(
+                option.Name,
+                pendingPresetName,
+                StringComparison.Ordinal));
+        if (pending != null)
+        {
+            SelectedPreset = pending;
+        }
     }
 }

@@ -103,6 +103,12 @@ public sealed class ProjectOperationService
         }
         catch (Exception exception)
         {
+            if (exception is ProjectRollbackIntegrityException)
+            {
+                return ProjectOperationResult.RollbackFailure(
+                    exception.Message);
+            }
+
             try
             {
                 RollbackIfRequired(context.MutationResult);
@@ -136,7 +142,7 @@ public sealed class ProjectOperationService
         Exception operationException,
         Exception rollbackException)
     {
-        return ProjectOperationResult.Failure(
+        return ProjectOperationResult.RollbackFailure(
             $"The operation '{operation.Name}' failed and its changes could not be fully rolled back." +
             Environment.NewLine + Environment.NewLine +
             $"Operation error: {operationException.Message}" +

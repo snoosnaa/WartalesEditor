@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
 
@@ -63,6 +64,12 @@ public sealed class ModProfileLibraryService
     public IReadOnlyList<ModProfileSummaryModel>
         GetProfiles()
     {
+        return GetProfiles(null);
+    }
+
+    public IReadOnlyList<ModProfileSummaryModel>
+        GetProfiles(ProjectModel? targetProject)
+    {
         string libraryDirectory =
             pathService.EnsureLibraryDirectory();
 
@@ -83,7 +90,12 @@ public sealed class ModProfileLibraryService
                 profiles.Add(
                     CreateSummary(
                         profile,
-                        file));
+                        file,
+                        targetProject));
+            }
+            catch (Operations.ProjectRollbackIntegrityException)
+            {
+                throw;
             }
             catch
             {
@@ -725,7 +737,8 @@ public sealed class ModProfileLibraryService
     private ModProfileSummaryModel
         CreateSummary(
             ModProfileModel profile,
-            string filePath)
+            string filePath,
+            ProjectModel? targetProject = null)
     {
         int settingCount = 0;
         int propertyCount = 0;
@@ -742,6 +755,22 @@ public sealed class ModProfileLibraryService
                 propertyCount +=
                     setting.Properties.Count;
             }
+        }
+
+        int effectiveChangeCount;
+        bool isExact;
+        if (targetProject == null)
+        {
+            effectiveChangeCount =
+                effectiveChangeCountService.Calculate(profile);
+            isExact = profile.OperationRequests.Count == 0;
+        }
+        else
+        {
+            effectiveChangeCount = effectiveChangeCountService.Calculate(
+                targetProject,
+                profile,
+                out isExact);
         }
 
         return new ModProfileSummaryModel
@@ -787,8 +816,10 @@ public sealed class ModProfileLibraryService
                 profile.OperationRequests.Count,
 
             EffectiveChangeCount =
-                effectiveChangeCountService.Calculate(
-                    profile)
+                effectiveChangeCount,
+
+            IsEffectiveChangeCountExact =
+                isExact
         };
     }
 }

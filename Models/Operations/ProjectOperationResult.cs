@@ -20,10 +20,28 @@ public sealed class ProjectOperationResult
         get;
     }
 
+    public bool RollbackIntegrityFailed
+    {
+        get;
+    }
+
     public ProjectOperationResult(
         ProjectMutationResult mutationResult,
         bool succeeded,
         string? message = null)
+        : this(
+            mutationResult,
+            succeeded,
+            message,
+            rollbackIntegrityFailed: false)
+    {
+    }
+
+    internal ProjectOperationResult(
+        ProjectMutationResult mutationResult,
+        bool succeeded,
+        string? message,
+        bool rollbackIntegrityFailed)
     {
         ArgumentNullException.ThrowIfNull(
             mutationResult);
@@ -36,6 +54,9 @@ public sealed class ProjectOperationResult
 
         Message =
             message;
+
+        RollbackIntegrityFailed =
+            rollbackIntegrityFailed;
     }
 
     public static ProjectOperationResult Success(
@@ -58,5 +79,17 @@ public sealed class ProjectOperationResult
             new ProjectMutationResult(),
             false,
             message);
+    }
+
+    internal static ProjectOperationResult RollbackFailure(
+        string message)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+
+        return new ProjectOperationResult(
+            new ProjectMutationResult(),
+            false,
+            message,
+            rollbackIntegrityFailed: true);
     }
 }

@@ -166,10 +166,27 @@ public sealed class RainFrequencyService
         return ApplyCore(project, preset, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        RainFrequencyPreset preset,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            preset,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline: exactSourceBaseline);
+    }
+
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         RainFrequencyPreset preset,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         RainFrequencyPresetOption selection =
             GetRequiredPreset(preset);
@@ -183,9 +200,26 @@ public sealed class RainFrequencyService
         if (existing != null)
             stateService.ValidateState(project, existing);
 
-        JArray baseline = existing == null || !existing.IsCompatible
-            ? Capture(targets)
-            : (JArray)existing.BaselineArray.DeepClone();
+        JArray current = Capture(targets);
+        JArray baseline = replay
+            ? exactSourceBaseline == null
+                ? (JArray)current.DeepClone()
+                : (JArray)exactSourceBaseline.DeepClone()
+            : existing == null || !existing.IsCompatible
+                ? (JArray)current.DeepClone()
+                : (JArray)existing.BaselineArray.DeepClone();
+        if (replay &&
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The exact-source rain baseline does not match the " +
+                "current target structure.");
+        }
         JArray expected = BuildExpected(CreateBaseline(), selection);
 
         for (int index = 0; index < targets.Count; index++)
@@ -203,7 +237,8 @@ public sealed class RainFrequencyService
             string.Equals(
                 existing.GameplaySettings?.Value<string>("preset"),
                 preset.ToString(),
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) &&
+            (!replay || JToken.DeepEquals(existing.BaselineArray, baseline)))
         {
             return result;
         }
@@ -407,7 +442,7 @@ public sealed class RainFrequencyService
                 }));
     }
 
-    private static JArray Capture(
+    internal static JArray Capture(
         IReadOnlyList<RainTarget> targets)
     {
         return new JArray(

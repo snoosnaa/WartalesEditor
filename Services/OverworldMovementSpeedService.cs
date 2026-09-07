@@ -127,10 +127,27 @@ public sealed class OverworldMovementSpeedService
         return ApplyCore(project, preset, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        OverworldMovementPreset preset,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            preset,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline: exactSourceBaseline);
+    }
+
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         OverworldMovementPreset preset,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         OverworldMovementPresetOption selection = GetRequiredPreset(preset);
         ValidatePair(selection.WalkSpeed, selection.RunSpeed);
@@ -143,18 +160,35 @@ public sealed class OverworldMovementSpeedService
             stateService.ValidateState(project, existing);
         }
 
-        JArray baseline = existing == null || !existing.IsCompatible
-            ? CaptureTargets(walk, run)
-            : (JArray)existing.BaselineArray.DeepClone();
-        JArray expected = BuildExpected(baseline, selection);
+        JArray baseline = replay
+            ? exactSourceBaseline == null
+                ? CaptureTargets(walk, run)
+                : (JArray)exactSourceBaseline.DeepClone()
+            : existing == null || !existing.IsCompatible
+                ? CaptureTargets(walk, run)
+                : (JArray)existing.BaselineArray.DeepClone();
         JArray current = CaptureTargets(walk, run);
+        if (replay &&
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The exact-source movement baseline does not match the " +
+                "current target structure.");
+        }
+        JArray expected = BuildExpected(baseline, selection);
 
         if (existing != null &&
             JToken.DeepEquals(current, expected) &&
             string.Equals(
                 existing.GameplaySettings?.Value<string>("preset"),
                 preset.ToString(),
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) &&
+            (!replay || JToken.DeepEquals(existing.BaselineArray, baseline)))
             return result;
 
         if (!JToken.DeepEquals(current, expected))

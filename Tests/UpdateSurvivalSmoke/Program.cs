@@ -133,7 +133,7 @@ try
     string snapshotJson = new ModificationSnapshotSerializationService().Serialize(snapshot);
     Check(!snapshotJson.Contains("CurrentCdbContentIdentity", StringComparison.Ordinal), "49 snapshot excludes current identity");
     ModProfileModel profile = new ModProfileService().CreateProfile(trusted, "Update Survival");
-    Check(profile.FormatVersion == 3, "50 profile writer v3");
+    Check(profile.FormatVersion == 4, "50 profile writer v4");
     Check(profile.SourceCdbGenerationIdentity == trusted.SourceCdbGenerationIdentity, "51 profile diagnostic source");
     string profileJson = new ModProfileSerializationService().Serialize(profile);
     Check(!profileJson.Contains("CurrentCdbContentIdentity", StringComparison.Ordinal), "52 profile excludes current identity");
@@ -479,10 +479,10 @@ try
     ModificationSnapshotImportResultModel legacyProfileResult =
         new ModProfileWorkflowService().ApplyProfile(legacyProfileTarget, legacyProfile);
     Check(!legacyProfileResult.HasFailures &&
-          legacyProfileTarget.GameplayOperationStates.Count == 0 &&
+          legacyProfileTarget.GameplayOperationStates.Count == 1 &&
           legacyProfileTarget.Sheets.Single().Entries.Single()
               .SourceEntry!["value"]!.Value<int>() != 10,
-        "92 legacy profile ordinary changes apply without gameplay-state transport");
+        "92 legacy profile projects intent and creates fresh gameplay state");
 
     ModificationSnapshotModel mismatchedPortable = CloneSnapshot(
         currentPortable,

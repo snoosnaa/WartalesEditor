@@ -73,17 +73,42 @@ public sealed class PartyEconomyService
         return ApplyCore(project, type, settings, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        ProgressionType type,
+        PartyEconomySettings settings,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            type,
+            settings,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline: exactSourceBaseline);
+    }
+
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         ProgressionType type,
         PartyEconomySettings settings,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         settings.Validate(type);
         GameplayOperationStateModel? existing = stateService.FindState(project, type);
         JArray baseline;
         GameplayOperationStateModel? previousState = existing?.DeepClone();
-        if (existing == null)
+        if (replay)
+        {
+            baseline = exactSourceBaseline == null
+                ? CaptureTargets(project, type)
+                : (JArray)exactSourceBaseline.DeepClone();
+        }
+        else if (existing == null)
         {
             baseline = CaptureTargets(project, type);
         }
@@ -99,10 +124,23 @@ public sealed class PartyEconomyService
 
         JArray expected = BuildExpected(baseline, settings, type);
         JArray current = CaptureTargets(project, type);
+        if (replay &&
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The exact-source Party Economy baseline does not match " +
+                "the current target structure.");
+        }
         JObject selectedSettings = WriteSettings(settings, type);
         if (existing != null &&
             JToken.DeepEquals(current, expected) &&
-            JToken.DeepEquals(existing.GameplaySettings, selectedSettings))
+            JToken.DeepEquals(existing.GameplaySettings, selectedSettings) &&
+            (!replay || JToken.DeepEquals(existing.BaselineArray, baseline)))
             return result;
 
         if (!JToken.DeepEquals(current, expected))

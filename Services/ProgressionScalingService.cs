@@ -96,6 +96,102 @@ public sealed class ProgressionScalingService
         return ScaleCore(project, progressionType, percentage, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        ProgressionType progressionType,
+        int percentage,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ReplayCore(
+            project,
+            progressionType,
+            percentage,
+            exactSourceBaseline,
+            context.MutationResult);
+    }
+
+    private ProjectMutationResult ReplayCore(
+        ProjectModel project,
+        ProgressionType progressionType,
+        int percentage,
+        JArray? exactSourceBaseline,
+        ProjectMutationResult journal)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ValidatePercentage(percentage);
+
+        ProgressionTableBinding binding =
+            tableResolver.Resolve(project, progressionType);
+        JArray current = (JArray)binding.ArrayProperty
+            .GetCurrentValueSnapshot();
+        JArray baseline = exactSourceBaseline == null
+            ? (JArray)current.DeepClone()
+            : (JArray)exactSourceBaseline.DeepClone();
+
+        _ = binding.ReadValues(current);
+        IReadOnlyList<long> baselineValues = binding.ReadValues(baseline);
+        if (baseline.Count != current.Count ||
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The exact-source progression baseline does not match " +
+                "the current target structure.");
+        }
+
+        IReadOnlyList<long> scaledValues = ScaleValues(
+            baselineValues,
+            progressionType,
+            percentage);
+        JArray expected = binding.CreateArray(baseline, scaledValues);
+        GameplayOperationStateModel? existing = stateService.FindState(
+            project,
+            progressionType);
+
+        if (existing != null)
+        {
+            stateService.ValidateState(project, existing);
+            if (existing.IsCompatible &&
+                existing.AppliedPercentage == percentage &&
+                JToken.DeepEquals(existing.BaselineArray, baseline) &&
+                JToken.DeepEquals(current, expected))
+            {
+                return journal;
+            }
+        }
+
+        if (!JToken.DeepEquals(current, expected))
+        {
+            journal.Merge(projectMutationService.EnsurePropertyByPath(
+                binding.Entry,
+                binding.ArrayPropertyPath,
+                expected));
+        }
+
+        GameplayOperationStateModel replacement =
+            GameplayOperationStateService.CreateState(
+                progressionType,
+                binding,
+                baseline,
+                percentage,
+                expected);
+        GameplayOperationStateModel? previous = existing?.DeepClone();
+        bool previousModified = project.IsGameplayOperationStateModified;
+        journal.AddGameplayOperationState(
+            project,
+            previous,
+            replacement,
+            previousModified);
+        stateService.ReplaceState(project, replacement);
+        return journal;
+    }
+
     private ProjectMutationResult ScaleCore(
         ProjectModel project,
         ProgressionType progressionType,

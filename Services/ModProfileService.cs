@@ -167,7 +167,7 @@ public sealed class ModProfileService
             ?? throw new InvalidOperationException(
                 "The selected profile does not contain metadata.");
 
-        gameplayOperationStateService.ValidateProjectStates(project);
+        gameplayOperationStateService.ValidateProjectStatesReadOnly(project);
 
         ModProfileModel captured = CreateProfile(
             project,
@@ -177,10 +177,27 @@ public sealed class ModProfileService
             existingMetadata.ProfileVersion,
             editorVersion);
 
+        System.Collections.Generic.IReadOnlyList<
+            ProfileOperationRequestModel> reconciledRequests =
+                operationCaptureService.ReconcileForUpdate(
+                    project,
+                    existingProfile,
+                    captured.OperationRequests);
+
+        operationCaptureService.ValidateNoUnresolvedOwnedLeafConflicts(
+            project,
+            captured.Snapshot,
+            reconciledRequests);
+
         reconciliationService.Reconcile(
             project,
             existingProfile.Snapshot,
             captured.Snapshot);
+
+        operationCaptureService.FilterOwnedLeavesForUpdate(
+            project,
+            captured.Snapshot,
+            reconciledRequests);
 
         DateTimeOffset modifiedAt = captured.Metadata.ModifiedAtUtc <
             existingMetadata.CreatedAtUtc
@@ -203,7 +220,9 @@ public sealed class ModProfileService
                 Tags = new(existingMetadata.Tags)
             },
             Snapshot = captured.Snapshot,
-            OperationRequests = captured.OperationRequests
+            OperationRequests =
+                System.Linq.Enumerable.ToList(
+                    reconciledRequests)
         };
     }
 

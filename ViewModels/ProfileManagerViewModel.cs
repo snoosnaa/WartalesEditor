@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using WartalesEditor.Helpers;
+using WartalesEditor.Models;
 using WartalesEditor.Models.Profiles;
 using WartalesEditor.Services;
 
@@ -29,6 +30,8 @@ public sealed class ProfileManagerViewModel :
         bool?> showProfileDetailsDialog;
 
     private ModProfileSummaryModel? selectedProfile;
+
+    private ProjectModel? targetProject;
 
     private bool canApplyToCurrentProject;
 
@@ -269,10 +272,7 @@ public sealed class ProfileManagerViewModel :
                 return string.Empty;
             }
 
-            return
-                SelectedProfile.EffectiveChangeCount == 1
-                    ? "1 change"
-                    : $"{SelectedProfile.EffectiveChangeCount:N0} changes";
+            return SelectedProfile.ChangeSummaryText;
         }
     }
 
@@ -347,6 +347,17 @@ public sealed class ProfileManagerViewModel :
             SelectedProfile?.FilePath);
     }
 
+    public void SetTargetProject(ProjectModel? project)
+    {
+        if (ReferenceEquals(targetProject, project))
+        {
+            return;
+        }
+
+        targetProject = project;
+        Refresh();
+    }
+
     public void RefreshAndSelect(
         string? filePath)
     {
@@ -368,7 +379,7 @@ public sealed class ProfileManagerViewModel :
         {
             var profiles =
                 profileLibraryService
-                    .GetProfiles();
+                    .GetProfiles(targetProject);
 
             SelectedProfile =
                 null;

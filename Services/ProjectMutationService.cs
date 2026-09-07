@@ -923,15 +923,23 @@ public sealed class ProjectMutationService
         JToken previousValue =
             property.SourceProperty.Value.DeepClone();
 
-        property.ApplySnapshotValue(
-            propertyValue);
-
         ProjectMutationResult result =
             new();
 
         result.AddUpdatedProperty(
             property,
             previousValue);
+
+        try
+        {
+            property.ApplySnapshotValue(
+                propertyValue);
+        }
+        catch (Exception exception)
+        {
+            RollbackLocal(result, exception);
+            throw;
+        }
 
         return result;
     }
@@ -976,7 +984,7 @@ public sealed class ProjectMutationService
         }
         catch (Exception rollbackException)
         {
-            throw new AggregateException(
+            throw new ProjectRollbackIntegrityException(
                 "A project mutation failed and its internal changes could not be fully rolled back.",
                 mutationException,
                 rollbackException);
@@ -1111,15 +1119,23 @@ public sealed class ProjectMutationService
         JToken previousValue =
             existingProperty.SourceProperty.Value.DeepClone();
 
-        existingProperty.ApplySnapshotValue(
-            propertyValue);
-
         ProjectMutationResult result =
             new();
 
         result.AddUpdatedProperty(
             existingProperty,
             previousValue);
+
+        try
+        {
+            existingProperty.ApplySnapshotValue(
+                propertyValue);
+        }
+        catch (Exception exception)
+        {
+            RollbackLocal(result, exception);
+            throw;
+        }
 
         return result;
     }

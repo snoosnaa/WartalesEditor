@@ -2,9 +2,9 @@
 
 Application Version: 1.0.0 (Public Release Preparation)
 
-Status: Release Preparation In Progress
+Status: Accepted Cumulative Work; Final Integrated Regression Passed
 
-Last Updated: 2026-09-03
+Last Updated: 2026-09-07
 
 Purpose
 
@@ -32,6 +32,46 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
+The post-1.0.0 Profile Operation Intent / Update Survival correction is
+implemented, Engineering reviewed, and Project Owner accepted. All five phases
+passed Engineering Review. Documentation reconciliation is complete; the
+implementation remains uncommitted and unpushed pending explicit authorization.
+No later public release, version, or tag is claimed by this status.
+
+Profiles now separate portable, source-independent operation intent from
+source-bound Gameplay Operation State. Format-4 profiles replay canonical
+`OperationRequests` against compatible current Wartales data, capture fresh
+target baselines, and create fresh target-bound state without rebinding old
+restore authority. Profile Create/Update, changed-source replay, exact-source
+fidelity, direct-edit ambiguity rejection, observational effective counting,
+success-only dialog refresh, stable semantic reporting, and Random Trait
+candidate reconciliation are complete.
+
+Project Owner Interactive Acceptance passed against the latest Wartales update
+and a subsequent newer update. The verified end-to-end path covered Import,
+Check Compatibility, the existing All Mods profile, key gameplay-setting
+reconstruction, semantic already-configured reporting, Undo/Redo, Save/reopen,
+Export Back to Wartales, game launch, and successful loading into gameplay.
+
+The separate Import From Wartales startup button-clipping polish is complete.
+The inherited shared 100-DIP width and 20 DIPs of horizontal padding left too
+little content space for the welcome label. The accepted bounded correction
+uses a local 150-DIP width while preserving the exact label, shared style,
+neighboring controls, command, and Import workflow. Engineering Review and
+Project Owner Visual Acceptance both passed. Focused verification passed Debug
+and Release builds with zero warnings and errors, MainWindow/WPF layout checks,
+Quick Help 44, QuickBMS Import, Export/MainWindow 205/205, and
+`git diff --check`.
+
+Final Integrated Regression passed the complete accepted matrix: zero-warning
+Debug and Release builds; Phase 1 83, Phase 2 199, Phase 3 83, Phase 4 123, and
+Phase 5 75; all 26 Class A/Profile groups; Update Survival 180; Request Board
+101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and the focused
+QuickBMS Import, Language Data, and Restore suites. The only skips were the
+established Windows file-link cases when symbolic-link privilege was
+unavailable. Commit/push preparation is now current; commit and push remain
+unauthorized, and the publication decision has not started.
+
 Wartales Editor has completed its accepted feature and engineering milestones
 and is now preparing Version 1.0.0 for public release.
 
@@ -58,9 +98,11 @@ remains outside this phase.
 
 Current Milestone
 
-Public Release Preparation
+Commit / Push preparation for the accepted Profile Operation Intent / Update
+Survival correction and accepted Import button polish, following a passed Final
+Integrated Regression. Commit/push remains unauthorized.
 
-Current phase:
+Prior public-release preparation record:
 
 **Public Release Preparation is IN PROGRESS.** Phase 1 is COMPLETE: legal/public
 metadata, repository hygiene, public onboarding, version reconciliation, public

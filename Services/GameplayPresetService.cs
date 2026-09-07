@@ -89,11 +89,30 @@ public sealed class GameplayPresetService
         return ApplyCore(project, type, presetKey, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        ProgressionType type,
+        string presetKey,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            type,
+            presetKey,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline: exactSourceBaseline);
+    }
+
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         ProgressionType type,
         string presetKey,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         GameplayPresetDefinition definition = GameplayPresetCatalog.Get(type);
@@ -104,7 +123,13 @@ public sealed class GameplayPresetService
         GameplayOperationStateModel? existing = stateService.FindState(project, type);
         JArray baseline;
 
-        if (existing == null)
+        if (replay)
+        {
+            baseline = exactSourceBaseline == null
+                ? CaptureTargets(targets)
+                : (JArray)exactSourceBaseline.DeepClone();
+        }
+        else if (existing == null)
         {
             baseline = CaptureTargets(targets);
         }
@@ -120,12 +145,25 @@ public sealed class GameplayPresetService
         ValidateBaseline(definition, baseline);
         ValidateExpected(definition, preset, expected);
         JArray current = CaptureTargets(targets);
+        if (replay &&
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The exact-source gameplay preset baseline does not " +
+                "match the current target structure.");
+        }
         if (existing != null &&
             JToken.DeepEquals(current, expected) &&
             string.Equals(
                 existing.GameplaySettings?.Value<string>("preset"),
                 preset.Key,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) &&
+            (!replay || JToken.DeepEquals(existing.BaselineArray, baseline)))
             return result;
 
         if (!JToken.DeepEquals(current, expected))
@@ -442,7 +480,7 @@ public sealed class GameplayPresetService
         return new ResolvedGameplayTarget(target, entry, property, value);
     }
 
-    private static JArray CaptureTargets(
+    internal static JArray CaptureTargets(
         IReadOnlyList<ResolvedGameplayTarget> targets)
     {
         JArray records = new();
@@ -480,7 +518,7 @@ public sealed class GameplayPresetService
         return records;
     }
 
-    private static JArray BuildExpected(
+    internal static JArray BuildExpected(
         JArray baseline,
         GameplayPresetDefinition definition,
         GameplayPresetOption preset)

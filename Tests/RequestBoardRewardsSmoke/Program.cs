@@ -223,11 +223,23 @@ Check(!profile.Snapshot.Categories.SelectMany(category => category.Settings)
         .SelectMany(setting => setting.Properties)
         .Any(property => property.PropertyPath == RequestBoardRewardsService.PropertyPath),
     "profile excludes owned absolute array snapshots");
-Check(profile.Snapshot.GameplayOperationStates.All(state =>
-        state.OperationType != ProgressionType.RequestBoardRewards),
-    "profile excludes source-specific Request Board state");
-Check(new EffectiveChangeCountService().Calculate(profile) == 2,
-    "effective profile accounting reports two owned project changes");
+GameplayOperationStateModel retainedRequestBoardState =
+    profile.Snapshot.GameplayOperationStates.Single(state =>
+        state.OperationType == ProgressionType.RequestBoardRewards);
+Check(retainedRequestBoardState.ProjectCompatibilityIdentity ==
+          profileSource.SourceCdbGenerationIdentity &&
+      string.IsNullOrEmpty(
+          retainedRequestBoardState.LocalRestoreContentIdentity),
+    "profile retains exact-source Request Board state without portable restore authority");
+ProjectModel countTarget = CreateProject(
+    MinArray((0, 200), (1, 175)),
+    MaxArray((0, 250), (1, 225)));
+int profileChangeCount = new EffectiveChangeCountService().Calculate(
+    countTarget,
+    profile,
+    out bool profileChangeCountIsExact);
+Check(profileChangeCountIsExact && profileChangeCount == 2,
+    "target-context profile accounting reports two effective project changes");
 string serialized = new ModProfileSerializationService().Serialize(profile);
 Check(serialized.Contains("request-board-rewards", StringComparison.Ordinal) &&
       serialized.Contains("\"percentage\": 150", StringComparison.Ordinal),
@@ -815,7 +827,8 @@ ProjectModel CreateProject(JArray? minimum, JArray? maximum)
     ProjectModelFactory factory = new();
     foreach (JObject sheet in root["sheets"]!.OfType<JObject>())
         result.Sheets.Add(factory.CreateSheetModel(sheet));
-    string identity = "sha256:" + new string('a', 64);
+    string identity = new CdbGenerationIdentityService().Calculate(
+        System.Text.Encoding.UTF8.GetBytes(result.OriginalJson));
     result.EstablishPersistedIdentity(
         identity,
         identity,

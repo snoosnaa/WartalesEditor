@@ -136,6 +136,21 @@ public sealed class RequestBoardRewardsService
         return ApplyCore(project, percentage, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        int percentage,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            percentage,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline: exactSourceBaseline);
+    }
+
     public ProjectMutationResult RestorePreviousValues(ProjectModel project) =>
         RestorePreviousValuesCore(project, new ProjectMutationResult());
 
@@ -150,7 +165,9 @@ public sealed class RequestBoardRewardsService
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         int percentage,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ValidatePercentage(percentage, allowProfilePercentage: false);
@@ -159,7 +176,13 @@ public sealed class RequestBoardRewardsService
             project,
             ProgressionType.RequestBoardRewards);
         JArray baseline;
-        if (existing == null)
+        if (replay)
+        {
+            baseline = exactSourceBaseline == null
+                ? Capture(targets)
+                : (JArray)exactSourceBaseline.DeepClone();
+        }
+        else if (existing == null)
         {
             baseline = Capture(targets);
         }
@@ -174,12 +197,27 @@ public sealed class RequestBoardRewardsService
         JArray expected = BuildExpected(baseline, percentage);
         JArray current = Capture(targets);
 
-        if (existing == null && JToken.DeepEquals(current, expected))
+        if (replay &&
+            !string.Equals(
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(baseline),
+                GameplayOperationFingerprintService
+                    .CreateShapeFingerprint(current),
+                StringComparison.Ordinal))
+        {
+            throw CompatibilityFailure(
+                GameplayCompatibilityStatus.StructureChanged);
+        }
+
+        if (!replay &&
+            existing == null &&
+            JToken.DeepEquals(current, expected))
             return result;
 
         if (existing != null &&
             JToken.DeepEquals(current, expected) &&
-            ReadPercentage(existing) == percentage)
+            ReadPercentage(existing) == percentage &&
+            (!replay || JToken.DeepEquals(existing.BaselineArray, baseline)))
         {
             return result;
         }

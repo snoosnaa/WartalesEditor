@@ -4839,11 +4839,15 @@ public class MainViewModel : ObservableObject
         return message.ToString();
     }
 
-    private static string BuildProfileApplySummary(
+    internal static string BuildProfileApplySummary(
         ModificationSnapshotImportResultModel result)
     {
         StringBuilder message =
             new();
+
+        string[] semanticAlreadyConfigured =
+            GetSemanticAlreadyConfiguredSummaries(
+                result.OperationResults);
 
         int applied =
             result.AppliedEffectiveChangeCount;
@@ -4872,6 +4876,9 @@ public class MainViewModel : ObservableObject
                     "change",
                     "changes")} are not available in this Wartales file.");
 
+            AppendSemanticAlreadyConfigured(
+                message,
+                semanticAlreadyConfigured);
             return message.ToString();
         }
 
@@ -4883,6 +4890,10 @@ public class MainViewModel : ObservableObject
             message.AppendLine();
             message.Append(
                 "This profile is already applied.");
+
+            AppendSemanticAlreadyConfigured(
+                message,
+                semanticAlreadyConfigured);
 
             return message.ToString();
         }
@@ -4912,10 +4923,59 @@ public class MainViewModel : ObservableObject
         else
         {
             message.Append(
-                "Every profile change was applied.");
+                semanticAlreadyConfigured.Length > 0
+                    ? "All profile settings are now active."
+                    : "Every profile change was applied.");
         }
 
+        AppendSemanticAlreadyConfigured(
+            message,
+            semanticAlreadyConfigured);
+
         return message.ToString();
+    }
+
+    internal static string[] GetSemanticAlreadyConfiguredSummaries(
+        IEnumerable<ProfileOperationApplyItemResultModel> operationResults)
+    {
+        ArgumentNullException.ThrowIfNull(operationResults);
+
+        return operationResults
+            .Where(operation =>
+                !string.IsNullOrWhiteSpace(
+                    operation.AlreadyConfiguredSummary))
+            .GroupBy(
+                operation => operation.OperationId,
+                StringComparer.Ordinal)
+            .Select(group => group.Last().AlreadyConfiguredSummary!)
+            .ToArray();
+    }
+
+    private static void AppendSemanticAlreadyConfigured(
+        StringBuilder message,
+        IReadOnlyList<string> summaries)
+    {
+        string[] presentationSummaries = summaries
+            .Where(summary => !string.IsNullOrWhiteSpace(summary))
+            .ToArray();
+
+        if (presentationSummaries.Length == 0)
+        {
+            return;
+        }
+
+        message.AppendLine();
+        message.AppendLine();
+        message.AppendLine("Already configured:");
+        for (int index = 0; index < presentationSummaries.Length; index++)
+        {
+            message.Append("• ");
+            message.Append(presentationSummaries[index]);
+            if (index < presentationSummaries.Length - 1)
+            {
+                message.AppendLine();
+            }
+        }
     }
 
     private void ShowLanguageData()
@@ -6012,6 +6072,12 @@ public class MainViewModel : ObservableObject
         object? sender,
         PropertyValueChangedEventArgs e)
     {
+        if (Project != null &&
+            ProjectObservationSuppressionService.IsSuppressed(Project))
+        {
+            return;
+        }
+
         if (sender
             is not PropertyModel property)
         {
@@ -6031,6 +6097,12 @@ public class MainViewModel : ObservableObject
         object? sender,
         EventArgs e)
     {
+        if (Project != null &&
+            ProjectObservationSuppressionService.IsSuppressed(Project))
+        {
+            return;
+        }
+
         RefreshModificationState();
 
         if (sender
@@ -6129,6 +6201,49 @@ public class MainViewModel : ObservableObject
         NotifySelectedSettingPresentationChanged();
 
         RefreshCommandStates();
+    }
+
+    private IReadOnlyList<Exception>
+        RefreshOpenGameplayDialogsAfterProfileApply()
+    {
+        IEnumerable<IGameplayProjectRefreshable> refreshableViewModels =
+            new Window?[]
+            {
+                progressionScalingDialog,
+                startingResourcesDialog,
+                overworldMovementSpeedDialog,
+                rainFrequencyDialog,
+                requestBoardRewardsDialog,
+                randomTraitExclusionsDialog
+            }
+            .Concat(partyEconomyDialogs.Values)
+            .Concat(gameplayPresetDialogs.Values)
+            .Select(dialog => dialog?.DataContext)
+            .OfType<IGameplayProjectRefreshable>();
+
+        return RefreshGameplayViewModels(refreshableViewModels);
+    }
+
+    internal static IReadOnlyList<Exception> RefreshGameplayViewModels(
+        IEnumerable<IGameplayProjectRefreshable> viewModels)
+    {
+        ArgumentNullException.ThrowIfNull(viewModels);
+        List<Exception> failures = new();
+
+        foreach (IGameplayProjectRefreshable viewModel in viewModels)
+        {
+            try
+            {
+                viewModel.RefreshAfterProjectOperation();
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine(exception);
+                failures.Add(exception);
+            }
+        }
+
+        return failures;
     }
 
     private void NotifySelectedSettingPresentationChanged()
@@ -6686,6 +6801,8 @@ public class MainViewModel : ObservableObject
             return;
         }
 
+        profileManagerViewModel.SetTargetProject(Project);
+
         profileManagerViewModel.CanApplyToCurrentProject =
             Project != null;
     }
@@ -6693,6 +6810,25 @@ public class MainViewModel : ObservableObject
     private void OnProfileApplyRequested(
         object? sender,
         ModProfileSummaryModel profile)
+    {
+        ApplyProfile(
+            profile,
+            RefreshOpenGameplayDialogsAfterProfileApply);
+    }
+
+    internal void ApplyProfileForTesting(
+        ModProfileSummaryModel profile,
+        IEnumerable<IGameplayProjectRefreshable> refreshableViewModels)
+    {
+        ArgumentNullException.ThrowIfNull(refreshableViewModels);
+        ApplyProfile(
+            profile,
+            () => RefreshGameplayViewModels(refreshableViewModels));
+    }
+
+    private void ApplyProfile(
+        ModProfileSummaryModel profile,
+        Func<IReadOnlyList<Exception>> refreshGameplayDialogs)
     {
         if (Project == null)
         {
@@ -6730,6 +6866,9 @@ public class MainViewModel : ObservableObject
 
             RefreshAfterProjectOperation();
 
+            IReadOnlyList<Exception> refreshFailures =
+                refreshGameplayDialogs();
+
             string message =
                 BuildProfileApplySummary(
                     result);
@@ -6751,15 +6890,30 @@ public class MainViewModel : ObservableObject
             }
 
             Status =
-                result.MutationResult.WasModified
+                result.AppliedEffectiveChangeCount > 0
                     ? $"Profile applied: " +
                       $"{result.AppliedEffectiveChangeCount:N0} " +
                       $"{GetSingularOrPlural(
                           result.AppliedEffectiveChangeCount,
                           "change",
                           "changes")} applied"
-                    : "Profile applied: " +
-                      "no changes were required.";
+                    : result.OperationsAlreadyConfiguredCount > 0
+                        ? "Profile applied: settings were already configured."
+                        : "Profile applied: no changes were required.";
+
+            if (refreshFailures.Count > 0)
+            {
+                messageDialogService.ShowWarning(
+                    "The profile was applied successfully, but one or more " +
+                    "open gameplay tools could not be refreshed." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Close and reopen those gameplay tools to view the " +
+                    "current settings.",
+                    "Profile Applied");
+
+                Status =
+                    "Profile applied; reopen affected gameplay tools to refresh them.";
+            }
         }
         catch (Exception exception)
         {

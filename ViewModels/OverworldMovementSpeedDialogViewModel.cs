@@ -7,12 +7,14 @@ using WartalesEditor.Services;
 
 namespace WartalesEditor.ViewModels;
 
-public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
+public sealed class OverworldMovementSpeedDialogViewModel :
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly OverworldMovementSpeedService service;
     private OverworldMovementPresetOption? selectedPreset;
     private OverworldMovementPreset detectedPreset;
+    private OverworldMovementPreset? loadedSelectedPreset;
 
     public OverworldMovementSpeedDialogViewModel(
         ProjectModel project,
@@ -91,6 +93,24 @@ public sealed class OverworldMovementSpeedDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRestorePreviousValues));
+        loadedSelectedPreset = SelectedPreset?.Preset;
+    }
+
+    public void RefreshAfterProjectOperation()
+    {
+        OverworldMovementPreset? pending = SelectedPreset?.Preset;
+        bool preservePending = pending != loadedSelectedPreset;
+
+        RefreshFromProject();
+
+        if (preservePending && pending.HasValue &&
+            pending.Value is OverworldMovementPreset.Vanilla or
+                OverworldMovementPreset.Faster or
+                OverworldMovementPreset.Fast or
+                OverworldMovementPreset.VeryFast)
+        {
+            SelectedPreset = FindPreset(pending.Value);
+        }
     }
 
     private static OverworldMovementPresetOption FindPreset(

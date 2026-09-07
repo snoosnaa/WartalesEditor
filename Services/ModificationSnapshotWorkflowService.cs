@@ -302,12 +302,23 @@ public sealed class ModificationSnapshotWorkflowService
                         .ProfileOperationApplyItemResultModel>(),
                 mutationResult);
         }
-        catch
+        catch (Exception operationException)
         {
             if (mutationResult.WasModified)
             {
-                new Operations.ProjectOperationTransactionService()
-                    .Rollback(mutationResult);
+                try
+                {
+                    new Operations.ProjectOperationTransactionService()
+                        .Rollback(mutationResult);
+                }
+                catch (Exception rollbackException)
+                {
+                    throw new Operations.ProjectRollbackIntegrityException(
+                        "Profile snapshot evaluation failed and its temporary " +
+                        "changes could not be fully rolled back.",
+                        operationException,
+                        rollbackException);
+                }
             }
 
             throw;

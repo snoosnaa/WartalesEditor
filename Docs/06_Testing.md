@@ -1,7 +1,7 @@
 ﻿# Testing Guide
 
 **Document Version:** 1.1  
-**Last Updated:** 2026-07-12
+**Last Updated:** 2026-09-07
 
 ---
 
@@ -215,6 +215,36 @@ when Windows symlink privilege is unavailable.
 
 The real canonical CDB may be inspected read-only. All mutation, Save, and
 re-import tests use isolated deterministic synthetic files.
+
+### Profile Operation Intent / Update Survival Acceptance
+
+The five-phase correction is complete. Automated evidence passes Debug and
+Release builds with zero warnings and zero errors; Phase 1 Profile Operation
+Intent 83, Phase 2 Replay 199, Phase 3 Atomic Apply 83, Phase 4 Create/Update
+123, Phase 5 Presentation 75, all 26 current Class A/Profile groups, Update
+Survival 180, Request Board Rewards 101, Golden CDB 203, QuickBMS Export
+205/205, and Quick Help 44. Focused QuickBMS Import, Language Data, and Restore
+Previous Values suites pass, and `git diff --check` passes. The QuickBMS file-
+symlink case retains only its permitted environment skip when Windows symbolic-
+link privilege is unavailable. Final Integrated Regression repeated this
+complete accepted matrix and passed before commit/push preparation.
+
+Coverage includes format-4 capture and backward compatibility, changed-source
+and exact-source replay, state-only and true no-op outcomes, atomic rollback and
+one-action Undo/Redo, Create/Update reconciliation, direct-edit ambiguity,
+observational target-context counting, semantic result identity, success-only
+dialog refresh, pending-input preservation, complete generic preset discovery,
+Random Trait membership reconciliation, post-commit refresh isolation, and a
+real temporary disk save/reopen with fresh dialog ViewModels.
+
+Project Owner Interactive Acceptance is separate from automated verification
+and passed. Using current post-update Wartales data, the owner verified Import,
+Check Compatibility, the existing All Mods profile, Character XP 40%,
+Profession XP 50%, Run Speed displayed as Fast, Positive Random Traits as
+Positive Only, Request Board and Restore behavior, coherent Undo/Redo, and
+Save/reopen persistence. After another Wartales update, the owner repeated the
+workflow and additionally verified Export Back to Wartales, successful game
+launch, and loading into gameplay.
 
 ### Shared Restore Previous Values Authority Regression
 

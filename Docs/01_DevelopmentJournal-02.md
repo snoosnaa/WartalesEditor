@@ -1,9 +1,49 @@
 ﻿# Development Journal – Part 2
 
-**Version:** 0.9\
+**Version:** 1.0\
 **Status:** Active\
-**Last Updated:** 2026-08-31\
+**Last Updated:** 2026-09-07\
 **Applies To:** Entire Project
+
+------------------------------------------------------------------------
+
+# 2026-09-07 — Profile Operation Intent / Update Survival Acceptance
+
+The five-phase correction completed implementation and Engineering Review with
+a **PASS** for every phase. Format-4 profiles now keep canonical portable
+operation intent separate from source-bound Gameplay Operation State. Profile
+Create/Update, changed-source replay with fresh baselines, exact-source
+validation, atomic Apply and rollback, observational target-context counting,
+semantic completion reporting, success-only dialog refresh, pending-input
+preservation, and Random Trait candidate reconciliation are accepted.
+
+Project Owner Interactive Acceptance returned **PASS** using the real current
+Wartales data and the existing All Mods profile. Verified results included
+Character XP 40%, Profession XP 50%, Run Speed displayed as Fast, Positive
+Random Traits as Positive Only, Request Board and Restore behavior, coherent
+Undo/Redo, and Save/reopen persistence. The owner then updated Wartales again
+and repeated Import, Check Compatibility, Profile Apply, Save, and Export Back
+to Wartales; the game launched and loaded successfully into gameplay.
+
+Automated acceptance totals are Phase 1 83, Phase 2 199, Phase 3 83, Phase 4
+123, Phase 5 75, 26 Class A/Profile groups, Update Survival 180, Request Board
+101, Golden 203, Export 205/205, and Quick Help 44, with focused Import,
+Language Data, and Restore suites passing and zero-warning Debug/Release builds.
+Documentation reconciliation is complete. Commit/push and any publication
+decision remain unauthorized.
+
+The separate Import From Wartales startup-button clipping issue was traced to
+the shared 100-DIP utility button width leaving only 80 DIPs after horizontal
+padding for the longer welcome label. The bounded correction gives that button
+a local 150-DIP width while preserving its exact text, shared style, neighbors,
+command, and Import behavior. Focused WPF coverage verifies the default and
+800-DIP minimum layouts. Debug and Release builds passed with zero warnings and
+errors; Quick Help passed 44 checks, QuickBMS Import passed,
+Export/MainWindow passed 205/205, and `git diff --check` passed. Engineering
+Review and Project Owner Visual Acceptance both returned **PASS**. Final
+Integrated Regression then repeated the complete accepted matrix and passed.
+The only skips were the established Windows file-link cases when symbolic-link
+privilege was unavailable. Commit and push are not authorized.
 
 ------------------------------------------------------------------------
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -68,6 +69,61 @@ void RunQuickHelpSmoke()
         (Button?)mainWindow.FindName("QuickHelpButton")
         ?? throw new InvalidOperationException(
             "Quick Help button was not found.");
+    Button importButton =
+        (Button?)mainWindow.FindName("ImportFromWartalesWelcomeButton")
+        ?? throw new InvalidOperationException(
+            "The welcome Import From Wartales button was not found.");
+    StackPanel welcomeActionRow =
+        importButton.Parent as StackPanel
+        ?? throw new InvalidOperationException(
+            "The welcome action row was not found.");
+    Button openButton = welcomeActionRow.Children
+        .OfType<Button>()
+        .Single(button => string.Equals(
+            button.Content?.ToString(),
+            "Open Extracted File",
+            StringComparison.Ordinal));
+    Button profilesButton = welcomeActionRow.Children
+        .OfType<Button>()
+        .Single(button => string.Equals(
+            button.Content?.ToString(),
+            "Profiles",
+            StringComparison.Ordinal));
+
+    Check(
+        string.Equals(
+            importButton.Content?.ToString(),
+            "Import From Wartales",
+            StringComparison.Ordinal) &&
+        importButton.Width == 150 &&
+        ButtonContentFits(importButton),
+        "welcome Import label is exact and accommodated at the default size");
+    Check(
+        WelcomeActionsFit(
+            welcomeActionRow,
+            importButton,
+            openButton,
+            profilesButton) &&
+        ButtonContentFits(openButton) &&
+        ButtonContentFits(profilesButton),
+        "welcome actions remain aligned without clipping at the default size");
+
+    mainWindow.Width = mainWindow.MinWidth;
+    DrainDispatcher();
+    Check(
+        mainWindow.ActualWidth >= 799 &&
+        WelcomeActionsFit(
+            welcomeActionRow,
+            importButton,
+            openButton,
+            profilesButton) &&
+        ButtonContentFits(importButton) &&
+        ButtonContentFits(openButton) &&
+        ButtonContentFits(profilesButton) &&
+        quickHelpButton.IsVisible,
+        "welcome actions and Quick Help remain usable at the 800-DIP minimum width");
+    mainWindow.Width = 1200;
+    DrainDispatcher();
 
     Check(
         string.Equals(
@@ -686,6 +742,51 @@ bool FooterFits(
             buttonPosition.X + 0.01 &&
         buttonPosition.X + buttons.ActualWidth <=
             footer.ActualWidth + 0.01;
+}
+
+bool ButtonContentFits(Button button)
+{
+    string text = button.Content?.ToString() ?? string.Empty;
+    FormattedText measurement = new(
+        text,
+        CultureInfo.CurrentUICulture,
+        button.FlowDirection,
+        new Typeface(
+            button.FontFamily,
+            button.FontStyle,
+            button.FontWeight,
+            button.FontStretch),
+        button.FontSize,
+        Brushes.Black,
+        VisualTreeHelper.GetDpi(button).PixelsPerDip);
+
+    return button.ActualWidth > 0 &&
+        measurement.WidthIncludingTrailingWhitespace +
+            button.Padding.Left + button.Padding.Right <=
+        button.ActualWidth + 0.01;
+}
+
+bool WelcomeActionsFit(
+    StackPanel row,
+    params Button[] buttons)
+{
+    if (row.ActualWidth <= 0 || buttons.Any(button => button.ActualWidth <= 0))
+        return false;
+
+    double priorRight = 0;
+    foreach (Button button in buttons)
+    {
+        Point position = button.TranslatePoint(new Point(0, 0), row);
+        if (position.X + 0.01 < priorRight ||
+            position.X + button.ActualWidth > row.ActualWidth + 0.01)
+        {
+            return false;
+        }
+
+        priorRight = position.X + button.ActualWidth;
+    }
+
+    return true;
 }
 
 void DrainDispatcher()

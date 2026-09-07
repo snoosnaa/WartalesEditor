@@ -6,7 +6,8 @@ using WartalesEditor.Services;
 
 namespace WartalesEditor.ViewModels;
 
-public sealed class StartingResourcesDialogViewModel : ObservableObject
+public sealed class StartingResourcesDialogViewModel :
+    ObservableObject, IGameplayProjectRefreshable
 {
     private readonly ProjectModel project;
     private readonly GameplayOperationStateService stateService;
@@ -19,6 +20,7 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
     private bool isInitialized;
     private bool inputBindingValid = true;
     private string validationMessage = string.Empty;
+    private StartingResourcesSettings loadedSettings = new();
 
     public StartingResourcesDialogViewModel(
         ProjectModel project,
@@ -160,7 +162,35 @@ public sealed class StartingResourcesDialogViewModel : ObservableObject
             ValidationMessage = project.GameplayOperationStateWarnings.FirstOrDefault() ?? string.Empty;
         }
         NotifyAmountsChanged();
+        loadedSettings = CreateSettings();
     }
+
+    public void RefreshAfterProjectOperation()
+    {
+        StartingResourcesSettings pending = CreateSettings();
+        bool preservePending = !SettingsEqual(pending, loadedSettings);
+        bool bindingWasValid = inputBindingValid;
+
+        RefreshFromProject();
+
+        if (preservePending)
+        {
+            SetAmounts(pending);
+            inputBindingValid = bindingWasValid;
+            ValidateInputs();
+            NotifyAmountsChanged();
+        }
+    }
+
+    private static bool SettingsEqual(
+        StartingResourcesSettings left,
+        StartingResourcesSettings right) =>
+        left.Krowns == right.Krowns &&
+        left.Bread == right.Bread &&
+        left.Apples == right.Apples &&
+        left.IronOre == right.IronOre &&
+        left.Wood == right.Wood &&
+        left.Cloth == right.Cloth;
 
     private void SetAmounts(StartingResourcesSettings settings)
     {

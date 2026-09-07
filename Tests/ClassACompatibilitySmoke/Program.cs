@@ -223,6 +223,7 @@ VerifyRandomTraitExclusions();
 VerifyProfileUpdate();
 VerifyProfileUpdateIntegrityAndAccounting();
 VerifyUpdateProfileFinalBlockerCorrections();
+VerifyProfileCountObservationSafety();
 VerifyCampfireExpansion();
 VerifyBattleCameraBaselineDrift();
 VerifyLegacyValour();
@@ -1405,6 +1406,117 @@ static void VerifyOrdinaryOpenTimeBetweenRests()
         30);
 }
 
+static void VerifyProfileCountObservationSafety()
+{
+    ProjectModel profileSource = CreateProject(
+        Sheet(
+            "constant",
+            ScalarEntry("FishingDurationControl", 6),
+            ScalarEntry("OrdinaryHistoryValue", 1)));
+    Check(ApplyPreset(
+            new ProjectOperationService(),
+            CreatePresetService(),
+            profileSource,
+            ProgressionType.FishingSpeed,
+            "Fast").Succeeded,
+        "count observation fixture captures Fishing Speed intent");
+    ModProfileModel profile = new ModProfileWorkflowService().CreateProfile(
+        profileSource,
+        "Observation fixture");
+
+    ProjectModel target = CreateProject(
+        Sheet(
+            "constant",
+            ScalarEntry("FishingDurationControl", 6),
+            ScalarEntry("OrdinaryHistoryValue", 1)));
+    EditHistoryService history = new();
+    MainViewModel main = CreateMainViewModel(
+        new LocalizationService(),
+        ReferenceDataService.Instance,
+        editHistoryService: history);
+    main.Project = target;
+
+    PropertyModel ordinary = Entry(
+        target,
+        "constant",
+        "OrdinaryHistoryValue").Properties.Single(property =>
+            property.EffectivePropertyPath == "value");
+    ordinary.Value = "2";
+    Check(main.CanUndo && !main.CanRedo,
+        "live MainViewModel subscription records the fixture user edit");
+    main.UndoCommand.Execute(null);
+    Check(!main.CanUndo && main.CanRedo,
+        "fixture establishes a pre-existing Redo action");
+
+    bool beforeCanUndo = main.CanUndo;
+    bool beforeCanRedo = main.CanRedo;
+    string beforeUndoDescription = main.UndoDescription;
+    string beforeRedoDescription = main.RedoDescription;
+    string beforeProject = ObservableProjectState(target);
+
+    int count = new ProfileEffectiveChangeCountService().Calculate(
+        target,
+        profile,
+        out bool exact);
+
+    Check(exact && count == 1,
+        "live MainViewModel target-context semantic count remains exact");
+    Check(main.CanUndo == beforeCanUndo &&
+          main.CanRedo == beforeCanRedo &&
+          main.UndoDescription == beforeUndoDescription &&
+          main.RedoDescription == beforeRedoDescription &&
+          ObservableProjectState(target) == beforeProject,
+        "target-context count preserves Undo/Redo order, labels, project data, state, flags, and provenance");
+
+    PropertyModel fishing = Entry(
+        target,
+        "constant",
+        "FishingDurationControl").Properties.Single(property =>
+            property.EffectivePropertyPath == "value");
+    int observerNotifications = 0;
+    EventHandler<PropertyValueChangedEventArgs> throwingObserver =
+        (_, _) =>
+        {
+            observerNotifications++;
+            if (observerNotifications == 1)
+            {
+                throw new InvalidOperationException(
+                    "Injected live evaluation observer failure.");
+            }
+        };
+    fishing.ValueChanged += throwingObserver;
+    int fallbackCount;
+    bool fallbackExact;
+    try
+    {
+        fallbackCount = new ProfileEffectiveChangeCountService().Calculate(
+            target,
+            profile,
+            out fallbackExact);
+    }
+    finally
+    {
+        fishing.ValueChanged -= throwingObserver;
+    }
+    Check(!fallbackExact &&
+          fallbackCount == 0 &&
+          observerNotifications >= 2 &&
+          main.CanUndo == beforeCanUndo &&
+          main.CanRedo == beforeCanRedo &&
+          main.UndoDescription == beforeUndoDescription &&
+          main.RedoDescription == beforeRedoDescription &&
+          ObservableProjectState(target) == beforeProject,
+        "confirmed-rollback observer failure preserves live history and returns only the truthful non-exact ordinary count");
+
+    main.RedoCommand.Execute(null);
+    Check(ordinary.SourceProperty!.Value.Value<int>() == 2 &&
+          main.CanUndo && !main.CanRedo,
+        "the pre-existing Redo action retains its original semantics after count evaluation");
+
+    Console.WriteLine(
+        "PASS target-context profile counting preserves live MainViewModel Undo/Redo and observable project state");
+}
+
 static void VerifyRteAccountingAndPartyImmediateRestore()
 {
     ProjectModel exclusionsProject = WithUnknownSource(
@@ -1449,14 +1561,21 @@ static void VerifyRteAccountingAndPartyImmediateRestore()
             exclusionsService,
             Array.Empty<string>()),
         exclusionsProject);
+    ModProfileModel threeExcludedProfile =
+        new ModProfileService().CreateProfile(
+            exclusionsProject,
+            "RTE three exclusions");
+    int threeExcludedProfileCount =
+        new ProfileEffectiveChangeCountService().Calculate(
+            CreateRandomTraitExclusionProject(),
+            threeExcludedProfile,
+            out bool threeExcludedCountIsExact);
     Check(threeExcluded.Succeeded &&
           new EffectiveChangeCountService().Calculate(exclusionsProject) ==
               preRteCount + 3 &&
-          new ProfileEffectiveChangeCountService().Calculate(
-              new ModProfileService().CreateProfile(
-                  exclusionsProject,
-                  "RTE three exclusions")) == 3,
-        "RTE three additional exclusions contribute exactly three project/profile changes");
+          threeExcludedCountIsExact &&
+          threeExcludedProfileCount == 3,
+        "RTE target-context profile accounting reports exactly three changed candidates");
     IReadOnlyList<ChangeSummaryItemModel> threeExcludedSummary =
         new ChangeSummaryService().BuildItems(
             exclusionsProject,
@@ -3752,13 +3871,18 @@ static void VerifyProfileUpdate()
                 Tags = new() { "party", "quality-of-life" }
             },
             Snapshot = captured.Snapshot,
-            OperationRequests = new()
-            {
-                new ProfileOperationRequestModel
+            OperationRequests = captured.OperationRequests
+                .Concat(new[]
                 {
-                    OperationId = ProfileOperationIds.UpgradeAllEquipment
-                }
-            }
+                    new ProfileOperationRequestModel
+                    {
+                        OperationId = ProfileOperationIds.UpgradeAllEquipment
+                    }
+                })
+                .OrderBy(
+                    request => request.OperationId,
+                    StringComparer.Ordinal)
+                .ToList()
         };
         ModProfileSummaryModel summary = library.AddProfile(originalProfile);
         string originalPath = summary.FilePath;
@@ -3812,11 +3936,14 @@ static void VerifyProfileUpdate()
               updated.Snapshot.GameplayOperationStates.Single().OperationType ==
                   ProgressionType.PositiveRandomTraits,
             "profile update refreshes current format, snapshot metadata, and gameplay state");
-        Check(updated.OperationRequests.Count == 0,
-            "profile update refreshes additive requests instead of retaining old requests");
-        Check(updated.Snapshot.Categories.Single()
-                  .Settings.SelectMany(setting => setting.Properties).Count() == 3,
-            "profile update rebuilds ordinary property changes from the current project");
+        Check(updated.OperationRequests.Count == 2 &&
+              updated.OperationRequests.Any(request => request.OperationId ==
+                  ProfileOperationIds.PositiveRandomTraits) &&
+              updated.OperationRequests.Any(request => request.OperationId ==
+                  ProfileOperationIds.UpgradeAllEquipment),
+            "profile update refreshes gameplay intent and preserves additive requests");
+        Check(updated.Snapshot.Categories.Count == 0,
+            "profile update excludes properties owned by canonical gameplay intent");
 
         string bytesBeforeUnsafeOverload = File.ReadAllText(originalPath);
         CheckThrows<InvalidOperationException>(
@@ -3976,8 +4103,13 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
             "4.2",
             "before-update");
         initial.Metadata.Tags.Add("integrity");
-        int initialEffectiveCount =
-            new ProfileEffectiveChangeCountService().Calculate(initial);
+        ProfileEffectiveChangeCountService profileAccounting = new();
+        int initialEffectiveCount = profileAccounting.Calculate(
+            CreateProfileIntegrityProject(),
+            initial,
+            out bool initialCountIsExact);
+        Check(initialCountIsExact,
+            "mixed profile initial count is exact against a concrete target");
         Check(initial.Snapshot.Categories
                 .Single(category => category.Name == "item")
                 .Settings.Single(setting => setting.Id == "Anvil")
@@ -4045,16 +4177,20 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
         int candidatePropertyCount = candidate.Snapshot.Categories
             .SelectMany(category => category.Settings)
             .Sum(setting => setting.Properties.Count);
-        Check(candidatePropertyCount == initialPropertyCount + 5,
-            "Update Profile preserves baseline-accepted records and adds five effective paths");
+        Check(candidatePropertyCount == initialPropertyCount,
+            "Update Profile preserves ordinary records while canonical operation intent owns five new effective paths");
         ModificationSnapshotPropertyModel replacedScalar = candidate.Snapshot.Categories
             .Single(category => category.Name == "constant")
             .Settings.Single(setting => setting.Id == "IntegrityScalar")
             .Properties.Single(property => property.PropertyPath == "value");
+        int candidateEffectiveCount = profileAccounting.Calculate(
+            CreateProfileIntegrityProject(),
+            candidate,
+            out bool candidateCountIsExact);
         Check(replacedScalar.OriginalValue.Value<int>() == 1 &&
               replacedScalar.CurrentValue.Value<int>() == 3 &&
-              new ProfileEffectiveChangeCountService().Calculate(candidate) ==
-                  initialEffectiveCount + 5,
+              candidateCountIsExact &&
+              candidateEffectiveCount == initialEffectiveCount + 5,
             "same-target replacement remains one canonical record while exactly five new changes increase the profile count");
 
         ModProfileSerializationService profileSerialization = new();
@@ -4105,11 +4241,15 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
                 new LocalizationService());
         int projectCount =
             new ProfileEffectiveChangeCountService().Calculate(replayTarget);
+        ModProfileSummaryModel targetSummary = library
+            .GetProfiles(CreateProfileIntegrityProject())
+            .Single();
         Check(JToken.DeepEquals(replayTarget.RootDocument, source.RootDocument) &&
               replay.UnappliedEffectiveChangeCount == 0,
             "updated mixed profile reloads and reproduces the intended CDB state");
         Check(projectCount == review.Count &&
-              projectCount == updatedSummary.EffectiveChangeCount &&
+              targetSummary.IsEffectiveChangeCountExact &&
+              projectCount == targetSummary.EffectiveChangeCount &&
               projectCount == replay.AppliedEffectiveChangeCount,
             "project, Review Changes, profile, and apply feedback share effective-leaf counts");
 
@@ -4141,8 +4281,12 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
             source,
             updated,
             "no-change-update");
-        Check(new ProfileEffectiveChangeCountService().Calculate(noChangeCandidate) ==
-              updatedSummary.EffectiveChangeCount,
+        int noChangeEffectiveCount = profileAccounting.Calculate(
+            CreateProfileIntegrityProject(),
+            noChangeCandidate,
+            out bool noChangeCountIsExact);
+        Check(noChangeCountIsExact &&
+              noChangeEffectiveCount == candidateEffectiveCount,
             "no-change update after baseline acceptance preserves effective profile content");
         ModProfileSummaryModel noChangeSummary = library.UpdateProfile(
             updatedSummary,
@@ -4184,10 +4328,12 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
                 .SelectMany(setting => setting.Properties)
                 .Any(),
             "intentional restoration to the clean scalar baseline removes the obsolete record");
-        Check(new ProfileEffectiveChangeCountService().Calculate(
-                  restoredScalarCandidate) ==
-              new ProfileEffectiveChangeCountService().Calculate(
-                  noChangeProfile) - 1,
+        int restoredScalarCount = profileAccounting.Calculate(
+            CreateProfileIntegrityProject(),
+            restoredScalarCandidate,
+            out bool restoredScalarCountIsExact);
+        Check(restoredScalarCountIsExact &&
+              restoredScalarCount == noChangeEffectiveCount - 1,
             "intentional scalar reversion decreases effective profile count by exactly one");
         workflow.ValidateUpdatedProfileCandidate(
             source,
@@ -4301,9 +4447,9 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
             OperationRequests = additiveOnly.OperationRequests
         };
         ProfileEffectiveChangeCountService accounting = new();
-        Check(accounting.Calculate(additiveOverlap) ==
-              accounting.Calculate(additiveOnly),
-            "additive deterministic output deduplicates overlapping effective paths");
+        Check(accounting.Calculate(additiveOnly) == 0 &&
+              accounting.Calculate(additiveOverlap) == 2,
+            "profile-only accounting counts ordinary properties exactly without fabricating additive output");
 
         ModProfileModel upgradeOnly = new()
         {
@@ -4347,9 +4493,9 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
             },
             OperationRequests = upgradeOnly.OperationRequests
         };
-        Check(accounting.Calculate(pathlessUpgradeCollision) ==
-              accounting.Calculate(upgradeOnly) + 1,
-            "pathless legacy flags are not guessed to overlap canonical props.flags output");
+        Check(accounting.Calculate(upgradeOnly) == 0 &&
+              accounting.Calculate(pathlessUpgradeCollision) == 1,
+            "profile-only accounting retains exact ordinary pathless changes without guessing Upgrade output");
 
         Console.WriteLine(
             "PASS mixed profile update integrity, safe replacement, paths, removals, and unified counts");
@@ -4551,32 +4697,30 @@ static void VerifyUpdateProfileFinalBlockerCorrections()
         new JValue(99));
     Check(staleStateProject.GameplayOperationStates.Single().IsCompatible,
         "direct target edit leaves cached compatibility unchanged before Update Profile");
+    string staleProjectBeforeRejection =
+        ObservableProjectState(staleStateProject);
 
-    ModProfileModel staleCorrected = workflow.CreateUpdatedProfile(
-        staleStateProject,
-        stateProfile,
-        "stale-state-corrected");
-    Check(!staleStateProject.GameplayOperationStates.Single().IsCompatible &&
-          !staleCorrected.Snapshot.GameplayOperationStates.Any() &&
-          staleCorrected.Snapshot.Categories.Single().Settings.Single()
-              .Properties.Single(property => property.PropertyPath == "value")
-              .CurrentValue.Value<int>() == 99,
-        "Update Profile observationally refreshes stale compatibility and retains the live ordinary target change");
-    workflow.ValidateUpdatedProfileCandidate(
-        staleStateProject,
-        stateProfile,
-        staleCorrected);
+    CheckThrows<InvalidOperationException>(
+        () => workflow.CreateUpdatedProfile(
+            staleStateProject,
+            stateProfile,
+            "stale-state-conflict"),
+        "Update Profile rejects a direct owned edit when historical intent has no authoritative current state");
+    Check(staleStateProject.GameplayOperationStates.Single().IsCompatible &&
+          Entry(staleStateProject, "constant", "FishingDurationControl")
+              .SourceEntry!["value"]!.Value<int>() == 99 &&
+          ObservableProjectState(staleStateProject) ==
+              staleProjectBeforeRejection,
+        "ambiguous Update rejection preserves the complete observable project state including compatibility fields");
 
     ModProfileModel injectedStale = serialization.Deserialize(
-        serialization.Serialize(staleCorrected));
-    injectedStale.Snapshot.GameplayOperationStates.Add(
-        stateProfile.Snapshot.GameplayOperationStates.Single().DeepClone());
+        serialization.Serialize(stateProfile));
     CheckThrows<InvalidOperationException>(
         () => workflow.ValidateUpdatedProfileCandidate(
             staleStateProject,
             stateProfile,
             injectedStale),
-        "independent validation rejects deliberately injected stale gameplay state");
+        "independent validation rejects a candidate that omits the conflicting direct edit");
 
     string staleStateLibraryDirectory = Path.Combine(
         Path.GetTempPath(),
@@ -4597,7 +4741,7 @@ static void VerifyUpdateProfileFinalBlockerCorrections()
                     staleStateProject,
                     stateProfile,
                     reloaded)),
-            "stale gameplay state fails before managed profile replacement");
+            "stale gameplay state fails independent validation before managed profile replacement");
         Check(File.ReadAllText(managed.FilePath) == originalBytes &&
               !Directory.EnumerateFiles(staleStateLibraryDirectory)
                   .Any(path => path.Contains(".update-", StringComparison.Ordinal)),
@@ -4610,7 +4754,14 @@ static void VerifyUpdateProfileFinalBlockerCorrections()
     }
 
     ProjectModel compatibleStateProject = CreateProject(
-        Sheet("constant", ScalarEntry("FishingDurationControl", 6)));
+        Sheet(
+            "constant",
+            ScalarEntry("FishingDurationControl", 6),
+            ScalarEntry("IndependentProfileValue", 1)));
+    _ = mutation.EnsurePropertyByPath(
+        Entry(compatibleStateProject, "constant", "IndependentProfileValue"),
+        "value",
+        new JValue(2));
     ApplyPreset(
         new ProjectOperationService(),
         CreatePresetService(),
@@ -5791,12 +5942,29 @@ static void VerifyProfileStateRoundTrip(
         project,
         $"{type} compatibility profile");
     var roundTrip = serializer.Deserialize(serializer.Serialize(profile));
-    GameplayOperationStateModel state =
-        roundTrip.Snapshot.GameplayOperationStates.Single(candidate =>
+    GameplayOperationStateModel current =
+        project.GameplayOperationStates.Single(candidate =>
             candidate.OperationType == type);
-    Check(state.ElementCount == expectedCount &&
-          state.BaselineArray.Count == expectedCount,
-        $"{type} expanded state profile round trip");
+    bool effective = !string.Equals(
+        current.BaselineFingerprint,
+        current.ExpectedCurrentFingerprint,
+        StringComparison.Ordinal);
+    GameplayOperationStateModel? state =
+        roundTrip.Snapshot.GameplayOperationStates.SingleOrDefault(candidate =>
+            candidate.OperationType == type);
+    bool hasIntent = roundTrip.OperationRequests.Any(request =>
+        new ProfileOperationIntentRegistry().GetOperationType(
+            request.OperationId) == type);
+    Check(effective
+            ? hasIntent &&
+              (state == null ||
+               state.ElementCount == expectedCount &&
+               state.BaselineArray.Count == expectedCount)
+            : state == null &&
+              !hasIntent,
+        effective
+            ? $"{type} effective profile intent round trip with optional exact-source state"
+            : $"{type} restored baseline is omitted from profile intent");
 }
 
 static void VerifySnapshotStateRoundTrip(
@@ -6505,6 +6673,33 @@ static ModificationSnapshotModel SnapshotProperty(
 
 static string Json(ProjectModel project) =>
     project.RootDocument.ToString(Newtonsoft.Json.Formatting.None);
+
+static string ObservableProjectState(ProjectModel project) =>
+    Json(project) + "|" +
+    JToken.FromObject(project.GameplayOperationStates)
+        .ToString(Newtonsoft.Json.Formatting.None) + "|" +
+    string.Join(
+        ";",
+        project.GameplayOperationStates.Select(state =>
+            $"{state.OperationType}:{state.IsCompatible}:" +
+            $"{state.CompatibilityMessage}:" +
+            $"{state.PersistedStateFingerprint}")) + "|" +
+    JToken.FromObject(project.HistoricalGameplayOperationStates)
+        .ToString(Newtonsoft.Json.Formatting.None) + "|" +
+    project.IsModified + "|" +
+    project.IsGameplayOperationStateModified + "|" +
+    project.SourceCdbGenerationIdentity + "|" +
+    project.CurrentCdbContentIdentity + "|" +
+    project.SourceProvenanceStatus + "|" +
+    string.Join(
+        ";",
+        project.Sheets.SelectMany(sheet => sheet.Entries.SelectMany(entry =>
+                entry.Properties
+                    .Where(property => property.IsModified)
+                    .Select(property =>
+                        $"{sheet.Name}/{entry.Id}/" +
+                        property.EffectivePropertyPath)))
+            .OrderBy(value => value, StringComparer.Ordinal));
 
 static void VerifyWartalesInstallationResolution(string parentRoot)
 {
@@ -7936,7 +8131,8 @@ static MainViewModel CreateMainViewModel(
     WartalesInstallationService?
         wartalesInstallationService = null,
     QuickBmsImportOptions?
-        quickBmsImportOptions = null)
+        quickBmsImportOptions = null,
+    EditHistoryService? editHistoryService = null)
 {
     JsonDataService jsonDataService = new();
     ModificationSnapshotWorkflowService snapshotWorkflowService = new();
@@ -7979,7 +8175,7 @@ static MainViewModel CreateMainViewModel(
         jsonDataService,
         new SearchService(),
         localization,
-        new EditHistoryService(),
+        editHistoryService ?? new EditHistoryService(),
         new ModificationSnapshotService(),
         snapshotWorkflowService,
         new ChangeSummaryService(),

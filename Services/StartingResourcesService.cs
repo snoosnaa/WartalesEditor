@@ -59,31 +59,66 @@ public sealed class StartingResourcesService
         return ApplyCore(project, settings, context.MutationResult);
     }
 
+    internal ProjectMutationResult Replay(
+        ProjectModel project,
+        StartingResourcesSettings settings,
+        JArray? exactSourceBaseline,
+        ProjectOperationExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return ApplyCore(
+            project,
+            settings,
+            context.MutationResult,
+            replay: true,
+            exactSourceBaseline);
+    }
+
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
         StartingResourcesSettings settings,
-        ProjectMutationResult result)
+        ProjectMutationResult result,
+        bool replay = false,
+        JArray? exactSourceBaseline = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(settings);
         settings.Validate();
 
-        GameplayOperationStateModel previousState =
-            stateService.GetRequiredCompatibleState(
+        GameplayOperationStateModel? existing =
+            stateService.FindState(
                 project,
-                ProgressionType.StartingResources)
+                ProgressionType.StartingResources);
+        GameplayOperationStateModel? previousState = existing?.DeepClone();
+
+        JArray baseline;
+        if (replay)
+        {
+            baseline = exactSourceBaseline == null
+                ? CaptureCurrentTargets(project)
+                : (JArray)exactSourceBaseline.DeepClone();
+        }
+        else
+        {
+            previousState = stateService.GetRequiredCompatibleState(
+                    project,
+                    ProgressionType.StartingResources)
                 .DeepClone();
+            baseline = (JArray)previousState.BaselineArray.DeepClone();
+        }
 
         bool previousStateWasModified =
             project.IsGameplayOperationStateModified;
 
         JArray expected = BuildExpectedTargets(
             project,
-            previousState.BaselineArray,
+            baseline,
             settings);
 
         if (JToken.DeepEquals(CaptureCurrentTargets(project), expected) &&
-            SettingsEqual(previousState.StartingResources, settings))
+            previousState != null &&
+            SettingsEqual(previousState.StartingResources, settings) &&
+            JToken.DeepEquals(previousState.BaselineArray, baseline))
         {
             return result;
         }
@@ -91,7 +126,7 @@ public sealed class StartingResourcesService
         ApplyExpectedTargets(project, expected, result);
 
         GameplayOperationStateModel replacement =
-            CreateState(previousState.BaselineArray, settings, expected);
+            CreateState(baseline, settings, expected);
 
         result.AddGameplayOperationState(
             project,

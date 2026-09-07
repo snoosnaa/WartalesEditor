@@ -132,13 +132,13 @@ public sealed class ModificationSnapshotApplyService
 
         try
         {
-            matchItem.TargetProperty
-                .ApplySnapshotValue(
-                    requestedValue);
-
             mutationResult.AddUpdatedProperty(
                 matchItem.TargetProperty,
                 currentTargetValue);
+
+            matchItem.TargetProperty
+                .ApplySnapshotValue(
+                    requestedValue);
 
             JToken appliedValue =
                 matchItem.TargetProperty

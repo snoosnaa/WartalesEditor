@@ -21,6 +21,8 @@ public sealed class RandomTraitExclusionCandidate
 
     public required RandomTraitPersonality Personality { get; init; }
 
+    internal string SemanticGroup { get; init; } = string.Empty;
+
     public required RandomTraitDoneBaseline BaselineDone { get; init; }
 
     public required bool IsAllowed { get; init; }
