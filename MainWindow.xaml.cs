@@ -49,9 +49,6 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        JsonDataService jsonDataService =
-            new();
-
         LocalizationService localizationService =
             new();
 
@@ -59,6 +56,17 @@ public partial class MainWindow : Window
             new(localizationService);
 
         languageDataService.LoadCanonical();
+
+        ProjectMutationService persistenceMutationService =
+            new();
+
+        JsonDataService jsonDataService =
+            new(
+                new ProjectModelFactory(),
+                new GameplayOperationStatePersistenceService(
+                    new GameplayOperationStateService(
+                        persistenceMutationService,
+                        localizationService)));
 
         ModificationSnapshotWorkflowService
             snapshotWorkflowService =
@@ -109,12 +117,17 @@ public partial class MainWindow : Window
                 new(
                     new OperationValidatorProvider(),
                     addCampFacilitiesOperation,
-                    upgradeAllEquipmentOperation);
+                    upgradeAllEquipmentOperation,
+                    localizationService);
 
         ModProfileService modProfileService =
             new(
                 new ModificationSnapshotService(),
-                profileOperationCaptureService);
+                profileOperationCaptureService,
+                new ProfileSnapshotReconciliationService(),
+                new GameplayOperationStateService(
+                    new ProjectMutationService(),
+                    localizationService));
 
         ViewModel =
             new MainViewModel(
@@ -134,7 +147,8 @@ public partial class MainWindow : Window
                         addCampFacilitiesOperation,
                         upgradeAllEquipmentOperation),
                     projectOperationService,
-                    projectOperationTransactionService),
+                    projectOperationTransactionService,
+                    localizationService),
                 ReferenceDataService.Instance,
                 validationWorkflowService,
                 validationPresentationService,

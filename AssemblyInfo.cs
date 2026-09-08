@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("WartalesEditor.CompatibilityTests")]
 [assembly: InternalsVisibleTo("WartalesEditor.GoldenCdbTests")]
+[assembly: InternalsVisibleTo("WartalesEditor.PathsGameplayTests")]
 
 [assembly: ThemeInfo(
     ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located

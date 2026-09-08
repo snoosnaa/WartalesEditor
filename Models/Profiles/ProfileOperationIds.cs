@@ -88,4 +88,19 @@ public static class ProfileOperationIds
 
     public const string RequestBoardRewards =
         "request-board-rewards";
+
+    public const string PathLevelRequirements =
+        "path-level-requirements";
+
+    public const string PathXpRewardsMight =
+        "path-xp-rewards-might";
+
+    public const string PathXpRewardsTrade =
+        "path-xp-rewards-trade";
+
+    public const string PathXpRewardsCrime =
+        "path-xp-rewards-crime";
+
+    public const string PathXpRewardsMystery =
+        "path-xp-rewards-mystery";
 }

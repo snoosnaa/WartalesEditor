@@ -555,7 +555,12 @@ public sealed class GameplayOperationStatePersistenceService
                  or ProgressionType.OverworldMovementSpeed
                  or ProgressionType.RainFrequency
                  or ProgressionType.RandomTraitExclusions
-                 or ProgressionType.RequestBoardRewards ||
+                 or ProgressionType.RequestBoardRewards
+                 or ProgressionType.PathLevelRequirements
+                 or ProgressionType.PathXpRewardsMight
+                 or ProgressionType.PathXpRewardsTrade
+                 or ProgressionType.PathXpRewardsCrime
+                 or ProgressionType.PathXpRewardsMystery ||
                  GameplayPresetCatalog.IsSupported(state.OperationType))
         {
             if (state.GameplaySettings == null)

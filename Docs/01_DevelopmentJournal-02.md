@@ -2,8 +2,44 @@
 
 **Version:** 1.0\
 **Status:** Active\
-**Last Updated:** 2026-09-07\
+**Last Updated:** 2026-09-08\
 **Applies To:** Entire Project
+
+------------------------------------------------------------------------
+
+# 2026-09-08 — Paths Gameplay Tools Accepted Feature Closure
+
+Investigation established the global Path-level requirement formula and the
+ordinary per-Path reward mechanism. The accepted implementation added Path
+Level Requirements with explicit Original/80%/60%/40%/20% choices and four
+independent Path XP Rewards operations with explicit
+Original/2×/3×/4×/5× choices. Requirement ownership is limited to Base/Next;
+reward ownership is deliberately limited to ordinary `counter.pathXP` values.
+The Project Owner explicitly excluded `MerchAttack`, every special
+`reward.pathXp` structure, threshold bonuses, and other Paths.
+
+The tools reuse Gameplay Operation State, Profile Operation Intent, Update
+Survival rediscovery, validation, transactions, effective counting, atomic
+Undo/Redo, save/reopen persistence, and Restore Previous Values. Localization
+review found duplicate Path IDs in Language Data: a later nested rank structure
+was replacing the direct main Path text. Direct localized name/text/title
+values now outrank structural fallback text, preserving canonical IDs as
+semantic authority and localization as presentation only.
+
+Project Owner functional testing passed. The final UI correction replaced
+concatenated rank headings with localized main Path names, compacted selectors
+and sections, reduced the preview to current/proposed ordinary reward ranges,
+and fit all four independent controls into the normal dialog without required
+scrolling. Engineering Review, Project Owner Functional Acceptance, and Project
+Owner UI Acceptance all passed. Final correction evidence includes Paths
+Gameplay 206, Quick Help 44, Profile Presentation 75, zero-warning Debug and
+Release builds, and `git diff --check`.
+
+Documentation reconciliation is complete. Commit/push remains unauthorized,
+and no release/version decision is claimed. A separate Project Owner-requested
+audit of existing user-facing values, presets, caps, defaults, ranges, and named
+choices remains pending before the next release/version decision; that audit was
+not performed here.
 
 ------------------------------------------------------------------------
 

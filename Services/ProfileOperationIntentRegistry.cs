@@ -292,6 +292,22 @@ public sealed class ProfileOperationIntentRegistry
                 ProgressionType.RequestBoardRewards,
                 RequestBoardRewardsService.ValidateProfilePercentage,
                 isLegacyExplicitRequest: true),
+            Percentage(
+                ProfileOperationIds.PathLevelRequirements,
+                ProgressionType.PathLevelRequirements,
+                PathLevelRequirementsService.ValidateProfilePercentage),
+            Multiplier(
+                ProfileOperationIds.PathXpRewardsMight,
+                ProgressionType.PathXpRewardsMight),
+            Multiplier(
+                ProfileOperationIds.PathXpRewardsTrade,
+                ProgressionType.PathXpRewardsTrade),
+            Multiplier(
+                ProfileOperationIds.PathXpRewardsCrime,
+                ProgressionType.PathXpRewardsCrime),
+            Multiplier(
+                ProfileOperationIds.PathXpRewardsMystery,
+                ProgressionType.PathXpRewardsMystery),
             Parameterless(
                 ProfileOperationIds.AddCampFacilities),
             Parameterless(
@@ -324,8 +340,9 @@ public sealed class ProfileOperationIntentRegistry
                             "percentage")
                         : state.AppliedPercentage;
 
-                return operationType ==
-                           ProgressionType.RequestBoardRewards &&
+                return operationType is
+                           ProgressionType.RequestBoardRewards or
+                           ProgressionType.PathLevelRequirements &&
                        percentage == 100
                     ? null
                     : new JObject
@@ -334,6 +351,29 @@ public sealed class ProfileOperationIntentRegistry
                     };
             },
             IsLegacyExplicitRequest: isLegacyExplicitRequest);
+
+    private static Registration Multiplier(
+        string operationId,
+        ProgressionType operationType) =>
+        new(
+            operationId,
+            operationType,
+            settings =>
+            {
+                ValidateExactProperties(settings, "multiplier");
+                PathXpRewardsService.ValidateProfileMultiplier(
+                    RequiredInt(settings!, "multiplier"));
+            },
+            state =>
+            {
+                int multiplier = RequiredInt(
+                    state.GameplaySettings,
+                    "multiplier");
+                PathXpRewardsService.ValidateProfileMultiplier(multiplier);
+                return multiplier == 1
+                    ? null
+                    : new JObject { ["multiplier"] = multiplier };
+            });
 
     private static Registration Party(
         string operationId,

@@ -466,6 +466,14 @@
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding GameplayProgressionCommand}"
                                     ToolTip="Configure character and profession XP requirements."/>
+                            <Button Content="Path Level Requirements"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding PathLevelRequirementsCommand}"
+                                    ToolTip="Lower the XP required to reach each Path level for all Paths."/>
+                            <Button Content="Path XP Rewards"
+                                    Style="{StaticResource GameplayToolButtonStyle}"
+                                    Command="{Binding PathXpRewardsCommand}"
+                                    ToolTip="Increase standard Path challenge rewards independently for each Path."/>
                             <Button Content="Lectern Knowledge Gain"
                                     Style="{StaticResource GameplayToolButtonStyle}"
                                     Command="{Binding GameplayPresetCommand}"

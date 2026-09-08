@@ -19,8 +19,8 @@ public sealed class ProfileOperationCaptureService
     private readonly UpgradeAllEquipmentOperation upgradeOperation;
     private readonly CampFacilityJsonBuilder campBuilder;
     private readonly ProfileOperationIntentRegistry intentRegistry;
-    private readonly ProfileOperationReplayService replayService = new();
-    private readonly GameplayOperationStateService stateService = new();
+    private readonly ProfileOperationReplayService replayService;
+    private readonly GameplayOperationStateService stateService;
     private readonly CdbGenerationIdentityService identityService = new();
 
     public static ProfileOperationCaptureService CreateDefault()
@@ -51,13 +51,29 @@ public sealed class ProfileOperationCaptureService
         IOperationValidatorProvider validatorProvider,
         AddCampFacilitiesOperation addCampOperation,
         UpgradeAllEquipmentOperation upgradeOperation,
+        LocalizationService localizationService)
+        : this(
+            validatorProvider,
+            addCampOperation,
+            upgradeOperation,
+            new CampFacilityJsonBuilder(),
+            new ProfileOperationIntentRegistry(),
+            localizationService)
+    {
+    }
+
+    public ProfileOperationCaptureService(
+        IOperationValidatorProvider validatorProvider,
+        AddCampFacilitiesOperation addCampOperation,
+        UpgradeAllEquipmentOperation upgradeOperation,
         CampFacilityJsonBuilder campBuilder)
         : this(
             validatorProvider,
             addCampOperation,
             upgradeOperation,
             campBuilder,
-            new ProfileOperationIntentRegistry())
+            new ProfileOperationIntentRegistry(),
+            new LocalizationService())
     {
     }
 
@@ -67,6 +83,23 @@ public sealed class ProfileOperationCaptureService
         UpgradeAllEquipmentOperation upgradeOperation,
         CampFacilityJsonBuilder campBuilder,
         ProfileOperationIntentRegistry intentRegistry)
+        : this(
+            validatorProvider,
+            addCampOperation,
+            upgradeOperation,
+            campBuilder,
+            intentRegistry,
+            new LocalizationService())
+    {
+    }
+
+    public ProfileOperationCaptureService(
+        IOperationValidatorProvider validatorProvider,
+        AddCampFacilitiesOperation addCampOperation,
+        UpgradeAllEquipmentOperation upgradeOperation,
+        CampFacilityJsonBuilder campBuilder,
+        ProfileOperationIntentRegistry intentRegistry,
+        LocalizationService localizationService)
     {
         this.validatorProvider = validatorProvider
             ?? throw new ArgumentNullException(
@@ -83,6 +116,10 @@ public sealed class ProfileOperationCaptureService
         this.intentRegistry = intentRegistry
             ?? throw new ArgumentNullException(
                 nameof(intentRegistry));
+        ArgumentNullException.ThrowIfNull(localizationService);
+        replayService = new ProfileOperationReplayService(localizationService);
+        stateService = new GameplayOperationStateService(
+            new ProjectMutationService(), localizationService);
     }
 
     public IReadOnlyList<ProfileOperationRequestModel> Capture(
@@ -340,7 +377,7 @@ public sealed class ProfileOperationCaptureService
             if (intent == null)
             {
                 throw new InvalidOperationException(
-                    $"Gameplay state '{state.OperationType}' represents " +
+                    $"Gameplay state '{stateService.GetDisplayName(state.OperationType)}' represents " +
                     "an effective outcome but has no canonical profile intent.");
             }
 
@@ -348,7 +385,7 @@ public sealed class ProfileOperationCaptureService
             {
                 throw new InvalidOperationException(
                     $"The current project contains more than one " +
-                    $"profile intent for '{intent.OperationId}'.");
+                    $"profile intent for '{replayService.GetDisplayName(intent)}'.");
             }
 
             requests.Add(intent);
@@ -376,7 +413,7 @@ public sealed class ProfileOperationCaptureService
             {
                 throw new InvalidOperationException(
                     $"The selected profile contains more than one request " +
-                    $"for '{request.OperationId}'.");
+                    $"for '{replayService.GetDisplayName(request)}'.");
             }
         }
 

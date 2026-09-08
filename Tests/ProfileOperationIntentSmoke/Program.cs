@@ -38,10 +38,15 @@ string[] expectedIds =
     ProfileOperationIds.PositiveRandomTraits,
     ProfileOperationIds.RandomTraitExclusions,
     ProfileOperationIds.RequestBoardRewards,
+    ProfileOperationIds.PathLevelRequirements,
+    ProfileOperationIds.PathXpRewardsMight,
+    ProfileOperationIds.PathXpRewardsTrade,
+    ProfileOperationIds.PathXpRewardsCrime,
+    ProfileOperationIds.PathXpRewardsMystery,
     ProfileOperationIds.AddCampFacilities,
     ProfileOperationIds.UpgradeAllEquipment
 };
-Check(registry.OperationIds.Count == 29, "29 canonical operation IDs registered");
+Check(registry.OperationIds.Count == 34, "34 canonical operation IDs registered");
 Check(registry.OperationIds.SequenceEqual(
         expectedIds.OrderBy(id => id, StringComparer.Ordinal)),
     "registered operation IDs are complete and deterministic");

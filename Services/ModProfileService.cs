@@ -18,13 +18,14 @@ public sealed class ModProfileService
         reconciliationService;
 
     private readonly GameplayOperationStateService
-        gameplayOperationStateService = new();
+        gameplayOperationStateService;
 
     public ModProfileService()
         : this(
             new ModificationSnapshotService(),
             ProfileOperationCaptureService.CreateDefault(),
-            new ProfileSnapshotReconciliationService())
+            new ProfileSnapshotReconciliationService(),
+            new GameplayOperationStateService())
     {
     }
 
@@ -33,7 +34,8 @@ public sealed class ModProfileService
         : this(
             snapshotService,
             ProfileOperationCaptureService.CreateDefault(),
-            new ProfileSnapshotReconciliationService())
+            new ProfileSnapshotReconciliationService(),
+            new GameplayOperationStateService())
     {
     }
 
@@ -44,7 +46,8 @@ public sealed class ModProfileService
         : this(
             snapshotService,
             operationCaptureService,
-            new ProfileSnapshotReconciliationService())
+            new ProfileSnapshotReconciliationService(),
+            new GameplayOperationStateService())
     {
     }
 
@@ -52,6 +55,19 @@ public sealed class ModProfileService
         ModificationSnapshotService snapshotService,
         ProfileOperationCaptureService operationCaptureService,
         ProfileSnapshotReconciliationService reconciliationService)
+        : this(
+            snapshotService,
+            operationCaptureService,
+            reconciliationService,
+            new GameplayOperationStateService())
+    {
+    }
+
+    public ModProfileService(
+        ModificationSnapshotService snapshotService,
+        ProfileOperationCaptureService operationCaptureService,
+        ProfileSnapshotReconciliationService reconciliationService,
+        GameplayOperationStateService gameplayOperationStateService)
     {
         this.snapshotService =
             snapshotService
@@ -67,6 +83,11 @@ public sealed class ModProfileService
             reconciliationService
             ?? throw new ArgumentNullException(
                 nameof(reconciliationService));
+
+        this.gameplayOperationStateService =
+            gameplayOperationStateService
+            ?? throw new ArgumentNullException(
+                nameof(gameplayOperationStateService));
     }
 
     public ModProfileModel CreateProfile(

@@ -6,6 +6,45 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Paths Gameplay Tools
+
+**Status:** Accepted and documentation-complete; commit/push and any later
+release/version decision remain pending.
+
+## Added
+
+- Added **Path Level Requirements** with Original, 80%, 60%, 40%, and 20%
+  choices for globally lowering Path level requirements.
+- Added **Path XP Rewards** with independent Original, 2×, 3×, 4×, and 5×
+  controls for Power and Glory, Trade and Craftsmanship, Crime and Chaos, and
+  Mysteries and Wisdom.
+- Both tools support Restore Previous Values, atomic Undo/Redo, persisted
+  Gameplay Operation State, format-4 Profile Operation Intent, exact
+  target-context change counting, and changed-source Update Survival replay.
+
+## Accepted boundaries and presentation
+
+- Path XP Rewards changes only ordinary current Path reward counters. It does
+  not change `MerchAttack`, special `reward.pathXp` rewards, threshold bonuses,
+  Outdated counters, or other Paths.
+- Path names come from loaded Language Data. Direct localized names take
+  precedence over nested progression-rank text.
+- The final dialog uses four independent sections, compact selectors, and a
+  reward-range-only preview. All sections fit its normal layout without
+  required scrolling.
+
+## Verification
+
+- Engineering Review passed. Project Owner Functional Acceptance and Project
+  Owner UI Acceptance passed.
+- Final UI-correction evidence: Paths Gameplay 206, Quick Help/WPF 44, Profile
+  Presentation 75, zero-warning Debug and Release builds, and a passing
+  `git diff --check`.
+
+No commit, push, tag, release, package, or publication is claimed by this entry.
+
+---
+
 # Profile Operation Intent / Update Survival Correction
 
 **Status:** Complete; all five Engineering Reviews passed and Project Owner

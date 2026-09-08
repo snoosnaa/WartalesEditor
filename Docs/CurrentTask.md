@@ -2,15 +2,43 @@
 
 ## Current Milestone
 
-Commit / Push Preparation
+Paths Gameplay Tools — Accepted Feature Closure
 
 ## Current Status
 
-**The Profile Operation Intent / Update Survival correction is COMPLETE and
-accepted.** All five implementation phases completed Engineering Review with a
-**PASS**, and Project Owner Interactive Acceptance also returned **PASS**.
-Documentation reconciliation is complete; commit and push are not yet
-authorized.
+**Paths Gameplay Tools are COMPLETE and accepted.** Investigation, product and
+architecture decisions, implementation, Engineering Review, Project Owner
+Functional Acceptance, and Project Owner UI Acceptance all passed.
+Documentation reconciliation is complete. Commit and push are not yet
+authorized, and no release or version decision has been made for this work.
+
+The accepted feature consists of **Path Level Requirements** and **Path XP
+Rewards**. Path Level Requirements globally scales the captured
+`PathXpBase`/`PathXpNext` authority using the approved Original, 80%, 60%, 40%,
+and 20% choices. Path XP Rewards provides four independent semantic operations
+for Power and Glory, Trade and Craftsmanship, Crime and Chaos, and Mysteries and
+Wisdom using the approved Original, 2×, 3×, 4×, and 5× choices. It owns only
+ordinary current `counter.pathXP` values for the selected canonical Path;
+`MerchAttack`, `reward.pathXp`, threshold bonuses, other special rewards, and
+other Paths remain outside its authority.
+
+Both tools use the accepted Gameplay Operation State, Profile Operation Intent,
+Update Survival, transaction, validation, effective-counting, Undo/Redo,
+save/reopen, and Restore Previous Values architecture. The final reward dialog
+uses localized main Path names, compact selectors, independent controls, and a
+reward-range-only preview; all four sections fit its normal layout without
+required scrolling.
+
+Before any later release/version decision, a separate Project Owner-requested
+audit remains pending. It will identify existing user-facing values, presets,
+caps, defaults, ranges, and named choices that were selected or implemented
+without an explicit Project Owner decision. That audit is review-only at its
+start and was not performed during Paths documentation reconciliation.
+
+**The earlier Profile Operation Intent / Update Survival correction also
+remains COMPLETE and accepted.** All five implementation phases completed
+Engineering Review with a **PASS**, and Project Owner Interactive Acceptance
+returned **PASS**.
 
 The accepted workflow stores portable gameplay preferences as canonical
 format-4 `OperationRequests` while retaining Gameplay Operation State as

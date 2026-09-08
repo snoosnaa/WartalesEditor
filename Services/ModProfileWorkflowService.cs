@@ -31,7 +31,7 @@ public sealed class ModProfileWorkflowService
         transactionService;
 
     private readonly ProfileOperationReplayService
-        replayService = new();
+        replayService;
 
     private readonly ProfileOperationIntentRegistry
         intentRegistry = new();
@@ -44,8 +44,7 @@ public sealed class ModProfileWorkflowService
             new();
 
     private readonly UpdatedProfileCandidateValidationService
-        updatedProfileCandidateValidationService =
-            new();
+        updatedProfileCandidateValidationService;
 
     public ModProfileWorkflowService()
         : this(
@@ -83,6 +82,25 @@ public sealed class ModProfileWorkflowService
         ProfileOperationResolver operationResolver,
         ProjectOperationService projectOperationService,
         ProjectOperationTransactionService transactionService)
+        : this(
+            profileService,
+            serializationService,
+            snapshotWorkflowService,
+            operationResolver,
+            projectOperationService,
+            transactionService,
+            new LocalizationService())
+    {
+    }
+
+    public ModProfileWorkflowService(
+        ModProfileService profileService,
+        ModProfileSerializationService serializationService,
+        ModificationSnapshotWorkflowService snapshotWorkflowService,
+        ProfileOperationResolver operationResolver,
+        ProjectOperationService projectOperationService,
+        ProjectOperationTransactionService transactionService,
+        LocalizationService localizationService)
     {
         this.profileService =
             profileService
@@ -98,6 +116,12 @@ public sealed class ModProfileWorkflowService
             snapshotWorkflowService
             ?? throw new ArgumentNullException(
                 nameof(snapshotWorkflowService));
+
+        replayService = new ProfileOperationReplayService(
+            localizationService ?? throw new ArgumentNullException(
+                nameof(localizationService)));
+        updatedProfileCandidateValidationService =
+            new UpdatedProfileCandidateValidationService(localizationService);
 
         this.operationResolver =
             operationResolver
@@ -449,9 +473,10 @@ public sealed class ModProfileWorkflowService
                     seed.ProjectCompatibilityIdentity,
                     profile.SourceCdbGenerationIdentity))
             {
+                string displayName = replayService.GetDisplayName(request);
                 throw new InvalidOperationException(
                     $"The retained gameplay state for " +
-                    $"'{request.OperationId}' does not belong to the " +
+                    $"'{displayName}' does not belong to the " +
                     "profile's source generation.");
             }
 
@@ -465,8 +490,9 @@ public sealed class ModProfileWorkflowService
             }
             catch (Exception exception)
             {
+                string displayName = replayService.GetDisplayName(request);
                 throw new InvalidOperationException(
-                    $"Profile gameplay setting '{request.OperationId}' " +
+                    $"{displayName} " +
                     "is not compatible with the current project.",
                     exception);
             }
@@ -681,10 +707,22 @@ public sealed class ModProfileWorkflowService
         if (request.OperationId is
             ProfileOperationIds.CharacterXp or
             ProfileOperationIds.ProfessionXp or
-            ProfileOperationIds.RequestBoardRewards)
+            ProfileOperationIds.RequestBoardRewards or
+            ProfileOperationIds.PathLevelRequirements)
         {
             int percentage = settings.Value<int>("percentage");
             return $"{displayName}: already configured at {percentage}%.";
+        }
+
+        if (request.OperationId is
+            ProfileOperationIds.PathXpRewardsMight or
+            ProfileOperationIds.PathXpRewardsTrade or
+            ProfileOperationIds.PathXpRewardsCrime or
+            ProfileOperationIds.PathXpRewardsMystery)
+        {
+            int multiplier = settings.Value<int>("multiplier");
+            string label = multiplier == 1 ? "Original" : $"{multiplier}×";
+            return $"{displayName}: already configured at {label}.";
         }
 
         if (request.OperationId ==

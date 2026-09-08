@@ -144,7 +144,10 @@ try
     string beforeProbe = trusted.RootDocument.ToString(Formatting.None);
     IReadOnlyList<GameplayCompatibilityAssessment> assessments =
         new GameplayCompatibilityAssessmentService().Assess(trusted);
-    Check(assessments.Count >= Enum.GetValues<ProgressionType>().Length, "54 all gameplay tool areas assessed");
+    Check(assessments.Count >= Enum.GetValues<ProgressionType>().Length - 3 &&
+          assessments.Any(x => x.ToolName == "Path Level Requirements") &&
+          assessments.Any(x => x.ToolName == "Path XP Rewards"),
+        "54 all gameplay tool areas assessed");
     Check(trusted.RootDocument.ToString(Formatting.None) == beforeProbe, "55 probes are mutation free");
     Check(assessments.Any(x => x.Status == GameplayCompatibilityStatus.MissingTarget), "56 missing target classified");
     Check(assessments.All(x => Enum.IsDefined(x.Status)), "57 typed probe outcomes");

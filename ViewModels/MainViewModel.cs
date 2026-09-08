@@ -109,6 +109,12 @@ public class MainViewModel : ObservableObject
     private readonly RequestBoardRewardsService
         requestBoardRewardsService;
 
+    private readonly PathLevelRequirementsService
+        pathLevelRequirementsService;
+
+    private readonly PathXpRewardsService
+        pathXpRewardsService;
+
     private readonly GameplayPresetService gameplayPresetService;
 
     private readonly RandomTraitExclusionsService
@@ -201,6 +207,12 @@ public class MainViewModel : ObservableObject
 
     private RequestBoardRewardsDialog?
         requestBoardRewardsDialog;
+
+    private PathLevelRequirementsDialog?
+        pathLevelRequirementsDialog;
+
+    private PathXpRewardsDialog?
+        pathXpRewardsDialog;
 
     private readonly Dictionary<ProgressionType, GameplayPresetDialog>
         gameplayPresetDialogs = new();
@@ -310,6 +322,8 @@ public class MainViewModel : ObservableObject
             overworldMovementSpeedDialog?.Close();
             rainFrequencyDialog?.Close();
             requestBoardRewardsDialog?.Close();
+            pathLevelRequirementsDialog?.Close();
+            pathXpRewardsDialog?.Close();
             foreach (GameplayPresetDialog dialog in gameplayPresetDialogs.Values.ToArray())
                 dialog.Close();
             randomTraitExclusionsDialog?.Close();
@@ -1009,6 +1023,10 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand RequestBoardRewardsCommand { get; }
 
+    public RelayCommand PathLevelRequirementsCommand { get; }
+
+    public RelayCommand PathXpRewardsCommand { get; }
+
     public RelayCommand GameplayPresetCommand { get; }
 
     public RelayCommand RandomTraitExclusionsCommand { get; }
@@ -1272,7 +1290,8 @@ public class MainViewModel : ObservableObject
 
         gameplayOperationStateService =
             new GameplayOperationStateService(
-                progressionMutationService);
+                progressionMutationService,
+                this.localizationService);
 
         progressionScalingService =
             new ProgressionScalingService(
@@ -1303,6 +1322,17 @@ public class MainViewModel : ObservableObject
             new RequestBoardRewardsService(
                 progressionMutationService,
                 gameplayOperationStateService);
+
+        pathLevelRequirementsService =
+            new PathLevelRequirementsService(
+                progressionMutationService,
+                gameplayOperationStateService);
+
+        pathXpRewardsService =
+            new PathXpRewardsService(
+                progressionMutationService,
+                gameplayOperationStateService,
+                this.localizationService);
 
         gameplayPresetService =
             new GameplayPresetService(
@@ -1475,6 +1505,16 @@ public class MainViewModel : ObservableObject
         RequestBoardRewardsCommand =
             new RelayCommand(
                 _ => ExecuteRequestBoardRewards(),
+                _ => Project != null);
+
+        PathLevelRequirementsCommand =
+            new RelayCommand(
+                _ => ExecutePathLevelRequirements(),
+                _ => Project != null);
+
+        PathXpRewardsCommand =
+            new RelayCommand(
+                _ => ExecutePathXpRewards(),
                 _ => Project != null);
 
         GameplayPresetCommand =
@@ -4467,6 +4507,224 @@ public class MainViewModel : ObservableObject
             requestBoardRewardsDialog = null;
     }
 
+    private void ExecutePathLevelRequirements()
+    {
+        if (Project == null) return;
+        if (pathLevelRequirementsDialog != null)
+        {
+            RestoreAndActivateWindow(pathLevelRequirementsDialog);
+            return;
+        }
+
+        PathLevelRequirementsDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException("The main application window is not available.");
+            dialog = new PathLevelRequirementsDialog
+            {
+                Owner = owner,
+                DataContext = new PathLevelRequirementsDialogViewModel(
+                    Project, pathLevelRequirementsService),
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnPathLevelRequirementsApplyRequested;
+            dialog.DisplayFailed += OnPathLevelRequirementsDisplayFailed;
+            dialog.Closed += OnPathLevelRequirementsClosed;
+            ShowFeatureWindow(dialog);
+            pathLevelRequirementsDialog = dialog;
+            Status = "Path Level Requirements opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            pathLevelRequirementsDialog = null;
+            messageDialogService.ShowError(
+                "Path Level Requirements could not be opened." +
+                Environment.NewLine + Environment.NewLine +
+                "The project was not changed.",
+                "Path Level Requirements");
+        }
+    }
+
+    private void OnPathLevelRequirementsApplyRequested(
+        object? sender,
+        PathLevelRequirementsApplyEventArgs e)
+    {
+        if (Project == null) return;
+        PathLevelRequirementsDialogViewModel? viewModel =
+            (sender as PathLevelRequirementsDialog)?.DataContext as
+                PathLevelRequirementsDialogViewModel;
+        viewModel?.ApplyFeedback.Clear();
+        IProjectOperation operation = new PathLevelRequirementsOperation(
+            pathLevelRequirementsService, e.Percentage, e.RestorePreviousValues);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    e.RestorePreviousValues
+                        ? "The previous Path level requirement values could not be restored.\n\nNo changes were made."
+                        : "The Path level requirement setting could not be applied.\n\nNo changes were made.",
+                    operation.Name);
+                return;
+            }
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name, result.MutationResult,
+                    projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            viewModel?.RefreshFromProject();
+            if (result.MutationResult.WasModified)
+                viewModel?.ApplyFeedback.ShowApplied(e.RestorePreviousValues
+                    ? "Previous values were restored."
+                    : $"Path level requirements were configured at {PathLevelRequirementsOperation.Display(e.Percentage)}.");
+            else viewModel?.ApplyFeedback.ShowAlreadyApplied();
+            Status = result.Message ?? operation.Name;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The Path level requirement setting could not be applied.\n\nNo changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnPathLevelRequirementsDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Path Level Requirements could not be displayed.\n\nThe project was not changed.",
+            "Path Level Requirements");
+    }
+
+    private void OnPathLevelRequirementsClosed(object? sender, EventArgs e)
+    {
+        if (sender is not PathLevelRequirementsDialog dialog) return;
+        dialog.ApplyRequested -= OnPathLevelRequirementsApplyRequested;
+        dialog.DisplayFailed -= OnPathLevelRequirementsDisplayFailed;
+        dialog.Closed -= OnPathLevelRequirementsClosed;
+        if (ReferenceEquals(pathLevelRequirementsDialog, dialog))
+            pathLevelRequirementsDialog = null;
+    }
+
+    private void ExecutePathXpRewards()
+    {
+        if (Project == null) return;
+        if (pathXpRewardsDialog != null)
+        {
+            RestoreAndActivateWindow(pathXpRewardsDialog);
+            return;
+        }
+
+        PathXpRewardsDialog? dialog = null;
+        try
+        {
+            Window owner = Application.Current?.Windows.OfType<Window>()
+                .FirstOrDefault(window => window.IsActive && window is MainWindow)
+                ?? Application.Current?.MainWindow
+                ?? throw new InvalidOperationException("The main application window is not available.");
+            dialog = new PathXpRewardsDialog
+            {
+                Owner = owner,
+                DataContext = new PathXpRewardsDialogViewModel(Project, pathXpRewardsService),
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ApplyRequested += OnPathXpRewardsApplyRequested;
+            dialog.DisplayFailed += OnPathXpRewardsDisplayFailed;
+            dialog.Closed += OnPathXpRewardsClosed;
+            ShowFeatureWindow(dialog);
+            pathXpRewardsDialog = dialog;
+            Status = "Path XP Rewards opened.";
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            dialog?.Close();
+            pathXpRewardsDialog = null;
+            messageDialogService.ShowError(
+                "Path XP Rewards could not be opened.\n\nThe project was not changed.",
+                "Path XP Rewards");
+        }
+    }
+
+    private void OnPathXpRewardsApplyRequested(
+        object? sender,
+        PathXpRewardsApplyEventArgs e)
+    {
+        if (Project == null) return;
+        PathXpRewardsDialogViewModel? dialogViewModel =
+            (sender as PathXpRewardsDialog)?.DataContext as PathXpRewardsDialogViewModel;
+        PathXpRewardsSectionViewModel? section = dialogViewModel?.Sections
+            .SingleOrDefault(candidate => candidate.PathId == e.PathId);
+        section?.ApplyFeedback.Clear();
+        IProjectOperation operation = new PathXpRewardsOperation(
+            pathXpRewardsService, e.PathId, e.Multiplier, e.RestorePreviousValues);
+        try
+        {
+            ProjectOperationResult result;
+            using (editHistoryService.SuppressRecording())
+                result = projectOperationService.Execute(operation, Project);
+            if (!result.Succeeded)
+            {
+                RefreshAfterProjectOperation();
+                messageDialogService.ShowError(
+                    e.RestorePreviousValues
+                        ? $"The previous {section?.DisplayName ?? "Path"} XP reward values could not be restored.\n\nNo changes were made."
+                        : $"The {section?.DisplayName ?? "Path"} XP reward setting could not be applied.\n\nNo changes were made.",
+                    operation.Name);
+                return;
+            }
+            if (result.MutationResult.WasModified)
+                editHistoryService.Record(new ProjectOperationHistoryAction(
+                    operation.Name, result.MutationResult,
+                    projectOperationTransactionService));
+            RefreshAfterProjectOperation();
+            section?.RefreshFromProject();
+            if (result.MutationResult.WasModified)
+                section?.ApplyFeedback.ShowApplied(e.RestorePreviousValues
+                    ? "Previous values were restored."
+                    : $"XP rewards were configured at {PathXpRewardsOperation.Display(e.Multiplier)}.");
+            else section?.ApplyFeedback.ShowAlreadyApplied();
+            Status = result.Message ?? operation.Name;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine(exception);
+            RefreshAfterProjectOperation();
+            messageDialogService.ShowError(
+                "The Path XP reward setting could not be applied.\n\nNo changes were made.",
+                operation.Name);
+        }
+    }
+
+    private void OnPathXpRewardsDisplayFailed(Exception exception)
+    {
+        Debug.WriteLine(exception);
+        messageDialogService.ShowError(
+            "Path XP Rewards could not be displayed.\n\nThe project was not changed.",
+            "Path XP Rewards");
+    }
+
+    private void OnPathXpRewardsClosed(object? sender, EventArgs e)
+    {
+        if (sender is not PathXpRewardsDialog dialog) return;
+        dialog.ApplyRequested -= OnPathXpRewardsApplyRequested;
+        dialog.DisplayFailed -= OnPathXpRewardsDisplayFailed;
+        dialog.Closed -= OnPathXpRewardsClosed;
+        if (ReferenceEquals(pathXpRewardsDialog, dialog))
+            pathXpRewardsDialog = null;
+    }
+
     private void ValidateProject()
     {
         if (Project == null)
@@ -6214,6 +6472,8 @@ public class MainViewModel : ObservableObject
                 overworldMovementSpeedDialog,
                 rainFrequencyDialog,
                 requestBoardRewardsDialog,
+                pathLevelRequirementsDialog,
+                pathXpRewardsDialog,
                 randomTraitExclusionsDialog
             }
             .Concat(partyEconomyDialogs.Values)
@@ -6329,6 +6589,12 @@ public class MainViewModel : ObservableObject
             .NotifyCanExecuteChanged();
 
         RequestBoardRewardsCommand?
+            .NotifyCanExecuteChanged();
+
+        PathLevelRequirementsCommand?
+            .NotifyCanExecuteChanged();
+
+        PathXpRewardsCommand?
             .NotifyCanExecuteChanged();
 
         GameplayPresetCommand?

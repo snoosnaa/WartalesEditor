@@ -39,6 +39,12 @@ public sealed class OperationValidatorProvider
     private readonly RandomTraitExclusionsOperationValidator
         randomTraitExclusionsValidator = new();
 
+    private readonly PathLevelRequirementsOperationValidator
+        pathLevelRequirementsValidator = new();
+
+    private readonly PathXpRewardsOperationValidator
+        pathXpRewardsValidator = new();
+
     private readonly IReadOnlyDictionary<ProgressionType, IProjectOperationValidator>
         gameplayPresetValidators =
             new Dictionary<ProgressionType, IProjectOperationValidator>
@@ -108,6 +114,12 @@ public sealed class OperationValidatorProvider
 
                 RandomTraitExclusionsOperation =>
                     randomTraitExclusionsValidator,
+
+                PathLevelRequirementsOperation =>
+                    pathLevelRequirementsValidator,
+
+                PathXpRewardsOperation =>
+                    pathXpRewardsValidator,
 
                 GameplayPresetOperation presetOperation =>
                     gameplayPresetValidators[presetOperation.OperationType],

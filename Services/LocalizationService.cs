@@ -32,6 +32,8 @@ public class LocalizationService
 
         Dictionary<string, string> preparedNames =
             new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> preparedNamePriorities =
+            new(StringComparer.OrdinalIgnoreCase);
 
         XElement? root = document.Root;
 
@@ -46,6 +48,7 @@ public class LocalizationService
                 string id = entry.Name.LocalName;
 
                 string? localizedText = null;
+                int localizedTextPriority = 0;
 
                 // Prefer the most common display fields.
                 string[] preferredFields =
@@ -63,6 +66,7 @@ public class LocalizationService
                         !string.IsNullOrWhiteSpace(element.Value))
                     {
                         localizedText = element.Value.Trim();
+                        localizedTextPriority = 2;
                         break;
                     }
                 }
@@ -76,6 +80,7 @@ public class LocalizationService
                         if (!string.IsNullOrWhiteSpace(child.Value))
                         {
                             localizedText = child.Value.Trim();
+                            localizedTextPriority = 1;
                             break;
                         }
                     }
@@ -87,7 +92,12 @@ public class LocalizationService
                     continue;
                 }
 
-                preparedNames[id] = localizedText;
+                if (!preparedNamePriorities.TryGetValue(id, out int existingPriority) ||
+                    localizedTextPriority >= existingPriority)
+                {
+                    preparedNames[id] = localizedText;
+                    preparedNamePriorities[id] = localizedTextPriority;
+                }
             }
         }
 

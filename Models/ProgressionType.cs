@@ -28,5 +28,10 @@ public enum ProgressionType
     LecternKnowledgeGain,
     PositiveRandomTraits,
     RandomTraitExclusions,
-    RequestBoardRewards
+    RequestBoardRewards,
+    PathLevelRequirements,
+    PathXpRewardsMight,
+    PathXpRewardsTrade,
+    PathXpRewardsCrime,
+    PathXpRewardsMystery
 }

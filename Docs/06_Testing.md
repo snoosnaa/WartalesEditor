@@ -246,6 +246,35 @@ Save/reopen persistence. After another Wartales update, the owner repeated the
 workflow and additionally verified Export Back to Wartales, successful game
 launch, and loading into gameplay.
 
+### Paths Gameplay Tools Acceptance
+
+Path Level Requirements and Path XP Rewards completed Engineering Review with
+a **PASS**. The final automated review matrix included zero-warning Debug and
+Release builds; Paths Gameplay 189 checks before the UI correction; Profile
+Intent phases 83/199/83/123/75; all 26 Class A/Profile groups; Update Survival
+180; Request Board Rewards 101; Golden CDB 203; QuickBMS Export 205/205; Quick
+Help 44; and focused QuickBMS Import, Language Data, and Restore Previous Values
+suites. The QuickBMS symbolic-link matrix retained its environment skip because
+Windows symbolic-link privilege was unavailable. `git diff --check` passed.
+
+The accepted UI correction increased Paths Gameplay coverage to **206 focused
+checks**. It verifies direct localized Path-name precedence over duplicate
+nested rank data, English/alternate/missing-localization behavior, four
+independent sections, compact multiplier selectors, Restore and Apply wiring,
+unchanged and changed reward-range-only previews, status separation, and the
+absence of player-facing target counts, configured totals, and changed-property
+counts. An STA WPF measure/arrange check verified all four sections and all nine
+actions fit a normal 640×660 client area with zero scrollable height. Debug and
+Release builds passed with zero warnings and errors, Quick Help passed 44,
+Profile Presentation passed 75, and `git diff --check` passed.
+
+Project Owner Interactive Acceptance is distinct from that automation and
+passed both functional and UI review. The owner confirmed Path Level
+Requirements behavior; independent Crime and Chaos reward configuration;
+Restore Previous Values; exclusion of other Paths and special rewards;
+localized main Path headings; compact selectors; the simplified reward-range
+preview; and normal dialog fit without required scrolling.
+
 ### Shared Restore Previous Values Authority Regression
 
 Permanent ordinary-open fixtures use a valid current-content identity with

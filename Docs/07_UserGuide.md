@@ -240,6 +240,36 @@ only their respective progression. **Use Current Values as 100%** deliberately
 adopts current values as that side's new scaling baseline; it is not Restore
 Previous Values.
 
+#### Path Level Requirements
+
+Lowers the XP required to reach each Path level for all Paths.
+
+1. Open **Path Level Requirements**.
+2. Choose **Original**, **80%**, **60%**, **40%**, or **20%**.
+3. Review the displayed level-requirement preview.
+4. Choose **Apply**.
+5. Use **Restore Previous Values** to return to the exact values that existed
+   before this tool first changed them.
+
+#### Path XP Rewards
+
+Increases standard Path challenge rewards independently for **Power and
+Glory**, **Trade and Craftsmanship**, **Crime and Chaos**, and **Mysteries and
+Wisdom**. Loaded Language Data supplies these Path names.
+
+1. In the section for the Path you want to change, choose **Original**, **2×**,
+   **3×**, **4×**, or **5×**.
+2. Review the ordinary reward range. An unchanged selection shows
+   **Current reward range: X–Y XP**; a changed selection shows
+   **X–Y XP → A–B XP**.
+3. Choose that section's **Apply** button.
+4. Use that section's **Restore Previous Values** button when you want to
+   restore its previously captured reward values.
+
+Each Path is controlled separately; there is no Apply All action. Special
+rewards and other runtime bonuses are unchanged, so this tool should not be
+read as multiplying every possible source of Path XP.
+
 #### Lectern Knowledge Gain
 
 Changes Knowledge earned from the Lectern during qualifying rests. Presets are

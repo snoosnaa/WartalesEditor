@@ -59,6 +59,13 @@ public sealed class GameplayCompatibilityAssessmentService
             _ = RandomTraitExclusionsService.ResolveCandidateIds(project));
         Probe(results, "Request Board Rewards", () =>
             _ = RequestBoardRewardsService.ResolveTargets(project));
+        Probe(results, "Path Level Requirements", () =>
+            _ = PathLevelRequirementsService.ResolveTargets(project));
+        Probe(results, "Path XP Rewards", () =>
+        {
+            foreach (string pathId in PathXpRewardsService.PathIds)
+                _ = PathXpRewardsService.ResolveTargets(project, pathId);
+        });
 
         foreach (ProgressionType type in Enum.GetValues<ProgressionType>()
                      .Where(GameplayPresetCatalog.IsSupported))

@@ -578,6 +578,48 @@ remain distinct, while one operation produces one player-facing result. Normal
 completion text does not expose JSON, fingerprint, replay, snapshot, source-
 identity, or mutation-journal terminology.
 
+## Paths Gameplay Tools
+
+Paths Gameplay Tools extend the existing operation architecture without a
+parallel mutation path.
+
+**Path Level Requirements** owns only
+`constant/PathXpBase/value` and `constant/PathXpNext/value`.
+`constant/PathMaxLevel/value` is compatibility context, not mutation authority.
+The runtime requirement formula is `PathXpBase + ((level - 1) × PathXpNext)`.
+Scaling uses a captured noncompounding baseline, checked arithmetic, nearest
+rounding with midpoints away from zero, and a minimum stored value of 1. The
+accepted percentages are 100, 80, 60, 40, and 20.
+
+**Path XP Rewards** is represented by four independent operations keyed by the
+canonical `PathMight`, `PathTrade`, `PathCrime`, and `PathMystery` identities.
+Each owns only `counter/<canonical entry ID>/pathXP` for current non-Outdated
+counters whose canonical `path` matches that operation. `MerchAttack`, every
+`reward.pathXp` structure, special consequence rewards, `thresholdXp`,
+`SpecialisedApprenticeships`, other Paths, and global Path requirements are
+outside this ownership boundary. The accepted multipliers are 1 through 5.
+
+The stable format-4 operation IDs are `path-level-requirements`,
+`path-xp-rewards-might`, `path-xp-rewards-trade`, `path-xp-rewards-crime`, and
+`path-xp-rewards-mystery`. Portable intent stores only the selected percentage
+or multiplier. It never stores target lists, source identity, baselines,
+fingerprints, restore authority, or localized display names.
+
+Gameplay Operation State remains source-bound. Requirement state captures the
+local Base/Next baseline and max-level compatibility context. Each reward state
+captures the discovered ordinary membership and original scalar values for one
+Path. Same-source membership drift fails safely. Changed-source Update Survival
+replay rediscovers current destination authority, uses a fresh destination
+baseline, and creates fresh destination-bound state; added valid targets are
+included and removed historical targets do not remain portable authority.
+
+Localization is presentation-only. Canonical Path IDs remain semantic
+authority, while `LocalizationService` supplies player-facing Path names from
+loaded Language Data. Direct localized `name`, `text`, or `title` values take
+precedence over structural fallback text, preventing nested progression-rank
+structures from replacing the main Path name. Profile, candidate-validation,
+and gameplay-state presentation use the same loaded localization authority.
+
 Run Speed storage remains unchanged. `Vanilla` maps to the player-facing
 Vanilla preset; persisted `Faster` with values 8/14 displays as **Fast**;
 persisted `Fast` with values 9/17 displays as **Faster**; and `VeryFast`

@@ -22,14 +22,24 @@ public sealed class ProfileOperationReplayService
     private readonly GameplayPresetService presetService;
     private readonly RandomTraitExclusionsService traitService;
     private readonly RequestBoardRewardsService requestBoardService;
+    private readonly PathLevelRequirementsService pathLevelService;
+    private readonly PathXpRewardsService pathRewardsService;
     private readonly ProjectOperationTransactionService transactionService;
     private readonly ProjectOperationService operationService;
     private readonly ProfileOperationResolver additiveResolver;
 
     public ProfileOperationReplayService()
+        : this(new LocalizationService())
     {
+    }
+
+    public ProfileOperationReplayService(
+        LocalizationService localizationService)
+    {
+        ArgumentNullException.ThrowIfNull(localizationService);
         ProjectMutationService mutations = new();
-        stateService = new GameplayOperationStateService(mutations);
+        stateService = new GameplayOperationStateService(
+            mutations, localizationService);
         registry = new ProfileOperationIntentRegistry();
         baselineService = new ProfileOperationReplayBaselineService(
             stateService,
@@ -42,6 +52,9 @@ public sealed class ProfileOperationReplayService
         presetService = new GameplayPresetService(mutations, stateService);
         traitService = new RandomTraitExclusionsService(mutations, stateService);
         requestBoardService = new RequestBoardRewardsService(mutations, stateService);
+        pathLevelService = new PathLevelRequirementsService(mutations, stateService);
+        pathRewardsService = new PathXpRewardsService(
+            mutations, stateService, localizationService);
         transactionService = new ProjectOperationTransactionService();
 
         ContentCreationService contentCreation = new(mutations);
@@ -340,6 +353,18 @@ public sealed class ProfileOperationReplayService
                 Leaf("constant", RequestBoardRewardsService.MaximumEntryId,
                     RequestBoardRewardsService.PropertyPath)
             },
+            ProgressionType.PathLevelRequirements => new[]
+            {
+                Leaf("constant", PathLevelRequirementsService.BaseEntryId,
+                    PathLevelRequirementsService.PropertyPath),
+                Leaf("constant", PathLevelRequirementsService.NextEntryId,
+                    PathLevelRequirementsService.PropertyPath)
+            },
+            ProgressionType.PathXpRewardsMight or
+            ProgressionType.PathXpRewardsTrade or
+            ProgressionType.PathXpRewardsCrime or
+            ProgressionType.PathXpRewardsMystery =>
+                GetPathRewardLeaves(project, operationType),
             _ when GameplayPresetCatalog.IsSupported(operationType) =>
                 GameplayPresetCatalog.Get(operationType).Targets
                     .Select(target => Leaf(
@@ -421,6 +446,24 @@ public sealed class ProfileOperationReplayService
                 requestBoardService.Replay(
                     project,
                     settings.Value<int>("percentage"),
+                    baseline,
+                    context);
+                break;
+            case ProgressionType.PathLevelRequirements:
+                pathLevelService.Replay(
+                    project,
+                    settings.Value<int>("percentage"),
+                    baseline,
+                    context);
+                break;
+            case ProgressionType.PathXpRewardsMight:
+            case ProgressionType.PathXpRewardsTrade:
+            case ProgressionType.PathXpRewardsCrime:
+            case ProgressionType.PathXpRewardsMystery:
+                pathRewardsService.Replay(
+                    project,
+                    PathXpRewardsService.GetPathId(operationType),
+                    settings.Value<int>("multiplier"),
                     baseline,
                     context);
                 break;
@@ -592,6 +635,34 @@ public sealed class ProfileOperationReplayService
                             StringComparison.Ordinal);
                     break;
 
+                case ProgressionType.PathLevelRequirements:
+                    PathLevelRequirementTargets pathLevelTargets =
+                        PathLevelRequirementsService.ResolveTargets(project);
+                    current = PathLevelRequirementsService.Capture(pathLevelTargets);
+                    metadataMatches =
+                        string.Equals(seed.TargetSheet, "constant,constant", StringComparison.Ordinal) &&
+                        string.Equals(seed.TargetEntry,
+                            $"{PathLevelRequirementsService.BaseEntryId}," +
+                            PathLevelRequirementsService.NextEntryId,
+                            StringComparison.Ordinal) &&
+                        string.Equals(seed.TargetPath, "value|value", StringComparison.Ordinal) &&
+                        seed.GameplaySettings?["pathMaxLevel"]?.Value<int>() ==
+                            pathLevelTargets.MaxLevel;
+                    break;
+
+                case ProgressionType.PathXpRewardsMight:
+                case ProgressionType.PathXpRewardsTrade:
+                case ProgressionType.PathXpRewardsCrime:
+                case ProgressionType.PathXpRewardsMystery:
+                    PathXpRewardTargets pathRewardTargets =
+                        PathXpRewardsService.ResolveTargets(
+                            project,
+                            PathXpRewardsService.GetPathId(operationType));
+                    current = PathXpRewardsService.Capture(pathRewardTargets);
+                    metadataMatches = MatchesMetadataFromBaseline(
+                        seed, "sheet", "entry", "targetPath");
+                    break;
+
                 default:
                     IReadOnlyList<ResolvedGameplayTarget> targets =
                         GameplayPresetService.ResolveTargets(
@@ -703,6 +774,18 @@ public sealed class ProfileOperationReplayService
                 new RequestBoardRewardsOperation(
                     requestBoardService,
                     settings.Value<int>("percentage")),
+            ProgressionType.PathLevelRequirements =>
+                new PathLevelRequirementsOperation(
+                    pathLevelService,
+                    settings.Value<int>("percentage")),
+            ProgressionType.PathXpRewardsMight or
+            ProgressionType.PathXpRewardsTrade or
+            ProgressionType.PathXpRewardsCrime or
+            ProgressionType.PathXpRewardsMystery =>
+                new PathXpRewardsOperation(
+                    pathRewardsService,
+                    PathXpRewardsService.GetPathId(operationType),
+                    settings.Value<int>("multiplier")),
             _ when GameplayPresetCatalog.IsSupported(operationType) =>
                 new GameplayPresetOperation(
                     presetService,
@@ -768,6 +851,20 @@ public sealed class ProfileOperationReplayService
                 record.Value<string>("sheet")!,
                 record.Value<string>("entry")!,
                 record.Value<string>("path")!))
+            .ToArray();
+
+    private static IReadOnlyList<ProfileOwnedSnapshotLeaf>
+        GetPathRewardLeaves(
+            ProjectModel project,
+            ProgressionType operationType) =>
+        PathXpRewardsService.ResolveTargets(
+                project,
+                PathXpRewardsService.GetPathId(operationType))
+            .Targets
+            .Select(target => Leaf(
+                "counter",
+                target.Entry.Id,
+                PathXpRewardsService.RewardPropertyPath))
             .ToArray();
 
     private static IReadOnlyList<ProfileOwnedSnapshotLeaf>

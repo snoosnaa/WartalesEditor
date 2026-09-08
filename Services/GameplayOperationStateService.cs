@@ -11,18 +11,33 @@ public sealed class GameplayOperationStateService
     private readonly ProgressionTableResolver
         tableResolver;
 
+    private readonly LocalizationService
+        localizationService;
+
     private readonly CdbGenerationIdentityService identityService = new();
 
     public GameplayOperationStateService()
         : this(
-            new ProjectMutationService())
+            new ProjectMutationService(),
+            new LocalizationService())
     {
     }
 
     public GameplayOperationStateService(
         ProjectMutationService projectMutationService)
+        : this(
+            projectMutationService,
+            new LocalizationService())
+    {
+    }
+
+    public GameplayOperationStateService(
+        ProjectMutationService projectMutationService,
+        LocalizationService localizationService)
     {
         ArgumentNullException.ThrowIfNull(projectMutationService);
+        this.localizationService = localizationService
+            ?? throw new ArgumentNullException(nameof(localizationService));
         tableResolver = new ProgressionTableResolver(projectMutationService);
     }
 
@@ -436,6 +451,21 @@ public sealed class GameplayOperationStateService
             return;
         }
 
+        if (state.OperationType == ProgressionType.PathLevelRequirements)
+        {
+            PathLevelRequirementsService.ValidateState(project, state);
+            return;
+        }
+
+        if (state.OperationType is ProgressionType.PathXpRewardsMight
+            or ProgressionType.PathXpRewardsTrade
+            or ProgressionType.PathXpRewardsCrime
+            or ProgressionType.PathXpRewardsMystery)
+        {
+            PathXpRewardsService.ValidateState(project, state);
+            return;
+        }
+
         if (GameplayPresetCatalog.IsSupported(state.OperationType))
         {
             GameplayPresetService.ValidateState(project, state);
@@ -562,7 +592,7 @@ public sealed class GameplayOperationStateService
         };
     }
 
-    private static string GetDisplayName(
+    internal string GetDisplayName(
         ProgressionType progressionType)
     {
         return progressionType switch
@@ -579,11 +609,24 @@ public sealed class GameplayOperationStateService
                 "Rain Frequency",
             ProgressionType.RequestBoardRewards =>
                 "Request Board Rewards",
+            ProgressionType.PathLevelRequirements =>
+                "Path Level Requirements",
+            ProgressionType.PathXpRewardsMight =>
+                GetPathXpRewardsDisplayName(PathXpRewardsService.MightPathId),
+            ProgressionType.PathXpRewardsTrade =>
+                GetPathXpRewardsDisplayName(PathXpRewardsService.TradePathId),
+            ProgressionType.PathXpRewardsCrime =>
+                GetPathXpRewardsDisplayName(PathXpRewardsService.CrimePathId),
+            ProgressionType.PathXpRewardsMystery =>
+                GetPathXpRewardsDisplayName(PathXpRewardsService.MysteryPathId),
             _ when GameplayPresetCatalog.IsSupported(progressionType) =>
                 GameplayPresetCatalog.Get(progressionType).Title,
             _ => "gameplay operation"
         };
     }
+
+    private string GetPathXpRewardsDisplayName(string pathId) =>
+        $"{localizationService.GetLocalizedName(pathId) ?? pathId} XP Rewards";
 
     internal bool HasRestoreAuthority(
         ProjectModel project,

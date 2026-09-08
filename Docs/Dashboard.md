@@ -4,20 +4,21 @@
 
 **Document Version:** 2.0
 
-**Last Updated:** 2026-08-31
+**Last Updated:** 2026-09-08
 
 ---
 
 # Project Status
 
-**Current Phase:** Public Release Preparation — IN PROGRESS
+**Current Phase:** Paths Gameplay Tools — ACCEPTED; commit authorization pending
 
-Phase 1 is COMPLETE. It covers legal/public metadata, public onboarding, version
-reconciliation, repository hygiene, release-note groundwork, and the Git-history
-privacy plan.
-Packaging, clean-machine validation, history sanitization, checksums, tagging,
-and publication remain pending. Earlier milestone sections below are retained as
-historical dashboard context.
+Path Level Requirements and the four independent Path XP Rewards operations
+have completed implementation, Engineering Review, Project Owner Functional
+Acceptance, Project Owner UI Acceptance, and documentation reconciliation. No
+release/version decision has been made for this work. Before such a decision, a
+separate Project Owner-requested audit of previously unapproved user-facing
+values, presets, caps, defaults, ranges, and named choices remains pending.
+Earlier milestone sections below are retained as historical dashboard context.
 
 Wartales Editor has successfully transitioned from a safe editing platform into a transactional content creation platform.
 

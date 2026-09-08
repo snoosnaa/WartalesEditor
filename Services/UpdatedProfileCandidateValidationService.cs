@@ -26,6 +26,18 @@ public sealed class UpdatedProfileCandidateValidationService
     }
 
     public UpdatedProfileCandidateValidationService(
+        LocalizationService localizationService)
+        : this(
+            new ModificationSnapshotService(),
+            new SnapshotPropertyResolutionService(),
+            CreateLocalizedCaptureService(localizationService),
+            new GameplayOperationStateService(
+                new ProjectMutationService(),
+                localizationService))
+    {
+    }
+
+    public UpdatedProfileCandidateValidationService(
         ModificationSnapshotService snapshotService,
         SnapshotPropertyResolutionService resolutionService,
         ProfileOperationCaptureService operationCaptureService,
@@ -156,9 +168,11 @@ public sealed class UpdatedProfileCandidateValidationService
             stateService.ValidateState(intendedProject, validated);
             if (!validated.IsCompatible)
             {
+                string displayName = stateService.GetDisplayName(
+                    state.OperationType);
                 throw new InvalidOperationException(
-                    $"The updated profile contains incompatible gameplay state " +
-                    $"for '{state.OperationType}': {validated.CompatibilityMessage}");
+                    $"The updated profile contains incompatible {displayName} " +
+                    $"state: {validated.CompatibilityMessage}");
             }
         }
 
@@ -174,7 +188,7 @@ public sealed class UpdatedProfileCandidateValidationService
         }
     }
 
-    private static Dictionary<ProgressionType, GameplayOperationStateModel> ToStateMap(
+    private Dictionary<ProgressionType, GameplayOperationStateModel> ToStateMap(
         IEnumerable<GameplayOperationStateModel> states,
         string sourceName)
     {
@@ -185,7 +199,7 @@ public sealed class UpdatedProfileCandidateValidationService
             {
                 throw new InvalidOperationException(
                     $"The {sourceName} contains duplicate gameplay state for " +
-                    $"'{state.OperationType}'.");
+                    $"'{stateService.GetDisplayName(state.OperationType)}'.");
             }
         }
 
@@ -440,4 +454,17 @@ public sealed class UpdatedProfileCandidateValidationService
         string settingId,
         string propertyPath) =>
         $"{categoryName}\u001f{settingId}\u001f{propertyPath}";
+
+    private static ProfileOperationCaptureService CreateLocalizedCaptureService(
+        LocalizationService localizationService)
+    {
+        ArgumentNullException.ThrowIfNull(localizationService);
+        ProjectMutationService mutationService = new();
+        ContentCreationService contentCreationService = new(mutationService);
+        return new ProfileOperationCaptureService(
+            new Operations.OperationValidatorProvider(),
+            new Operations.AddCampFacilitiesOperation(contentCreationService),
+            new Operations.UpgradeAllEquipmentOperation(contentCreationService),
+            localizationService);
+    }
 }

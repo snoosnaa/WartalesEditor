@@ -2,9 +2,9 @@
 
 Application Version: 1.0.0 (Public Release Preparation)
 
-Status: Accepted Cumulative Work; Final Integrated Regression Passed
+Status: Paths Gameplay Tools Accepted; Documentation Reconciled; Commit Pending
 
-Last Updated: 2026-09-07
+Last Updated: 2026-09-08
 
 Purpose
 
@@ -31,6 +31,31 @@ Product philosophy belongs in PlayerFirstDesign.md.
 Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
+
+Paths Gameplay Tools are **ACCEPTED / COMPLETE**. Engineering Review passed,
+Project Owner Functional Acceptance passed, and Project Owner UI Acceptance
+passed. Documentation is reconciled by this task; commit/push remains pending
+explicit authorization. No release, version, or tag decision has been made for
+this work.
+
+**Path Level Requirements** globally scales the captured Path requirement
+formula through Original, 80%, 60%, 40%, and 20%. **Path XP Rewards** independently
+scales ordinary reward counters for each canonical Path through Original, 2×,
+3×, 4×, and 5×. It deliberately excludes `MerchAttack`, all `reward.pathXp`
+special rewards, threshold bonuses, Outdated counters, and other Paths.
+Both features participate in Gameplay Operation State, Profile Operation
+Intent, Update Survival, Restore Previous Values, effective counting,
+transactions, and atomic Undo/Redo.
+
+The final accepted reward UI uses localized main Path names, compact selectors,
+independent Apply/Restore controls, and reward-range-only previews. All four
+Path sections fit the normal dialog without required vertical scrolling.
+
+A separate pre-release Project Owner value-choice audit remains pending before
+the next release/version decision. It will identify user-facing values,
+presets, caps, defaults, ranges, and named choices that lack an explicit Project
+Owner decision; it will not change those choices automatically. The audit was
+not performed as part of Paths reconciliation.
 
 The post-1.0.0 Profile Operation Intent / Update Survival correction is
 implemented, Engineering reviewed, and Project Owner accepted. All five phases
@@ -72,8 +97,8 @@ established Windows file-link cases when symbolic-link privilege was
 unavailable. Commit/push preparation is now current; commit and push remain
 unauthorized, and the publication decision has not started.
 
-Wartales Editor has completed its accepted feature and engineering milestones
-and is now preparing Version 1.0.0 for public release.
+Wartales Editor has completed its accepted Version 1.0.0 release lifecycle and
+continues bounded post-release gameplay development on the stable platform.
 
 The application:
 
@@ -93,14 +118,15 @@ Is maintained with Git and GitHub.
 
 The editing platform and supporting architecture are considered stable.
 
-The current work is limited to release preparation; future product development
-remains outside this phase.
+The current work is limited to closing the accepted Paths Gameplay Tools
+feature. A later release/version decision remains separate.
 
 Current Milestone
 
-Commit / Push preparation for the accepted Profile Operation Intent / Update
-Survival correction and accepted Import button polish, following a passed Final
-Integrated Regression. Commit/push remains unauthorized.
+Paths Gameplay Tools accepted-feature closure. Documentation reconciliation is
+complete; commit/push remains unauthorized. The separate pre-release
+Project Owner value-choice audit is the next pending review activity, but it is
+not authorized by this milestone. Release/version work has not been selected.
 
 Prior public-release preparation record:
 
