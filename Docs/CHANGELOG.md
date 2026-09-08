@@ -6,10 +6,10 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
-# Product Decision Audit Follow-Up
+# Version 1.1.0
 
-**Status:** Implemented, Engineering reviewed, and Project Owner accepted;
-commit/push and any later release/version decision remain pending.
+**Status:** Release candidate prepared and locally verified; publication is not
+authorized.
 
 ## Added
 
@@ -51,18 +51,20 @@ commit/push and any later release/version decision remain pending.
   QuickBMS Export/routing 215; Golden CDB 203; Quick Help 44; Request Board
   Rewards 101; Paths Gameplay 206; Class A and focused QuickBMS Import; and a
   passing `git diff --check`.
+- The fresh self-contained `win-x64` package contains 405 public files, excludes
+  PDBs and external tools, passed path-privacy and clean-extraction checks, and
+  started successfully as Version 1.1.0.
 
-No commit, push, tag, release, package, publication, or live Export is claimed
-by this entry.
+The accepted Product Decision Audit follow-up is committed and included in the
+1.1.0 release candidate source.
 
 ---
 
-# Paths Gameplay Tools
+## Paths Gameplay Tools
 
-**Status:** Accepted and documentation-complete; commit/push and any later
-release/version decision remain pending.
+**Status:** Accepted, committed, and included in 1.1.0.
 
-## Added
+### Added
 
 - Added **Path Level Requirements** with Original, 80%, 60%, 40%, and 20%
   choices for globally lowering Path level requirements.
@@ -73,7 +75,7 @@ release/version decision remain pending.
   Gameplay Operation State, format-4 Profile Operation Intent, exact
   target-context change counting, and changed-source Update Survival replay.
 
-## Accepted boundaries and presentation
+### Accepted boundaries and presentation
 
 - Path XP Rewards changes only ordinary current Path reward counters. It does
   not change `MerchAttack`, special `reward.pathXp` rewards, threshold bonuses,
@@ -84,7 +86,7 @@ release/version decision remain pending.
   reward-range-only preview. All sections fit its normal layout without
   required scrolling.
 
-## Verification
+### Verification
 
 - Engineering Review passed. Project Owner Functional Acceptance and Project
   Owner UI Acceptance passed.
@@ -92,17 +94,15 @@ release/version decision remain pending.
   Presentation 75, zero-warning Debug and Release builds, and a passing
   `git diff --check`.
 
-No commit, push, tag, release, package, or publication is claimed by this entry.
+No tag, release, package publication, or live Export is claimed by this entry.
 
 ---
 
-# Profile Operation Intent / Update Survival Correction
+## Profiles and Update Survival
 
-**Status:** Complete; all five Engineering Reviews passed and Project Owner
-Interactive Acceptance passed. Documentation is reconciled; commit, push, and
-any later release decision remain pending.
+**Status:** Complete, accepted, committed, and included in 1.1.0.
 
-## Changed
+### Changed
 
 - Introduced format-4 profiles with canonical source-independent
   `OperationRequests` for recognized gameplay outcomes while keeping Gameplay
@@ -126,7 +126,7 @@ any later release decision remain pending.
   uses player-facing feature descriptions for stateful, Upgrade All Equipment,
   and Add Camp Facilities outcomes.
 
-## Accepted
+### Accepted
 
 - Automated regression passed Debug and Release builds with zero warnings and
   errors; phase totals 83/199/83/123/75; 26 Class A/Profile groups; Update
@@ -137,7 +137,7 @@ any later release decision remain pending.
   gameplay-setting reconstruction, Undo/Redo, Save/reopen, Export Back to
   Wartales, game launch, and loading into gameplay.
 
-## Accepted startup-button polish
+### Accepted startup-button polish
 
 - Corrected the clipped **Import From Wartales** welcome action by overriding
   its inherited 100-DIP utility width locally to 150 DIPs. The exact label,
@@ -153,8 +153,8 @@ Phase totals 83/199/83/123/75; all 26 Class A/Profile groups; Update Survival
 180; Request Board 101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and
 the focused QuickBMS Import, Language Data, and Restore suites. The only skips
 were the established Windows file-link cases when symbolic-link privilege was
-unavailable. No commit, push, new release, tag, package, or publication is
-claimed by this entry.
+unavailable. No tag, release, package publication, or live Export is claimed by
+this entry.
 
 ---
 

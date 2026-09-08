@@ -4,8 +4,8 @@ Wartales Editor is a Windows desktop editor for Wartales `data.cdb` files with
 gameplay-focused editing tools, profiles, update compatibility checks, Golden
 CDB comparison, and integrated QuickBMS import/export workflows.
 
-Current source version: **1.0.0 (public release preparation)**. The final
-portable package has not yet been published.
+Current source version: **1.1.0 (release candidate preparation)**. Publication
+has not yet been authorized.
 
 ## AI Development Disclosure
 
@@ -39,14 +39,14 @@ validation, and lifecycle reconciliation before accepted commits.
 
 ## Supported Platform and Game Version
 
-Wartales Editor 1.0.0 supports **Windows 11 x64** and the **Steam version of
+Wartales Editor 1.1.0 supports **Windows 11 x64** and the **Steam version of
 Wartales**. It can automatically locate Wartales across Steam libraries. If
 automatic detection fails, select the Wartales installation folder containing
 `Wartales.exe` and `res.pak`; use **Tools → Wartales Location…** to change that
 selection later. Integrated Import and Export require the documented
 user-supplied QuickBMS toolchain.
 
-Validated with Wartales Steam BuildID **23361327**.
+Last exact recorded Wartales build: Steam BuildID **23361327**.
 
 Validated with QuickBMS **0.12.0** (SHA-256
 `FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`).
@@ -54,9 +54,12 @@ Validated with QuickBMS **0.12.0** (SHA-256
 Validated with `Shiro_Games_PAK_script.bms` **v0.2**, dated **10.03.2022**
 (SHA-256 `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
 
-Wartales Editor 1.0.0 was validated with this specific Wartales, QuickBMS, and
-Shiro script combination. Later game or toolchain updates may require renewed
-compatibility validation. Other operating systems, CPU architectures, stores,
+BuildID 23361327 is the last exact Wartales build recorded in repository
+release authority. Wartales Editor 1.1.0 regression passed against the accepted
+post-1.0.0 feature set; the exact current Wartales BuildID still requires final
+Project Owner confirmation before publication. The QuickBMS and Shiro script
+combination remains validated as recorded below. Later game or toolchain updates
+may require renewed compatibility validation. Other operating systems, CPU architectures, stores,
 unverified Wartales builds, co-op behavior, and arbitrary third-party CDB
 combinations are not currently claimed as supported. Ordinary manual CDB
 editing outside this boundary may work, but it is not part of the verified
@@ -64,7 +67,7 @@ integrated-support claim.
 
 ## Download and Installation
 
-The intended V1 artifact is `WartalesEditor-1.0.0-win-x64.zip`: a free,
+The intended 1.1 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
 self-contained, untrimmed, multi-file Windows x64 portable build. No installer
 or updater is included.
 

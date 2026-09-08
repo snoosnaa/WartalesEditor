@@ -1,6 +1,6 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 1.0.0
+**Application Version:** 1.1.0
 
 **Document Version:** 2.0
 
@@ -10,15 +10,15 @@
 
 # Project Status
 
-**Current Phase:** Product Decision Audit Follow-Up — ACCEPTED; documentation reconciled; commit authorization pending
+**Current Phase:** Version 1.1.0 — RELEASE CANDIDATE PREPARED
 
-The Product Decision Audit and accepted follow-up are complete. Engineering
-Review and Project Owner Interactive Acceptance passed. The accepted changes
-add Lectern 4×, Cooking Pot 5/10/16, Tent Valour 3/4/5, Starting Resources Hemp
-and grouped quick controls, plus one remembered QuickBMS folder with the
-historical Desktop fallback. Profile metadata remains unchanged. Documentation
-is reconciled; commit/push awaits authorization, and no release/version decision
-has started. Earlier milestone sections remain as historical dashboard context.
+Version 1.1.0 is the selected release target. All included feature work is
+accepted, and the 405-file self-contained release candidate is prepared and
+locally verified. Its ZIP SHA-256 is
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+Tagging, GitHub Release creation, Nexus publication, VirusTotal submission, and
+other publication remain unauthorized. Earlier milestone sections remain as
+historical dashboard context.
 
 ## Party Economy Custom Preservation
 
@@ -200,9 +200,9 @@ Planned features include:
 
 # Current Priorities
 
-1. Review and authorize the complete accepted Product Decision Audit follow-up.
-2. Commit and push only after explicit authorization.
-3. Begin any release/version decision as a separate lifecycle.
+1. Confirm the exact current Wartales Steam BuildID before publication.
+2. Obtain separate authorization before creating `v1.1.0`.
+3. Publish only after the separate external-release authorization.
 
 ---
 

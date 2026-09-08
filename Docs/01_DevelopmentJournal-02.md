@@ -1789,3 +1789,24 @@ Survival 180, focused QuickBMS Import, Language Data, focused Restore, and all
 25 Class A groups passing. No additional live Export or game launch occurred
 during reconciliation. Both items are closed, and Public Release Preparation is
 the next repository-authoritative activity; it was not begun here.
+
+## 2026-09-08 — Version 1.1.0 Release Candidate Preparation
+
+Version 1.1.0 release metadata, public documentation, changelog, and release
+notes were reconciled without changing gameplay behavior or persistence schema.
+The complete established regression matrix passed, including zero-warning Debug
+and Release builds and all current gameplay, profile, update-survival, QuickBMS,
+Golden CDB, Quick Help, Language Data, and restore suites.
+
+A fresh self-contained, untrimmed, multi-file `win-x64` publish produced the
+candidate package. Its 405 public files exclude the private PDB, external
+QuickBMS/Shiro tools, source, tests, game data, user data, and machine-local
+settings. Privacy checks passed, clean extraction was byte-for-byte equivalent,
+the extracted Version 1.1.0 application started and closed normally, and Windows
+Defender reported no detections. The immutable ZIP SHA-256 is
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+
+Steam BuildID 23361327 remains the last exact repository-recorded supported
+build. The exact current BuildID requires Project Owner confirmation before
+publication. No tag, push, GitHub Release, Nexus publication, VirusTotal upload,
+or live Export occurred.

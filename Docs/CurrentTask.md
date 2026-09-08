@@ -2,16 +2,14 @@
 
 ## Current Milestone
 
-Product Decision Audit Follow-Up — Acceptance Closure
+Version 1.1.0 — Release Candidate Prepared
 
 ## Current Status
 
-**The Product Decision Audit and its accepted follow-up are COMPLETE.** The
-investigation and product decisions are closed, implementation is complete,
-Engineering Review returned **PASS**, and Project Owner Interactive Acceptance
-returned **PASS**. Documentation reconciliation is complete by this task.
-Commit and push remain pending explicit authorization; no release or version
-decision has started.
+**Version 1.1.0 is the selected release target.** All included feature work is
+accepted, and the fresh self-contained `win-x64` release candidate has been
+prepared and verified locally. Publication, `v1.1.0`, GitHub Release creation,
+Nexus publication, and VirusTotal submission remain unauthorized.
 
 The accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food
 Reduction 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting
@@ -26,7 +24,8 @@ Post values that do not match a named preset now appear as **Custom** and remain
 unchanged while independent Valour or capacity settings are applied. Explicit
 named-preset selection still replaces those values. Custom is presentation-only;
 state and profiles continue to store exact numeric settings without a schema
-change. Documentation is reconciled by this task.
+change. Documentation is reconciled and included in the committed release
+source.
 
 **Tools → QuickBMS Location...** now accepts and remembers one folder containing
 both required QuickBMS files. Import From Wartales, Export Back to Wartales, and
@@ -50,6 +49,18 @@ passing `git diff --check`. Project Owner Interactive Acceptance separately
 passed all approved presets, Starting Resources behavior, QuickBMS selection,
 remembered-location, validation, and fallback scenarios. No live Export is
 claimed for this acceptance cycle.
+
+## Release Preparation Boundary
+
+The prepared package is `WartalesEditor-1.1.0-win-x64.zip`: self-contained,
+untrimmed, multi-file, and free of PDBs, external tools, game data, user data,
+and machine-local settings. It contains 405 public files, passed exact
+staging/extraction equivalence, launched successfully from the clean extraction,
+and has SHA-256
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+QuickBMS and the Shiro script remain external. Steam BuildID 23361327 is the
+last exact build recorded in repository authority; the exact current BuildID
+requires Project Owner confirmation before publication.
 
 ## Prior Public Release Preparation Context
 

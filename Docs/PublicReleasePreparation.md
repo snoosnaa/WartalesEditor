@@ -1,8 +1,14 @@
 # Public Release Preparation
 
-**Target release:** Wartales Editor 1.0.0
+**Target release:** Wartales Editor 1.1.0
 
-**Status:** IN PROGRESS
+**Status:** RELEASE CANDIDATE PREPARED — PUBLICATION NOT AUTHORIZED
+
+**Version 1.1.0 scope:** Accepted post-1.0.0 work is committed and includes
+Paths Gameplay Tools, stronger Profile Update Survival, Starting Resources
+Hemp and grouped controls, additional approved presets, remembered QuickBMS
+folder selection, Party Economy Custom preservation, Quick Help, and accepted
+usability corrections. Publication is not authorized.
 
 **Phase 1:** COMPLETE — legal/public metadata, repository hygiene, public
 onboarding, version reconciliation, and Git-history privacy sanitization are
@@ -17,6 +23,15 @@ guidance, and later publication sequence are defined and repository-verified.
 **Phase 2 closeout:** User Manual content review: PASS. User Manual PDF Project
 Owner visual review: PASS. README content review: PASS. README PDF Project Owner
 visual review: PASS.
+
+**Version 1.1.0 candidate:** PREPARED AND LOCALLY VERIFIED. The fresh
+self-contained, untrimmed, multi-file `win-x64` package contains 405 public
+files. It excludes PDBs, QuickBMS, the Shiro script, game/user data, source, and
+tests. Staging and clean extraction are byte-for-byte equivalent, the extracted
+application started as Version 1.1.0 and closed normally, and Windows Defender
+reported no detections for both the extracted package and ZIP. The immutable ZIP
+SHA-256 is
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
 
 **Quick Help V1:** CLOSED. Investigation, Design / Architecture,
 Implementation, Focused Engineering Review (**PASS**), Project Owner
@@ -88,7 +103,8 @@ RC2 is superseded for publication. No fresh candidate has been generated.
 - Released by TyTech Games.
 - Windows 11 x64 and Steam Wartales across detected Steam libraries, with manual
   installation-folder selection when needed.
-- Release-tested Wartales Steam BuildID `23361327`.
+- Last exact repository-recorded Wartales Steam BuildID: `23361327`. The exact
+  current BuildID requires Project Owner confirmation before 1.1.0 publication.
 - Self-contained, untrimmed, multi-file `win-x64` portable ZIP.
 - No installer, updater, single-file publish, trimming, or ReadyToRun.
 - Unsigned V1 with a published SHA-256 checksum.
@@ -205,7 +221,7 @@ validated SDK-supported publish policy changes them.
 
 ## Release ZIP Manifest
 
-Artifact: `WartalesEditor-1.0.0-win-x64.zip`.
+Artifact: `WartalesEditor-1.1.0-win-x64.zip`.
 
 Archive entries are placed directly at the ZIP root so a player can extract to
 one chosen folder and run the executable. Do not add a second nested wrapper
@@ -234,10 +250,10 @@ explicitly verify that both files are present together at the ZIP root.
 ## Artifact Names
 
 ```text
-Binary ZIP:      WartalesEditor-1.0.0-win-x64.zip
-Checksum:        WartalesEditor-1.0.0-win-x64.sha256
-Optional symbols:WartalesEditor-1.0.0-symbols.zip (not approved for V1)
-Git tag:         v1.0.0
+Binary ZIP:      WartalesEditor-1.1.0-win-x64.zip
+Checksum:        WartalesEditor-1.1.0-win-x64.sha256
+Optional symbols:WartalesEditor-1.1.0-symbols.zip (not approved)
+Git tag:         v1.1.0
 ```
 
 Do not create the tag or artifacts until separately authorized.
@@ -248,8 +264,8 @@ Create the checksum only after the final ZIP is immutable. From the artifact
 directory:
 
 ```powershell
-$zip = 'WartalesEditor-1.0.0-win-x64.zip'
-$checksum = 'WartalesEditor-1.0.0-win-x64.sha256'
+$zip = 'WartalesEditor-1.1.0-win-x64.zip'
+$checksum = 'WartalesEditor-1.1.0-win-x64.sha256'
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToUpperInvariant()
 "$hash  $zip" | Set-Content -LiteralPath $checksum -Encoding ascii
 Get-Content -LiteralPath $checksum
@@ -261,8 +277,8 @@ and the ZIP filename, followed by a newline.
 After upload, download the ZIP and checksum into a clean directory and run:
 
 ```powershell
-$expected = (Get-Content -LiteralPath 'WartalesEditor-1.0.0-win-x64.sha256').Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)[0]
-$actual = (Get-FileHash -LiteralPath 'WartalesEditor-1.0.0-win-x64.zip' -Algorithm SHA256).Hash.ToUpperInvariant()
+$expected = (Get-Content -LiteralPath 'WartalesEditor-1.1.0-win-x64.sha256').Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)[0]
+$actual = (Get-FileHash -LiteralPath 'WartalesEditor-1.1.0-win-x64.zip' -Algorithm SHA256).Hash.ToUpperInvariant()
 if ($actual -ne $expected) { throw 'Published ZIP checksum mismatch.' }
 ```
 
@@ -413,10 +429,12 @@ Use the actual future immutable release ZIP, never development output:
 
 ## Supported Version Recording
 
-The validated release combination is Wartales Steam BuildID `23361327`,
-QuickBMS `0.12.0`, and `Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022. The
-validated hashes are recorded in the public documents. Keep this exact
-combination consistent across all four public authorities:
+The last exact repository-recorded Wartales build is Steam BuildID `23361327`.
+The exact current BuildID requires final Project Owner confirmation before
+1.1.0 publication. QuickBMS `0.12.0` and
+`Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022 remain the validated external
+toolchain, with hashes recorded in the public documents. Keep these statements
+consistent across all four public authorities:
 
 - Root `README.md` / packaged `README.pdf`.
 - `Docs/07_UserGuide.md` / packaged `USER-GUIDE.pdf`.
@@ -459,7 +477,7 @@ candidate.
 7. Copy the accepted README as `README.pdf`, the accepted manual as
    `USER-GUIDE.pdf`, LICENSE, notices, and changelog.
 8. Audit required/prohibited files and retain symbols privately.
-9. Construct `WartalesEditor-1.0.0-win-x64.zip` from staging root.
+9. Construct `WartalesEditor-1.1.0-win-x64.zip` from staging root.
 10. Generate the immutable ZIP SHA-256 file.
 11. Scan extracted staging and ZIP with updated Windows Defender.
 12. Perform the complete clean-machine validation plan.
@@ -467,7 +485,7 @@ candidate.
     authorities.
 14. Perform final release reconciliation and obtain Project Owner acceptance.
 15. Commit/push only the separately approved final source/document state.
-16. Create annotated/lightweight `v1.0.0` only as separately authorized.
+16. Create annotated/lightweight `v1.1.0` only as separately authorized.
 17. Create the GitHub Release and upload ZIP/checksum.
 18. Redownload both published files and verify SHA-256.
 19. Extract and launch the downloaded published artifact.
@@ -489,13 +507,11 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Commit and push the reconciled public documentation after approval.
-- Produce and fully validate a new immutable release candidate without mutating
-  or relabeling RC2.
-- Enable/configure GitHub Issues.
-- Repeat final release review and reconciliation for the replacement candidate.
-- Create `v1.0.0` only after authorization.
-- Publish the GitHub Release only after authorization.
+- Complete and locally commit the 1.1.0 release candidate preparation record.
+- Confirm the exact current Wartales Steam BuildID with the Project Owner.
+- Create `v1.1.0` only after explicit authorization.
+- Publish the GitHub Release only after explicit authorization.
 - Publish to Nexus only if separately authorized.
+- Submit to VirusTotal only if separately authorized.
 
 Release preparation remains **IN PROGRESS** until these items are complete.

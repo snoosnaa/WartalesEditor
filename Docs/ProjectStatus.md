@@ -1,8 +1,8 @@
 ﻿Project Status
 
-Application Version: 1.0.0 (Public Release Preparation)
+Application Version: 1.1.0 (Release Candidate Prepared)
 
-Status: Product Decision Audit Follow-Up Accepted; Documentation Reconciled; Commit Pending
+Status: Version 1.1.0 Release Candidate Prepared; Publication Not Authorized
 
 Last Updated: 2026-09-08
 
@@ -32,11 +32,12 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
-The **Product Decision Audit and accepted follow-up are COMPLETE**. The audit,
-product decisions, implementation, evidence closure, Engineering Review, and
-Project Owner Interactive Acceptance all passed. Documentation reconciliation
-is complete by this task. Commit and push remain pending explicit
-authorization; no release, version, or tag decision has started.
+**Version 1.1.0 is the selected release target.** The Product Decision Audit,
+Paths Gameplay Tools, Profile Operation Intent and Update Survival work, Party
+Economy Custom Preservation, and other accepted post-1.0.0 changes are complete,
+documented, committed, and pushed. The fresh release candidate is prepared and
+locally verified. No tag, GitHub Release, Nexus publication, VirusTotal
+submission, or other publication action is authorized.
 
 Accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food Reduction
 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting Resources
@@ -51,7 +52,7 @@ are presented as **Custom** and preserved when independent Valour or capacity
 settings change; choosing a named preset replaces them explicitly. Custom is a
 presentation-only classification. Gameplay Operation State and profiles retain
 exact numeric settings, and no persistence schema changed. Documentation is
-reconciled; commit/push remains pending authorization.
+reconciled and included in the committed release source.
 
 **Tools → QuickBMS Location...** lets the player select and remember one folder
 containing `quickbms.exe` and `Shiro_Games_PAK_script.bms`. Import From Wartales,
@@ -77,7 +78,7 @@ approved preset, Starting Resources, and QuickBMS workflows. No live Export is
 claimed by this acceptance cycle.
 
 Wartales Editor has completed its accepted Version 1.0.0 release lifecycle and
-continues bounded post-release gameplay development on the stable platform.
+is preparing the Version 1.1.0 candidate on the stable platform.
 
 The application:
 
@@ -97,15 +98,17 @@ Is maintained with Git and GitHub.
 
 The editing platform and supporting architecture are considered stable.
 
-The current work is limited to reviewing this Product Decision Audit follow-up
-documentation reconciliation. Commit/push authorization and any later
-release/version decision remain separate.
+Final release preparation completed with full regression, fresh publish,
+privacy and manifest audits, exact clean-extraction equivalence, Windows
+Defender scans, and an extracted-package startup smoke. The 405-file package is
+`WartalesEditor-1.1.0-win-x64.zip`; its SHA-256 is
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+Publication remains a separate authorization.
 
 Current Milestone
 
-Product Decision Audit follow-up acceptance closure. Documentation
-reconciliation is complete; commit/push remains unauthorized. The audit is no
-longer pending. Release/version work has not been selected.
+Version 1.1.0 release candidate prepared. The candidate is not a publication
+and does not authorize `v1.1.0`, a GitHub Release, Nexus, or VirusTotal.
 
 Prior public-release preparation record:
 

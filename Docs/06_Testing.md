@@ -25,6 +25,39 @@ No milestone is complete until it has been successfully:
 - Documented
 - Committed
 
+## Version 1.1.0 Release Candidate Evidence — 2026-09-08
+
+The complete release regression passed before packaging:
+
+- Debug and Release builds: 0 warnings, 0 errors.
+- Class A Compatibility: PASS.
+- Profile Operation Intent: 84 checks.
+- Profile Operation Replay: 209 checks.
+- Atomic Profile Apply: 83 checks.
+- Profile Intent Update: 123 checks.
+- Profile Presentation: 75 checks.
+- Update Survival: 180 checks.
+- QuickBMS Export/routing: 215 checks.
+- Golden CDB: 203 checks.
+- Quick Help/MainWindow: 44 checks.
+- Request Board Rewards: 101 checks.
+- Paths Gameplay: 206 checks.
+- Focused QuickBMS Import, Language Data, and Restore Previous Values: PASS.
+- The established Windows privilege-only reparse/symbolic-link cases retained
+  their permitted skip; all applicable checks passed.
+
+The fresh self-contained `win-x64` publish produced 401 files and one project
+PDB. The PDB was retained privately and excluded from the public staging tree.
+The final package contains 405 files, has no private path findings, and exactly
+matches its clean extraction by relative path, length, and SHA-256. The extracted
+application opened a main window, reported Product Version 1.1.0 / File Version
+1.1.0.0, found the adjacent Quick Help User Guide, accepted a normal close, and
+exited. Windows Defender engine 1.1.26080.3 with signature 1.459.111.0 reported
+no detections for the extracted package or immutable ZIP.
+
+Candidate ZIP SHA-256:
+`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+
 ---
 
 # Testing Philosophy
