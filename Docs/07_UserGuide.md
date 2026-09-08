@@ -24,7 +24,7 @@ The initial supported environment is:
 - Wartales installed in a Steam library that the editor can detect, or selected
   manually by choosing the installation folder containing `Wartales.exe` and
   `res.pak`.
-- Wartales Steam BuildID 23361327.
+- Wartales Steam App ID 1527950, BuildID 25172421.
 - QuickBMS 0.12.0 (SHA-256
   `FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`).
 - `Shiro_Games_PAK_script.bms` v0.2, dated 10.03.2022 (SHA-256
@@ -33,10 +33,10 @@ The initial supported environment is:
 Other Windows versions, operating systems, processor architectures, stores,
 unverified Wartales builds, co-op behavior, and arbitrary combinations of
 third-party CDB changes are not currently part of the verified support claim.
-BuildID 23361327 is the last exact Wartales build recorded in repository
-release authority. The exact current Wartales BuildID for the 1.1.0 release
-still requires final Project Owner confirmation before publication. QuickBMS
-and Shiro script requirements remain unchanged.
+Steam Wartales BuildID 25172421 is the currently validated build for Version
+1.1.0. The Project Owner confirmed it directly from installed Steam content
+updated September 7, 2026. QuickBMS and Shiro script requirements remain
+unchanged.
 
 ## 3. Installation
 

@@ -46,7 +46,7 @@ automatic detection fails, select the Wartales installation folder containing
 selection later. Integrated Import and Export require the documented
 user-supplied QuickBMS toolchain.
 
-Last exact recorded Wartales build: Steam BuildID **23361327**.
+Validated Wartales build: Steam App ID **1527950**, BuildID **25172421**.
 
 Validated with QuickBMS **0.12.0** (SHA-256
 `FF812D38E22AEA0CC2CDC13C5C91CA34FAE4443AB12987002105BE6BAB3F4948`).
@@ -54,12 +54,11 @@ Validated with QuickBMS **0.12.0** (SHA-256
 Validated with `Shiro_Games_PAK_script.bms` **v0.2**, dated **10.03.2022**
 (SHA-256 `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
 
-BuildID 23361327 is the last exact Wartales build recorded in repository
-release authority. Wartales Editor 1.1.0 regression passed against the accepted
-post-1.0.0 feature set; the exact current Wartales BuildID still requires final
-Project Owner confirmation before publication. The QuickBMS and Shiro script
-combination remains validated as recorded below. Later game or toolchain updates
-may require renewed compatibility validation. Other operating systems, CPU architectures, stores,
+Steam Wartales BuildID 25172421 is the currently validated build for Version
+1.1.0, confirmed directly by the Project Owner from installed Steam content
+updated September 7, 2026. The QuickBMS and Shiro script combination remains
+validated as recorded below. Later game or toolchain updates may require renewed
+compatibility validation. Other operating systems, CPU architectures, stores,
 unverified Wartales builds, co-op behavior, and arbitrary third-party CDB
 combinations are not currently claimed as supported. Ordinary manual CDB
 editing outside this boundary may work, but it is not part of the verified

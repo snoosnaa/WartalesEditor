@@ -63,9 +63,8 @@ are not included in Wartales Editor.
 - Historical six-field Starting Resources profile requests remain compatible;
   missing Hemp means no requested Hemp addition.
 - Windows 11 x64 and Steam Wartales remain the supported platform.
-- Steam BuildID 23361327 is the last exact Wartales build recorded in repository
-  release authority. The exact current BuildID requires final Project Owner
-  confirmation before publication.
+- Steam Wartales BuildID 25172421 is the currently validated build for this
+  release, confirmed directly by the Project Owner from installed Steam content.
 - QuickBMS 0.12.0 and `Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022 remain
   the validated external toolchain.
 

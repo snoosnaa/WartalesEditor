@@ -2,7 +2,7 @@
 
 **Application Version:** 1.1.0
 
-**Current lifecycle:** Version 1.1.0 release candidate prepared; publication not authorized
+**Current lifecycle:** Version 1.1.0 release candidate ready; publication authorization required
 
 The root [README](../README.md) is the public introduction and quick-start
 guide. This directory retains the complete user, architecture, engineering,

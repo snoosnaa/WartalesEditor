@@ -1804,9 +1804,9 @@ QuickBMS/Shiro tools, source, tests, game data, user data, and machine-local
 settings. Privacy checks passed, clean extraction was byte-for-byte equivalent,
 the extracted Version 1.1.0 application started and closed normally, and Windows
 Defender reported no detections. The immutable ZIP SHA-256 is
-`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 
-Steam BuildID 23361327 remains the last exact repository-recorded supported
-build. The exact current BuildID requires Project Owner confirmation before
-publication. No tag, push, GitHub Release, Nexus publication, VirusTotal upload,
-or live Export occurred.
+The Project Owner subsequently confirmed Steam App ID 1527950, Wartales BuildID
+25172421, from installed Steam content updated September 7, 2026 at 5:39 PM.
+This closes the final technical release blocker. No tag, push, GitHub Release,
+Nexus publication, VirusTotal upload, or live Export occurred.

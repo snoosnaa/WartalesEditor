@@ -54,6 +54,9 @@ authorized.
 - The fresh self-contained `win-x64` package contains 405 public files, excludes
   PDBs and external tools, passed path-privacy and clean-extraction checks, and
   started successfully as Version 1.1.0.
+- Steam Wartales App ID 1527950, BuildID 25172421 is the currently validated
+  game build for Version 1.1.0, confirmed directly by the Project Owner from
+  installed content updated September 7, 2026.
 
 The accepted Product Decision Audit follow-up is committed and included in the
 1.1.0 release candidate source.

@@ -2,14 +2,16 @@
 
 ## Current Milestone
 
-Version 1.1.0 — Release Candidate Prepared
+Version 1.1.0 — Release Candidate Ready
 
 ## Current Status
 
 **Version 1.1.0 is the selected release target.** All included feature work is
-accepted, and the fresh self-contained `win-x64` release candidate has been
-prepared and verified locally. Publication, `v1.1.0`, GitHub Release creation,
-Nexus publication, and VirusTotal submission remain unauthorized.
+accepted, and the fresh self-contained `win-x64` release candidate is prepared
+and verified locally. The Project Owner directly confirmed Steam App ID 1527950,
+Wartales BuildID 25172421, from installed content updated September 7, 2026 at
+5:39 PM. No technical blocker remains. Publication, `v1.1.0`, GitHub Release
+creation, Nexus publication, and VirusTotal submission remain unauthorized.
 
 The accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food
 Reduction 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting
@@ -57,10 +59,10 @@ untrimmed, multi-file, and free of PDBs, external tools, game data, user data,
 and machine-local settings. It contains 405 public files, passed exact
 staging/extraction equivalence, launched successfully from the clean extraction,
 and has SHA-256
-`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
-QuickBMS and the Shiro script remain external. Steam BuildID 23361327 is the
-last exact build recorded in repository authority; the exact current BuildID
-requires Project Owner confirmation before publication.
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
+QuickBMS and the Shiro script remain external. Steam App ID 1527950, Wartales
+BuildID 25172421, is the currently validated game build for Version 1.1.0.
+Only explicit publication authorization remains.
 
 ## Prior Public Release Preparation Context
 

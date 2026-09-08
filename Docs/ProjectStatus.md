@@ -1,8 +1,8 @@
 ﻿Project Status
 
-Application Version: 1.1.0 (Release Candidate Prepared)
+Application Version: 1.1.0 (Release Candidate Ready)
 
-Status: Version 1.1.0 Release Candidate Prepared; Publication Not Authorized
+Status: Version 1.1.0 Release Candidate Ready; Publication Authorization Required
 
 Last Updated: 2026-09-08
 
@@ -36,8 +36,11 @@ Current State
 Paths Gameplay Tools, Profile Operation Intent and Update Survival work, Party
 Economy Custom Preservation, and other accepted post-1.0.0 changes are complete,
 documented, committed, and pushed. The fresh release candidate is prepared and
-locally verified. No tag, GitHub Release, Nexus publication, VirusTotal
-submission, or other publication action is authorized.
+locally verified. The Project Owner directly confirmed Steam App ID 1527950,
+Wartales BuildID 25172421, from installed content updated September 7, 2026 at
+5:39 PM. The BuildID blocker is closed, and no technical blocker remains. No
+tag, GitHub Release, Nexus publication, VirusTotal submission, or other
+publication action is authorized.
 
 Accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food Reduction
 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting Resources
@@ -102,13 +105,14 @@ Final release preparation completed with full regression, fresh publish,
 privacy and manifest audits, exact clean-extraction equivalence, Windows
 Defender scans, and an extracted-package startup smoke. The 405-file package is
 `WartalesEditor-1.1.0-win-x64.zip`; its SHA-256 is
-`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 Publication remains a separate authorization.
 
 Current Milestone
 
-Version 1.1.0 release candidate prepared. The candidate is not a publication
-and does not authorize `v1.1.0`, a GitHub Release, Nexus, or VirusTotal.
+Version 1.1.0 release candidate ready. The candidate is not a publication and
+does not authorize `v1.1.0`, a GitHub Release, Nexus, or VirusTotal. Explicit
+Project Owner publication authorization is the only remaining release gate.
 
 Prior public-release preparation record:
 

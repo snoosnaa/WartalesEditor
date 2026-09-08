@@ -56,7 +56,12 @@ exited. Windows Defender engine 1.1.26080.3 with signature 1.459.111.0 reported
 no detections for the extracted package or immutable ZIP.
 
 Candidate ZIP SHA-256:
-`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
+
+The Project Owner subsequently confirmed Steam App ID 1527950, Wartales BuildID
+25172421, from installed Steam content updated September 7, 2026 at 5:39 PM.
+This closed the provisional candidate's BuildID verification gate. Final package
+reconciliation regenerated the public documentation, build, ZIP, and hash.
 
 ---
 

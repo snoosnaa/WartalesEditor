@@ -2,7 +2,7 @@
 
 **Target release:** Wartales Editor 1.1.0
 
-**Status:** RELEASE CANDIDATE PREPARED — PUBLICATION NOT AUTHORIZED
+**Status:** RELEASE CANDIDATE READY — PUBLICATION AUTHORIZATION REQUIRED
 
 **Version 1.1.0 scope:** Accepted post-1.0.0 work is committed and includes
 Paths Gameplay Tools, stronger Profile Update Survival, Starting Resources
@@ -31,7 +31,12 @@ tests. Staging and clean extraction are byte-for-byte equivalent, the extracted
 application started as Version 1.1.0 and closed normally, and Windows Defender
 reported no detections for both the extracted package and ZIP. The immutable ZIP
 SHA-256 is
-`4424EE2FD0589D91FB1B03F8CA837CDFEED191FB9CB9B73853F61373FE84FD29`.
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
+
+**Version 1.1.0 game authority:** CONFIRMED. The Project Owner directly verified
+Steam App ID `1527950`, Wartales BuildID `25172421`, from installed Steam content
+updated September 7, 2026 at 5:39 PM. The prior BuildID confirmation blocker is
+closed; only explicit publication authorization remains.
 
 **Quick Help V1:** CLOSED. Investigation, Design / Architecture,
 Implementation, Focused Engineering Review (**PASS**), Project Owner
@@ -103,8 +108,8 @@ RC2 is superseded for publication. No fresh candidate has been generated.
 - Released by TyTech Games.
 - Windows 11 x64 and Steam Wartales across detected Steam libraries, with manual
   installation-folder selection when needed.
-- Last exact repository-recorded Wartales Steam BuildID: `23361327`. The exact
-  current BuildID requires Project Owner confirmation before 1.1.0 publication.
+- Steam App ID `1527950`, Wartales BuildID `25172421`, directly confirmed by the
+  Project Owner from installed content updated September 7, 2026 at 5:39 PM.
 - Self-contained, untrimmed, multi-file `win-x64` portable ZIP.
 - No installer, updater, single-file publish, trimming, or ReadyToRun.
 - Unsigned V1 with a published SHA-256 checksum.
@@ -429,9 +434,9 @@ Use the actual future immutable release ZIP, never development output:
 
 ## Supported Version Recording
 
-The last exact repository-recorded Wartales build is Steam BuildID `23361327`.
-The exact current BuildID requires final Project Owner confirmation before
-1.1.0 publication. QuickBMS `0.12.0` and
+The currently validated Wartales build is Steam App ID `1527950`, BuildID
+`25172421`, confirmed directly by the Project Owner from installed Steam content
+updated September 7, 2026 at 5:39 PM. QuickBMS `0.12.0` and
 `Shiro_Games_PAK_script.bms` v0.2 dated 10.03.2022 remain the validated external
 toolchain, with hashes recorded in the public documents. Keep these statements
 consistent across all four public authorities:
@@ -507,11 +512,10 @@ hash, and print an audit without tagging or publishing.
 
 ## Remaining Release Preparation
 
-- Complete and locally commit the 1.1.0 release candidate preparation record.
-- Confirm the exact current Wartales Steam BuildID with the Project Owner.
 - Create `v1.1.0` only after explicit authorization.
 - Publish the GitHub Release only after explicit authorization.
 - Publish to Nexus only if separately authorized.
 - Submit to VirusTotal only if separately authorized.
 
-Release preparation remains **IN PROGRESS** until these items are complete.
+The release candidate is technically ready. External publication remains
+pending explicit Project Owner authorization.
