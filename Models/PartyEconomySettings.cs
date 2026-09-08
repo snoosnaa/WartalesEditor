@@ -47,33 +47,52 @@ public sealed class PartyEconomySettings
             case ProgressionType.ValourPoints:
                 ValidateRange(MaximumValour, 1, 100, "Maximum Valour");
                 ValidateRange(RestoredValour, 0, 100, "Valour Restored After Rest");
-                ValidateTierProgression(
+                ValidateTentValues(
                     TentTier1Valour,
                     TentTier2Valour,
-                    TentTier3Valour,
-                    "Tent Valour");
+                    TentTier3Valour);
                 break;
             case ProgressionType.CarryingCapacity:
                 ValidateRange(SaddlebagCapacity, 0, 1000, "Saddlebag Capacity Bonus");
                 ValidateRange(PonyStartingCapacity, 0, 1000, "Pony Starting Capacity");
-                ValidateTierProgression(
+                ValidateHitchingPostValues(
                     HitchingPostTier1Base,
                     HitchingPostTier2Base,
                     HitchingPostTier3Base,
-                    "Hitching Post base capacity");
-                ValidateTierProgression(
                     HitchingPostTier1Trait,
                     HitchingPostTier2Trait,
-                    HitchingPostTier3Trait,
-                    "Hitching Post trait capacity");
-                if (HitchingPostTier1Trait != 0)
-                    throw new ArgumentOutOfRangeException(
-                        nameof(HitchingPostTier1Trait),
-                        "Tier 1 Hitching Posts do not provide the additional trait bonus.");
+                    HitchingPostTier3Trait);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(type));
         }
+    }
+
+    internal static void ValidateTentValues(int tier1, int tier2, int tier3) =>
+        ValidateTierProgression(tier1, tier2, tier3, "Tent Valour");
+
+    internal static void ValidateHitchingPostValues(
+        int tier1Base,
+        int tier2Base,
+        int tier3Base,
+        int tier1Trait,
+        int tier2Trait,
+        int tier3Trait)
+    {
+        ValidateTierProgression(
+            tier1Base,
+            tier2Base,
+            tier3Base,
+            "Hitching Post base capacity");
+        ValidateTierProgression(
+            tier1Trait,
+            tier2Trait,
+            tier3Trait,
+            "Hitching Post trait capacity");
+        if (tier1Trait != 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(tier1Trait),
+                "Tier 1 Hitching Posts do not provide the additional trait bonus.");
     }
 
     private static void ValidateTierProgression(

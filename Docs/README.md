@@ -2,7 +2,7 @@
 
 **Application Version:** 1.0.0
 
-**Current lifecycle:** Paths Gameplay Tools — ACCEPTED; commit authorization pending
+**Current lifecycle:** Product Decision Audit Follow-Up — ACCEPTED; documentation reconciled; commit authorization pending
 
 The root [README](../README.md) is the public introduction and quick-start
 guide. This directory retains the complete user, architecture, engineering,

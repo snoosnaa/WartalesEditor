@@ -12,6 +12,7 @@ public sealed class StartingResourcesSettings
     public int IronOre { get; init; }
     public int Wood { get; init; }
     public int Cloth { get; init; }
+    public int Hemp { get; init; }
 
     public StartingResourcesSettings DeepClone() =>
         new()
@@ -21,7 +22,8 @@ public sealed class StartingResourcesSettings
             Apples = Apples,
             IronOre = IronOre,
             Wood = Wood,
-            Cloth = Cloth
+            Cloth = Cloth,
+            Hemp = Hemp
         };
 
     public void Validate()
@@ -32,6 +34,7 @@ public sealed class StartingResourcesSettings
         ValidateValue(IronOre, nameof(IronOre));
         ValidateValue(Wood, nameof(Wood));
         ValidateValue(Cloth, nameof(Cloth));
+        ValidateValue(Hemp, nameof(Hemp));
     }
 
     private static void ValidateValue(int value, string name)

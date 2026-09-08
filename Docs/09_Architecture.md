@@ -149,11 +149,17 @@ file identity, and candidate project are published coherently; publication
 failure restores the captured prior reference/project state. Application-level
 language data remains independent of promotion.
 
-Default path composition is isolated in `QuickBmsImportOptions`: it derives the
-current user's Desktop QuickBMS folder and the standard Program Files (x86)
-Steam Wartales location. Services accept explicit options and a process-runner
-abstraction for deterministic testing and later settings UI without embedding
-a user-specific absolute path in core logic.
+QuickBMS toolchain location is machine-local application configuration.
+`QuickBmsLocationService` stores one selected folder outside project, profile,
+snapshot, Golden, and Gameplay Operation State authority. Resolution checks a
+valid saved folder first, the historical `<Desktop>\quickbms` convention second,
+and otherwise returns a safe guided failure. A valid folder must contain readable,
+non-empty regular files named `quickbms.exe` and
+`Shiro_Games_PAK_script.bms`. `MainViewModel` applies the same resolution to
+Import From Wartales, Export Back to Wartales, and detached Golden CDB
+acquisition. Services continue accepting explicit options and process-runner
+abstractions for deterministic testing without embedding user-specific paths in
+portable data.
 
 ## Export Back to Wartales transport boundary
 
@@ -523,6 +529,34 @@ semantic intent fails safely, and the complete Profile Apply remains one atomic
 Undo/Redo action. On the same source, retained state may seed exact baseline
 fidelity only after the normal source, shape, fingerprint, and state validation
 passes; stale or malformed state is never trusted.
+
+### Starting Resources intent compatibility
+
+Starting Resources currently captures seven additive values: Krowns, Bread,
+Apples, Iron Ore, Wood, Cloth, and Hemp. Historical format-4 requests containing
+the original six fields remain valid without a profile-format change. Missing
+Hemp normalizes to zero requested extra Hemp; it does not create Hemp when the
+destination baseline lacks it or remove/replace Hemp already owned by that
+baseline. Changed-source replay derives output from the destination and creates
+fresh destination-bound Gameplay Operation State. Exact-source comparison also
+normalizes only the missing Hemp field while continuing to reject mismatches in
+the original six values.
+
+Hemp uses the existing origin-inventory array mutation. A requested positive
+amount creates the standard item object only when absent, while unknown items,
+unknown fields, and ordering are preserved. Restore Previous Values reapplies
+the captured baseline array, so a Hemp object introduced by the operation is
+removed when structural absence was the original state.
+
+### Accepted preset catalog additions
+
+The approved preset sets include Lectern Knowledge Gain at 2×, 3×, 4×, and 5×;
+Cooking Pot Food Reduction at 3/6/9, 4/8/12, 5/10/16, and 6/12/18; and Tent
+Valour at 1/2/3, 2/3/4, and 3/4/5. These are ordinary additions within the
+existing preset and Party Economy architectures; identifiers, state ownership,
+validation, transactions, and Restore behavior are unchanged.
+
+### Already-configured intent behavior
 
 When valid intent already matches raw values but compatible state is absent,
 Apply creates no synthetic property mutation. It may establish fresh state and

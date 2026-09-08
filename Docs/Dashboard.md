@@ -10,15 +10,23 @@
 
 # Project Status
 
-**Current Phase:** Paths Gameplay Tools — ACCEPTED; commit authorization pending
+**Current Phase:** Product Decision Audit Follow-Up — ACCEPTED; documentation reconciled; commit authorization pending
 
-Path Level Requirements and the four independent Path XP Rewards operations
-have completed implementation, Engineering Review, Project Owner Functional
-Acceptance, Project Owner UI Acceptance, and documentation reconciliation. No
-release/version decision has been made for this work. Before such a decision, a
-separate Project Owner-requested audit of previously unapproved user-facing
-values, presets, caps, defaults, ranges, and named choices remains pending.
-Earlier milestone sections below are retained as historical dashboard context.
+The Product Decision Audit and accepted follow-up are complete. Engineering
+Review and Project Owner Interactive Acceptance passed. The accepted changes
+add Lectern 4×, Cooking Pot 5/10/16, Tent Valour 3/4/5, Starting Resources Hemp
+and grouped quick controls, plus one remembered QuickBMS folder with the
+historical Desktop fallback. Profile metadata remains unchanged. Documentation
+is reconciled; commit/push awaits authorization, and no release/version decision
+has started. Earlier milestone sections remain as historical dashboard context.
+
+## Party Economy Custom Preservation
+
+Implementation, Engineering Review, and delegated Project Owner acceptance are
+complete. Valid unmatched Tent and Hitching Post values now appear as **Custom**
+and remain exact while independent Valour or capacity settings change. Selecting
+a named preset explicitly replaces them. Custom is presentation-only; exact
+numeric state/profile authority and existing schemas remain unchanged.
 
 Wartales Editor has successfully transitioned from a safe editing platform into a transactional content creation platform.
 
@@ -192,10 +200,9 @@ Planned features include:
 
 # Current Priorities
 
-1. Commit and push the reconciled public documentation after approval.
-2. Generate and fully validate a fresh immutable release candidate.
-3. Configure GitHub Issues and complete final release review.
-4. Tag `v1.0.0` and publish only when separately authorized.
+1. Review and authorize the complete accepted Product Decision Audit follow-up.
+2. Commit and push only after explicit authorization.
+3. Begin any release/version decision as a separate lifecycle.
 
 ---
 

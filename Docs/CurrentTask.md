@@ -2,80 +2,54 @@
 
 ## Current Milestone
 
-Paths Gameplay Tools — Accepted Feature Closure
+Product Decision Audit Follow-Up — Acceptance Closure
 
 ## Current Status
 
-**Paths Gameplay Tools are COMPLETE and accepted.** Investigation, product and
-architecture decisions, implementation, Engineering Review, Project Owner
-Functional Acceptance, and Project Owner UI Acceptance all passed.
-Documentation reconciliation is complete. Commit and push are not yet
-authorized, and no release or version decision has been made for this work.
+**The Product Decision Audit and its accepted follow-up are COMPLETE.** The
+investigation and product decisions are closed, implementation is complete,
+Engineering Review returned **PASS**, and Project Owner Interactive Acceptance
+returned **PASS**. Documentation reconciliation is complete by this task.
+Commit and push remain pending explicit authorization; no release or version
+decision has started.
 
-The accepted feature consists of **Path Level Requirements** and **Path XP
-Rewards**. Path Level Requirements globally scales the captured
-`PathXpBase`/`PathXpNext` authority using the approved Original, 80%, 60%, 40%,
-and 20% choices. Path XP Rewards provides four independent semantic operations
-for Power and Glory, Trade and Craftsmanship, Crime and Chaos, and Mysteries and
-Wisdom using the approved Original, 2×, 3×, 4×, and 5× choices. It owns only
-ordinary current `counter.pathXP` values for the selected canonical Path;
-`MerchAttack`, `reward.pathXp`, threshold bonuses, other special rewards, and
-other Paths remain outside its authority.
+The accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food
+Reduction 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting
+Resources is grouped into Currency, Food, and Materials; Food shortcuts affect
+only Bread and Apples, while Materials shortcuts affect Iron Ore, Wood, Cloth,
+and Hemp. Rope remains unsupported, Clear Extras covers all supported values,
+and the approved maximum remains 1,000,000.
 
-Both tools use the accepted Gameplay Operation State, Profile Operation Intent,
-Update Survival, transaction, validation, effective-counting, Undo/Redo,
-save/reopen, and Restore Previous Values architecture. The final reward dialog
-uses localized main Path names, compact selectors, independent controls, and a
-reward-range-only preview; all four sections fit its normal layout without
-required scrolling.
+Party Economy Custom Preservation is implemented, Engineering Review passed,
+and delegated Project Owner acceptance passed. Valid existing Tent and Hitching
+Post values that do not match a named preset now appear as **Custom** and remain
+unchanged while independent Valour or capacity settings are applied. Explicit
+named-preset selection still replaces those values. Custom is presentation-only;
+state and profiles continue to store exact numeric settings without a schema
+change. Documentation is reconciled by this task.
 
-Before any later release/version decision, a separate Project Owner-requested
-audit remains pending. It will identify existing user-facing values, presets,
-caps, defaults, ranges, and named choices that were selected or implemented
-without an explicit Project Owner decision. That audit is review-only at its
-start and was not performed during Paths documentation reconciliation.
+**Tools → QuickBMS Location...** now accepts and remembers one folder containing
+both required QuickBMS files. Import From Wartales, Export Back to Wartales, and
+detached Golden CDB acquisition use the shared saved location; the historical
+`<Desktop>\quickbms` convention remains fallback behavior. The location is
+machine-local and is not project, profile, gameplay-state, or Golden authority.
 
-**The earlier Profile Operation Intent / Update Survival correction also
-remains COMPLETE and accepted.** All five implementation phases completed
-Engineering Review with a **PASS**, and Project Owner Interactive Acceptance
-returned **PASS**.
+Historical six-field Starting Resources profile intent remains valid without a
+format bump. Missing Hemp means no requested Hemp addition. Changed-source
+replay uses and preserves the destination baseline, including existing Hemp;
+exact-source validation remains strict for the original six values. Profiles
+retain their existing Version, Description, Author, Tags, metadata UI, and root
+schema.
 
-The accepted workflow stores portable gameplay preferences as canonical
-format-4 `OperationRequests` while retaining Gameplay Operation State as
-source-bound baseline and Restore Previous Values authority. Changed-source
-Profile Apply replays intent through the authoritative feature services,
-captures a fresh baseline from the newly imported Wartales data, creates fresh
-target-bound state, and records the complete Apply as one Undo/Redo action.
-Profile Create/Update, exact target-context counting, success-only open-dialog
-refresh, semantic already-configured reporting, and Random Trait candidate
-reconciliation are complete and verified.
-
-The Project Owner verified the workflow twice against updated Wartales data.
-The accepted evidence includes Import From Wartales, Check Compatibility,
-applying the existing All Mods profile, correct Character XP (40%), Profession
-XP (50%), Run Speed (Fast), Positive Random Traits (Positive Only), Request
-Board and Restore presentation, one-step Undo/Redo, Save/reopen persistence,
-Export Back to Wartales, successful game launch, and loading into gameplay.
-
-The separate **Import From Wartales** startup button-clipping polish is also
-complete and accepted. The shared utility style remains 100 DIPs wide with 20
-DIPs of horizontal padding; the longer welcome label now uses a bounded local
-150-DIP width while retaining the exact label, shared style, neighboring
-controls, command, and Import workflow. Engineering Review returned **PASS**,
-and Project Owner Visual Acceptance returned **PASS**. Focused verification
-passed zero-warning Debug and Release builds, MainWindow/WPF layout coverage,
-Quick Help 44, QuickBMS Import, Export/MainWindow 205/205, and
-`git diff --check`.
-
-Final Integrated Regression passed the complete accepted matrix: zero-warning
-Debug and Release builds; Phase 1 83, Phase 2 199, Phase 3 83, Phase 4 123, and
-Phase 5 75; all 26 Class A/Profile groups; Update Survival 180; Request Board
-101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and the focused
-QuickBMS Import, Language Data, and Restore suites. The only skips were the
-established Windows file-link cases when symbolic-link privilege was
-unavailable. Commit / Push preparation is now the immediate lifecycle step.
-Commit and push are not yet authorized; any publication decision remains
-separate.
+Final automated evidence includes zero-warning Debug and Release builds; Class
+A Compatibility; Profile Operation Intent 84; Profile Operation Replay 209;
+Atomic Profile Apply 83; Profile Intent Update 123; Profile Presentation 75;
+Update Survival 180; QuickBMS Export/routing 215; Golden CDB 203; Quick Help 44;
+Request Board Rewards 101; Paths Gameplay 206; focused QuickBMS Import; and a
+passing `git diff --check`. Project Owner Interactive Acceptance separately
+passed all approved presets, Starting Resources behavior, QuickBMS selection,
+remembered-location, validation, and fallback scenarios. No live Export is
+claimed for this acceptance cycle.
 
 ## Prior Public Release Preparation Context
 
@@ -600,7 +574,6 @@ configured 645-change state.
 
 ## Next Required Step
 
-Commit and push the reconciled public metadata documentation, then generate and
-fully validate a fresh immutable release candidate from that final committed
-source. RC2 remains superseded for publication; no `v1.0.0` tag, GitHub Release,
-or Nexus publication is authorized.
+Project Owner documentation review. If accepted, commit and push require
+separate explicit authorization. No release/version, tag, GitHub Release, or
+Nexus publication work has started or is authorized.

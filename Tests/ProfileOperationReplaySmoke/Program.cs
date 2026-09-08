@@ -123,7 +123,8 @@ ProjectOperationResult startingResult = Replay(
         ["apples"] = 3,
         ["ironOre"] = 4,
         ["wood"] = 5,
-        ["cloth"] = 6
+        ["cloth"] = 6,
+        ["hemp"] = 7
     });
 Check(startingResult.Succeeded, "Starting Resources replay succeeds");
 Check(Value(starting, "item", "Gold", "props.startQuantity") == 110,
@@ -134,6 +135,14 @@ Check(((JArray)Entry(starting, "startChoice", "Origin")
             item.Value<string>("item") == "IronOre" &&
             item.Value<int>("count") == 4),
     "Starting Resources applies origin additions");
+Check(((JArray)Entry(starting, "startChoice", "Origin")
+        .SourceEntry!.SelectToken("props.items")!)
+        .OfType<JObject>().Any(item =>
+            item.Value<string>("item") == "Hemp" &&
+            item.Value<int>("count") == 7 &&
+            item.Value<bool>("stolen") == false &&
+            item.Value<bool>("hidden") == false),
+    "Starting Resources creates canonical Hemp inventory entries");
 CheckFreshState(
     starting,
     ProgressionType.StartingResources,
@@ -148,9 +157,145 @@ Check(replay.GetOwnedSnapshotLeaves(
             ["apples"] = 3,
             ["ironOre"] = 4,
             ["wood"] = 5,
-            ["cloth"] = 6
+            ["cloth"] = 6,
+            ["hemp"] = 7
         })).Count == 4,
     "Starting Resources owned leaves identified");
+
+JObject legacyStartingSettings = new()
+{
+    ["krowns"] = 25,
+    ["bread"] = 2,
+    ["apples"] = 3,
+    ["ironOre"] = 4,
+    ["wood"] = 5,
+    ["cloth"] = 6
+};
+ProjectModel legacySource = StartingProject('4');
+ProjectOperationResult legacySourceResult = Replay(
+    legacySource,
+    ProfileOperationIds.StartingResources,
+    (JObject)legacyStartingSettings.DeepClone());
+Check(legacySourceResult.Succeeded,
+    "legacy six-field Starting Resources source replay succeeds");
+Check(!((JArray)Entry(legacySource, "startChoice", "Origin")
+          .SourceEntry!.SelectToken("props.items")!)
+        .OfType<JObject>().Any(item =>
+            item.Value<string>("item") == "Hemp"),
+    "legacy six-field Starting Resources intent does not create Hemp");
+GameplayOperationStateModel legacySeed =
+    State(legacySource, ProgressionType.StartingResources);
+JObject serializedLegacySeed = JObject.FromObject(legacySeed);
+((JObject)serializedLegacySeed[
+    nameof(GameplayOperationStateModel.StartingResources)]!)
+    .Property(nameof(StartingResourcesSettings.Hemp))!
+    .Remove();
+GameplayOperationStateModel historicalLegacySeed =
+    serializedLegacySeed.ToObject<GameplayOperationStateModel>()
+    ?? throw new InvalidOperationException(
+        "Historical Starting Resources state could not be reconstructed.");
+
+ProjectModel legacyDestination = StartingProject('5');
+JArray destinationItems = (JArray)Entry(
+    legacyDestination,
+    "startChoice",
+    "Origin").SourceEntry!.SelectToken("props.items")!;
+destinationItems.Add(new JObject
+{
+    ["item"] = "DestinationOnly",
+    ["count"] = 11,
+    ["custom"] = "preserve"
+});
+destinationItems.Add(new JObject
+{
+    ["item"] = "Hemp",
+    ["count"] = 9,
+    ["stolen"] = true,
+    ["hidden"] = false,
+    ["custom"] = "baseline"
+});
+ProjectOperationResult legacyChangedSource = Replay(
+    legacyDestination,
+    ProfileOperationIds.StartingResources,
+    (JObject)legacyStartingSettings.DeepClone(),
+    historicalLegacySeed);
+JArray changedSourceItems = (JArray)Entry(
+    legacyDestination,
+    "startChoice",
+    "Origin").SourceEntry!.SelectToken("props.items")!;
+Check(legacyChangedSource.Succeeded &&
+      Value(legacyDestination, "item", "Gold", "props.startQuantity") == 35 &&
+      Value(legacyDestination, "item", "Bread", "props.startQuantity") == 3 &&
+      Value(legacyDestination, "item", "Apple", "props.startQuantity") == 4 &&
+      changedSourceItems.OfType<JObject>().Any(item =>
+          item.Value<string>("item") == "IronOre" &&
+          item.Value<int>("count") == 4) &&
+      changedSourceItems.OfType<JObject>().Any(item =>
+          item.Value<string>("item") == "Wood" &&
+          item.Value<int>("count") == 5) &&
+      changedSourceItems.OfType<JObject>().Any(item =>
+          item.Value<string>("item") == "Cloth" &&
+          item.Value<int>("count") == 6) &&
+      changedSourceItems.OfType<JObject>().Any(item =>
+          item.Value<string>("item") == "DestinationOnly" &&
+          item.Value<int>("count") == 11 &&
+          item.Value<string>("custom") == "preserve") &&
+      changedSourceItems.OfType<JObject>().Any(item =>
+          item.Value<string>("item") == "Hemp" &&
+          item.Value<int>("count") == 9 &&
+          item.Value<bool>("stolen") &&
+          item.Value<string>("custom") == "baseline"),
+    "legacy changed-source replay applies six resources and preserves destination Hemp and unknown items");
+GameplayOperationStateModel destinationState =
+    State(legacyDestination, ProgressionType.StartingResources);
+Check(destinationState.ProjectCompatibilityIdentity ==
+          legacyDestination.SourceCdbGenerationIdentity &&
+      destinationState.ProjectCompatibilityIdentity !=
+          historicalLegacySeed.ProjectCompatibilityIdentity &&
+      destinationState.StartingResources?.Hemp == 0,
+    "legacy changed-source replay creates destination-bound state with zero requested Hemp");
+
+new GameplayOperationStateService().RemoveState(
+    legacySource,
+    ProgressionType.StartingResources,
+    markModified: false);
+legacySource.IsGameplayOperationStateModified = false;
+ProjectOperationResult legacyExactSource = Replay(
+    legacySource,
+    ProfileOperationIds.StartingResources,
+    (JObject)legacyStartingSettings.DeepClone(),
+    historicalLegacySeed);
+CheckStateOnly(
+    legacyExactSource,
+    "legacy six-field Starting Resources exact-source replay");
+ProfileOperationIntentRegistry legacyRegistry = new();
+Check(legacyRegistry.TryProjectLegacyIntent(
+          State(legacySource, ProgressionType.StartingResources),
+          out ProfileOperationRequestModel? recapturedLegacy,
+          out _) &&
+      recapturedLegacy?.Settings?["hemp"]?.Value<int>() == 0 &&
+      recapturedLegacy.Settings["krowns"]?.Value<int>() == 25,
+    "post-replay Starting Resources capture emits current seven-field intent without losing legacy values");
+
+new GameplayOperationStateService().RemoveState(
+    legacySource,
+    ProgressionType.StartingResources,
+    markModified: false);
+legacySource.IsGameplayOperationStateModified = false;
+JObject serializedMismatch = JObject.FromObject(historicalLegacySeed);
+((JObject)serializedMismatch[
+    nameof(GameplayOperationStateModel.StartingResources)]!)[
+        nameof(StartingResourcesSettings.Krowns)] = 26;
+GameplayOperationStateModel mismatchedLegacySeed =
+    serializedMismatch.ToObject<GameplayOperationStateModel>()
+    ?? throw new InvalidOperationException(
+        "Mismatched historical Starting Resources state could not be reconstructed.");
+CheckInvalidSeed(
+    legacySource,
+    ProfileOperationIds.StartingResources,
+    (JObject)legacyStartingSettings.DeepClone(),
+    mismatchedLegacySeed,
+    "legacy Starting Resources exact-source old-resource mismatch");
 
 ProjectModel volunteer = CreateProject(
     Sheet("trait", new JObject
@@ -810,14 +955,16 @@ static JObject ArrayEntry(
         new JObject { [valueName] = value }))
 };
 
-static ProjectModel StartingProject() => CreateProjectWithIdentity('c',
+static ProjectModel StartingProject(char identityMarker = 'c') =>
+    CreateProjectWithIdentity(identityMarker,
     Sheet("item",
         StartItem("Gold", 10),
         StartItem("Bread", 1),
         StartItem("Apple", 1),
         new JObject { ["id"] = "IronOre" },
         new JObject { ["id"] = "Wood" },
-        new JObject { ["id"] = "Cloth" }),
+        new JObject { ["id"] = "Cloth" },
+        new JObject { ["id"] = "Hemp" }),
     Sheet("startChoice", new JObject
     {
         ["id"] = "Origin",

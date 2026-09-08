@@ -6,6 +6,57 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Product Decision Audit Follow-Up
+
+**Status:** Implemented, Engineering reviewed, and Project Owner accepted;
+commit/push and any later release/version decision remain pending.
+
+## Added
+
+- Added the 4× Lectern Knowledge Gain choice.
+- Added the 5/10/16 Cooking Pot Food Reduction choice.
+- Added the 3/4/5 Tent Valour choice.
+- Added Hemp as a supported Starting Resources material.
+- Grouped Starting Resources into Currency, Food, and Materials; added +5 and
+  +10 Food shortcuts for Bread and Apples; and included Hemp in the Materials
+  shortcuts. Clear Extras covers every supported resource, and the maximum
+  extra amount remains 1,000,000. Rope is not supported.
+- Added **Tools → QuickBMS Location...** so players can select and remember one
+  folder containing both `quickbms.exe` and
+  `Shiro_Games_PAK_script.bms`. The historical `<Desktop>\quickbms` location
+  remains a fallback.
+
+## Compatibility
+
+- Existing profile metadata and metadata UI are unchanged.
+- Historical six-field Starting Resources profile requests remain valid.
+  Missing Hemp means no requested Hemp addition; changed-source replay uses the
+  destination baseline and preserves existing destination Hemp.
+
+## Fixed
+
+- Valid existing Tent and Hitching Post values that do not match a named preset
+  now appear as **Custom** and are preserved while independent Party Economy
+  settings change. Explicitly selecting a named preset still replaces those
+  values. Custom is preservation-only, not a free-form tier editor or persistent
+  profile/state value.
+
+## Verification
+
+- Engineering Review passed after direct legacy-profile and shared QuickBMS
+  routing evidence was added. Project Owner Interactive Acceptance passed.
+- Final evidence includes zero-warning Debug and Release builds; Profile
+  Operation Intent 84; Profile Operation Replay 209; Atomic Profile Apply 83;
+  Profile Intent Update 123; Profile Presentation 75; Update Survival 180;
+  QuickBMS Export/routing 215; Golden CDB 203; Quick Help 44; Request Board
+  Rewards 101; Paths Gameplay 206; Class A and focused QuickBMS Import; and a
+  passing `git diff --check`.
+
+No commit, push, tag, release, package, publication, or live Export is claimed
+by this entry.
+
+---
+
 # Paths Gameplay Tools
 
 **Status:** Accepted and documentation-complete; commit/push and any later

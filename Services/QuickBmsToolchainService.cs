@@ -49,7 +49,8 @@ public sealed class QuickBmsToolchainService
         {
             FileInfo file = new(fullPath);
 
-            if ((file.Attributes & FileAttributes.Directory) != 0
+            if ((file.Attributes &
+                 (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0
                 ||
                 file.Length == 0)
             {

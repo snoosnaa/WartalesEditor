@@ -38,27 +38,52 @@
         <Grid Grid.Row="2" IsEnabled="{Binding IsInitialized}">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <GroupBox Grid.Column="0" Header="Extra supplies" Margin="0,0,8,0">
-                <Grid Margin="12">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Extra Krowns" VerticalAlignment="Center"/><TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Krowns, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <TextBlock Grid.Row="1" Text="Extra Bread" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Bread, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <TextBlock Grid.Row="2" Text="Extra Apples" VerticalAlignment="Center"/><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Apples, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <TextBlock Grid.Row="3" Text="Extra Iron Ore" VerticalAlignment="Center"/><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding IronOre, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <TextBlock Grid.Row="4" Text="Extra Wood" VerticalAlignment="Center"/><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Wood, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <TextBlock Grid.Row="5" Text="Extra Cloth" VerticalAlignment="Center"/><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Cloth, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
-                    <WrapPanel Grid.Row="6" Grid.ColumnSpan="2" Margin="0,12,0,0">
-                        <Button Content="+5 to All Materials" Margin="0,0,6,6" Click="AddFiveButton_Click"/>
-                        <Button Content="+10 to All Materials" Margin="0,0,6,6" Click="AddTenButton_Click"/>
-                        <Button Content="Clear Extras" Margin="0,0,6,6" Click="ClearButton_Click"/>
-                    </WrapPanel>
-                    <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="{Binding ValidationMessage, Mode=OneWay}"
+                <StackPanel Margin="12">
+                    <GroupBox Header="Currency" Margin="0,0,0,8">
+                        <Grid Margin="8,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="Extra Krowns" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding Krowns, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Food" Margin="0,0,0,8">
+                        <Grid Margin="8,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Extra Bread" VerticalAlignment="Center"/><TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Bread, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <TextBlock Grid.Row="1" Text="Extra Apples" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Apples, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,6,0,0">
+                                <Button Content="+5 to All Food" Margin="0,0,6,6" Click="AddFiveFoodButton_Click"/>
+                                <Button Content="+10 to All Food" Margin="0,0,6,6" Click="AddTenFoodButton_Click"/>
+                            </WrapPanel>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Materials">
+                        <Grid Margin="8,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Extra Iron Ore" VerticalAlignment="Center"/><TextBox Grid.Row="0" Grid.Column="1" Text="{Binding IronOre, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <TextBlock Grid.Row="1" Text="Extra Wood" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Wood, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <TextBlock Grid.Row="2" Text="Extra Cloth" VerticalAlignment="Center"/><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Cloth, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <TextBlock Grid.Row="3" Text="Extra Hemp" VerticalAlignment="Center"/><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Hemp, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Validation.Error="InputValidationError" Margin="6"/>
+                            <WrapPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,6,0,0">
+                                <Button Content="+5 to All Materials" Margin="0,0,6,6" Click="AddFiveButton_Click"/>
+                                <Button Content="+10 to All Materials" Margin="0,0,6,6" Click="AddTenButton_Click"/>
+                            </WrapPanel>
+                        </Grid>
+                    </GroupBox>
+
+                    <Button Content="Clear Extras" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ClearButton_Click"/>
+                    <TextBlock Text="{Binding ValidationMessage, Mode=OneWay}"
                                Style="{StaticResource GameplayValidationTextStyle}" Margin="0,8,0,0"/>
-                </Grid>
+                </StackPanel>
             </GroupBox>
             <GroupBox Grid.Column="1" Header="Preview" Margin="8,0,0,0">
                 <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"

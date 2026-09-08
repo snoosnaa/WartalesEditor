@@ -2,7 +2,7 @@
 
 Application Version: 1.0.0 (Public Release Preparation)
 
-Status: Paths Gameplay Tools Accepted; Documentation Reconciled; Commit Pending
+Status: Product Decision Audit Follow-Up Accepted; Documentation Reconciled; Commit Pending
 
 Last Updated: 2026-09-08
 
@@ -32,70 +32,49 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
-Paths Gameplay Tools are **ACCEPTED / COMPLETE**. Engineering Review passed,
-Project Owner Functional Acceptance passed, and Project Owner UI Acceptance
-passed. Documentation is reconciled by this task; commit/push remains pending
-explicit authorization. No release, version, or tag decision has been made for
-this work.
+The **Product Decision Audit and accepted follow-up are COMPLETE**. The audit,
+product decisions, implementation, evidence closure, Engineering Review, and
+Project Owner Interactive Acceptance all passed. Documentation reconciliation
+is complete by this task. Commit and push remain pending explicit
+authorization; no release, version, or tag decision has started.
 
-**Path Level Requirements** globally scales the captured Path requirement
-formula through Original, 80%, 60%, 40%, and 20%. **Path XP Rewards** independently
-scales ordinary reward counters for each canonical Path through Original, 2×,
-3×, 4×, and 5×. It deliberately excludes `MerchAttack`, all `reward.pathXp`
-special rewards, threshold bonuses, Outdated counters, and other Paths.
-Both features participate in Gameplay Operation State, Profile Operation
-Intent, Update Survival, Restore Previous Values, effective counting,
-transactions, and atomic Undo/Redo.
+Accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food Reduction
+5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting Resources
+is grouped into Currency, Food, and Materials. Food shortcuts affect only Bread
+and Apples; Materials shortcuts affect Iron Ore, Wood, Cloth, and Hemp. Rope is
+not supported, Clear Extras covers all supported resources, and the maximum
+extra remains 1,000,000.
 
-The final accepted reward UI uses localized main Path names, compact selectors,
-independent Apply/Restore controls, and reward-range-only previews. All four
-Path sections fit the normal dialog without required vertical scrolling.
+Party Economy Custom Preservation is complete. Engineering Review and delegated
+Project Owner acceptance passed. Valid unmatched Tent and Hitching Post values
+are presented as **Custom** and preserved when independent Valour or capacity
+settings change; choosing a named preset replaces them explicitly. Custom is a
+presentation-only classification. Gameplay Operation State and profiles retain
+exact numeric settings, and no persistence schema changed. Documentation is
+reconciled; commit/push remains pending authorization.
 
-A separate pre-release Project Owner value-choice audit remains pending before
-the next release/version decision. It will identify user-facing values,
-presets, caps, defaults, ranges, and named choices that lack an explicit Project
-Owner decision; it will not change those choices automatically. The audit was
-not performed as part of Paths reconciliation.
+**Tools → QuickBMS Location...** lets the player select and remember one folder
+containing `quickbms.exe` and `Shiro_Games_PAK_script.bms`. Import From Wartales,
+Export Back to Wartales, and detached Golden CDB acquisition share that
+machine-local resolution. A valid saved folder is preferred, the historical
+`<Desktop>\quickbms` convention remains fallback behavior, and unresolved
+tooling fails with player guidance.
 
-The post-1.0.0 Profile Operation Intent / Update Survival correction is
-implemented, Engineering reviewed, and Project Owner accepted. All five phases
-passed Engineering Review. Documentation reconciliation is complete; the
-implementation remains uncommitted and unpushed pending explicit authorization.
-No later public release, version, or tag is claimed by this status.
+Starting Resources preserves legacy profile behavior without a format bump.
+Historical six-field requests remain valid and mean zero requested Hemp.
+Changed-source replay captures and preserves the destination baseline,
+including existing Hemp, while exact-source comparison remains strict for the
+original fields. Existing Profile Version, Description, Author, Tags, metadata
+UI, and root schema are unchanged.
 
-Profiles now separate portable, source-independent operation intent from
-source-bound Gameplay Operation State. Format-4 profiles replay canonical
-`OperationRequests` against compatible current Wartales data, capture fresh
-target baselines, and create fresh target-bound state without rebinding old
-restore authority. Profile Create/Update, changed-source replay, exact-source
-fidelity, direct-edit ambiguity rejection, observational effective counting,
-success-only dialog refresh, stable semantic reporting, and Random Trait
-candidate reconciliation are complete.
-
-Project Owner Interactive Acceptance passed against the latest Wartales update
-and a subsequent newer update. The verified end-to-end path covered Import,
-Check Compatibility, the existing All Mods profile, key gameplay-setting
-reconstruction, semantic already-configured reporting, Undo/Redo, Save/reopen,
-Export Back to Wartales, game launch, and successful loading into gameplay.
-
-The separate Import From Wartales startup button-clipping polish is complete.
-The inherited shared 100-DIP width and 20 DIPs of horizontal padding left too
-little content space for the welcome label. The accepted bounded correction
-uses a local 150-DIP width while preserving the exact label, shared style,
-neighboring controls, command, and Import workflow. Engineering Review and
-Project Owner Visual Acceptance both passed. Focused verification passed Debug
-and Release builds with zero warnings and errors, MainWindow/WPF layout checks,
-Quick Help 44, QuickBMS Import, Export/MainWindow 205/205, and
-`git diff --check`.
-
-Final Integrated Regression passed the complete accepted matrix: zero-warning
-Debug and Release builds; Phase 1 83, Phase 2 199, Phase 3 83, Phase 4 123, and
-Phase 5 75; all 26 Class A/Profile groups; Update Survival 180; Request Board
-101; Golden 203; QuickBMS Export 205/205; Quick Help 44; and the focused
-QuickBMS Import, Language Data, and Restore suites. The only skips were the
-established Windows file-link cases when symbolic-link privilege was
-unavailable. Commit/push preparation is now current; commit and push remain
-unauthorized, and the publication decision has not started.
+Final evidence includes zero-warning Debug and Release builds; Class A
+Compatibility; Profile Operation Intent 84; Profile Operation Replay 209;
+Atomic Profile Apply 83; Profile Intent Update 123; Profile Presentation 75;
+Update Survival 180; QuickBMS Export/routing 215; Golden CDB 203; Quick Help 44;
+Request Board Rewards 101; Paths Gameplay 206; focused QuickBMS Import; and
+`git diff --check`. Project Owner Interactive Acceptance separately passed the
+approved preset, Starting Resources, and QuickBMS workflows. No live Export is
+claimed by this acceptance cycle.
 
 Wartales Editor has completed its accepted Version 1.0.0 release lifecycle and
 continues bounded post-release gameplay development on the stable platform.
@@ -118,15 +97,15 @@ Is maintained with Git and GitHub.
 
 The editing platform and supporting architecture are considered stable.
 
-The current work is limited to closing the accepted Paths Gameplay Tools
-feature. A later release/version decision remains separate.
+The current work is limited to reviewing this Product Decision Audit follow-up
+documentation reconciliation. Commit/push authorization and any later
+release/version decision remain separate.
 
 Current Milestone
 
-Paths Gameplay Tools accepted-feature closure. Documentation reconciliation is
-complete; commit/push remains unauthorized. The separate pre-release
-Project Owner value-choice audit is the next pending review activity, but it is
-not authorized by this milestone. Release/version work has not been selected.
+Product Decision Audit follow-up acceptance closure. Documentation
+reconciliation is complete; commit/push remains unauthorized. The audit is no
+longer pending. Release/version work has not been selected.
 
 Prior public-release preparation record:
 

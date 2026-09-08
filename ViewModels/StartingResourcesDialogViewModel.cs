@@ -17,6 +17,7 @@ public sealed class StartingResourcesDialogViewModel :
     private int ironOre;
     private int wood;
     private int cloth;
+    private int hemp;
     private bool isInitialized;
     private bool inputBindingValid = true;
     private string validationMessage = string.Empty;
@@ -43,6 +44,7 @@ public sealed class StartingResourcesDialogViewModel :
     public int IronOre { get => ironOre; set => SetAmount(ref ironOre, value, nameof(IronOre)); }
     public int Wood { get => wood; set => SetAmount(ref wood, value, nameof(Wood)); }
     public int Cloth { get => cloth; set => SetAmount(ref cloth, value, nameof(Cloth)); }
+    public int Hemp { get => hemp; set => SetAmount(ref hemp, value, nameof(Hemp)); }
 
     public bool IsInitialized
     {
@@ -98,6 +100,7 @@ public sealed class StartingResourcesDialogViewModel :
                 $"+{settings.IronOre:N0} Iron Ore",
                 $"+{settings.Wood:N0} Wood",
                 $"+{settings.Cloth:N0} Cloth",
+                $"+{settings.Hemp:N0} Hemp",
                 "Applied to every supported starting group where required"
             };
             return string.Join(Environment.NewLine, values);
@@ -112,8 +115,16 @@ public sealed class StartingResourcesDialogViewModel :
             Apples = Apples,
             IronOre = IronOre,
             Wood = Wood,
-            Cloth = Cloth
+            Cloth = Cloth,
+            Hemp = Hemp
         };
+
+    public void AddToAllFood(int amount)
+    {
+        if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+        Bread = Math.Min(MaximumExtra, checked(Bread + amount));
+        Apples = Math.Min(MaximumExtra, checked(Apples + amount));
+    }
 
     public void AddToAllMaterials(int amount)
     {
@@ -121,6 +132,7 @@ public sealed class StartingResourcesDialogViewModel :
         IronOre = Math.Min(MaximumExtra, checked(IronOre + amount));
         Wood = Math.Min(MaximumExtra, checked(Wood + amount));
         Cloth = Math.Min(MaximumExtra, checked(Cloth + amount));
+        Hemp = Math.Min(MaximumExtra, checked(Hemp + amount));
     }
 
     public void ClearExtras()
@@ -131,6 +143,7 @@ public sealed class StartingResourcesDialogViewModel :
         IronOre = 0;
         Wood = 0;
         Cloth = 0;
+        Hemp = 0;
     }
 
     public void RefreshFromProject(bool useFirstUseDefaults = false)
@@ -190,7 +203,8 @@ public sealed class StartingResourcesDialogViewModel :
         left.Apples == right.Apples &&
         left.IronOre == right.IronOre &&
         left.Wood == right.Wood &&
-        left.Cloth == right.Cloth;
+        left.Cloth == right.Cloth &&
+        left.Hemp == right.Hemp;
 
     private void SetAmounts(StartingResourcesSettings settings)
     {
@@ -200,6 +214,7 @@ public sealed class StartingResourcesDialogViewModel :
         ironOre = settings.IronOre;
         wood = settings.Wood;
         cloth = settings.Cloth;
+        hemp = settings.Hemp;
     }
 
     private void SetAmount(ref int field, int value, string propertyName)
@@ -233,6 +248,7 @@ public sealed class StartingResourcesDialogViewModel :
         OnPropertyChanged(nameof(IronOre));
         OnPropertyChanged(nameof(Wood));
         OnPropertyChanged(nameof(Cloth));
+        OnPropertyChanged(nameof(Hemp));
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(CanApply));
     }

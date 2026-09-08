@@ -888,7 +888,8 @@ public sealed class ProfileOperationReplayService
         Apples = settings.Value<int>("apples"),
         IronOre = settings.Value<int>("ironOre"),
         Wood = settings.Value<int>("wood"),
-        Cloth = settings.Value<int>("cloth")
+        Cloth = settings.Value<int>("cloth"),
+        Hemp = settings.Value<int?>("hemp") ?? 0
     };
 
     private static PartyEconomySettings ReadPartyEconomy(

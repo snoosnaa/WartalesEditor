@@ -397,7 +397,9 @@ Use the actual future immutable release ZIP, never development output:
 15. Create, apply, update, export, import, and delete a Profile.
 16. Set up/replace Language Data and verify persistence after relaunch.
 17. Set/select, compare, load, import-as-Golden, and remove Golden as planned.
-18. Install the approved external QuickBMS/script versions at expected paths.
+18. Place the approved external QuickBMS/script versions together in one test
+    folder and select it through **Tools → QuickBMS Location...**; also verify
+    the historical `<Desktop>\quickbms` fallback separately.
 19. Import From Wartales and verify durable `Extracted\data.cdb`.
 20. Run Export preflight through final confirmation boundaries.
 21. Only with separate live-write authorization, perform one final Export and

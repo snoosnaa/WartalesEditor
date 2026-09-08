@@ -246,6 +246,52 @@ Save/reopen persistence. After another Wartales update, the owner repeated the
 workflow and additionally verified Export Back to Wartales, successful game
 launch, and loading into gameplay.
 
+### Product Decision Audit Follow-Up Acceptance
+
+The accepted follow-up adds Lectern 4×, Cooking Pot 5/10/16, Tent Valour
+3/4/5, Starting Resources Hemp and grouped quick controls, and remembered
+QuickBMS folder selection. Direct Starting Resources evidence covers canonical
+Hemp creation, structural-absence Restore, unknown item/field preservation,
+legacy state, authentic six-field profile replay on a changed source, existing
+destination Hemp, exact-source compatibility, strict mismatch rejection, and
+current seven-field projection. Direct QuickBMS evidence reconstructs a saved
+synthetic location and proves that it reaches production Import, Export, and
+detached Golden acquisition paths; no live package is used or written.
+
+Final automated evidence passes Debug and Release builds with zero warnings and
+errors; Class A Compatibility; Profile Operation Intent 84; Profile Operation
+Replay 209; Atomic Profile Apply 83; Profile Intent Update 123; Profile
+Presentation 75; Update Survival 180; QuickBMS Export/routing 215; Golden CDB
+203; Quick Help/MainWindow 44; Request Board Rewards 101; Paths Gameplay 206;
+focused QuickBMS Import; and `git diff --check`. The Windows file-reparse case
+retains its explicit skip when symbolic-link privilege is unavailable.
+
+Project Owner Interactive Acceptance passed separately for the three preset
+additions, Starting Resources grouping and Hemp behavior, Food and Materials
+controls, Rope exclusion, Clear Extras, QuickBMS folder selection and memory,
+invalid-folder rejection, saved-location use, and fallback behavior. No live
+Export is claimed by this acceptance record.
+
+### Party Economy Custom Preservation Acceptance
+
+Delegated Project Owner acceptance exercised the production Party Economy
+ViewModel, operation, state, profile, and history paths. Valid unmatched Tent
+and Hitching Post values are detected as Custom, remain exact while independent
+Valour and capacity fields change, and are replaced only after explicit named-
+preset selection. Pending selection can return to Custom without mutating the
+project. Invalid ranges, tier ordering, and the unsupported nonzero Tier 1
+Hitching Post trait remain rejected.
+
+Evidence covers non-mutating dialog construction, independent edits, explicit
+preset replacement, Restore Previous Values, atomic Undo/Redo, state
+save/reload, profile round-trip, and combined Custom Tent plus Custom Hitching
+Post operation ordering. State and profile assertions confirm exact numeric
+settings persist without a Custom token or schema change. Debug and Release
+builds completed with zero warnings and errors; Class A Compatibility, Profile
+Operation Intent 84, Profile Operation Replay 209, Atomic Profile Apply 83,
+Profile Intent Update 123, and `git diff --check` passed. Delegated Project
+Owner acceptance passed.
+
 ### Paths Gameplay Tools Acceptance
 
 Path Level Requirements and Path XP Rewards completed Engineering Review with

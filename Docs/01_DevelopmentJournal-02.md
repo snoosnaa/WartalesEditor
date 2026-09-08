@@ -7,6 +7,52 @@
 
 ------------------------------------------------------------------------
 
+# 2026-09-08 — Party Economy Custom Preservation Accepted
+
+A User Guide wording audit exposed unnecessary preset-only Apply blocking for
+valid existing Tent and Hitching Post values. The underlying Party Economy
+service, mutation, state, and profile paths already supported exact numeric
+values, so the correction remained in presentation policy: valid unmatched
+values now appear as **Custom** and are preserved while independent Valour or
+capacity settings change. Explicit named-preset selection remains the only way
+the dialog replaces those custom tier values.
+
+Validation remains authoritative for ranges, tier ordering, and the unsupported
+Tier 1 Hitching Post trait. Custom is ViewModel-only and adds no profile or state
+token or schema. Focused Engineering Review passed, delegated Project Owner
+acceptance passed through production ViewModel/operation/state/history paths,
+and documentation is reconciled. Commit/push remains pending authorization; no
+release/version decision or live Export is claimed.
+
+------------------------------------------------------------------------
+
+# 2026-09-08 — Product Decision Audit Follow-Up Acceptance Closure
+
+The Project Owner completed the bounded audit of existing user-facing choices
+and approved three additions: Lectern Knowledge Gain 4×, Cooking Pot Food
+Reduction 5/10/16, and Tent Valour 3/4/5. Starting Resources now includes Hemp,
+groups Currency/Food/Materials, provides +5/+10 Food shortcuts for Bread and
+Apples, and includes Hemp in the Materials shortcuts. Rope remains excluded and
+the approved maximum extra amount remains 1,000,000. Profile metadata and its
+existing UI/schema were deliberately left unchanged.
+
+QuickBMS setup now accepts one player-selected folder containing both required
+files and remembers it machine-locally. Import, Export, and detached Golden CDB
+acquisition share the same saved-folder resolution, with the historical
+`<Desktop>\quickbms` location retained as fallback. Player guidance now reflects
+that QuickBMS may be kept anywhere.
+
+The initial Engineering Review found no production defect but required stronger
+direct evidence. Closure tests now prove persisted-location routing through all
+three production workflows and authentic legacy six-field Starting Resources
+replay across changed-source and exact-source cases, including strict negative
+validation and existing destination Hemp preservation. Final Engineering Review
+and Project Owner Interactive Acceptance passed. Documentation reconciliation
+is complete; commit/push remains pending authorization, and no release/version
+decision or live Export is claimed.
+
+------------------------------------------------------------------------
+
 # 2026-09-08 — Paths Gameplay Tools Accepted Feature Closure
 
 Investigation established the global Path-level requirement formula and the

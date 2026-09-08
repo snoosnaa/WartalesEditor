@@ -256,6 +256,10 @@
                           Command="{Binding SetWartalesLocationCommand}"
                           ToolTip="Find or choose the Wartales installation used for import and export."/>
 
+                <MenuItem Header="_QuickBMS Location..."
+                          Command="{Binding SetQuickBmsLocationCommand}"
+                          ToolTip="Choose the folder containing QuickBMS and the Shiro Games PAK script."/>
+
                 <Separator/>
 
                 <MenuItem Header="_Check Project"

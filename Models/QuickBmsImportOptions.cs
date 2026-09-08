@@ -35,6 +35,22 @@ public sealed class QuickBmsImportOptions
         };
     }
 
+    public QuickBmsImportOptions WithQuickBmsDirectory(
+        string quickBmsDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(quickBmsDirectory);
+        string directory = Path.GetFullPath(quickBmsDirectory);
+
+        return new QuickBmsImportOptions
+        {
+            WartalesInstallationDirectory = WartalesInstallationDirectory,
+            QuickBmsExecutablePath = Path.Combine(directory, "quickbms.exe"),
+            ShiroScriptPath = Path.Combine(directory, "Shiro_Games_PAK_script.bms"),
+            StagingRootDirectory = StagingRootDirectory,
+            ProcessTimeout = ProcessTimeout
+        };
+    }
+
     public static QuickBmsImportOptions CreateDefault()
     {
         string quickBmsDirectory =

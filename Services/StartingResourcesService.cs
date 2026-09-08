@@ -15,6 +15,7 @@ public sealed class StartingResourcesService
     public const string IronOreItemId = "IronOre";
     public const string WoodItemId = "Wood";
     public const string ClothItemId = "Cloth";
+    public const string HempItemId = "Hemp";
 
     private readonly ProjectMutationService mutationService;
     private readonly GameplayOperationStateService stateService;
@@ -213,6 +214,7 @@ public sealed class StartingResourcesService
             MergeExtra(items, IronOreItemId, settings.IronOre);
             MergeExtra(items, WoodItemId, settings.Wood);
             MergeExtra(items, ClothItemId, settings.Cloth);
+            MergeExtra(items, HempItemId, settings.Hemp);
         }
 
         return result;
@@ -285,7 +287,7 @@ public sealed class StartingResourcesService
         string[] allItemIds =
         {
             GoldItemId, BreadItemId, AppleItemId,
-            IronOreItemId, WoodItemId, ClothItemId
+            IronOreItemId, WoodItemId, ClothItemId, HempItemId
         };
         foreach (string itemId in allItemIds)
         {
@@ -466,7 +468,8 @@ public sealed class StartingResourcesService
         left != null &&
         left.Krowns == right.Krowns && left.Bread == right.Bread &&
         left.Apples == right.Apples && left.IronOre == right.IronOre &&
-        left.Wood == right.Wood && left.Cloth == right.Cloth;
+        left.Wood == right.Wood && left.Cloth == right.Cloth &&
+        left.Hemp == right.Hemp;
 
     private static SheetModel FindSheet(ProjectModel project, string name) =>
         project.Sheets.SingleOrDefault(sheet => string.Equals(sheet.Name, name, StringComparison.Ordinal))

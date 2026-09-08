@@ -67,17 +67,19 @@ are not bundled, mirrored, or licensed as part of Wartales Editor.
 1. Obtain QuickBMS from [Luigi Auriemma's official QuickBMS site](https://aluigi.altervista.org/quickbms.htm).
 2. Obtain `Shiro_Games_PAK_script.bms` from the
    [upstream Bartlomiej Duda Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
-3. Create a folder named `quickbms` on your Windows Desktop.
-4. Place the files at these exact default locations:
+3. Put `quickbms.exe` and `Shiro_Games_PAK_script.bms` together in one folder.
+   That folder may be anywhere you choose.
+4. In Wartales Editor, choose **Tools → QuickBMS Location...** and select that
+   folder. The editor remembers the selection for Import From Wartales, Export
+   Back to Wartales, and Golden CDB acquisition.
 
-```text
-<Desktop>\quickbms\quickbms.exe
-<Desktop>\quickbms\Shiro_Games_PAK_script.bms
-```
+If you have not selected a folder, the editor still checks the historical
+`<Desktop>\quickbms` location as a fallback. You do not need to move QuickBMS to
+the Desktop when another location is more convenient.
 
 Avoid arbitrary repackaged binaries or scripts. Integrated Import and Export
-remain unavailable until both expected files and a valid Steam Wartales
-installation are available.
+remain unavailable until both files and a valid Steam Wartales installation
+are available.
 
 ## 6. Recommended Workflow
 
@@ -215,15 +217,19 @@ Restore button.
 
 #### Starting Resources
 
-Adds extra Krowns, Bread, Apples, Iron Ore, Wood, and Cloth to every standard
-new-campaign start. The selected starting group keeps its normal supplies and
-bonuses; existing saves are unchanged. First setup suggests 10 Bread and 5
-Apples.
+Adds extra resources to every standard new-campaign start. The dialog groups
+the supported resources as **Currency** (Krowns), **Food** (Bread and Apples),
+and **Materials** (Iron Ore, Wood, Cloth, and Hemp). Rope is not supported. The
+selected starting group keeps its normal supplies and bonuses; existing saves
+are unchanged. First setup suggests 10 Bread and 5 Apples.
 
-1. Enter nonnegative amounts or use **+5 to All Materials**, **+10 to All
-   Materials**, or **Clear Extras**.
-2. Review the preview.
-3. Choose **Apply**.
+1. Enter nonnegative amounts up to 1,000,000.
+2. Optionally use **+5 to All Food** or **+10 to All Food** for Bread and
+   Apples, or **+5 to All Materials** and **+10 to All Materials** for Iron Ore,
+   Wood, Cloth, and Hemp.
+3. Use **Clear Extras** to clear every supported extra amount.
+4. Review the preview.
+5. Choose **Apply**.
 
 In Wartales, large starting-resource amounts may cause the resource list to
 shift or stutter visually because the extra items extend beyond the normal
@@ -273,8 +279,8 @@ read as multiplying every possible source of Path XP.
 #### Lectern Knowledge Gain
 
 Changes Knowledge earned from the Lectern during qualifying rests. Presets are
-**Vanilla** (captured rate), **Increased** (2×), **High** (3×), and **Very High**
-(5×). Other Knowledge sources are unchanged.
+**Vanilla** (captured rate), **Increased** (2×), **High** (3×), **Higher** (4×),
+and **Very High** (5×). Other Knowledge sources are unchanged.
 
 ### Professions
 
@@ -329,7 +335,8 @@ keeps Tier 1 capacity at 4, and raises Tier 2 and Tier 3 capacity to 8 and 12.
 
 Changes daily food saved by an assigned cook without changing capacity.
 Presets are **Vanilla** (2 / 4 / 6 by tier), **Improved** (3 / 6 / 9),
-**Strong** (4 / 8 / 12), and **Very Strong** (6 / 12 / 18).
+**Strong** (4 / 8 / 12), **Stronger** (5 / 10 / 16), and **Very Strong**
+(6 / 12 / 18).
 
 #### Workshop Materials
 
@@ -353,15 +360,21 @@ wage payments.
 #### Valour Points
 
 Configures maximum Valour, Valour restored after rest, and Tent bonuses. Tent
-presets are **Vanilla** (1 / 2 / 3) and **Increased** (2 / 3 / 4). Custom
-existing Tent values require an explicit supported preset before expanded
-bonuses are applied.
+presets are **Vanilla** (1 / 2 / 3), **Increased** (2 / 3 / 4), and **High**
+(3 / 4 / 5). If valid existing Tent values do not match one of those presets,
+the selector displays **Custom**. Custom preserves those exact Tent values while
+you change Maximum Valour or Valour Restored After Rest. Selecting a named
+preset replaces the custom Tent values; Custom does not provide free-form tier
+editing.
 
 #### Carrying Capacity
 
 Configures Saddlebag capacity, Pony starting capacity, and Hitching Post
-bonuses. Hitching Post presets are **Vanilla** and **Increased**. Custom
-existing bonuses require an explicit preset selection before Apply.
+bonuses. Hitching Post presets are **Vanilla** and **Increased**. If valid
+existing Hitching Post values do not match either preset, the selector displays
+**Custom**. Custom preserves the exact existing base and trait bonuses while
+you change Saddlebag or Pony capacity. Selecting a named preset replaces the
+custom Hitching Post values; Custom does not provide free-form tier editing.
 
 #### Run Stamina Recovery
 
@@ -631,14 +644,14 @@ Profiles:      <Documents>\Wartales Editor\Profiles\
 Language Data:<Documents>\Wartales Editor\Language Data\export.xml
 Golden CDB:   <Documents>\Wartales Editor\Golden CDB\data.cdb
 Imported CDB: <Wartales installation>\Extracted\data.cdb
-QuickBMS:     <Desktop>\quickbms\quickbms.exe
-Shiro script: <Desktop>\quickbms\Shiro_Games_PAK_script.bms
+QuickBMS:     <folder selected through Tools → QuickBMS Location...>
 ```
 
 Modified CDBs go where you select during Save. The editor may keep a companion
 file beside a saved CDB so supported Gameplay Tools can remember previous
 values. Import/Export preparation uses Windows temporary folders that are not
-user libraries; do not manipulate them while an operation is running.
+user libraries; do not manipulate them while an operation is running. If no
+QuickBMS folder has been selected, `<Desktop>\quickbms` remains the fallback.
 
 ## 26. Updating Wartales Editor
 
@@ -660,9 +673,10 @@ workflow in Section 19 and record the Wartales build in any issue report.
 
 ## 28. Troubleshooting
 
-- **QuickBMS not found:** verify `<Desktop>\quickbms\quickbms.exe`.
-- **Script not found:** verify the exact upstream
-  `Shiro_Games_PAK_script.bms` filename and location.
+- **QuickBMS or script not found:** put `quickbms.exe` and the exact upstream
+  `Shiro_Games_PAK_script.bms` file in one folder, then choose **Tools →
+  QuickBMS Location...** and select that folder. The historical
+  `<Desktop>\quickbms` folder is checked only as a fallback.
 - **Wartales not found:** select the Steam Wartales installation folder that
   contains `Wartales.exe` and `res.pak`. Use **Tools → Wartales Location…** to
   change the saved folder later. You can also manually Open an already extracted

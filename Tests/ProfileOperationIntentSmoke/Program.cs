@@ -96,13 +96,28 @@ GameplayOperationStateModel startingState = State(
         Apples = 3,
         IronOre = 4,
         Wood = 5,
-        Cloth = 6
+        Cloth = 6,
+        Hemp = 7
     });
 ProfileOperationRequestModel starting = Project(startingState);
 Check(starting.Settings!.Properties().Select(p => p.Name).SequenceEqual(
-        new[] { "krowns", "bread", "apples", "ironOre", "wood", "cloth" }) &&
-      starting.Settings["krowns"]!.Value<int>() == 100,
+        new[] { "krowns", "bread", "apples", "ironOre", "wood", "cloth", "hemp" }) &&
+      starting.Settings["krowns"]!.Value<int>() == 100 &&
+      starting.Settings["hemp"]!.Value<int>() == 7,
     "Starting Resources projected with canonical fields");
+
+registry.ValidateRequest(
+    Request(ProfileOperationIds.StartingResources, new JObject
+    {
+        ["krowns"] = 1,
+        ["bread"] = 2,
+        ["apples"] = 3,
+        ["ironOre"] = 4,
+        ["wood"] = 5,
+        ["cloth"] = 6
+    }),
+    4);
+Check(true, "legacy six-field Starting Resources intent remains valid");
 
 JObject volunteerSettings = new() { ["volunteerPercentage"] = 75 };
 JObject valourSettings = new()

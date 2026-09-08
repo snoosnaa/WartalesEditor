@@ -113,16 +113,17 @@ workflows and troubleshooting.
 QuickBMS and the Shiro Games PAK script are external, user-supplied tools. They
 are not bundled, mirrored, or licensed as part of Wartales Editor.
 
-The current release expects:
-
-- `<Desktop>\quickbms\quickbms.exe`
-- `<Desktop>\quickbms\Shiro_Games_PAK_script.bms`
-
 Obtain QuickBMS from [Luigi Auriemma's official QuickBMS site](https://aluigi.altervista.org/quickbms.htm).
-Obtain the script from the [upstream Bartlomiej Duda Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
-Avoid arbitrary repackaged binaries. Integrated Import and Export remain
-unavailable until both expected files exist. The validated versions and hashes
-are recorded in **Supported Platform and Game Version** above.
+Obtain `Shiro_Games_PAK_script.bms` from the [upstream Bartlomiej Duda Tools repository](https://github.com/bartlomiejduda/Tools/blob/master/NEW%20Tools/Shiro%20Games/Shiro_Games_PAK_script.bms).
+Keep both files together in one folder, then choose **Tools → QuickBMS
+Location...** in Wartales Editor and select that folder. The editor remembers
+the location for Import, Export, and Golden CDB operations.
+
+QuickBMS may be installed anywhere. If no folder has been selected, the
+historical `<Desktop>\quickbms` location remains a fallback. Avoid arbitrary
+repackaged binaries. Integrated Import and Export remain unavailable until both
+required files exist. The validated versions and hashes are recorded in
+**Supported Platform and Game Version** above.
 
 ## Profiles and Restore Previous Values
 

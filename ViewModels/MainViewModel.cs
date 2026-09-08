@@ -132,7 +132,12 @@ public class MainViewModel : ObservableObject
 
     private GoldenCdbComparisonService goldenCdbComparisonService;
 
-    private readonly QuickBmsImportOptions quickBmsImportOptions;
+    private QuickBmsImportOptions quickBmsImportOptions;
+
+    private QuickBmsLocationService
+        quickBmsLocationService = new();
+
+    private bool useQuickBmsLocationResolution;
 
     private readonly WartalesInstallationService
         wartalesInstallationService;
@@ -914,6 +919,8 @@ public class MainViewModel : ObservableObject
 
     public RelayCommand SetWartalesLocationCommand { get; }
 
+    public RelayCommand SetQuickBmsLocationCommand { get; }
+
     public RelayCommand SaveCommand { get; }
 
     public RelayCommand ShowGameplayToolsWorkspaceCommand
@@ -1270,6 +1277,18 @@ public class MainViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(quickBmsImportOptions));
 
+        QuickBmsImportOptions defaultQuickBmsOptions =
+            QuickBmsImportOptions.CreateDefault();
+        useQuickBmsLocationResolution =
+            string.Equals(
+                this.quickBmsImportOptions.QuickBmsExecutablePath,
+                defaultQuickBmsOptions.QuickBmsExecutablePath,
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                this.quickBmsImportOptions.ShiroScriptPath,
+                defaultQuickBmsOptions.ShiroScriptPath,
+                StringComparison.OrdinalIgnoreCase);
+
         localizationStatus =
             CreateLanguageDataStatus(
                 this.languageDataService.CurrentState);
@@ -1366,6 +1385,11 @@ public class MainViewModel : ObservableObject
         SetWartalesLocationCommand =
             new RelayCommand(
                 _ => SetWartalesLocation(),
+                _ => !IsQuickBmsOperationInProgress);
+
+        SetQuickBmsLocationCommand =
+            new RelayCommand(
+                _ => SetQuickBmsLocation(),
                 _ => !IsQuickBmsOperationInProgress);
 
         SaveCommand =
@@ -2421,7 +2445,8 @@ public class MainViewModel : ObservableObject
     {
         WartalesOptionsResolution resolution =
             ResolveWartalesOptions(
-                alwaysPrompt: true);
+                alwaysPrompt: true,
+                resolveQuickBms: false);
         if (resolution.Outcome ==
             WartalesOptionsResolutionOutcome.Cancelled)
         {
@@ -2452,8 +2477,55 @@ public class MainViewModel : ObservableObject
             "Wartales Location");
     }
 
+    private void SetQuickBmsLocation()
+    {
+        try
+        {
+            QuickBmsLocationResolution resolution =
+                quickBmsLocationService.Resolve();
+            string? selectedDirectory =
+                fileDialogService.ShowOpenFolderDialog(
+                    "Select the folder containing quickbms.exe and Shiro_Games_PAK_script.bms.",
+                    resolution.Toolchain == null
+                        ? resolution.SuggestedDirectory
+                        : Path.GetDirectoryName(
+                            resolution.Toolchain.ExecutablePath));
+            if (string.IsNullOrWhiteSpace(selectedDirectory))
+            {
+                Status = "QuickBMS location was not changed.";
+                return;
+            }
+
+            QuickBmsToolchainInfo toolchain =
+                quickBmsLocationService.ValidateAndRemember(
+                    selectedDirectory);
+            quickBmsImportOptions =
+                quickBmsLocationService.Apply(
+                    quickBmsImportOptions,
+                    toolchain);
+            useQuickBmsLocationResolution = true;
+
+            Status = "QuickBMS location saved.";
+            messageDialogService.ShowInformation(
+                "The QuickBMS location is ready." +
+                Environment.NewLine + Environment.NewLine +
+                selectedDirectory,
+                "QuickBMS Location");
+        }
+        catch (Exception exception)
+        {
+            messageDialogService.ShowError(
+                "The QuickBMS location was not changed." +
+                Environment.NewLine + Environment.NewLine +
+                $"Details: {exception.Message}",
+                "QuickBMS Location");
+            Status = "QuickBMS location was not changed.";
+        }
+    }
+
     private WartalesOptionsResolution ResolveWartalesOptions(
-        bool alwaysPrompt)
+        bool alwaysPrompt,
+        bool resolveQuickBms = true)
     {
         try
         {
@@ -2466,10 +2538,12 @@ public class MainViewModel : ObservableObject
                 resolution.Installation != null)
             {
                 return WartalesOptionsResolution.Success(
-                    quickBmsImportOptions
-                        .WithWartalesInstallationDirectory(
-                            resolution.Installation
-                                .InstallationDirectory));
+                    ResolveQuickBmsOptionsIfRequired(
+                        quickBmsImportOptions
+                            .WithWartalesInstallationDirectory(
+                                resolution.Installation
+                                    .InstallationDirectory),
+                        resolveQuickBms));
             }
 
             string? selectedDirectory =
@@ -2486,10 +2560,12 @@ public class MainViewModel : ObservableObject
                     .ValidateAndRemember(
                         selectedDirectory);
             return WartalesOptionsResolution.Success(
-                quickBmsImportOptions
-                    .WithWartalesInstallationDirectory(
-                        installation
-                            .InstallationDirectory));
+                ResolveQuickBmsOptionsIfRequired(
+                    quickBmsImportOptions
+                        .WithWartalesInstallationDirectory(
+                            installation
+                                .InstallationDirectory),
+                    resolveQuickBms));
         }
         catch (Exception exception)
         {
@@ -2498,7 +2574,31 @@ public class MainViewModel : ObservableObject
         }
     }
 
-    private async Task<QuickBmsImportResult?>
+    private QuickBmsImportOptions ResolveQuickBmsOptionsIfRequired(
+        QuickBmsImportOptions options,
+        bool resolveQuickBms)
+    {
+        if (!resolveQuickBms || !useQuickBmsLocationResolution) return options;
+
+        QuickBmsLocationResolution resolution =
+            quickBmsLocationService.Resolve();
+        if (resolution.Toolchain == null)
+        {
+            throw new QuickBmsImportException(
+                QuickBmsImportFailureKind.ToolchainInvalid,
+                "QuickBMS is not ready. Use Tools > QuickBMS Location... to select the folder containing quickbms.exe and Shiro_Games_PAK_script.bms.");
+        }
+
+        quickBmsImportOptions =
+            quickBmsLocationService.Apply(
+                quickBmsImportOptions,
+                resolution.Toolchain);
+        return quickBmsLocationService.Apply(
+            options,
+            resolution.Toolchain);
+    }
+
+    internal async Task<QuickBmsImportResult?>
         ImportFromWartalesAsync()
     {
         QuickBmsImportAcquisitionAttempt attempt =
@@ -5810,6 +5910,13 @@ public class MainViewModel : ObservableObject
             throw new ArgumentNullException(nameof(service));
     }
 
+    internal void UseQuickBmsLocationServiceForTesting(
+        QuickBmsLocationService service)
+    {
+        quickBmsLocationService = service ??
+            throw new ArgumentNullException(nameof(service));
+    }
+
     internal void UseQuickBmsExportServiceForTesting(
         IQuickBmsExportService service)
     {
@@ -6528,6 +6635,8 @@ public class MainViewModel : ObservableObject
         ExportBackToWartalesCommand?
             .NotifyCanExecuteChanged();
         SetWartalesLocationCommand?
+            .NotifyCanExecuteChanged();
+        SetQuickBmsLocationCommand?
             .NotifyCanExecuteChanged();
         SaveCommand?.NotifyCanExecuteChanged();
 

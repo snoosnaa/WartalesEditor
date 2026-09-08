@@ -50,6 +50,18 @@
                         <TextBlock Text="2. Set up QuickBMS and the Shiro Games PAK script if you have not already."
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,7"/>
+                        <TextBlock Text="QuickBMS Setup"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock Text="Keep quickbms.exe and Shiro_Games_PAK_script.bms together in one folder."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,7"/>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,7"><Run Text="In Wartales Editor, choose "/><Run Text="Tools → QuickBMS Location..." FontWeight="SemiBold"/><Run Text=" and select that folder."/></TextBlock>
+                        <TextBlock Text="The editor remembers it for Import, Export, and Golden CDB. If no folder is saved, Desktop\quickbms remains the fallback."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
                         <TextBlock TextWrapping="Wrap"
                                    Margin="0,0,0,7"><Run Text="3. Click "/><Run Text="Import From Wartales" FontWeight="SemiBold"/><Run Text="."/></TextBlock>
                         <TextBlock Text="4. Confirm replacement if prompted."

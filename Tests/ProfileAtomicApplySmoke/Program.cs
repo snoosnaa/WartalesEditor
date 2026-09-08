@@ -786,7 +786,8 @@ static ProjectModel StartingProject(char marker) => CreateProject(marker,
         StartItem("Apple", 1),
         new JObject { ["id"] = "IronOre" },
         new JObject { ["id"] = "Wood" },
-        new JObject { ["id"] = "Cloth" }),
+        new JObject { ["id"] = "Cloth" },
+        new JObject { ["id"] = "Hemp" }),
     Sheet("startChoice", new JObject
     {
         ["id"] = "Origin",

@@ -154,6 +154,7 @@ public static class GameplayPresetCatalog
                 Preset("Vanilla", "Vanilla", "T1 2; T2 4; T3 6 food", "Restores normal food saved per tier.", 2, 4, 6),
                 Preset("Improved", "Improved", "T1 3; T2 6; T3 9 food", "An assigned cook saves 3, 6, or 9 food by Cooking Pot tier.", 3, 6, 9),
                 Preset("Strong", "Strong", "T1 4; T2 8; T3 12 food", "An assigned cook saves 4, 8, or 12 food by Cooking Pot tier.", 4, 8, 12),
+                Preset("Stronger", "Stronger", "T1 5; T2 10; T3 16 food", "An assigned cook saves 5, 10, or 16 food by Cooking Pot tier.", 5, 10, 16),
                 Preset("VeryStrong", "Very Strong", "T1 6; T2 12; T3 18 food", "An assigned cook saves 6, 12, or 18 food by Cooking Pot tier.", 6, 12, 18)),
 
             Definition(
@@ -222,6 +223,7 @@ public static class GameplayPresetCatalog
                 Preset("Vanilla", "Vanilla", "1×", "Lectern Knowledge progress uses the rate captured from the current game data during qualifying rests.", 25),
                 Preset("Increased", "Increased", "2×", "Lectern Knowledge progress is earned at twice the current game rate during qualifying rests.", 50),
                 Preset("High", "High", "3×", "Lectern Knowledge progress is earned at three times the current game rate during qualifying rests.", 75),
+                Preset("Higher", "Higher", "4×", "Lectern Knowledge progress is earned at four times the current game rate during qualifying rests.", 100),
                 Preset("VeryHigh", "Very High", "5×", "Lectern Knowledge progress is earned at five times the current game rate during qualifying rests.", 125)),
 
             Definition(

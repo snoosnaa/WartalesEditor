@@ -41,6 +41,12 @@ public partial class StartingResourcesDialog : Window
     private void AddTenButton_Click(object sender, RoutedEventArgs e) =>
         ((StartingResourcesDialogViewModel)DataContext).AddToAllMaterials(10);
 
+    private void AddFiveFoodButton_Click(object sender, RoutedEventArgs e) =>
+        ((StartingResourcesDialogViewModel)DataContext).AddToAllFood(5);
+
+    private void AddTenFoodButton_Click(object sender, RoutedEventArgs e) =>
+        ((StartingResourcesDialogViewModel)DataContext).AddToAllFood(10);
+
     private void ClearButton_Click(object sender, RoutedEventArgs e) =>
         ((StartingResourcesDialogViewModel)DataContext).ClearExtras();
 

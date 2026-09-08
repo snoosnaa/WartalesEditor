@@ -9,6 +9,15 @@ namespace WartalesEditor.ViewModels;
 public sealed class PartyEconomyDialogViewModel :
     ObservableObject, IGameplayProjectRefreshable
 {
+    private static readonly IReadOnlyList<string> NamedTentPresets =
+        new[] { "Vanilla", "Increased", "High" };
+    private static readonly IReadOnlyList<string> CustomTentPresets =
+        new[] { "Custom", "Vanilla", "Increased", "High" };
+    private static readonly IReadOnlyList<string> NamedHitchingPostPresets =
+        new[] { "Vanilla", "Increased" };
+    private static readonly IReadOnlyList<string> CustomHitchingPostPresets =
+        new[] { "Custom", "Vanilla", "Increased" };
+
     private readonly ProjectModel project;
     private readonly PartyEconomyService service;
     private int volunteerPercentage;
@@ -27,7 +36,11 @@ public sealed class PartyEconomyDialogViewModel :
     private int hitchingPostTier3Trait;
     private string? selectedTentPreset;
     private string? selectedHitchingPostPreset;
-    private bool customExpandedValuesConfirmed;
+    private bool hasCustomTentValues;
+    private bool hasCustomHitchingPostValues;
+    private (int Tier1, int Tier2, int Tier3) customTentValues;
+    private (int Tier1Base, int Tier2Base, int Tier3Base,
+        int Tier1Trait, int Tier2Trait, int Tier3Trait) customHitchingPostValues;
     private bool inputBindingValid = true;
     private string validationMessage = string.Empty;
     private PartyEconomySettings loadedSettings = new();
@@ -55,19 +68,28 @@ public sealed class PartyEconomyDialogViewModel :
     public int RestoredValour { get => restoredValour; set => SetValue(ref restoredValour, value, nameof(RestoredValour)); }
     public int SaddlebagCapacity { get => saddlebagCapacity; set => SetValue(ref saddlebagCapacity, value, nameof(SaddlebagCapacity)); }
     public int PonyStartingCapacity { get => ponyStartingCapacity; set => SetValue(ref ponyStartingCapacity, value, nameof(PonyStartingCapacity)); }
-    public IReadOnlyList<string> TentPresets { get; } = new[] { "Vanilla", "Increased" };
-    public IReadOnlyList<string> HitchingPostPresets { get; } = new[] { "Vanilla", "Increased" };
+    public IReadOnlyList<string> TentPresets => hasCustomTentValues
+        ? CustomTentPresets
+        : NamedTentPresets;
+    public IReadOnlyList<string> HitchingPostPresets => hasCustomHitchingPostValues
+        ? CustomHitchingPostPresets
+        : NamedHitchingPostPresets;
 
     public string? SelectedTentPreset
     {
         get => selectedTentPreset;
         set
         {
+            if (value == "Custom" && !hasCustomTentValues) return;
             if (!SetProperty(ref selectedTentPreset, value) || value == null) return;
             ApplyFeedback.Clear();
-            (tentTier1Valour, tentTier2Valour, tentTier3Valour) =
-                value == "Increased" ? (2, 3, 4) : (1, 2, 3);
-            customExpandedValuesConfirmed = true;
+            (tentTier1Valour, tentTier2Valour, tentTier3Valour) = value switch
+            {
+                "Custom" => customTentValues,
+                "Increased" => (2, 3, 4),
+                "High" => (3, 4, 5),
+                _ => (1, 2, 3)
+            };
             Validate();
             OnPropertyChanged(nameof(PreviewText));
         }
@@ -78,14 +100,17 @@ public sealed class PartyEconomyDialogViewModel :
         get => selectedHitchingPostPreset;
         set
         {
+            if (value == "Custom" && !hasCustomHitchingPostValues) return;
             if (!SetProperty(ref selectedHitchingPostPreset, value) || value == null) return;
             ApplyFeedback.Clear();
             (hitchingPostTier1Base, hitchingPostTier2Base, hitchingPostTier3Base,
              hitchingPostTier1Trait, hitchingPostTier2Trait, hitchingPostTier3Trait) =
-                value == "Increased"
-                    ? (20, 40, 60, 0, 20, 30)
-                    : (10, 10, 10, 0, 5, 10);
-            customExpandedValuesConfirmed = true;
+                value switch
+                {
+                    "Custom" => customHitchingPostValues,
+                    "Increased" => (20, 40, 60, 0, 20, 30),
+                    _ => (10, 10, 10, 0, 5, 10)
+                };
             Validate();
             OnPropertyChanged(nameof(PreviewText));
         }
@@ -175,7 +200,7 @@ public sealed class PartyEconomyDialogViewModel :
         }
 
         ApplyFeedback.Clear();
-        Assign(baseline, true);
+        Assign(baseline);
         Validate();
         NotifyAll();
         return CanApply;
@@ -189,7 +214,7 @@ public sealed class PartyEconomyDialogViewModel :
 
     public void RefreshFromProject()
     {
-        Assign(service.GetSettings(project, OperationType), false);
+        Assign(service.GetSettings(project, OperationType));
         Validate();
         NotifyAll();
         loadedSettings = CreateSettings();
@@ -199,14 +224,21 @@ public sealed class PartyEconomyDialogViewModel :
     {
         PartyEconomySettings pending = CreateSettings();
         bool preservePending = !SettingsEqual(pending, loadedSettings);
-        bool customWasConfirmed = customExpandedValuesConfirmed;
+        bool retainedCustomTent = hasCustomTentValues;
+        bool retainedCustomHitchingPost = hasCustomHitchingPostValues;
+        var retainedTentValues = customTentValues;
+        var retainedHitchingPostValues = customHitchingPostValues;
         bool bindingWasValid = inputBindingValid;
 
         RefreshFromProject();
 
-        if (preservePending)
+        if (preservePending && !SettingsEqual(pending, loadedSettings))
         {
-            Assign(pending, customWasConfirmed);
+            hasCustomTentValues = retainedCustomTent;
+            hasCustomHitchingPostValues = retainedCustomHitchingPost;
+            customTentValues = retainedTentValues;
+            customHitchingPostValues = retainedHitchingPostValues;
+            Assign(pending, preserveCustomOptions: true);
             inputBindingValid = bindingWasValid;
             Validate();
             NotifyAll();
@@ -241,7 +273,7 @@ public sealed class PartyEconomyDialogViewModel :
 
     private void Assign(
         PartyEconomySettings settings,
-        bool confirmCustomExpandedValues)
+        bool preserveCustomOptions = false)
     {
         volunteerPercentage = settings.VolunteerPercentage;
         maximumValour = settings.MaximumValour;
@@ -257,14 +289,31 @@ public sealed class PartyEconomyDialogViewModel :
         hitchingPostTier1Trait = settings.HitchingPostTier1Trait;
         hitchingPostTier2Trait = settings.HitchingPostTier2Trait;
         hitchingPostTier3Trait = settings.HitchingPostTier3Trait;
-        selectedTentPreset =
+        string? detectedTentPreset =
             (tentTier1Valour, tentTier2Valour, tentTier3Valour) switch
             {
                 (1, 2, 3) => "Vanilla",
                 (2, 3, 4) => "Increased",
+                (3, 4, 5) => "High",
                 _ => null
             };
-        selectedHitchingPostPreset =
+        if (detectedTentPreset == null && HasValidTentValues())
+        {
+            hasCustomTentValues = true;
+            customTentValues = (
+                tentTier1Valour,
+                tentTier2Valour,
+                tentTier3Valour);
+            selectedTentPreset = "Custom";
+        }
+        else
+        {
+            selectedTentPreset = detectedTentPreset;
+            if (!preserveCustomOptions)
+                hasCustomTentValues = false;
+        }
+
+        string? detectedHitchingPostPreset =
             (hitchingPostTier1Base, hitchingPostTier2Base, hitchingPostTier3Base,
              hitchingPostTier1Trait, hitchingPostTier2Trait, hitchingPostTier3Trait) switch
             {
@@ -272,7 +321,24 @@ public sealed class PartyEconomyDialogViewModel :
                 (20, 40, 60, 0, 20, 30) => "Increased",
                 _ => null
             };
-        customExpandedValuesConfirmed = confirmCustomExpandedValues;
+        if (detectedHitchingPostPreset == null && HasValidHitchingPostValues())
+        {
+            hasCustomHitchingPostValues = true;
+            customHitchingPostValues = (
+                hitchingPostTier1Base,
+                hitchingPostTier2Base,
+                hitchingPostTier3Base,
+                hitchingPostTier1Trait,
+                hitchingPostTier2Trait,
+                hitchingPostTier3Trait);
+            selectedHitchingPostPreset = "Custom";
+        }
+        else
+        {
+            selectedHitchingPostPreset = detectedHitchingPostPreset;
+            if (!preserveCustomOptions)
+                hasCustomHitchingPostValues = false;
+        }
     }
 
     private void SetValue(ref int field, int value, string name)
@@ -288,22 +354,46 @@ public sealed class PartyEconomyDialogViewModel :
         try
         {
             CreateSettings().Validate(OperationType);
-            ValidationMessage = OperationType switch
-            {
-                ProgressionType.ValourPoints
-                    when selectedTentPreset == null &&
-                         !customExpandedValuesConfirmed =>
-                    "Current Tent bonuses are custom. Choose Vanilla or Increased before applying.",
-                ProgressionType.CarryingCapacity
-                    when selectedHitchingPostPreset == null &&
-                         !customExpandedValuesConfirmed =>
-                    "Current Hitching Post bonuses are custom. Choose Vanilla or Increased before applying.",
-                _ => string.Empty
-            };
+            ValidationMessage = string.Empty;
         }
         catch (Exception exception)
         {
             ValidationMessage = exception.Message;
+        }
+    }
+
+    private bool HasValidTentValues()
+    {
+        try
+        {
+            PartyEconomySettings.ValidateTentValues(
+                tentTier1Valour,
+                tentTier2Valour,
+                tentTier3Valour);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
+    }
+
+    private bool HasValidHitchingPostValues()
+    {
+        try
+        {
+            PartyEconomySettings.ValidateHitchingPostValues(
+                hitchingPostTier1Base,
+                hitchingPostTier2Base,
+                hitchingPostTier3Base,
+                hitchingPostTier1Trait,
+                hitchingPostTier2Trait,
+                hitchingPostTier3Trait);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
         }
     }
 
@@ -314,6 +404,8 @@ public sealed class PartyEconomyDialogViewModel :
         OnPropertyChanged(nameof(RestoredValour));
         OnPropertyChanged(nameof(SaddlebagCapacity));
         OnPropertyChanged(nameof(PonyStartingCapacity));
+        OnPropertyChanged(nameof(TentPresets));
+        OnPropertyChanged(nameof(HitchingPostPresets));
         OnPropertyChanged(nameof(SelectedTentPreset));
         OnPropertyChanged(nameof(SelectedHitchingPostPreset));
         OnPropertyChanged(nameof(PreviewText));

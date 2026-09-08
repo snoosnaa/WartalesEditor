@@ -218,6 +218,7 @@ VerifyMiningBaselineScaling();
 VerifyVendorBaselineScaling();
 VerifyResourceReplenishment();
 VerifyLecternKnowledgeGain();
+VerifyCookingPotIntermediatePreset();
 VerifyPositiveRandomTraits();
 VerifyRandomTraitExclusions();
 VerifyProfileUpdate();
@@ -228,8 +229,10 @@ VerifyCampfireExpansion();
 VerifyBattleCameraBaselineDrift();
 VerifyLegacyValour();
 VerifyLegacyCarrying();
+VerifyPartyEconomyCustomCrossSection();
 VerifySnapshotPathCompatibility();
 VerifyLegacyProfileReconciliation();
+VerifyStartingResourcesHemp();
 VerifyApplyFeedbackState();
 VerifyCatalogCoverage();
 VerifyMalformedTargets();
@@ -3002,6 +3005,9 @@ static void VerifyLecternKnowledgeGain()
     ApplyPreset(executor, service, project,
         ProgressionType.LecternKnowledgeGain, "High");
     CheckNumber(project, "constant", "GainOnLecternRest", "value", 90);
+    ApplyPreset(executor, service, project,
+        ProgressionType.LecternKnowledgeGain, "Higher");
+    CheckNumber(project, "constant", "GainOnLecternRest", "value", 120);
     ProjectOperationResult veryHigh = ApplyPreset(executor, service, project,
         ProgressionType.LecternKnowledgeGain, "VeryHigh");
     CheckNumber(project, "constant", "GainOnLecternRest", "value", 150);
@@ -3060,6 +3066,58 @@ static void VerifyLecternKnowledgeGain()
         "Lectern missing target rejected");
     _ = veryHigh;
     Console.WriteLine("PASS Lectern Knowledge Gain captured-baseline scaling and safety");
+}
+
+static void VerifyCookingPotIntermediatePreset()
+{
+    ProjectModel project = CreateProject(
+        Sheet("item",
+            BonusEntry("CookingPot", "tool", "bonusesIfAssigned", "bonus", "FoodReduction", 2),
+            BonusEntry("CookingPotT2", "tool", "bonusesIfAssigned", "bonus", "FoodReduction", 4),
+            BonusEntry("CookingPotT3", "tool", "bonusesIfAssigned", "bonus", "FoodReduction", 6)));
+    GameplayPresetService service = CreatePresetService();
+    ProjectOperationService executor = new();
+
+    ProjectOperationResult stronger = ApplyPreset(
+        executor,
+        service,
+        project,
+        ProgressionType.CookingPotFoodReduction,
+        "Stronger");
+    int[] values = project.Sheets.Single().Entries
+        .Select(entry => entry.SourceEntry!.SelectToken("tool.bonusesIfAssigned[0].value")!.Value<int>())
+        .ToArray();
+    Check(values.SequenceEqual(new[] { 5, 10, 16 }),
+        "Cooking Pot 5/10/16 preset applies exact tier values");
+    string strongerJson = Json(project);
+
+    ProjectOperationResult vanilla = ApplyPreset(
+        executor,
+        service,
+        project,
+        ProgressionType.CookingPotFoodReduction,
+        "Vanilla");
+    values = project.Sheets.Single().Entries
+        .Select(entry => entry.SourceEntry!.SelectToken("tool.bonusesIfAssigned[0].value")!.Value<int>())
+        .ToArray();
+    Check(values.SequenceEqual(new[] { 2, 4, 6 }),
+        "Cooking Pot restore retains the captured Vanilla values");
+    VerifyUndoRedo(
+        "Cooking Pot 5/10/16 restore",
+        vanilla,
+        project,
+        strongerJson,
+        Json(project));
+    VerifySnapshotStateRoundTrip(
+        project,
+        ProgressionType.CookingPotFoodReduction,
+        3);
+    VerifyProfileStateRoundTrip(
+        project,
+        ProgressionType.CookingPotFoodReduction,
+        3);
+    _ = stronger;
+    Console.WriteLine("PASS Cooking Pot 5/10/16 preset, restore, history, and profiles");
 }
 
 static void VerifyPositiveRandomTraits()
@@ -5218,56 +5276,178 @@ static void VerifyLegacyValourSupported()
     Check(project.GameplayOperationStates.Single().ElementCount == 5,
         "legacy Valour redo restores expanded state");
     VerifyProfileStateRoundTrip(project, ProgressionType.ValourPoints, 5);
+
+    viewModel.RefreshFromProject();
+    viewModel.SelectedTentPreset = "High";
+    Check(viewModel.TentPresets.SequenceEqual(
+              new[] { "Vanilla", "Increased", "High" }) &&
+          viewModel.PreviewText.Contains("3 / 4 / 5", StringComparison.Ordinal),
+        "Valour exposes the ordered 3/4/5 Tent preset");
+    ProjectOperationResult high = ExecuteParty(
+        project,
+        service,
+        ProgressionType.ValourPoints,
+        viewModel.CreateSettings());
+    Check(high.Succeeded, "3/4/5 Tent preset applies");
+    CheckPartyValues(project, ProgressionType.ValourPoints, 3, 4, 5);
+    VerifyUndoRedo(
+        "3/4/5 Tent preset",
+        high,
+        project,
+        after,
+        Json(project));
+    VerifyProfileStateRoundTrip(project, ProgressionType.ValourPoints, 5);
 }
 
 static void VerifyLegacyValourCustom()
 {
+    foreach (((int Tier1, int Tier2, int Tier3) values, string preset) in new[]
+             {
+                 ((1, 2, 3), "Vanilla"),
+                 ((2, 3, 4), "Increased"),
+                 ((3, 4, 5), "High")
+             })
+    {
+        PartyEconomyDialogViewModel detected = new(
+            CreateValourProject(values.Tier1, values.Tier2, values.Tier3),
+            CreatePartyService(),
+            ProgressionType.ValourPoints);
+        Check(detected.SelectedTentPreset == preset,
+            $"Valour detects {preset} Tent values");
+    }
+
     ProjectModel project = CreateValourProject(3, 5, 8);
     AddLegacyPartyState(project, ProgressionType.ValourPoints);
     PartyEconomyService service = CreatePartyService();
+    string beforeDialog = ObservableProjectState(project);
     PartyEconomyDialogViewModel viewModel = new(
         project,
         service,
         ProgressionType.ValourPoints);
 
-    Check(viewModel.SelectedTentPreset == null && !viewModel.CanApply,
-        "legacy Valour custom current Tent values block implicit Apply");
+    Check(viewModel.SelectedTentPreset == "Custom" && viewModel.CanApply &&
+          viewModel.TentPresets.SequenceEqual(
+              new[] { "Custom", "Vanilla", "Increased", "High" }),
+        "valid unmatched Tent values are displayed as Custom and remain valid");
     Check(viewModel.PreviewText.Contains("3 / 5 / 8", StringComparison.Ordinal),
         "legacy Valour reports actual custom Tent values");
-    Check(viewModel.ValidationMessage.Contains("custom", StringComparison.OrdinalIgnoreCase),
-        "legacy Valour reports custom state clearly");
+    Check(string.IsNullOrWhiteSpace(viewModel.ValidationMessage) &&
+          ObservableProjectState(project) == beforeDialog,
+        "opening Valour with Custom Tent values does not mutate the project");
     CheckPartyValues(project, ProgressionType.ValourPoints, 3, 5, 8);
-
     viewModel.SelectedTentPreset = "Increased";
-    Check(viewModel.CanApply, "legacy Valour explicit preset enables Apply");
+    viewModel.SelectedTentPreset = "Custom";
+    CheckPartyValues(project, ProgressionType.ValourPoints, 3, 5, 8);
+    Check(viewModel.PreviewText.Contains("3 / 5 / 8", StringComparison.Ordinal),
+        "returning to Custom restores the preserved Tent values before Apply");
+
+    viewModel.MaximumValour = 20;
+    Check(viewModel.CanApply && viewModel.SelectedTentPreset == "Custom",
+        "Custom Tent values allow a Maximum Valour edit");
     string customJson = Json(project);
     ProjectOperationResult upgrade = ExecuteParty(
         project,
         service,
         ProgressionType.ValourPoints,
         viewModel.CreateSettings());
-    Check(upgrade.Succeeded, "legacy Valour custom upgrade applies explicitly");
+    PartyEconomySettings appliedSettings = service.GetSettings(
+        project, ProgressionType.ValourPoints);
+    Check(upgrade.Succeeded && appliedSettings.MaximumValour == 20 &&
+          appliedSettings.RestoredValour == 2 &&
+          upgrade.MutationResult.UpdatedProperties.Count == 1,
+        "Maximum Valour applies as the only property change");
     GameplayOperationStateModel state = project.GameplayOperationStates.Single();
     CheckPartyBaseline(state, 3, 5, 8);
-    CheckPartyValues(project, ProgressionType.ValourPoints, 2, 3, 4);
-    string increasedJson = Json(project);
+    CheckPartyValues(project, ProgressionType.ValourPoints, 3, 5, 8);
+    string appliedJson = Json(project);
     VerifyUndoRedo(
-        "legacy Valour custom upgrade",
+        "Valour Custom Tent preservation",
         upgrade,
         project,
         customJson,
-        increasedJson);
+        appliedJson);
+    VerifyProfileStateRoundTrip(project, ProgressionType.ValourPoints, 5);
+
+    ProjectModel reloaded = CreateValourProject(3, 5, 8);
+    reloaded.Sheets.Single(sheet => sheet.Name == "constant").Entries
+        .Single(entry => entry.Id == "ActionPointBaseMax").SourceEntry!["value"] = 20;
+    VerifyGameplayStateFileRoundTrip(
+        project, reloaded, ProgressionType.ValourPoints);
 
     viewModel.RefreshFromProject();
-    viewModel.ResetToGameDefaults();
-    Check(viewModel.CanApply, "legacy Valour baseline reset explicitly confirmed");
+    Check(viewModel.SelectedTentPreset == "Custom",
+        "Custom Tent detection survives operation refresh");
+    Check(viewModel.TryRestorePreviousValues(),
+        "Valour Custom baseline can be prepared for Restore Previous Values");
     ProjectOperationResult restore = ExecuteParty(
         project,
         service,
         ProgressionType.ValourPoints,
         viewModel.CreateSettings());
     Check(restore.Succeeded, "legacy Valour baseline restoration applies");
+    Check(service.GetSettings(project, ProgressionType.ValourPoints).MaximumValour == 14,
+        "Valour Restore Previous Values restores Maximum Valour");
     CheckPartyValues(project, ProgressionType.ValourPoints, 3, 5, 8);
+
+    foreach ((int? maximum, int? restored, string label) in new[]
+             {
+                 ((int?)null, (int?)7, "Restored Valour"),
+                 ((int?)18, (int?)9, "Maximum and Restored Valour")
+             })
+    {
+        ProjectModel independent = CreateValourProject(3, 5, 8);
+        PartyEconomyService independentService = CreatePartyService();
+        PartyEconomyDialogViewModel independentViewModel = new(
+            independent, independentService, ProgressionType.ValourPoints);
+        if (maximum.HasValue) independentViewModel.MaximumValour = maximum.Value;
+        if (restored.HasValue) independentViewModel.RestoredValour = restored.Value;
+        Check(independentViewModel.CanApply &&
+              independentViewModel.SelectedTentPreset == "Custom",
+            $"Custom Tent values allow {label} edits");
+        ProjectOperationResult result = ExecuteParty(
+            independent,
+            independentService,
+            ProgressionType.ValourPoints,
+            independentViewModel.CreateSettings());
+        Check(result.Succeeded, $"{label} edit applies with Custom Tent values");
+        CheckPartyValues(independent, ProgressionType.ValourPoints, 3, 5, 8);
+    }
+
+    foreach ((string preset, int[] expected) in new[]
+             {
+                 ("Vanilla", new[] { 1, 2, 3 }),
+                 ("Increased", new[] { 2, 3, 4 }),
+                 ("High", new[] { 3, 4, 5 })
+             })
+    {
+        ProjectModel replacement = CreateValourProject(3, 5, 8);
+        PartyEconomyService replacementService = CreatePartyService();
+        PartyEconomyDialogViewModel replacementViewModel = new(
+            replacement, replacementService, ProgressionType.ValourPoints);
+        replacementViewModel.SelectedTentPreset = preset;
+        ProjectOperationResult result = ExecuteParty(
+            replacement,
+            replacementService,
+            ProgressionType.ValourPoints,
+            replacementViewModel.CreateSettings());
+        Check(result.Succeeded, $"Custom Tent to {preset} applies explicitly");
+        CheckPartyValues(replacement, ProgressionType.ValourPoints, expected);
+    }
+
+    PartyEconomyDialogViewModel invalidOrder = new(
+        CreateValourProject(5, 3, 8),
+        CreatePartyService(),
+        ProgressionType.ValourPoints);
+    Check(invalidOrder.SelectedTentPreset == null && !invalidOrder.CanApply &&
+          !string.IsNullOrWhiteSpace(invalidOrder.ValidationMessage),
+        "invalid Tent tier ordering remains blocked");
+
+    PartyEconomyDialogViewModel invalidRange = new(
+        CreateValourProject(3, 5, 1001),
+        CreatePartyService(),
+        ProgressionType.ValourPoints);
+    Check(invalidRange.SelectedTentPreset == null && !invalidRange.CanApply,
+        "out-of-range Tent values remain blocked");
 }
 
 static void VerifyLegacyCarrying()
@@ -5305,53 +5485,236 @@ static void VerifyLegacyCarryingSupported()
 
 static void VerifyLegacyCarryingCustom()
 {
+    foreach (((int Tier1Base, int Tier2Base, int Tier3Base,
+               int Tier2Trait, int Tier3Trait) values, string preset) in new[]
+             {
+                 ((10, 10, 10, 5, 10), "Vanilla"),
+                 ((20, 40, 60, 20, 30), "Increased")
+             })
+    {
+        PartyEconomyDialogViewModel detected = new(
+            CreateCarryingProject(
+                values.Tier1Base,
+                values.Tier2Base,
+                values.Tier3Base,
+                values.Tier2Trait,
+                values.Tier3Trait),
+            CreatePartyService(),
+            ProgressionType.CarryingCapacity);
+        Check(detected.SelectedHitchingPostPreset == preset,
+            $"Carrying detects {preset} Hitching Post values");
+    }
+
     ProjectModel project = CreateCarryingProject(11, 22, 33, 7, 14);
     AddLegacyPartyState(project, ProgressionType.CarryingCapacity);
     PartyEconomyService service = CreatePartyService();
+    string beforeDialog = ObservableProjectState(project);
     PartyEconomyDialogViewModel viewModel = new(
         project,
         service,
         ProgressionType.CarryingCapacity);
 
-    Check(viewModel.SelectedHitchingPostPreset == null && !viewModel.CanApply,
-        "legacy Carrying custom current values block implicit Apply");
+    Check(viewModel.SelectedHitchingPostPreset == "Custom" && viewModel.CanApply &&
+          viewModel.HitchingPostPresets.SequenceEqual(
+              new[] { "Custom", "Vanilla", "Increased" }),
+        "valid unmatched Hitching Post values are displayed as Custom and remain valid");
     Check(viewModel.PreviewText.Contains("11 / 22 / 33", StringComparison.Ordinal) &&
           viewModel.PreviewText.Contains("0 / 7 / 14", StringComparison.Ordinal),
         "legacy Carrying reports actual custom values");
-    Check(viewModel.ValidationMessage.Contains("custom", StringComparison.OrdinalIgnoreCase),
-        "legacy Carrying reports custom state clearly");
+    Check(string.IsNullOrWhiteSpace(viewModel.ValidationMessage) &&
+          ObservableProjectState(project) == beforeDialog,
+        "opening Carrying with Custom Hitching Post values does not mutate the project");
     CheckCarryingValues(project, 11, 22, 33, 7, 14);
-
     viewModel.SelectedHitchingPostPreset = "Increased";
-    Check(viewModel.CanApply, "legacy Carrying explicit preset enables Apply");
+    viewModel.SelectedHitchingPostPreset = "Custom";
+    CheckCarryingValues(project, 11, 22, 33, 7, 14);
+    Check(viewModel.PreviewText.Contains("11 / 22 / 33", StringComparison.Ordinal) &&
+          viewModel.PreviewText.Contains("0 / 7 / 14", StringComparison.Ordinal),
+        "returning to Custom restores preserved Hitching Post values before Apply");
+
+    viewModel.PonyStartingCapacity = 75;
+    Check(viewModel.CanApply && viewModel.SelectedHitchingPostPreset == "Custom",
+        "Custom Hitching Post values allow a Pony Capacity edit");
     string customJson = Json(project);
     ProjectOperationResult upgrade = ExecuteParty(
         project,
         service,
         ProgressionType.CarryingCapacity,
         viewModel.CreateSettings());
-    Check(upgrade.Succeeded, "legacy Carrying custom upgrade applies explicitly");
+    PartyEconomySettings appliedSettings = service.GetSettings(
+        project, ProgressionType.CarryingCapacity);
+    Check(upgrade.Succeeded && appliedSettings.SaddlebagCapacity == 10 &&
+          appliedSettings.PonyStartingCapacity == 75 &&
+          upgrade.MutationResult.UpdatedProperties.Count == 1,
+        "Pony Capacity applies as the only property change");
     GameplayOperationStateModel state = project.GameplayOperationStates.Single();
     CheckCarryingBaseline(state, 11, 22, 33, 7, 14);
-    CheckCarryingValues(project, 20, 40, 60, 20, 30);
-    string increasedJson = Json(project);
+    CheckCarryingValues(project, 11, 22, 33, 7, 14);
+    string appliedJson = Json(project);
     VerifyUndoRedo(
-        "legacy Carrying custom upgrade",
+        "Carrying Custom Hitching Post preservation",
         upgrade,
         project,
         customJson,
-        increasedJson);
+        appliedJson);
+    VerifyProfileStateRoundTrip(project, ProgressionType.CarryingCapacity, 7);
 
     viewModel.RefreshFromProject();
-    viewModel.ResetToGameDefaults();
-    Check(viewModel.CanApply, "legacy Carrying baseline reset explicitly confirmed");
+    Check(viewModel.SelectedHitchingPostPreset == "Custom",
+        "Custom Hitching Post detection survives operation refresh");
+    Check(viewModel.TryRestorePreviousValues(),
+        "Carrying Custom baseline can be prepared for Restore Previous Values");
     ProjectOperationResult restore = ExecuteParty(
         project,
         service,
         ProgressionType.CarryingCapacity,
         viewModel.CreateSettings());
     Check(restore.Succeeded, "legacy Carrying baseline restoration applies");
+    Check(service.GetSettings(project, ProgressionType.CarryingCapacity)
+              .PonyStartingCapacity == 55,
+        "Carrying Restore Previous Values restores Pony Capacity");
     CheckCarryingValues(project, 11, 22, 33, 7, 14);
+
+    foreach ((int? saddlebag, int? pony, string label) in new[]
+             {
+                 ((int?)25, (int?)null, "Saddlebag Capacity"),
+                 ((int?)30, (int?)80, "Saddlebag and Pony Capacity")
+             })
+    {
+        ProjectModel independent = CreateCarryingProject(11, 22, 33, 7, 14);
+        PartyEconomyService independentService = CreatePartyService();
+        PartyEconomyDialogViewModel independentViewModel = new(
+            independent, independentService, ProgressionType.CarryingCapacity);
+        if (saddlebag.HasValue)
+            independentViewModel.SaddlebagCapacity = saddlebag.Value;
+        if (pony.HasValue)
+            independentViewModel.PonyStartingCapacity = pony.Value;
+        Check(independentViewModel.CanApply &&
+              independentViewModel.SelectedHitchingPostPreset == "Custom",
+            $"Custom Hitching Post values allow {label} edits");
+        ProjectOperationResult result = ExecuteParty(
+            independent,
+            independentService,
+            ProgressionType.CarryingCapacity,
+            independentViewModel.CreateSettings());
+        Check(result.Succeeded,
+            $"{label} edit applies with Custom Hitching Post values");
+        CheckCarryingValues(independent, 11, 22, 33, 7, 14);
+    }
+
+    foreach ((string preset, int[] expected) in new[]
+             {
+                 ("Vanilla", new[] { 10, 10, 10, 5, 10 }),
+                 ("Increased", new[] { 20, 40, 60, 20, 30 })
+             })
+    {
+        ProjectModel replacement = CreateCarryingProject(11, 22, 33, 7, 14);
+        PartyEconomyService replacementService = CreatePartyService();
+        PartyEconomyDialogViewModel replacementViewModel = new(
+            replacement, replacementService, ProgressionType.CarryingCapacity);
+        replacementViewModel.SelectedHitchingPostPreset = preset;
+        ProjectOperationResult result = ExecuteParty(
+            replacement,
+            replacementService,
+            ProgressionType.CarryingCapacity,
+            replacementViewModel.CreateSettings());
+        Check(result.Succeeded,
+            $"Custom Hitching Post to {preset} applies explicitly");
+        CheckCarryingValues(
+            replacement,
+            expected[0], expected[1], expected[2], expected[3], expected[4]);
+    }
+
+    PartyEconomyDialogViewModel invalidBase = new(
+        CreateCarryingProject(30, 20, 40, 7, 14),
+        CreatePartyService(),
+        ProgressionType.CarryingCapacity);
+    Check(invalidBase.SelectedHitchingPostPreset == null && !invalidBase.CanApply,
+        "invalid Hitching Post base ordering remains blocked");
+
+    PartyEconomyDialogViewModel invalidTrait = new(
+        CreateCarryingProject(11, 22, 33, 14, 7),
+        CreatePartyService(),
+        ProgressionType.CarryingCapacity);
+    Check(invalidTrait.SelectedHitchingPostPreset == null && !invalidTrait.CanApply,
+        "invalid Hitching Post trait ordering remains blocked");
+
+    PartyEconomyDialogViewModel invalidRange = new(
+        CreateCarryingProject(11, 22, 1001, 7, 14),
+        CreatePartyService(),
+        ProgressionType.CarryingCapacity);
+    Check(invalidRange.SelectedHitchingPostPreset == null && !invalidRange.CanApply,
+        "out-of-range Hitching Post values remain blocked");
+
+    ProjectModel invalidTierOneProject =
+        CreateCarryingProject(11, 22, 33, 7, 14);
+    string invalidTierOneBefore = ObservableProjectState(invalidTierOneProject);
+    ProjectOperationResult invalidTierOne = ExecuteParty(
+        invalidTierOneProject,
+        CreatePartyService(),
+        ProgressionType.CarryingCapacity,
+        new PartyEconomySettings
+        {
+            SaddlebagCapacity = 10,
+            PonyStartingCapacity = 55,
+            HitchingPostTier1Base = 11,
+            HitchingPostTier2Base = 22,
+            HitchingPostTier3Base = 33,
+            HitchingPostTier1Trait = 1,
+            HitchingPostTier2Trait = 7,
+            HitchingPostTier3Trait = 14
+        });
+    Check(!invalidTierOne.Succeeded &&
+          ObservableProjectState(invalidTierOneProject) == invalidTierOneBefore,
+        "nonzero Tier 1 Hitching Post trait is rejected before mutation");
+}
+
+static void VerifyPartyEconomyCustomCrossSection()
+{
+    ProjectModel project = CreateCombinedPartyProject();
+    PartyEconomyService service = CreatePartyService();
+    PartyEconomyDialogViewModel valour = new(
+        project, service, ProgressionType.ValourPoints);
+    PartyEconomyDialogViewModel carrying = new(
+        project, service, ProgressionType.CarryingCapacity);
+    Check(valour.SelectedTentPreset == "Custom" &&
+          carrying.SelectedHitchingPostPreset == "Custom",
+        "combined project detects both valid Custom tier sets");
+
+    string before = Json(project);
+    valour.MaximumValour = 20;
+    ProjectOperationResult valourResult = ExecuteParty(
+        project, service, ProgressionType.ValourPoints, valour.CreateSettings());
+    string afterValour = Json(project);
+    carrying.PonyStartingCapacity = 75;
+    ProjectOperationResult carryingResult = ExecuteParty(
+        project, service, ProgressionType.CarryingCapacity, carrying.CreateSettings());
+    string afterBoth = Json(project);
+
+    Check(valourResult.Succeeded && carryingResult.Succeeded &&
+          valourResult.MutationResult.UpdatedProperties.Count == 1 &&
+          carryingResult.MutationResult.UpdatedProperties.Count == 1 &&
+          valourResult.MutationResult.GameplayOperationStateRollbackRecords.Count == 1 &&
+          carryingResult.MutationResult.GameplayOperationStateRollbackRecords.Count == 1,
+        "combined Custom project records one atomic action per existing operation type");
+    CheckPartyValues(project, ProgressionType.ValourPoints, 3, 5, 8);
+    CheckCarryingValues(project, 11, 22, 33, 7, 14);
+
+    EditHistoryService history = new();
+    ProjectOperationTransactionService transactions = new();
+    history.Record(new ProjectOperationHistoryAction(
+        "Custom Tent Maximum Valour", valourResult.MutationResult, transactions));
+    history.Record(new ProjectOperationHistoryAction(
+        "Custom Hitching Post Pony Capacity", carryingResult.MutationResult, transactions));
+    Check(history.Undo() && Json(project) == afterValour,
+        "combined Custom project first Undo restores Carrying only");
+    Check(history.Undo() && Json(project) == before,
+        "combined Custom project second Undo restores Valour");
+    Check(history.Redo() && Json(project) == afterValour,
+        "combined Custom project first Redo reapplies Valour");
+    Check(history.Redo() && Json(project) == afterBoth,
+        "combined Custom project second Redo reapplies Carrying");
+    Console.WriteLine("PASS Party Economy combined Custom preservation and atomic history");
 }
 
 static void VerifySnapshotPathCompatibility()
@@ -5521,6 +5884,103 @@ static void VerifyLegacyProfileReconciliation()
     Console.WriteLine("PASS legacy profile reconciliation and ambiguity safety");
 }
 
+static void VerifyStartingResourcesHemp()
+{
+    ProjectModel project = CreateProject(
+        Sheet("item",
+            StartingShared("Gold", 100),
+            StartingShared("Bread", 10),
+            StartingShared("Apple", 5),
+            new JObject { ["id"] = "IronOre" },
+            new JObject { ["id"] = "Wood" },
+            new JObject { ["id"] = "Cloth" },
+            new JObject { ["id"] = "Hemp" }),
+        Sheet("startChoice",
+            StartingOrigin("OriginA", "PatternA"),
+            StartingOrigin("OriginB", "PatternB")),
+        Sheet("unitPattern",
+            new JObject { ["id"] = "PatternA" },
+            new JObject { ["id"] = "PatternB" }));
+    ProjectMutationService mutation = new();
+    GameplayOperationStateService states = new(mutation);
+    StartingResourcesService service = new(mutation, states);
+    service.Initialize(project);
+
+    StartingResourcesSettings settings = new()
+    {
+        Krowns = 25,
+        Bread = 5,
+        Apples = 10,
+        IronOre = 2,
+        Wood = 3,
+        Cloth = 4,
+        Hemp = 7
+    };
+    ProjectOperationResult applied = new ProjectOperationService().Execute(
+        new StartingResourcesOperation(service, settings),
+        project);
+    Check(applied.Succeeded &&
+          project.GameplayOperationStates.Single().StartingResources?.Hemp == 7,
+        "Starting Resources state captures Hemp");
+
+    foreach (EntryModel origin in project.Sheets.Single(sheet => sheet.Name == "startChoice").Entries)
+    {
+        JArray items = (JArray)origin.SourceEntry!.SelectToken("props.items")!;
+        JObject hemp = items.OfType<JObject>().Single(item =>
+            item.Value<string>("item") == "Hemp");
+        Check(hemp.Value<int>("count") == 7 &&
+              hemp.Value<bool>("stolen") == false &&
+              hemp.Value<bool>("hidden") == false &&
+              items.OfType<JObject>().Any(item => item.Value<string>("item") == "UnknownItem"),
+            $"Starting Resources creates exact Hemp and preserves unknown items for {origin.Id}");
+    }
+
+    string appliedJson = Json(project);
+    ProjectOperationResult restored = new ProjectOperationService().Execute(
+        new StartingResourcesOperation(service, new StartingResourcesSettings()),
+        project);
+    Check(restored.Succeeded && project.Sheets.Single(sheet => sheet.Name == "startChoice")
+            .Entries.All(origin =>
+                ((JArray)origin.SourceEntry!.SelectToken("props.items")!)
+                    .OfType<JObject>().All(item => item.Value<string>("item") != "Hemp")),
+        "Starting Resources zero settings restore structural Hemp absence");
+    string restoredJson = Json(project);
+    VerifyUndoRedo("Starting Resources Hemp restore", restored, project, appliedJson, restoredJson);
+
+    StartingResourcesSettings legacy = Newtonsoft.Json.JsonConvert.DeserializeObject<StartingResourcesSettings>(
+        "{\"Krowns\":1,\"Bread\":2,\"Apples\":3,\"IronOre\":4,\"Wood\":5,\"Cloth\":6}")!;
+    Check(legacy.Hemp == 0, "legacy Starting Resources state defaults missing Hemp to zero");
+
+    static JObject StartingShared(string id, int value) => new()
+    {
+        ["id"] = id,
+        ["props"] = new JObject
+        {
+            ["startQuantity"] = value,
+            ["startQuantityDifficultyBonus"] = 0
+        }
+    };
+
+    static JObject StartingOrigin(string id, string pattern) => new()
+    {
+        ["id"] = id,
+        ["desc"] = id,
+        ["introText"] = "Intro",
+        ["props"] = new JObject
+        {
+            ["pattern"] = pattern,
+            ["items"] = new JArray(new JObject
+            {
+                ["item"] = "UnknownItem",
+                ["count"] = 1,
+                ["unknown"] = true
+            })
+        }
+    };
+
+    Console.WriteLine("PASS Starting Resources Hemp, structure, legacy state, and history");
+}
+
 static void VerifyApplyFeedbackState()
 {
     GameplayApplyFeedbackViewModel feedback = new();
@@ -5549,6 +6009,30 @@ static void VerifyApplyFeedbackState()
     startingResources.SetInputBindingValid(false);
     Check(!startingResources.ApplyFeedback.IsVisible,
         "Starting Resources clears stale feedback for invalid input");
+    startingResources.SetInputBindingValid(true);
+    startingResources.ClearExtras();
+    startingResources.AddToAllFood(5);
+    Check(startingResources.Bread == 5 && startingResources.Apples == 5 &&
+          startingResources.Krowns == 0 && startingResources.IronOre == 0 &&
+          startingResources.Wood == 0 && startingResources.Cloth == 0 &&
+          startingResources.Hemp == 0,
+        "Starting Resources Food shortcut updates only Bread and Apples");
+    startingResources.AddToAllFood(10);
+    Check(startingResources.Bread == 15 && startingResources.Apples == 15,
+        "Starting Resources +10 Food updates both Food values");
+    startingResources.AddToAllMaterials(5);
+    Check(startingResources.IronOre == 5 && startingResources.Wood == 5 &&
+          startingResources.Cloth == 5 && startingResources.Hemp == 5 &&
+          startingResources.Bread == 15 && startingResources.Apples == 15 &&
+          startingResources.Krowns == 0,
+        "Starting Resources Materials shortcut includes Hemp and excludes Food and Currency");
+    startingResources.ClearExtras();
+    Check(startingResources.CreateSettings().DeepClone() is StartingResourcesSettings cleared &&
+          cleared.Krowns == 0 && cleared.Bread == 0 && cleared.Apples == 0 &&
+          cleared.IronOre == 0 && cleared.Wood == 0 && cleared.Cloth == 0 &&
+          cleared.Hemp == 0 &&
+          StartingResourcesSettings.MaximumExtra == 1_000_000,
+        "Starting Resources Clear resets all seven values and preserves the approved maximum");
 
     PartyEconomyDialogViewModel partyEconomy = new(
         CreateValourProject(1, 2, 3),
@@ -5668,6 +6152,10 @@ static void VerifyApplyFeedbackState()
     string compatibilityXaml = File.ReadAllText(compatibilityWindowPath!);
     string mainXaml = File.ReadAllText(mainWindowPath!);
     string mainViewModelSource = File.ReadAllText(mainViewModelPath!);
+    string startingResourcesXaml = File.ReadAllText(Path.Combine(
+        Path.GetDirectoryName(mainWindowPath!)!,
+        "Views",
+        "StartingResourcesDialog.xaml"));
     Check(compatibilityXaml.Contains("ShowInTaskbar=\"True\"", StringComparison.Ordinal) &&
           compatibilityXaml.Contains("WindowStartupLocation=\"CenterOwner\"", StringComparison.Ordinal) &&
           mainXaml.Contains("Header=\"_Check Compatibility\"", StringComparison.Ordinal) &&
@@ -5680,6 +6168,14 @@ static void VerifyApplyFeedbackState()
               "Command=\"{Binding SetWartalesLocationCommand}\"",
               StringComparison.Ordinal),
         "Tools exposes Wartales Location through the shared resolver command");
+    Check(startingResourcesXaml.Contains("Header=\"Currency\"", StringComparison.Ordinal) &&
+          startingResourcesXaml.Contains("Header=\"Food\"", StringComparison.Ordinal) &&
+          startingResourcesXaml.Contains("Header=\"Materials\"", StringComparison.Ordinal) &&
+          startingResourcesXaml.Contains("Text=\"{Binding Hemp", StringComparison.Ordinal) &&
+          startingResourcesXaml.Contains("+5 to All Food", StringComparison.Ordinal) &&
+          startingResourcesXaml.Contains("+10 to All Food", StringComparison.Ordinal) &&
+          !startingResourcesXaml.Contains("Rope", StringComparison.Ordinal),
+        "Starting Resources UI groups seven approved resources and excludes Rope");
     Check(mainViewModelSource.Contains(
               "Owner = GetMainWindowOwner()",
               StringComparison.Ordinal) &&
@@ -5705,6 +6201,20 @@ static void VerifyCatalogCoverage()
         .Where(GameplayPresetCatalog.IsSupported)
         .ToArray();
     Check(supported.Length == 17, "catalog contains seventeen shared preset tools");
+
+    GameplayPresetDefinition lectern = GameplayPresetCatalog.Get(
+        ProgressionType.LecternKnowledgeGain);
+    Check(lectern.Presets.Select(preset => preset.ValueSummary).SequenceEqual(
+            new[] { "1×", "2×", "3×", "4×", "5×" }) &&
+          lectern.Presets[3].Values[0]!.Value<int>() == 100,
+        "Lectern presets include exact ordered 4× values without remapping existing choices");
+
+    GameplayPresetDefinition cooking = GameplayPresetCatalog.Get(
+        ProgressionType.CookingPotFoodReduction);
+    Check(cooking.Presets.Select(preset => preset.Values.ToObject<int[]>()!)
+            .Any(values => values.SequenceEqual(new[] { 5, 10, 16 })) &&
+          cooking.Presets.Count == 5,
+        "Cooking Pot presets include the unique 5/10/16 tier table");
 
     foreach (ProgressionType type in supported)
     {
@@ -6126,6 +6636,31 @@ static ProjectModel CreateCarryingProject(
             PersonalBonusEntry("PonyAuge", tier1Base, null),
             PersonalBonusEntry("PonyAugeT2", tier2Base, tier2Trait),
             PersonalBonusEntry("PonyAugeT3", tier3Base, tier3Trait)),
+        Sheet(
+            "unitClass",
+            ArrayEntry(
+                "Pony",
+                "stats",
+                new JObject { ["attribute"] = "Transport", ["value"] = 55 })));
+
+static ProjectModel CreateCombinedPartyProject() =>
+    CreateProject(
+        Sheet(
+            "constant",
+            ScalarEntry("ActionPointBaseMax", 14),
+            ScalarEntry("ActionPointGainPerSleep", 2)),
+        Sheet(
+            "item",
+            BonusEntry("Tent", "props", "bonuses", "bonus", "ActionPoint", 3),
+            BonusEntry("TentT2", "props", "bonuses", "bonus", "ActionPoint", 5),
+            BonusEntry("TentT3", "props", "bonuses", "bonus", "ActionPoint", 8),
+            ArrayEntry(
+                "AnimAccCarriage",
+                "baseBonus",
+                new JObject { ["attribute"] = "Transport", ["value"] = 10 }),
+            PersonalBonusEntry("PonyAuge", 11, null),
+            PersonalBonusEntry("PonyAugeT2", 22, 7),
+            PersonalBonusEntry("PonyAugeT3", 33, 14)),
         Sheet(
             "unitClass",
             ArrayEntry(

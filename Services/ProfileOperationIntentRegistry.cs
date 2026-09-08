@@ -186,8 +186,16 @@ public sealed class ProfileOperationIntentRegistry
         }
 
         JObject? stateSettings = registration.ProjectState(state);
+        JObject? requestSettings = request.Settings;
+        if (state.OperationType == ProgressionType.StartingResources &&
+            requestSettings != null &&
+            requestSettings["hemp"] == null)
+        {
+            requestSettings = (JObject)requestSettings.DeepClone();
+            requestSettings["hemp"] = 0;
+        }
         if (stateSettings == null ||
-            !JToken.DeepEquals(stateSettings, request.Settings))
+            !JToken.DeepEquals(stateSettings, requestSettings))
         {
             throw new InvalidOperationException(
                 "The exact-source gameplay state settings do not match " +
@@ -424,7 +432,8 @@ public sealed class ProfileOperationIntentRegistry
             ["apples"] = settings.Apples,
             ["ironOre"] = settings.IronOre,
             ["wood"] = settings.Wood,
-            ["cloth"] = settings.Cloth
+            ["cloth"] = settings.Cloth,
+            ["hemp"] = settings.Hemp
         };
     }
 
@@ -527,14 +536,25 @@ public sealed class ProfileOperationIntentRegistry
 
     private static void ValidateStartingResources(JObject? settings)
     {
-        ValidateExactProperties(
-            settings,
-            "krowns",
-            "bread",
-            "apples",
-            "ironOre",
-            "wood",
-            "cloth");
+        if (settings == null)
+        {
+            throw new InvalidOperationException(
+                "The gameplay-tool request settings are missing.");
+        }
+
+        HashSet<string> required = new(StringComparer.Ordinal)
+        {
+            "krowns", "bread", "apples", "ironOre", "wood", "cloth"
+        };
+        HashSet<string> actual = settings.Properties()
+            .Select(property => property.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        if (!required.IsSubsetOf(actual) ||
+            actual.Except(required).Any(name => name != "hemp"))
+        {
+            throw new InvalidOperationException(
+                "The gameplay-tool request contains missing or unsupported settings.");
+        }
 
         StartingResourcesSettings values = new()
         {
@@ -543,7 +563,10 @@ public sealed class ProfileOperationIntentRegistry
             Apples = RequiredInt(settings, "apples"),
             IronOre = RequiredInt(settings, "ironOre"),
             Wood = RequiredInt(settings, "wood"),
-            Cloth = RequiredInt(settings, "cloth")
+            Cloth = RequiredInt(settings, "cloth"),
+            Hemp = settings["hemp"] == null
+                ? 0
+                : RequiredInt(settings, "hemp")
         };
         values.Validate();
     }

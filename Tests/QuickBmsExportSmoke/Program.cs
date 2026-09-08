@@ -46,6 +46,8 @@ try
 {
     TestParser();
     TestWorkspace();
+    TestQuickBmsLocation();
+    await TestQuickBmsProductionRoutingAsync();
     TestExportReparseMatrix();
     TestPackagePreflight();
     TestProgressAndUiContract();
@@ -396,6 +398,9 @@ void TestProgressAndUiContract()
     int openIndex = mainXaml.IndexOf("OpenCommand", exportIndex, StringComparison.Ordinal);
     Check(importIndex >= 0 && exportIndex > importIndex && openIndex > exportIndex,
         "File menu Import Export Open ordering");
+    Check(mainXaml.Contains("Header=\"_QuickBMS Location...\"", StringComparison.Ordinal) &&
+          mainXaml.Contains("Command=\"{Binding SetQuickBmsLocationCommand}\"", StringComparison.Ordinal),
+        "Tools exposes the persistent QuickBMS folder command");
 
     string dialogXaml = File.ReadAllText(Path.Combine(
         repository, "Views", "QuickBmsExportProgressDialog.xaml"));
@@ -415,6 +420,206 @@ void TestProgressAndUiContract()
     Check(mainViewModel.Contains("!IsQuickBmsOperationInProgress", StringComparison.Ordinal) &&
           mainViewModel.Contains("QuickBmsOperationKind.Importing", StringComparison.Ordinal),
         "shared QuickBMS gate wiring");
+}
+
+void TestQuickBmsLocation()
+{
+    string root = Path.Combine(testRoot, "quickbms-location");
+    string fallbackDirectory = Path.Combine(root, "Desktop", "quickbms");
+    string savedDirectory = Path.Combine(root, "Selected Toolchain");
+    string invalidDirectory = Path.Combine(root, "Invalid Toolchain");
+    string locationFile = Path.Combine(root, "Documents", "location.json");
+    CreateToolchain(fallbackDirectory);
+    CreateToolchain(savedDirectory);
+    Directory.CreateDirectory(invalidDirectory);
+    File.WriteAllText(Path.Combine(invalidDirectory, "quickbms.exe"), "fixture");
+
+    QuickBmsLocationService service = new(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService());
+    QuickBmsLocationResolution fallback = service.Resolve();
+    Check(fallback.Toolchain?.ExecutablePath ==
+              Path.GetFullPath(Path.Combine(fallbackDirectory, "quickbms.exe")) &&
+          fallback.Toolchain.ScriptPath ==
+              Path.GetFullPath(Path.Combine(fallbackDirectory, "Shiro_Games_PAK_script.bms")),
+        "QuickBMS Desktop fallback resolves both exact files when no choice is saved");
+
+    QuickBmsToolchainInfo selected = service.ValidateAndRemember(savedDirectory);
+    string savedDocument = File.ReadAllText(locationFile);
+    QuickBmsLocationResolution saved = new QuickBmsLocationService(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService()).Resolve();
+    Check(saved.Toolchain == selected && savedDocument.Contains("Selected Toolchain", StringComparison.Ordinal),
+        "valid QuickBMS selection persists and survives service reconstruction");
+
+    CheckThrows(() => service.ValidateAndRemember(invalidDirectory),
+        "QuickBMS folder missing the Shiro script is rejected");
+    Check(File.ReadAllText(locationFile) == savedDocument,
+        "invalid QuickBMS selection preserves the prior valid saved location");
+
+    File.Delete(Path.Combine(savedDirectory, "quickbms.exe"));
+    QuickBmsLocationResolution recovered = service.Resolve();
+    Check(recovered.Toolchain?.ExecutablePath ==
+              Path.GetFullPath(Path.Combine(fallbackDirectory, "quickbms.exe")),
+        "invalid saved QuickBMS folder falls back to the historical Desktop location");
+
+    QuickBmsImportOptions applied = service.Apply(
+        QuickBmsImportOptions.CreateDefault(),
+        recovered.Toolchain!);
+    Check(applied.QuickBmsExecutablePath == recovered.Toolchain!.ExecutablePath &&
+          applied.ShiroScriptPath == recovered.Toolchain.ScriptPath,
+        "resolved QuickBMS folder updates both runtime paths together");
+
+    static void CreateToolchain(string directory)
+    {
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "quickbms.exe"), "fixture executable");
+        File.WriteAllText(Path.Combine(directory, "Shiro_Games_PAK_script.bms"), "fixture script");
+    }
+}
+
+async Task TestQuickBmsProductionRoutingAsync()
+{
+    string root = Path.Combine(testRoot, "quickbms-production-routing");
+    string selectedDirectory = Path.Combine(root, "Selected Toolchain");
+    string fallbackDirectory = Path.Combine(root, "Desktop", "quickbms");
+    string locationFile = Path.Combine(root, "Documents", "location.json");
+    string languagePath = Path.Combine(root, "Language Data");
+    string installationDirectory = CreateValidWartalesInstallation(
+        Path.Combine(root, "Wartales"));
+    Directory.CreateDirectory(selectedDirectory);
+    Directory.CreateDirectory(fallbackDirectory);
+    File.WriteAllText(
+        Path.Combine(selectedDirectory, "quickbms.exe"),
+        "selected executable");
+    File.WriteAllText(
+        Path.Combine(selectedDirectory, "Shiro_Games_PAK_script.bms"),
+        "selected script");
+    File.WriteAllText(
+        Path.Combine(fallbackDirectory, "quickbms.exe"),
+        "fallback executable");
+    File.WriteAllText(
+        Path.Combine(fallbackDirectory, "Shiro_Games_PAK_script.bms"),
+        "fallback script");
+
+    QuickBmsLocationService writer = new(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService());
+    _ = writer.ValidateAndRemember(selectedDirectory);
+    QuickBmsLocationService reconstructed = new(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService());
+    QuickBmsImportOptions defaults = QuickBmsImportOptions.CreateDefault();
+    QuickBmsImportOptions productionOptions = new()
+    {
+        WartalesInstallationDirectory = installationDirectory,
+        QuickBmsExecutablePath = defaults.QuickBmsExecutablePath,
+        ShiroScriptPath = defaults.ShiroScriptPath,
+        StagingRootDirectory = Path.Combine(root, "Staging"),
+        ProcessTimeout = TimeSpan.FromSeconds(5)
+    };
+    JsonDataService json = new();
+    MainViewModel viewModel = CreateMainViewModel(
+        json,
+        new UiFileDialogs(),
+        new UiMessages(),
+        languagePath,
+        productionOptions);
+    viewModel.UseQuickBmsLocationServiceForTesting(reconstructed);
+
+    CapturingFailureRunner runner = new();
+    viewModel.UseQuickBmsImportServiceForTesting(
+        new QuickBmsImportService(
+            json,
+            new WartalesInstallationService(),
+            new QuickBmsToolchainService(),
+            runner,
+            new ExtractionWorkspaceService(),
+            new FileFingerprintService()));
+
+    _ = await viewModel.ImportFromWartalesAsync();
+    Check(runner.Requests.Count == 1 &&
+          runner.Requests[0].ExecutablePath == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "quickbms.exe")) &&
+          runner.Requests[0].Arguments[0] == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "Shiro_Games_PAK_script.bms")),
+        "persisted QuickBMS folder reaches Import production routing and overrides Desktop fallback");
+
+    _ = await viewModel.ImportCurrentWartalesAsGoldenAsync();
+    Check(runner.Requests.Count == 2 &&
+          runner.Requests[1].ExecutablePath == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "quickbms.exe")) &&
+          runner.Requests[1].Arguments[0] == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "Shiro_Games_PAK_script.bms")),
+        "persisted QuickBMS folder reaches detached Golden production routing");
+
+}
+
+async Task TestQuickBmsExportProductionRoutingAsync(string uiRoot)
+{
+    string root = Path.Combine(uiRoot, "quickbms-export-routing");
+    string selectedDirectory = Path.Combine(root, "Selected Toolchain");
+    string fallbackDirectory = Path.Combine(root, "Desktop", "quickbms");
+    string locationFile = Path.Combine(root, "Documents", "location.json");
+    Directory.CreateDirectory(selectedDirectory);
+    Directory.CreateDirectory(fallbackDirectory);
+    foreach (string directory in new[] { selectedDirectory, fallbackDirectory })
+    {
+        File.WriteAllText(Path.Combine(directory, "quickbms.exe"), directory);
+        File.WriteAllText(
+            Path.Combine(directory, "Shiro_Games_PAK_script.bms"),
+            directory);
+    }
+
+    QuickBmsLocationService writer = new(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService());
+    _ = writer.ValidateAndRemember(selectedDirectory);
+    QuickBmsLocationService reconstructed = new(
+        locationFile,
+        fallbackDirectory,
+        new QuickBmsToolchainService());
+    QuickBmsImportOptions defaults = QuickBmsImportOptions.CreateDefault();
+    string installationDirectory = CreateValidWartalesInstallation(
+        Path.Combine(root, "Wartales"));
+    QuickBmsImportOptions productionOptions = new()
+    {
+        WartalesInstallationDirectory = installationDirectory,
+        QuickBmsExecutablePath = defaults.QuickBmsExecutablePath,
+        ShiroScriptPath = defaults.ShiroScriptPath,
+        StagingRootDirectory = Path.Combine(root, "Staging")
+    };
+    JsonDataService json = new();
+    MainViewModel viewModel = CreateMainViewModel(
+        json,
+        new UiFileDialogs(),
+        new UiMessages(),
+        Path.Combine(root, "Language Data"),
+        productionOptions);
+    viewModel.UseQuickBmsLocationServiceForTesting(reconstructed);
+    string sourcePath = Path.Combine(root, "source.cdb");
+    File.WriteAllText(sourcePath, BaseJson(5));
+    viewModel.PromoteLoadedProject(
+        json.LoadReferenceProject(sourcePath),
+        sourcePath);
+    UiExportService export = new(Path.Combine(root, "Export"))
+    {
+        PrepareException = new IOException("stop after options capture")
+    };
+    viewModel.UseQuickBmsExportServiceForTesting(export);
+
+    await viewModel.ExportBackToWartalesAsync();
+
+    Check(export.LastQuickBmsExecutablePath == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "quickbms.exe")) &&
+          export.LastShiroScriptPath == Path.GetFullPath(
+              Path.Combine(selectedDirectory, "Shiro_Games_PAK_script.bms")),
+        "persisted QuickBMS folder reaches Export production routing without live export");
 }
 
 string FindRepositoryRoot()
@@ -1087,6 +1292,7 @@ async Task TestMainViewModelBehaviorAsync(Window owner)
     string uiRoot = Path.Combine(testRoot, "main-view-model");
     Directory.CreateDirectory(uiRoot);
 
+    await TestQuickBmsExportProductionRoutingAsync(uiRoot);
     await TestImportBlocksExportAsync(uiRoot);
     await TestOwnerResolutionFailureAsync(owner, uiRoot);
     await TestMainWindowClientCoverageAsync(owner, uiRoot);
@@ -2537,6 +2743,23 @@ sealed record ProjectTransportState(
     int HistoricalStateCount,
     UpdateCompatibilityReport? UpdateCompatibilityReport);
 
+sealed class CapturingFailureRunner : IExternalProcessRunner
+{
+    public List<ExternalProcessRequest> Requests { get; } = new();
+
+    public Task<ExternalProcessResult> RunAsync(
+        ExternalProcessRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        Requests.Add(request);
+        return Task.FromResult(new ExternalProcessResult
+        {
+            Started = false,
+            StartError = "Synthetic stop after production options capture."
+        });
+    }
+}
+
 sealed class UiFileDialogs : IFileDialogService
 {
     public string? SaveFileName { get; set; }
@@ -2658,6 +2881,8 @@ sealed class UiExportService : IQuickBmsExportService
     public List<CancellationToken> ExportCancellationTokens { get; } = new();
     public QuickBmsExportWorkspace? LastWorkspace { get; private set; }
     public string? LastWartalesInstallationDirectory { get; private set; }
+    public string? LastQuickBmsExecutablePath { get; private set; }
+    public string? LastShiroScriptPath { get; private set; }
     public string? LastPreparedPackagePath { get; private set; }
 
     public async Task<QuickBmsExportPreparation> PrepareAsync(
@@ -2669,6 +2894,8 @@ sealed class UiExportService : IQuickBmsExportService
         PrepareCount++;
         LastWartalesInstallationDirectory =
             options.WartalesInstallationDirectory;
+        LastQuickBmsExecutablePath = options.QuickBmsExecutablePath;
+        LastShiroScriptPath = options.ShiroScriptPath;
         Events.Add("prepare");
         PreparationStarted?.Invoke();
         if (PrepareException != null)
