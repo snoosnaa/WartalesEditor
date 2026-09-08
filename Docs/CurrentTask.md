@@ -2,16 +2,17 @@
 
 ## Current Milestone
 
-Version 1.1.0 — Release Candidate Ready
+Version 1.1.0 — Released
 
 ## Current Status
 
-**Version 1.1.0 is the selected release target.** All included feature work is
-accepted, and the fresh self-contained `win-x64` release candidate is prepared
-and verified locally. The Project Owner directly confirmed Steam App ID 1527950,
+**Version 1.1.0 was released publicly on September 8, 2026.** All included feature work is
+accepted, and the self-contained `win-x64` package is published and independently
+verified. The Project Owner directly confirmed Steam App ID 1527950,
 Wartales BuildID 25172421, from installed content updated September 7, 2026 at
-5:39 PM. No technical blocker remains. Publication, `v1.1.0`, GitHub Release
-creation, Nexus publication, and VirusTotal submission remain unauthorized.
+5:39 PM. Tag `v1.1.0` points to release commit
+`9db2841e9f74bef3eb1e07eddd82265a15b2a3ba`. Nexus publication and VirusTotal
+submission were not performed.
 
 The accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food
 Reduction 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting
@@ -62,7 +63,7 @@ and has SHA-256
 `401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 QuickBMS and the Shiro script remain external. Steam App ID 1527950, Wartales
 BuildID 25172421, is the currently validated game build for Version 1.1.0.
-Only explicit publication authorization remains.
+The GitHub release lifecycle is complete.
 
 ## Prior Public Release Preparation Context
 
@@ -587,6 +588,6 @@ configured 645-change state.
 
 ## Next Required Step
 
-Project Owner documentation review. If accepted, commit and push require
-separate explicit authorization. No release/version, tag, GitHub Release, or
-Nexus publication work has started or is authorized.
+No active gameplay implementation task is selected. Begin future work only
+after Project Owner direction. Nexus publication and VirusTotal submission
+remain separate optional actions and were not performed.

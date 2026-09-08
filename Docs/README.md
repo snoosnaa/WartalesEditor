@@ -2,7 +2,7 @@
 
 **Application Version:** 1.1.0
 
-**Current lifecycle:** Version 1.1.0 release candidate ready; publication authorization required
+**Current lifecycle:** Version 1.1.0 released September 8, 2026
 
 The root [README](../README.md) is the public introduction and quick-start
 guide. This directory retains the complete user, architecture, engineering,
@@ -13,8 +13,8 @@ testing, roadmap, and historical record for the source repository.
 - [User Guide](07_UserGuide.md) — installation, supported environment,
   QuickBMS setup, editing workflows, safety, recovery, and troubleshooting.
 - [Changelog](CHANGELOG.md) — public release groundwork and historical changes.
-- [Version 1.1.0 Release Notes](ReleaseNotes-1.1.0.md) — prepared public release
-  summary; not yet published.
+- [Version 1.1.0 Release Notes](ReleaseNotes-1.1.0.md) — published release
+  summary.
 - [Public Release Preparation](PublicReleasePreparation.md) — intended V1
   release model, lifecycle state, pending work, and history-sanitization plan.
 - [Project Status](ProjectStatus.md) — authoritative current project state.

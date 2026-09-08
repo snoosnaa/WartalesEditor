@@ -10,17 +10,17 @@
 
 # Project Status
 
-**Current Phase:** Version 1.1.0 — RELEASE CANDIDATE READY
+**Current Phase:** Version 1.1.0 — RELEASED
 
-Version 1.1.0 is the selected release target. All included feature work is
-accepted, and the 405-file self-contained release candidate is prepared and
-locally verified. Its ZIP SHA-256 is
+Version 1.1.0 was released publicly on September 8, 2026. The 405-file
+self-contained Windows x64 package is available from the official GitHub
+Release. Its ZIP SHA-256 is
 `401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 The Project Owner directly confirmed Steam App ID 1527950, Wartales BuildID
-25172421, from installed content updated September 7, 2026. No technical blocker
-remains. Tagging, GitHub Release creation, Nexus publication, VirusTotal
-submission, and other publication remain unauthorized. Earlier milestone
-sections remain as historical dashboard context.
+25172421, from installed content updated September 7, 2026. Tag `v1.1.0` points
+to the accepted release commit. GitHub publication and independent download/hash
+verification are complete. Nexus publication and VirusTotal submission were not
+performed. Earlier milestone sections remain as historical dashboard context.
 
 ## Party Economy Custom Preservation
 
@@ -202,8 +202,8 @@ Planned features include:
 
 # Current Priorities
 
-1. Obtain separate authorization before creating `v1.1.0`.
-2. Publish only after the separate external-release authorization.
+1. Preserve the released Version 1.1.0 tag and immutable package.
+2. Begin future work only after Project Owner direction.
 3. Keep Nexus and VirusTotal pending unless separately authorized.
 
 ---

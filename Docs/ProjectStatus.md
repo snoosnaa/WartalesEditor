@@ -1,8 +1,8 @@
 ﻿Project Status
 
-Application Version: 1.1.0 (Release Candidate Ready)
+Application Version: 1.1.0 (Released)
 
-Status: Version 1.1.0 Release Candidate Ready; Publication Authorization Required
+Status: Version 1.1.0 Released
 
 Last Updated: 2026-09-08
 
@@ -32,15 +32,15 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
-**Version 1.1.0 is the selected release target.** The Product Decision Audit,
+**Version 1.1.0 was released publicly on September 8, 2026.** The Product Decision Audit,
 Paths Gameplay Tools, Profile Operation Intent and Update Survival work, Party
 Economy Custom Preservation, and other accepted post-1.0.0 changes are complete,
-documented, committed, and pushed. The fresh release candidate is prepared and
-locally verified. The Project Owner directly confirmed Steam App ID 1527950,
+documented, committed, and published. The Project Owner directly confirmed Steam App ID 1527950,
 Wartales BuildID 25172421, from installed content updated September 7, 2026 at
-5:39 PM. The BuildID blocker is closed, and no technical blocker remains. No
-tag, GitHub Release, Nexus publication, VirusTotal submission, or other
-publication action is authorized.
+5:39 PM. Tag `v1.1.0` targets release commit
+`9db2841e9f74bef3eb1e07eddd82265a15b2a3ba`; the final GitHub Release contains
+the verified ZIP and checksum. Nexus publication and VirusTotal submission were
+not performed.
 
 Accepted additions are Lectern Knowledge Gain 4×, Cooking Pot Food Reduction
 5/10/16, Tent Valour 3/4/5, and Hemp in Starting Resources. Starting Resources
@@ -106,13 +106,14 @@ privacy and manifest audits, exact clean-extraction equivalence, Windows
 Defender scans, and an extracted-package startup smoke. The 405-file package is
 `WartalesEditor-1.1.0-win-x64.zip`; its SHA-256 is
 `401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
-Publication remains a separate authorization.
+The package and checksum are published in the Version 1.1.0 GitHub Release and
+were independently downloaded and hash-verified after publication.
 
 Current Milestone
 
-Version 1.1.0 release candidate ready. The candidate is not a publication and
-does not authorize `v1.1.0`, a GitHub Release, Nexus, or VirusTotal. Explicit
-Project Owner publication authorization is the only remaining release gate.
+Version 1.1.0 released. Tag `v1.1.0` and the final GitHub Release are public.
+Nexus publication and VirusTotal submission were not performed and remain
+separate optional actions requiring authorization.
 
 Prior public-release preparation record:
 

@@ -2,13 +2,13 @@
 
 **Target release:** Wartales Editor 1.1.0
 
-**Status:** RELEASE CANDIDATE READY — PUBLICATION AUTHORIZATION REQUIRED
+**Status:** VERSION 1.1.0 PUBLISHED — RELEASE LIFECYCLE COMPLETE
 
 **Version 1.1.0 scope:** Accepted post-1.0.0 work is committed and includes
 Paths Gameplay Tools, stronger Profile Update Survival, Starting Resources
 Hemp and grouped controls, additional approved presets, remembered QuickBMS
 folder selection, Party Economy Custom preservation, Quick Help, and accepted
-usability corrections. Publication is not authorized.
+usability corrections. The GitHub release was published September 8, 2026.
 
 **Phase 1:** COMPLETE — legal/public metadata, repository hygiene, public
 onboarding, version reconciliation, and Git-history privacy sanitization are
@@ -36,7 +36,7 @@ SHA-256 is
 **Version 1.1.0 game authority:** CONFIRMED. The Project Owner directly verified
 Steam App ID `1527950`, Wartales BuildID `25172421`, from installed Steam content
 updated September 7, 2026 at 5:39 PM. The prior BuildID confirmation blocker is
-closed; only explicit publication authorization remains.
+closed, and publication is complete.
 
 **Quick Help V1:** CLOSED. Investigation, Design / Architecture,
 Implementation, Focused Engineering Review (**PASS**), Project Owner
@@ -86,8 +86,11 @@ The public authorities and review PDFs now record this exact combination. RC2
 remains immutable, rejected/superseded for publication, and must not be mutated,
 relabeled, tagged, or published. No fresh candidate has been generated.
 
-**Tag:** NOT CREATED. **GitHub Release:** NOT CREATED. **Nexus:** NOT AUTHORIZED;
-PENDING SEPARATE PROJECT OWNER DECISION.
+**Tag:** `v1.1.0`, targeting
+`9db2841e9f74bef3eb1e07eddd82265a15b2a3ba`. **GitHub Release:** PUBLISHED at
+`https://github.com/snoosnaa/WartalesEditor/releases/tag/v1.1.0` with the ZIP
+and checksum assets independently downloaded and hash-verified. **Nexus:** NOT
+PUBLISHED. **VirusTotal:** NOT SUBMITTED.
 
 **Non-default Wartales installation support:** IMPLEMENTATION COMPLETE;
 ENGINEERING REVIEW PASS; PROJECT OWNER RUNTIME ACCEPTANCE PASS. The shared
@@ -510,12 +513,10 @@ small fail-fast script then; it should verify source/SDK, publish once, stage
 from an allowlisted manifest, reject prohibited files, archive deterministically,
 hash, and print an audit without tagging or publishing.
 
-## Remaining Release Preparation
+## Post-Release External Follow-Up
 
-- Create `v1.1.0` only after explicit authorization.
-- Publish the GitHub Release only after explicit authorization.
 - Publish to Nexus only if separately authorized.
 - Submit to VirusTotal only if separately authorized.
 
-The release candidate is technically ready. External publication remains
-pending explicit Project Owner authorization.
+The Version 1.1.0 GitHub release lifecycle is complete. No further release
+action is active.

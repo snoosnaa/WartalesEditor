@@ -777,3 +777,13 @@ exposes Snapshot or mutation terminology and that no new binding errors occur.
 
 Search Scope Semantics Correction is tracked separately and is not part of the
 Pass 5 wording verification.
+
+# Version 1.1.0 Published-Artifact Verification
+
+The final GitHub Release assets were downloaded into a fresh verification
+directory after publication. The downloaded ZIP SHA-256 was
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`, matching
+both the published checksum file and the locally accepted immutable artifact.
+Fresh extraction produced 405 files, included `WartalesEditor.exe`, `README.pdf`,
+and `USER-GUIDE.pdf`, contained no PDB files, and reported Product Version 1.1.0
+and File Version 1.1.0.0.

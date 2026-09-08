@@ -8,8 +8,12 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 # Version 1.1.0
 
-**Status:** Release candidate prepared and locally verified; publication is not
-authorized.
+**Status:** Released September 8, 2026.
+
+**Release:** `v1.1.0` at commit
+`9db2841e9f74bef3eb1e07eddd82265a15b2a3ba`. The published Windows x64 ZIP
+SHA-256 is
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 
 ## Added
 
@@ -58,8 +62,8 @@ authorized.
   game build for Version 1.1.0, confirmed directly by the Project Owner from
   installed content updated September 7, 2026.
 
-The accepted Product Decision Audit follow-up is committed and included in the
-1.1.0 release candidate source.
+The accepted Product Decision Audit follow-up is included in the Version 1.1.0
+release.
 
 ---
 

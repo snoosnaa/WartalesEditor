@@ -1810,3 +1810,18 @@ The Project Owner subsequently confirmed Steam App ID 1527950, Wartales BuildID
 25172421, from installed Steam content updated September 7, 2026 at 5:39 PM.
 This closes the final technical release blocker. No tag, push, GitHub Release,
 Nexus publication, VirusTotal upload, or live Export occurred.
+
+## 2026-09-08 — Wartales Editor 1.1.0 Published
+
+The two accepted release-preparation commits were pushed normally to `main`.
+Annotated tag `v1.1.0` was created at
+`9db2841e9f74bef3eb1e07eddd82265a15b2a3ba` and pushed without force. The final
+GitHub Release was published with the approved ZIP and checksum assets.
+
+Both public assets were then downloaded into a fresh verification directory.
+The ZIP SHA-256 matched the published checksum and accepted local artifact:
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`. Fresh
+extraction produced the expected 405-file package, required executable and PDF
+documents, no PDBs, and Version 1.1.0 metadata. Nexus publication and VirusTotal
+submission were not performed. The Version 1.1.0 GitHub release lifecycle is
+complete.

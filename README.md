@@ -4,8 +4,8 @@ Wartales Editor is a Windows desktop editor for Wartales `data.cdb` files with
 gameplay-focused editing tools, profiles, update compatibility checks, Golden
 CDB comparison, and integrated QuickBMS import/export workflows.
 
-Current source version: **1.1.0 (release candidate preparation)**. Publication
-has not yet been authorized.
+Current public version: **1.1.0**, released September 8, 2026. Download the
+official package from the [Wartales Editor 1.1.0 GitHub Release](https://github.com/snoosnaa/WartalesEditor/releases/tag/v1.1.0).
 
 ## AI Development Disclosure
 
@@ -66,13 +66,13 @@ integrated-support claim.
 
 ## Download and Installation
 
-The intended 1.1 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
+The published 1.1 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
 self-contained, untrimmed, multi-file Windows x64 portable build. No installer
 or updater is included.
 
-Once the release is published:
+To install it:
 
-1. Download the ZIP only from the official GitHub or Nexus release page.
+1. Download the ZIP only from the official GitHub Release page.
 2. Compare its SHA-256 checksum with the published checksum.
 3. Extract the complete ZIP to a normal user-writable folder.
 4. Run `WartalesEditor.exe` from that extracted folder.
@@ -80,8 +80,8 @@ Once the release is published:
 Do not run the executable from inside the ZIP. Keep all extracted files
 together.
 
-Release availability will be announced only after the release-candidate checks
-and publication phase are complete.
+Published ZIP SHA-256:
+`401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.
 
 ## Full User Manual
 
