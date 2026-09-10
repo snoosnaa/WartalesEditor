@@ -344,7 +344,7 @@ captureProject.GameplayOperationStates.Add(State(
 ModProfileModel captured = new ModProfileService().CreateProfile(
     captureProject,
     "Intent Capture");
-Check(captured.FormatVersion == 4 &&
+Check(captured.FormatVersion == ModProfileFormat.CurrentVersion &&
       captured.OperationRequests.Count == 0 &&
       captured.Snapshot.GameplayOperationStates.Count == 0,
     "new profile does not capture intent from state without restore authority");

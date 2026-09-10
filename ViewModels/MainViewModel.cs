@@ -7055,7 +7055,10 @@ public class MainViewModel : ObservableObject
                 createdProfile.FilePath);
 
             Status =
-                $"Profile created: {createdProfile.Name}";
+                createdProfile.IsEffectiveChangeCountExact
+                    ? $"Profile created: {createdProfile.Name}"
+                    : $"Profile created: {createdProfile.Name}. " +
+                      "Exact Profile Changes are unavailable for this revision.";
 
         }
         catch (Exception exception)
@@ -7685,7 +7688,10 @@ public class MainViewModel : ObservableObject
 
             profileManagerViewModel?.ReportProfileUpdated(
                 updatedSummary.FilePath);
-            Status = $"Profile updated: {updatedSummary.Name}";
+            Status = updatedSummary.IsEffectiveChangeCountExact
+                ? $"Profile updated: {updatedSummary.Name}"
+                : $"Profile updated: {updatedSummary.Name}. " +
+                  "Exact Profile Changes are unavailable for this revision.";
         }
         catch (Exception exception)
         {

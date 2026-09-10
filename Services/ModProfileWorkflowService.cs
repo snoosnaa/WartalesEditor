@@ -46,6 +46,15 @@ public sealed class ModProfileWorkflowService
     private readonly UpdatedProfileCandidateValidationService
         updatedProfileCandidateValidationService;
 
+    private readonly ProfileImpactEvaluationService
+        impactEvaluationService;
+
+    private readonly ProfileImpactManifestValidationService
+        impactManifestValidationService = new();
+
+    private readonly ProfileGameplayContentIdentityService
+        gameplayContentIdentityService = new();
+
     public ModProfileWorkflowService()
         : this(
             new ModProfileService(),
@@ -101,6 +110,27 @@ public sealed class ModProfileWorkflowService
         ProjectOperationService projectOperationService,
         ProjectOperationTransactionService transactionService,
         LocalizationService localizationService)
+        : this(
+            profileService,
+            serializationService,
+            snapshotWorkflowService,
+            operationResolver,
+            projectOperationService,
+            transactionService,
+            localizationService,
+            ProfileImpactBaselineResolver.CreateDefault())
+    {
+    }
+
+    public ModProfileWorkflowService(
+        ModProfileService profileService,
+        ModProfileSerializationService serializationService,
+        ModificationSnapshotWorkflowService snapshotWorkflowService,
+        ProfileOperationResolver operationResolver,
+        ProjectOperationService projectOperationService,
+        ProjectOperationTransactionService transactionService,
+        LocalizationService localizationService,
+        ProfileImpactBaselineResolver impactBaselineResolver)
     {
         this.profileService =
             profileService
@@ -137,6 +167,14 @@ public sealed class ModProfileWorkflowService
             transactionService
             ?? throw new ArgumentNullException(
                 nameof(transactionService));
+
+        impactEvaluationService = new ProfileImpactEvaluationService(
+            impactBaselineResolver ?? throw new ArgumentNullException(
+                nameof(impactBaselineResolver)),
+            new JsonDataService(),
+            gameplayContentIdentityService,
+            impactManifestValidationService,
+            ApplyProfile);
     }
 
     public ModProfileModel CreateProfile(
@@ -147,13 +185,20 @@ public sealed class ModProfileWorkflowService
         string profileVersion = "1.0",
         string editorVersion = "")
     {
-        return profileService.CreateProfile(
+        ModProfileModel profile = profileService.CreateProfile(
             project,
             profileName,
             description,
             author,
             profileVersion,
             editorVersion);
+
+        profile.ImpactManifest = impactEvaluationService.TryEstablish(
+            project,
+            profile,
+            editorVersion,
+            out _);
+        return profile;
     }
 
     public ModProfileModel CreateUpdatedProfile(
@@ -161,10 +206,47 @@ public sealed class ModProfileWorkflowService
         ModProfileModel existingProfile,
         string editorVersion = "")
     {
-        return profileService.CreateUpdatedProfile(
+        ModProfileModel candidate = profileService.CreateUpdatedProfile(
             project,
             existingProfile,
             editorVersion);
+
+        if (CanPreserveImpactManifest(existingProfile, candidate))
+        {
+            candidate.ImpactManifest =
+                existingProfile.ImpactManifest!.DeepClone();
+        }
+        else
+        {
+            candidate.ImpactManifest = impactEvaluationService.TryEstablish(
+                project,
+                candidate,
+                editorVersion,
+                out _);
+        }
+
+        return candidate;
+    }
+
+    private bool CanPreserveImpactManifest(
+        ModProfileModel existingProfile,
+        ModProfileModel candidate)
+    {
+        if (!impactManifestValidationService.TryValidate(
+                existingProfile,
+                existingProfile.ImpactManifest,
+                out _))
+        {
+            return false;
+        }
+
+        ProfileImpactManifestModel manifest = existingProfile.ImpactManifest!;
+        return identityService.AreEqual(
+                   manifest.SourceCdbGenerationIdentity,
+                   candidate.SourceCdbGenerationIdentity) &&
+               identityService.AreEqual(
+                   manifest.ProfileGameplayContentIdentity,
+                   gameplayContentIdentityService.Calculate(candidate));
     }
 
     public void ValidateUpdatedProfileCandidate(

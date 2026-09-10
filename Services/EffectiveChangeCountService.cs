@@ -56,7 +56,7 @@ public sealed class EffectiveChangeCountService
             result = new ModProfileWorkflowService().ApplyProfile(
                 targetProject,
                 profile);
-            isExact = true;
+            isExact = IsComplete(profile, result);
             return Calculate(result.MutationResult);
         }
         catch (ProjectRollbackIntegrityException)
@@ -246,6 +246,31 @@ public sealed class EffectiveChangeCountService
         string settingId,
         string propertyPath) =>
         $"{categoryName}\u001f{settingId}\u001f{propertyPath}";
+
+    private static bool IsComplete(
+        ModProfileModel profile,
+        ModificationSnapshotImportResultModel result)
+    {
+        if (result.UnmatchedCount != 0 ||
+            result.ConflictCount != 0 ||
+            result.InvalidSnapshotChangeCount != 0 ||
+            result.FailedCount != 0 ||
+            result.OperationsFailedCount != 0 ||
+            result.ApplyResult.NotMatchedCount != 0)
+        {
+            return false;
+        }
+
+        string[] requested = profile.OperationRequests
+            .Select(request => request.OperationId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        string[] evaluated = result.OperationResults
+            .Select(operation => operation.OperationId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        return requested.SequenceEqual(evaluated, StringComparer.Ordinal);
+    }
 
     private static GameplayStateObservation[] CaptureStateObservations(
         IEnumerable<GameplayOperationStateModel> states) =>

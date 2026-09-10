@@ -1,7 +1,7 @@
 ﻿# Testing Guide
 
-**Document Version:** 1.1  
-**Last Updated:** 2026-09-07
+**Document Version:** 1.2
+**Last Updated:** 2026-09-10
 
 ---
 
@@ -62,6 +62,50 @@ The Project Owner subsequently confirmed Steam App ID 1527950, Wartales BuildID
 25172421, from installed Steam content updated September 7, 2026 at 5:39 PM.
 This closed the provisional candidate's BuildID verification gate. Final package
 reconciliation regenerated the public documentation, build, ZIP, and hash.
+
+---
+
+## Profile Impact Manifest Acceptance — 2026-09-10
+
+Format 5 adds optional historical Profile Changes authority without changing
+format-4 Apply semantics. The focused Profile Impact Manifest suite passes 131
+checks. Direct coverage includes case-insensitive alias isolation, duplicate
+alias rejection, deterministic serialization, unsupported and tampered
+manifests, canonical leaf identity/order, blank property paths, exact baseline
+resolution, provider failure containment, evaluator-integrity classification,
+and complete-evaluation rejection for unmatched, conflicting, invalid,
+unsupported, failed, or missing results.
+
+Real operation evaluation covers Paths, Request Board Rewards, Starting
+Resources, Party Economy, Random Trait Exclusions, Add Camp Facilities, and
+Upgrade All Equipment. Isolated structural evidence establishes 32 Add Camp
+leaves and 517 Upgrade All leaves, equal to their authoritative distinct
+PropertyModel mutation counts without created-entry or operation-request
+inflation. A representative 744-leaf profile established all 744 leaves in
+approximately 117–134 ms across final review and delegated acceptance runs.
+
+Historical stability coverage proves the persisted count survives Profile and
+CDB save/reopen, fully applied and partial/divergent targets, Apply, Undo, and
+Redo. Valid zero displays `0 changes`; missing or invalid authority displays
+`Unavailable`. Formats 1–4 remain usable, invalid optional authority does not
+block core Apply, and Profile Manager reads validated persisted authority rather
+than replaying profiles against the open CDB.
+
+Final accepted regression evidence is: Debug and Release builds with zero
+warnings and errors; Profile Impact Manifest 131; Profile Operation Intent 86;
+Profile Operation Replay 209; Atomic Profile Apply 99; Profile Intent Update
+123; Profile Presentation 75; Update Survival 180; Golden CDB 203; Request Board
+Rewards 101; Paths Gameplay 208; QuickBMS Export/routing 215/215; Quick Help 44;
+and Class A compatibility passing. Restore Previous Values, history/Undo/Redo,
+Starting Resources, Party Economy, Random Trait Exclusions, Add Camp, and
+Upgrade All remain covered by those passing suites. `git diff --check` passed;
+no live Export was run.
+
+Engineering Review passed after parser, provider-boundary, evaluator-integrity,
+and direct-evidence corrections. Delegated Project Owner Acceptance passed the
+stable historical count, zero/Unavailable, legacy/invalid, Create/Update,
+changed-source, metadata/duplicate/import, large-profile, Apply/Restore, and
+Golden-optional scenarios.
 
 ---
 

@@ -2,8 +2,45 @@
 
 **Version:** 1.0\
 **Status:** Active\
-**Last Updated:** 2026-09-08\
+**Last Updated:** 2026-09-10\
 **Applies To:** Entire Project
+
+------------------------------------------------------------------------
+
+# 2026-09-10 — Profile Impact Manifest Accepted and Reconciled
+
+Format 5 introduced optional Profile Impact Manifest authority for stable
+historical **Profile Changes**. The count records distinct canonical
+PropertyModel leaves whose profile-produced final value differs from exact
+verified pristine source bytes. It remains stable across Apply, Undo/Redo,
+target Save/reopen, target divergence, Wartales updates, and Golden changes.
+Valid zero displays `0 changes`; unavailable or invalid authority displays
+`Unavailable`. Formats 1–4 remain usable.
+
+The manifest is reporting-only and does not participate in Apply, mutation,
+compatibility, Restore Previous Values, or Gameplay Operation State authority.
+Exact baseline providers are independently verified persisted pristine bytes
+and the optional Golden CDB only when its content hash exactly matches source
+identity. Parser hardening isolates every case-insensitive manifest alias before
+core deserialization, and evaluator hardening distinguishes optional provider
+failure from impossible internal evaluation states.
+
+Final renewed Engineering Review returned **PASS** after closure of the parser,
+provider-boundary, evaluator-integrity, and direct-evidence findings. Delegated
+Project Owner Acceptance returned **PASS** for fully applied, partial/divergent,
+save/reopen, zero/Unavailable, legacy/invalid, Create/Update, changed-source,
+metadata/duplicate/import, Apply/Restore, Golden-optional, and large-profile
+behavior.
+
+Accepted verification includes zero-warning Debug and Release builds; Profile
+Impact Manifest 131; Profile Operation Intent 86; Profile Operation Replay 209;
+Atomic Profile Apply 99; Profile Intent Update 123; Profile Presentation 75;
+Update Survival 180; Golden CDB 203; Request Board Rewards 101; Paths Gameplay
+208; QuickBMS Export/routing 215/215; Quick Help 44; and Class A compatibility.
+The controlled 744-leaf profile established all 744 changes in approximately
+117–134 ms. No live Export occurred. Documentation reconciliation completed;
+commit and push remain pending explicit authorization, and no release/version
+decision has begun.
 
 ------------------------------------------------------------------------
 

@@ -2,9 +2,9 @@
 
 Application Version: 1.1.0 (Released)
 
-Status: Version 1.1.0 Released
+Status: Profile Impact Manifest Complete and Checkpointed
 
-Last Updated: 2026-09-08
+Last Updated: 2026-09-10
 
 Purpose
 
@@ -31,6 +31,30 @@ Product philosophy belongs in PlayerFirstDesign.md.
 Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
+
+Profile Impact Manifest is implemented and accepted as post-1.1.0 work. Final
+renewed Engineering Review passed, delegated Project Owner Acceptance passed,
+documentation reconciliation is complete, and the authorized commit/push
+checkpoint is complete. No release or version assignment has begun.
+
+New gameplay Profile Create/Update uses root format 5. Its optional manifest is
+reporting authority for stable historical **Profile Changes**: distinct
+canonical game-data leaves changed relative to an exact verified pristine
+source generation. The value does not collapse after Apply or target
+Save/reopen. Valid zero authority displays `0 changes`; missing, invalid, or
+unestablished authority displays `Unavailable`. Formats 1–4 remain usable.
+Manifest authority is independent of Apply, mutation, compatibility, Restore
+Previous Values, and Gameplay Operation State.
+
+Exact establishment uses independently verified pristine persisted bytes or an
+optional exact-hash-matching Golden CDB. Golden remains read-only and optional;
+no automatic QuickBMS extraction occurs. Final evidence includes zero-warning
+Debug and Release builds; Profile Impact Manifest 131; Profile Operation Intent
+86; Profile Operation Replay 209; Atomic Profile Apply 99; Profile Intent Update
+123; Profile Presentation 75; Update Survival 180; Golden CDB 203; Request Board
+Rewards 101; Paths Gameplay 208; QuickBMS Export/routing 215/215; Quick Help 44;
+and Class A compatibility. The 744-leaf acceptance scenario established all 744
+changes in approximately 134 ms. No live Export was run.
 
 **Version 1.1.0 was released publicly on September 8, 2026.** The Product Decision Audit,
 Paths Gameplay Tools, Profile Operation Intent and Update Survival work, Party
@@ -951,10 +975,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Commit and push the reconciled public metadata documentation, then generate and
-fully validate a fresh immutable release candidate from that final committed
-source. RC2 remains immutable evidence and is superseded for publication.
-Tagging and publication remain pending.
+Begin the next separately authorized post-1.1.0 workstream. No release candidate,
+tag, publication, or version decision is authorized by the completed Profile
+Impact Manifest checkpoint.
 
 Document Maintenance
 

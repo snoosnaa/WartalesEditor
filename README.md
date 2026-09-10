@@ -130,6 +130,11 @@ required files exist. The validated versions and hashes are recorded in
 ## Profiles and Restore Previous Values
 
 Profiles are the main way to save and reuse a personal mod configuration.
+Profile Manager's **Profile Changes** value is the established historical number
+of game values changed by that Profile revision. It does not shrink because the
+open CDB already contains the changes. Profiles without an exact established
+count show **Unavailable**, while a valid exact zero shows **0 changes**.
+
 **Restore Previous Values** returns a Gameplay Tool to the settings it had
 before that tool first changed them; those settings are not necessarily
 Wartales defaults. The Detailed Editor's **Restore Original Value** instead

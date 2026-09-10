@@ -159,6 +159,18 @@ Choose **Tools → Profiles** or toolbar **Profiles**. Profile Manager provides:
 - **Rename**, **Duplicate**, **Import**, **Export**, **Delete**, and **Refresh**
   for managing Profiles.
 
+**Profile Changes** shows the established historical number of game values
+changed by that Profile revision. The number does not shrink because the open
+CDB already contains some or all of those changes. For example, a Profile
+established as changing 744 values continues to show **744 changes** after it is
+applied and the modified CDB is saved and reopened.
+
+An exact valid zero-impact Profile shows **0 changes**. **Unavailable** means an
+exact historical count has not been established for that Profile revision; it
+does not mean zero, and it does not prevent an otherwise compatible Profile from
+being applied. Older Profiles remain usable and may show **Unavailable** until
+they are explicitly updated while an exact historical count can be established.
+
 Profile-applied changes appear in **Review Changes** and can be undone with
 Undo. If part of a Profile is not compatible with the open CDB, the editor
 reports it instead of guessing.

@@ -1,5 +1,7 @@
 ﻿using WartalesEditor.Models.Snapshots;
 
+using Newtonsoft.Json;
+
 namespace WartalesEditor.Models.Profiles;
 
 public sealed class ModProfileModel
@@ -27,4 +29,11 @@ public sealed class ModProfileModel
         get;
         init;
     } = new();
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public ProfileImpactManifestModel? ImpactManifest
+    {
+        get;
+        internal set;
+    }
 }

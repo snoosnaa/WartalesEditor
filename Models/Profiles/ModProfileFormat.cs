@@ -8,8 +8,10 @@ public static class ModProfileFormat
 
     public const int ProfileOperationIntentVersion = 4;
 
+    public const int ProfileImpactManifestVersion = 5;
+
     public const int CurrentVersion =
-        ProfileOperationIntentVersion;
+        ProfileImpactManifestVersion;
 
     public const string DefaultFileExtension =
         ".wtprofile";

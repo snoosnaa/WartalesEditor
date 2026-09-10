@@ -2,9 +2,32 @@
 
 ## Current Milestone
 
-Version 1.1.0 — Released
+Post-1.1.0 — Profile Impact Manifest Reconciliation
 
 ## Current Status
+
+Profile Impact Manifest implementation is complete. Final renewed Engineering
+Review returned **PASS**, delegated Project Owner Acceptance returned **PASS**,
+and documentation reconciliation is complete. New gameplay Profile Create and
+Update use root format 5 with optional durable historical Profile Changes
+authority. Formats 1–4 remain readable and applicable.
+
+Profile Manager now reports the number of distinct canonical game-data leaves
+that one profile gameplay revision changes relative to its verified pristine
+source. This historical count remains stable after Apply, Undo/Redo, target
+Save/reopen, and target divergence. Valid zero authority displays `0 changes`;
+missing or invalid authority displays `Unavailable`. The manifest is reporting
+authority only and does not affect Apply, mutation, compatibility, Restore
+Previous Values, or Gameplay Operation State.
+
+Final accepted evidence includes zero-warning Debug and Release builds; Profile
+Impact Manifest 131; Profile Operation Intent 86; Profile Operation Replay 209;
+Atomic Profile Apply 99; Profile Intent Update 123; Profile Presentation 75;
+Update Survival 180; Golden CDB 203; Request Board Rewards 101; Paths Gameplay
+208; QuickBMS Export/routing 215/215; Quick Help 44; and Class A compatibility.
+The controlled 744-leaf scenario established 744 historical changes in about
+117–134 ms. No live Export was run. The authorized commit/push checkpoint is
+complete; no release/version decision has started.
 
 **Version 1.1.0 was released publicly on September 8, 2026.** All included feature work is
 accepted, and the self-contained `win-x64` package is published and independently
@@ -588,6 +611,8 @@ configured 645-change state.
 
 ## Next Required Step
 
-No active gameplay implementation task is selected. Begin future work only
-after Project Owner direction. Nexus publication and VirusTotal submission
-remain separate optional actions and were not performed.
+Perform final repository verification, then await explicit authorization to
+commit and push the accepted Profile Impact Manifest implementation, tests, and
+documentation. No tag, release, or version decision is authorized. Nexus
+publication and VirusTotal submission remain separate optional actions and were
+not performed.

@@ -4306,10 +4306,10 @@ static void VerifyProfileUpdateIntegrityAndAccounting()
               replay.UnappliedEffectiveChangeCount == 0,
             "updated mixed profile reloads and reproduces the intended CDB state");
         Check(projectCount == review.Count &&
-              targetSummary.IsEffectiveChangeCountExact &&
-              projectCount == targetSummary.EffectiveChangeCount &&
+              !targetSummary.IsEffectiveChangeCountExact &&
+              targetSummary.ChangeSummaryText == "Unavailable" &&
               projectCount == replay.AppliedEffectiveChangeCount,
-            "project, Review Changes, profile, and apply feedback share effective-leaf counts");
+            "project, Review Changes, and apply feedback agree while Profile Changes remains unavailable without historical authority");
 
         foreach (string entryId in new[] { "Firecamp", "FirecampT2", "FirecampT3" })
         {

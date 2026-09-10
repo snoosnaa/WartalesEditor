@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,6 +20,9 @@ public sealed class ModProfileSerializationService
 
     private readonly ProfileOperationIntentRegistry
         intentRegistry;
+
+    private readonly ProfileImpactManifestValidationService
+        impactManifestValidationService;
 
     public ModProfileSerializationService()
         : this(
@@ -50,6 +54,9 @@ public sealed class ModProfileSerializationService
             intentRegistry
             ?? throw new ArgumentNullException(
                 nameof(intentRegistry));
+
+        impactManifestValidationService =
+            new ProfileImpactManifestValidationService();
     }
 
     public string Serialize(
@@ -62,7 +69,7 @@ public sealed class ModProfileSerializationService
         try
         {
             return JsonConvert.SerializeObject(
-                profile,
+                CreateSerializationProjection(profile),
                 serializerSettings);
         }
         catch (JsonException exception)
@@ -83,14 +90,42 @@ public sealed class ModProfileSerializationService
         }
 
         ModProfileModel? profile;
+        JToken? impactManifestToken = null;
 
         try
         {
-            profile =
-                JsonConvert.DeserializeObject<
-                    ModProfileModel>(
-                    json,
-                    serializerSettings);
+            using StringReader stringReader = new(json);
+            using JsonTextReader jsonReader = new(stringReader)
+            {
+                DateParseHandling = DateParseHandling.DateTimeOffset
+            };
+            JToken rootToken = JToken.Load(jsonReader);
+            if (rootToken is not JObject root)
+            {
+                throw new JsonSerializationException(
+                    "The mod profile root must be an object.");
+            }
+
+            IReadOnlyList<JToken> manifestPayloads =
+                ReadRootManifestPayloads(json);
+
+            foreach (JProperty manifestProperty in root.Properties()
+                         .Where(property => string.Equals(
+                             property.Name,
+                             nameof(ModProfileModel.ImpactManifest),
+                             StringComparison.OrdinalIgnoreCase))
+                         .ToList())
+            {
+                manifestProperty.Remove();
+            }
+
+            if (manifestPayloads.Count == 1)
+            {
+                impactManifestToken = manifestPayloads[0];
+            }
+
+            profile = root.ToObject<ModProfileModel>(
+                JsonSerializer.Create(serializerSettings));
         }
         catch (JsonException exception)
         {
@@ -107,7 +142,84 @@ public sealed class ModProfileSerializationService
 
         ValidateAfterDeserialization(profile);
 
+        if (profile.FormatVersion >=
+                ModProfileFormat.ProfileImpactManifestVersion &&
+            impactManifestToken is not null &&
+            impactManifestToken.Type != JTokenType.Null)
+        {
+            try
+            {
+                ProfileImpactManifestModel? manifest =
+                    impactManifestToken.ToObject<ProfileImpactManifestModel>(
+                        JsonSerializer.Create(serializerSettings));
+                if (impactManifestValidationService.TryValidate(
+                        profile,
+                        manifest,
+                        out _))
+                {
+                    profile.ImpactManifest = manifest;
+                }
+            }
+            catch (JsonException)
+            {
+                // Optional reporting authority is isolated from core Apply data.
+            }
+            catch (ArgumentException)
+            {
+                // Invalid optional manifest behaves as unavailable.
+            }
+        }
+
         return profile;
+    }
+
+    private static IReadOnlyList<JToken> ReadRootManifestPayloads(
+        string json)
+    {
+        List<JToken> payloads = new();
+        using StringReader stringReader = new(json);
+        using JsonTextReader reader = new(stringReader)
+        {
+            DateParseHandling = DateParseHandling.DateTimeOffset
+        };
+
+        if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+        {
+            throw new JsonSerializationException(
+                "The mod profile root must be an object.");
+        }
+
+        while (reader.Read() && reader.TokenType != JsonToken.EndObject)
+        {
+            if (reader.TokenType == JsonToken.Comment)
+            {
+                continue;
+            }
+
+            if (reader.TokenType != JsonToken.PropertyName)
+            {
+                throw new JsonSerializationException(
+                    "The mod profile root contains an invalid member.");
+            }
+
+            string propertyName = reader.Value?.ToString() ?? string.Empty;
+            if (!reader.Read())
+            {
+                throw new JsonSerializationException(
+                    "The mod profile root contains an incomplete member.");
+            }
+
+            JToken value = JToken.ReadFrom(reader);
+            if (string.Equals(
+                    propertyName,
+                    nameof(ModProfileModel.ImpactManifest),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                payloads.Add(value.DeepClone());
+            }
+        }
+
+        return payloads;
     }
 
     public void Save(
@@ -260,6 +372,30 @@ public sealed class ModProfileSerializationService
 
         ValidateOperationRequests(
             profile);
+
+    }
+
+    private ModProfileModel CreateSerializationProjection(
+        ModProfileModel profile)
+    {
+        ProfileImpactManifestModel? manifest =
+            impactManifestValidationService.TryValidate(
+                profile,
+                profile.ImpactManifest,
+                out _)
+                ? profile.ImpactManifest?.DeepClone()
+                : null;
+
+        return new ModProfileModel
+        {
+            FormatVersion = profile.FormatVersion,
+            Metadata = profile.Metadata,
+            Snapshot = profile.Snapshot,
+            SourceCdbGenerationIdentity =
+                profile.SourceCdbGenerationIdentity,
+            OperationRequests = profile.OperationRequests,
+            ImpactManifest = manifest
+        };
     }
 
     private void ValidateAfterDeserialization(

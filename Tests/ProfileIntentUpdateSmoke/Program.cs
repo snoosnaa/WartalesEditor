@@ -28,7 +28,7 @@ ModProfileModel created = workflow.CreateProfile(
     "1.0",
     "phase4");
 Check(created.FormatVersion == ModProfileFormat.CurrentVersion,
-    "new profile writes format 4");
+    "new profile writes the current root format");
 Check(created.OperationRequests.Count == 1 &&
       Request(created).Settings!.Value<string>("preset") == "Fast",
     "active compatible gameplay state captures canonical intent");
@@ -49,7 +49,7 @@ Check(created.Snapshot.GameplayOperationStates.Count == 1 &&
 string firstJson = serializer.Serialize(created);
 ModProfileModel roundTrip = serializer.Deserialize(firstJson);
 Check(serializer.Serialize(roundTrip) == firstJson,
-    "format-4 serialization is deterministic");
+    "current-format serialization is deterministic");
 
 AcceptCurrent(sourceA);
 ModProfileModel afterSaveCreate = workflow.CreateProfile(
@@ -114,12 +114,12 @@ ModProfileModel migrated = workflow.CreateUpdatedProfile(
     legacySource,
     legacy,
     "migrate");
-Check(migrated.FormatVersion == 4 &&
+Check(migrated.FormatVersion == ModProfileFormat.CurrentVersion &&
       migrated.OperationRequests.Any(request =>
           request.OperationId == ProfileOperationIds.FishingSpeed) &&
       migrated.OperationRequests.Any(request =>
           request.OperationId == ProfileOperationIds.AddCampFacilities),
-    "format-3 update projects stateful intent and preserves additive request");
+    "legacy update projects stateful intent and preserves additive request");
 Check(new ModProfileService().UpdateMetadata(legacy, description: "metadata")
           .FormatVersion == 3,
     "metadata-only editing does not migrate legacy format");
@@ -272,15 +272,17 @@ try
         Entry(fatalLibraryTarget, "FishingDurationControl")
             .Properties.Single(property =>
                 property.EffectivePropertyPath == "value");
+    int libraryObserverNotifications = 0;
     EventHandler<PropertyValueChangedEventArgs> fatalLibraryObserver =
-        (_, _) => throw new InvalidOperationException(
-            "Injected library count rollback failure.");
+        (_, _) => libraryObserverNotifications++;
     fatalLibraryProperty.ValueChanged += fatalLibraryObserver;
     try
     {
-        CheckThrows<ProjectRollbackIntegrityException>(
-            () => fatalLibrary.GetProfiles(fatalLibraryTarget),
-            "profile library does not hide a fatal count rollback-integrity failure");
+        ModProfileSummaryModel summary =
+            fatalLibrary.GetProfiles(fatalLibraryTarget).Single();
+        Check(libraryObserverNotifications == 0 &&
+              !summary.IsEffectiveChangeCountExact,
+            "profile library does not observationally apply profiles for its primary count");
     }
     finally
     {
@@ -315,8 +317,8 @@ ModProfileSummaryModel nonExactSummary = new()
     IsEffectiveChangeCountExact = false
 };
 Check(nonExactSummary.ChangeSummaryText ==
-          "1 property change + 2 gameplay settings",
-    "no-target presentation distinguishes exact ordinary changes from configured gameplay settings");
+          "Unavailable",
+    "missing historical impact authority displays Unavailable");
 
 string summaryLibraryPath = Path.Combine(
     Path.GetTempPath(),
@@ -333,15 +335,15 @@ try
     ModProfileSummaryModel withTarget =
         summaryLibrary.GetProfiles(CreateProject("A")).Single();
     Check(!withoutTarget.IsEffectiveChangeCountExact &&
-          withoutTarget.EffectiveChangeCount == 1 &&
+          withoutTarget.EffectiveChangeCount == 0 &&
           withoutTarget.OperationCount == 1 &&
           withoutTarget.ChangeSummaryText ==
-              "1 property change + 1 gameplay setting",
-        "profile library reports truthful non-exact contents without a target project");
-    Check(withTarget.IsEffectiveChangeCountExact &&
-          withTarget.EffectiveChangeCount == 2 &&
-          withTarget.ChangeSummaryText == "2 changes",
-        "profile library reports exact effective changes with a target project");
+              "Unavailable",
+        "profile library reports unavailable without historical authority");
+    Check(!withTarget.IsEffectiveChangeCountExact &&
+          withTarget.EffectiveChangeCount == 0 &&
+          withTarget.ChangeSummaryText == "Unavailable",
+        "current target does not become primary Profile Changes authority");
 }
 finally
 {
@@ -378,12 +380,12 @@ if (File.Exists(allModsPath) && File.Exists(goldenPath))
         controlledA,
         allMods,
         "phase4-all-mods");
-    Check(allModsV4.FormatVersion == 4 &&
+    Check(allModsV4.FormatVersion == ModProfileFormat.CurrentVersion &&
           allMods.Snapshot.GameplayOperationStates.Count == 26 &&
           allModsV4.OperationRequests.Count(request =>
               new ProfileOperationIntentRegistry().GetOperationType(
                   request.OperationId) != null) == 27,
-        "All Mods safe copy projects 26 legacy states and preserves canonical Request Board intent in format 4");
+        "All Mods safe copy projects legacy states and preserves canonical Request Board intent in the current format");
     Check(allMods.OperationRequests.Where(request =>
               request.OperationId is
                   ProfileOperationIds.AddCampFacilities or
@@ -814,6 +816,7 @@ ModProfileModel RequestOnly(ModProfileModel source, string operationId)
 {
     ModProfileModel profile = serializer.Deserialize(
         serializer.Serialize(source));
+    profile.ImpactManifest = null;
     ProfileOperationRequestModel request = profile.OperationRequests
         .Single(candidate => candidate.OperationId == operationId);
     profile.OperationRequests.Clear();

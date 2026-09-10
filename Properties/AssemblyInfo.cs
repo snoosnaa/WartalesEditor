@@ -9,3 +9,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("WartalesEditor.ProfileAtomicApplyTests")]
 [assembly: InternalsVisibleTo("WartalesEditor.ProfileIntentUpdateTests")]
 [assembly: InternalsVisibleTo("WartalesEditor.ProfilePresentationTests")]
+[assembly: InternalsVisibleTo("WartalesEditor.ProfileImpactManifestTests")]

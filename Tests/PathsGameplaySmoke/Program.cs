@@ -16,6 +16,29 @@ PathLevelRequirementsService levels = new(mutations, states);
 PathXpRewardsService rewards = new(mutations, states, Localizer());
 ProjectOperationService operations = new();
 
+ProfileImpactManifestModel levelImpact = EstablishPathsImpact(
+    project,
+    new ProfileOperationRequestModel
+    {
+        OperationId = ProfileOperationIds.PathLevelRequirements,
+        Settings = new JObject { ["percentage"] = 60 }
+    });
+Check(levelImpact.TotalCount == 2 &&
+      levelImpact.Leaves.All(leaf =>
+          leaf.EntryId is "PathXpBase" or "PathXpNext"),
+    "Path Level Requirements manifest uses real semantic output leaves");
+
+ProfileImpactManifestModel crimeImpact = EstablishPathsImpact(
+    project,
+    new ProfileOperationRequestModel
+    {
+        OperationId = ProfileOperationIds.PathXpRewardsCrime,
+        Settings = new JObject { ["multiplier"] = 2 }
+    });
+Check(crimeImpact.TotalCount == 17 &&
+      crimeImpact.Leaves.All(leaf => leaf.PropertyPath == "pathXP"),
+    "Path XP Rewards manifest uses all real path-owned canonical leaves");
+
 PathLevelRequirementsPreview originalPreview = levels.CreatePreview(project, 100);
 Check(originalPreview.CurrentMinimum == 5 && originalPreview.CurrentMaximum == 55,
     "vanilla Path requirement formula");
@@ -1203,6 +1226,48 @@ ModProfileModel ProfileWithRequest(
     OperationRequests = [request]
 };
 
+ProfileImpactManifestModel EstablishPathsImpact(
+    ProjectModel baseline,
+    ProfileOperationRequestModel request)
+{
+    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(
+        baseline.RootDocument.ToString(Newtonsoft.Json.Formatting.None));
+    string identity = new CdbGenerationIdentityService().Calculate(bytes);
+    ProjectModel exact = new JsonDataService().CreateProjectFromJson(
+        System.Text.Encoding.UTF8.GetString(bytes));
+    exact.EstablishPersistedIdentity(
+        identity, identity, SourceProvenanceStatus.Verified);
+    ModProfileModel profile = new()
+    {
+        FormatVersion = ModProfileFormat.CurrentVersion,
+        SourceCdbGenerationIdentity = identity,
+        Metadata = new ModProfileMetadataModel
+        {
+            Name = "Paths impact",
+            ProfileVersion = "1.0",
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            ModifiedAtUtc = DateTimeOffset.UtcNow
+        },
+        Snapshot = new ModificationSnapshotModel
+        {
+            SourceFileName = "paths.cdb",
+            SourceCdbGenerationIdentity = identity
+        },
+        OperationRequests = [request]
+    };
+    ProfileImpactEvaluationService evaluator = new(
+        new ProfileImpactBaselineResolver(
+            new IProfileImpactBaselineProvider[]
+            {
+                new PathsExactBytesProvider(bytes)
+            }),
+        new JsonDataService(),
+        CreateWorkflow(Localizer()).ApplyProfile);
+    return evaluator.TryEstablish(exact, profile, "test", out string reason)
+        ?? throw new InvalidOperationException(
+            $"Paths impact manifest was unavailable: {reason}");
+}
+
 string ProjectSnapshot(ProjectModel model) =>
     model.RootDocument.ToString(Newtonsoft.Json.Formatting.None) + "|" +
     JToken.FromObject(model.GameplayOperationStates)
@@ -1279,3 +1344,22 @@ record DialogLayoutEvidence(
     int ActionButtonCount,
     bool ComboBoxesAreCompact,
     double ScrollableHeight);
+
+sealed class PathsExactBytesProvider : IProfileImpactBaselineProvider
+{
+    private readonly byte[] bytes;
+
+    public PathsExactBytesProvider(byte[] bytes) => this.bytes = bytes;
+
+    public bool TryGetBaseline(
+        ProjectModel sourceProject,
+        string requiredSourceIdentity,
+        out ProfileImpactBaseline? baseline)
+    {
+        baseline = new ProfileImpactBaseline(
+            bytes,
+            new CdbGenerationIdentityService().Calculate(bytes),
+            "paths exact bytes");
+        return true;
+    }
+}

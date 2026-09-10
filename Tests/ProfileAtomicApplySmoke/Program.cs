@@ -131,6 +131,10 @@ Check(State(sameTarget, ProgressionType.OverworldMovementSpeed)
 Check(exactResult.OperationResults.Single().Status ==
       ProfileOperationApplyStatus.AlreadyConfigured,
     "state-only replay is classified already configured");
+int stateOnlyImpact = new ProfileEffectiveChangeCountService().Calculate(
+    MovementProject('c', 8, 14), exactProfile, out bool stateOnlyExact);
+Check(stateOnlyExact && stateOnlyImpact == 0,
+    "complete state-only target-context evaluation is exact with zero property changes");
 
 ProjectOperationHistoryAction stateOnlyHistory = new(
     "State-only profile",
@@ -159,6 +163,69 @@ Check(State(equalTarget, ProgressionType.OverworldMovementSpeed)
         .BaselineArray[0]!["value"]!.Value<int>() == 8,
     "already-equal state captures the target value as fresh baseline");
 
+Console.WriteLine("Phase 3 atomic Profile Apply: isolated structural impact");
+ProfileOperationRequestModel addCampRequest = new()
+{
+    OperationId = ProfileOperationIds.AddCampFacilities
+};
+ProjectModel addCampTarget = AdditiveProject('1');
+ProfileImpactManifestModel? addCampManifest = EstablishImpact(
+    addCampTarget,
+    new[] { addCampRequest });
+ModificationSnapshotImportResultModel addCampResult =
+    new ModProfileWorkflowService().ApplyProfile(
+        addCampTarget,
+        Profile(AdditiveProject('2'), new[] { addCampRequest }));
+int addCampMutationCount = new EffectiveChangeCountService().Calculate(
+    addCampResult.MutationResult);
+Check(addCampManifest != null &&
+      addCampManifest.TotalCount == addCampMutationCount,
+    "isolated Add Camp manifest count equals its actual distinct mutation count");
+Check(addCampManifest!.Leaves.Any(leaf =>
+          leaf.EntryId == "Anvil" &&
+          leaf.PropertyPath.StartsWith("tool.", StringComparison.Ordinal)) &&
+      addCampManifest.Leaves.Any(leaf =>
+          leaf.EntryId == "ApothecaryTable" &&
+          leaf.PropertyPath.StartsWith("icon.", StringComparison.Ordinal)),
+    "isolated Add Camp manifest contains representative facility leaves");
+Check(!addCampManifest.Leaves.Any(leaf =>
+          UpgradeAllEquipmentTargetCatalog.EntryIds.Contains(leaf.EntryId) &&
+          leaf.PropertyPath == "props.flags"),
+    "isolated Add Camp manifest contains no Upgrade All leaves");
+
+ProfileOperationRequestModel upgradeAllRequest = new()
+{
+    OperationId = ProfileOperationIds.UpgradeAllEquipment
+};
+ProjectModel upgradeAllTarget = AdditiveProject('3');
+ProfileImpactManifestModel? upgradeAllManifest = EstablishImpact(
+    upgradeAllTarget,
+    new[] { upgradeAllRequest });
+ModificationSnapshotImportResultModel upgradeAllResult =
+    new ModProfileWorkflowService().ApplyProfile(
+        upgradeAllTarget,
+        Profile(AdditiveProject('4'), new[] { upgradeAllRequest }));
+int upgradeAllMutationCount = new EffectiveChangeCountService().Calculate(
+    upgradeAllResult.MutationResult);
+Check(upgradeAllManifest != null &&
+      upgradeAllManifest.TotalCount == upgradeAllMutationCount,
+    "isolated Upgrade All manifest count equals its actual distinct mutation count");
+Check(upgradeAllManifest!.Leaves.Any(leaf =>
+          UpgradeAllEquipmentTargetCatalog.EntryIds.Contains(leaf.EntryId) &&
+          leaf.PropertyPath == "props.flags") &&
+      upgradeAllManifest.Leaves.All(leaf =>
+          leaf.PropertyPath == "props.flags"),
+    "isolated Upgrade All manifest contains representative equipment leaves only");
+Check(!upgradeAllManifest.Leaves.Any(leaf =>
+          (leaf.EntryId == "Anvil" ||
+           leaf.EntryId == "ApothecaryTable") &&
+          (leaf.PropertyPath.StartsWith("tool.", StringComparison.Ordinal) ||
+           leaf.PropertyPath.StartsWith("icon.", StringComparison.Ordinal))),
+    "isolated Upgrade All manifest contains no Add Camp leaves");
+Console.WriteLine(
+    $"Isolated structural counts: Add Camp {addCampMutationCount}, " +
+    $"Upgrade All {upgradeAllMutationCount}");
+
 Console.WriteLine("Phase 3 atomic Profile Apply: additive ordering");
 ProjectModel additiveTarget = AdditiveProject('f');
 ProjectModel additiveSource = AdditiveProject('e');
@@ -177,6 +244,9 @@ ModProfileModel additiveProfile = Profile(
             OperationId = ProfileOperationIds.AddCampFacilities
         }
     });
+ProfileImpactManifestModel? additiveManifest = EstablishImpact(
+    additiveTarget,
+    additiveProfile.OperationRequests);
 ModificationSnapshotImportResultModel additiveResult =
     new ModProfileWorkflowService().ApplyProfile(
         additiveTarget,
@@ -201,6 +271,18 @@ Check(UpgradeAllEquipmentTargetCatalog.EntryIds.All(id =>
     "Upgrade All Equipment applies to the complete current catalog");
 Check(additiveResult.MutationResult.GameplayOperationStateRollbackRecords.Count == 1,
     "mixed additive profile journals stateful authority in the same result");
+Check(additiveManifest != null &&
+      additiveManifest.TotalCount ==
+          new EffectiveChangeCountService().Calculate(
+              additiveResult.MutationResult),
+    "Add Camp and Upgrade All manifest counts canonical property leaves without CreatedEntry inflation");
+Check(additiveManifest!.Leaves.Any(leaf =>
+          leaf.EntryId == "Anvil" &&
+          leaf.PropertyPath.StartsWith("tool.", StringComparison.Ordinal)) &&
+      additiveManifest.Leaves.Any(leaf =>
+          UpgradeAllEquipmentTargetCatalog.EntryIds.Contains(leaf.EntryId) &&
+          leaf.PropertyPath == "props.flags"),
+    "structural manifest includes real Add Camp and Upgrade All output leaves");
 
 Console.WriteLine("Phase 3 atomic Profile Apply: save and reopen");
 string persistenceDirectory = Path.Combine(
@@ -696,16 +778,57 @@ static ProfileOperationRequestModel Request(
     Settings = settings
 };
 
-static ModificationSnapshotImportResultModel ApplyIntent(
+ModificationSnapshotImportResultModel ApplyIntent(
     ProjectModel target,
     string operationId,
     JObject settings)
 {
-    ProjectModel source = MovementProject('0', 6, 11);
+    ProfileOperationRequestModel request = Request(operationId, settings);
+    ProfileImpactManifestModel? manifest = EstablishImpact(
+        target,
+        new[] { request });
     ModProfileModel profile = Profile(
-        source,
-        new[] { Request(operationId, settings) });
-    return new ModProfileWorkflowService().ApplyProfile(target, profile);
+        MovementProject('0', 6, 11),
+        new[] { request });
+    ModificationSnapshotImportResultModel result =
+        new ModProfileWorkflowService().ApplyProfile(target, profile);
+    Check(manifest != null && manifest.TotalCount ==
+          new EffectiveChangeCountService().Calculate(result.MutationResult),
+        $"{operationId} manifest uses real replay and exact canonical leaf count");
+    return result;
+}
+
+ProfileImpactManifestModel? EstablishImpact(
+    ProjectModel source,
+    IEnumerable<ProfileOperationRequestModel> requests)
+{
+    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(Json(source));
+    string identity = new CdbGenerationIdentityService().Calculate(bytes);
+    ProjectModel exactSource = new JsonDataService().CreateProjectFromJson(
+        System.Text.Encoding.UTF8.GetString(bytes));
+    exactSource.EstablishPersistedIdentity(
+        identity, identity, SourceProvenanceStatus.Verified);
+    ModProfileModel profile = Profile(
+        exactSource,
+        requests.Select(request => new ProfileOperationRequestModel
+        {
+            FormatVersion = request.FormatVersion,
+            OperationId = request.OperationId,
+            Settings = request.Settings == null
+                ? null
+                : (JObject)request.Settings.DeepClone()
+        }),
+        formatVersion: ModProfileFormat.CurrentVersion);
+    ProfileImpactEvaluationService evaluator = new(
+        new ProfileImpactBaselineResolver(
+            new IProfileImpactBaselineProvider[]
+            {
+                new ExactBytesProvider(bytes)
+            }),
+        new JsonDataService(),
+        new ModProfileWorkflowService().ApplyProfile);
+    return evaluator.TryEstablish(
+        exactSource, profile, "test", out _);
 }
 
 static JObject Preset(string key) => new() { ["preset"] = key };
@@ -1068,3 +1191,22 @@ static EntryModel EntryIn(ProjectModel project, string id, string sheetName) =>
 
 static string Json(ProjectModel project) =>
     project.RootDocument.ToString();
+
+sealed class ExactBytesProvider : IProfileImpactBaselineProvider
+{
+    private readonly byte[] bytes;
+
+    public ExactBytesProvider(byte[] bytes) => this.bytes = bytes;
+
+    public bool TryGetBaseline(
+        ProjectModel sourceProject,
+        string requiredSourceIdentity,
+        out ProfileImpactBaseline? baseline)
+    {
+        baseline = new ProfileImpactBaseline(
+            bytes,
+            new CdbGenerationIdentityService().Calculate(bytes),
+            "test exact bytes");
+        return true;
+    }
+}

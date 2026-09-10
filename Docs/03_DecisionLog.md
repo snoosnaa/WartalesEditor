@@ -1,8 +1,8 @@
 ﻿# Decision Log
 
-**Version:** 0.2
+**Version:** 0.3
 **Status:** Active
-**Last Updated:** 2026-07-24
+**Last Updated:** 2026-09-10
 **Applies To:** Entire Project
 
 ---
@@ -17,6 +17,7 @@
 - Decision 0006
 - Decision 0007
 - Decision 0008
+- Decision 0009
 
 ---
 
@@ -151,3 +152,25 @@ The stable gameplay-operation platform now supports related
 player-facing features without repeated infrastructure work. Compatible
 features may be planned together while retaining focused implementation
 and verification boundaries.
+
+---
+
+# Decision 0009
+
+## Title
+
+Use historical clean-baseline impact for Profile Changes.
+
+## Status
+
+Accepted
+
+## Reason
+
+A target-relative count cannot truthfully describe a profile after that profile
+has already been applied. Format 5 therefore permits an optional Profile Impact
+Manifest established against exact verified pristine source bytes. It provides
+stable reporting authority for one profile gameplay revision while remaining
+strictly separate from Apply, mutation, compatibility, Restore Previous Values,
+and Gameplay Operation State authority. Missing or invalid authority is shown as
+Unavailable rather than replaced with a fabricated count.

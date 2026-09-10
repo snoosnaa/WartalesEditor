@@ -16,8 +16,8 @@ public sealed class ModProfileLibraryService
     private readonly ModProfileSerializationService
         serializationService;
 
-    private readonly ProfileEffectiveChangeCountService
-        effectiveChangeCountService;
+    private readonly ProfileImpactManifestValidationService
+        impactManifestValidationService = new();
 
     public ModProfileLibraryService()
         : this(
@@ -55,10 +55,7 @@ public sealed class ModProfileLibraryService
             ?? throw new ArgumentNullException(
                 nameof(serializationService));
 
-        this.effectiveChangeCountService =
-            effectiveChangeCountService
-            ?? throw new ArgumentNullException(
-                nameof(effectiveChangeCountService));
+        ArgumentNullException.ThrowIfNull(effectiveChangeCountService);
     }
 
     public IReadOnlyList<ModProfileSummaryModel>
@@ -646,6 +643,12 @@ public sealed class ModProfileLibraryService
             FormatVersion =
                 sourceProfile.FormatVersion,
 
+            SourceCdbGenerationIdentity =
+                sourceProfile.SourceCdbGenerationIdentity,
+
+            ImpactManifest =
+                sourceProfile.ImpactManifest?.DeepClone(),
+
             Metadata =
                 new ModProfileMetadataModel
                 {
@@ -757,21 +760,13 @@ public sealed class ModProfileLibraryService
             }
         }
 
-        int effectiveChangeCount;
-        bool isExact;
-        if (targetProject == null)
-        {
-            effectiveChangeCount =
-                effectiveChangeCountService.Calculate(profile);
-            isExact = profile.OperationRequests.Count == 0;
-        }
-        else
-        {
-            effectiveChangeCount = effectiveChangeCountService.Calculate(
-                targetProject,
-                profile,
-                out isExact);
-        }
+        bool isExact = impactManifestValidationService.TryValidate(
+            profile,
+            profile.ImpactManifest,
+            out _);
+        int effectiveChangeCount = isExact
+            ? profile.ImpactManifest!.TotalCount
+            : 0;
 
         return new ModProfileSummaryModel
         {

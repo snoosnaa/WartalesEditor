@@ -6,6 +6,49 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ---
 
+# Unreleased
+
+## Added
+
+- Added optional format-5 Profile Impact Manifest authority so Profile Manager
+  can display stable historical **Profile Changes** for a profile gameplay
+  revision.
+
+## Changed
+
+- Profile Changes now represents the number of distinct game values the profile
+  changes relative to its verified pristine source. The count no longer
+  collapses toward zero because the profile is already applied or the modified
+  CDB was saved and reopened.
+- Valid exact zero-impact profiles display `0 changes`; profiles without valid
+  established authority display `Unavailable`.
+- New gameplay Profile Create/Update uses format 5. Formats 1–4 remain usable
+  and may display `Unavailable` until new impact authority is established.
+
+## Compatibility and safety
+
+- The manifest is reporting-only. Profile Apply, mutation, compatibility,
+  Restore Previous Values, and Gameplay Operation State remain independently
+  authoritative.
+- Exact establishment requires independently verified pristine bytes or an
+  optional Golden CDB with an exact matching content hash. Golden remains
+  read-only and optional, and no automatic QuickBMS extraction occurs.
+
+## Verification
+
+- Final Engineering Review and delegated Project Owner Acceptance passed.
+- Accepted evidence includes zero-warning Debug and Release builds; Profile
+  Impact Manifest 131; Profile Operation Intent 86; Profile Operation Replay
+  209; Atomic Profile Apply 99; Profile Intent Update 123; Profile Presentation
+  75; Update Survival 180; Golden CDB 203; Request Board Rewards 101; Paths
+  Gameplay 208; QuickBMS Export/routing 215/215; Quick Help 44; Class A
+  compatibility; and a passing `git diff --check`.
+- A controlled 744-leaf profile established all 744 historical changes in
+  approximately 117–134 ms across final review and acceptance. No live Export
+  was run.
+
+---
+
 # Version 1.1.0
 
 **Status:** Released September 8, 2026.

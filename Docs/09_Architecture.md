@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Status:** Active  
-**Last Updated:** 2026-09-07
+**Last Updated:** 2026-09-10
 **Applies To:** Entire Project
 
 ---
@@ -497,7 +497,7 @@ removal, recursive pruning, or generalized JSON deletion.
 
 # Profile Operation Intent and Update Survival
 
-Format-4 profiles separate two authorities that must not be conflated. The
+Formats 4 and 5 separate two authorities that must not be conflated. The
 profile root carries `FormatVersion`; each item in `OperationRequests` carries
 the canonical `OperationId` and operation-specific `Settings` that represent
 portable, source-independent player intent. The requests contain no
@@ -507,7 +507,9 @@ as applicable it owns the captured baseline, applied setting, expected-current
 fingerprint, target identity and shape, source-generation identity, and local
 restore authority.
 
-New profiles use format 4. Recognized stateful gameplay outcomes are captured
+New profiles use format 5. Format 5 retains the format-4 gameplay and Apply
+contract and adds an optional `ImpactManifest` as historical reporting
+authority. Recognized stateful gameplay outcomes are captured
 as canonical operation requests, including after Save has accepted raw
 `PropertyModel.IsModified` values. Operation-owned raw snapshot leaves are
 excluded so they cannot compete with semantic replay; unrelated ordinary edits
@@ -515,10 +517,11 @@ remain ordinary profile content. Current-source state may be retained for
 strictly validated exact-source baseline fidelity, but it is never the portable
 authority. No intent is inferred from unsupported raw values alone.
 
-Formats 1–3 remain readable. Recognized legacy gameplay state is projected into
-canonical intent only when it can be validated safely. Update Existing Profile
-may migrate an old profile to format 4; metadata-only editing does not silently
-migrate it, and an old restore baseline never becomes portable authority.
+Formats 1–4 remain readable and applicable. Recognized legacy gameplay state is
+projected into canonical intent only when it can be validated safely. Explicit
+gameplay Create/Update uses the current format; metadata-only editing does not
+silently migrate an older profile, and an old restore baseline never becomes
+portable authority.
 
 On a structurally compatible new source generation, Profile Apply replays
 portable intent through the existing authoritative feature services. Output is
@@ -564,11 +567,12 @@ classifies the operation as already configured, making Restore Previous Values
 available when the new state provides authority. Matching values plus matching
 valid state permit a true no-op while retaining the same semantic result.
 
-## Format-4 Profile Reconciliation
+## Profile Reconciliation (Formats 4–5)
 
 Profile Create captures canonical intent from compatible authoritative Gameplay
 Operation State, excludes owned raw leaves, retains unrelated ordinary edits,
-and writes format 4. Update Existing Profile reconciles by stable `OperationId`:
+and writes the current format. Update Existing Profile reconciles by stable
+`OperationId`:
 unchanged intent is preserved, changed authoritative intent replaces it, new
 intent is added, and authoritatively restored intent is removed. Historical
 intent remains when there is no new authoritative semantic state.
@@ -581,19 +585,60 @@ independent validation, and managed-file replacement remain atomic.
 
 ## Effective Profile Change Counting
 
-Profiles carry no comparison-baseline or count metadata solely for
-presentation. Exact semantic counts require a concrete target project. With a
-target, the authoritative Apply behavior is evaluated observationally and the
-distinct actual property mutations determine the exact impact. Without a
-target, intrinsically knowable ordinary changes remain exact, while semantic
-operations are described as configured gameplay settings rather than assigned
-a fabricated property count. Ownership breadth, fixed target totals, and
-candidate counts are not effective-change authority.
+Profile Manager's primary **Profile Changes** value is historical clean-baseline
+impact for one profile gameplay revision. It is the number of distinct
+canonical game-data leaves whose profile-produced final value differs from the
+exact pristine Wartales source generation against which the authority was
+established. Current target state does not redefine it: Apply, Undo/Redo,
+Save/reopen, loading a different CDB, a Wartales update, or a changed/disappeared
+Golden CDB cannot make an established count collapse toward zero.
 
-Observational evaluation leaves project data, Gameplay Operation State,
-Undo/Redo, open-dialog presentation, and pending input unchanged. If rollback
-integrity cannot be proven, the failure is fatal rather than converted to a
-normal non-exact result.
+Format 5 may carry an optional `ImpactManifest`. The manifest records its own
+format and impact-semantics versions, verified source-generation identity,
+profile gameplay-content identity, total count, canonical affected-leaf
+evidence, evidence fingerprint, and establishment metadata. A leaf is identified
+by sheet, stable entry ID, and effective property path, with a `Created`,
+`Updated`, or `Removed` mutation kind. The count includes distinct effective
+`PropertyModel` leaves only. Operation requests, Gameplay Operation State,
+profile metadata, fingerprints, container objects, created entries as separate
+units, and state-only operation metadata do not count. Semantic operations such
+as Paths, Request Board Rewards, Starting Resources, Party Economy, Random Trait
+Exclusions, Add Camp Facilities, and Upgrade All Equipment contribute their
+actual affected leaves; one operation is not automatically one change.
+
+The manifest is reporting/presentation authority only. It is never Apply,
+mutation, compatibility, Restore Previous Values, or Gameplay Operation State
+authority. A valid zero-leaf manifest displays `0 changes`; missing, invalid, or
+unestablished authority displays `Unavailable`. Invalid optional authority is
+isolated from otherwise valid core profile content. All case-insensitive root
+aliases are removed before core deserialization; duplicate aliases invalidate
+optional authority, normal consumers receive only a validated manifest or
+`null`, and serialization emits at most one canonical `ImpactManifest`.
+
+Establishment requires exact pristine bytes whose SHA-256 equals the verified
+source-generation identity. Current persisted pristine source bytes qualify only
+after independent verification. The optional Golden CDB qualifies only on the
+same exact-hash rule and remains read-only; BuildID, filename, structural
+similarity, `OriginalJson`, and in-memory state are not substitutes. No automatic
+QuickBMS extraction occurs for count establishment. SHA-256 provides
+deterministic identity, binding, and corruption/tamper detection—not authorship,
+signing, or trusted authenticity.
+
+A valid manifest belongs to one gameplay-content revision, source generation,
+and impact-semantics version. Metadata-only changes preserve it. Gameplay/source
+changes rebuild it when an exact baseline and complete evaluation are available;
+otherwise a valid Create/Update may continue with stale authority removed and
+Profile Changes shown as `Unavailable`. Applying a source-A profile to source B
+does not rewrite source-A history; Update Survival independently decides whether
+portable intent can apply to B.
+
+Ordinary unavailable baseline, compatibility, provider, I/O, and environment
+conditions degrade to no manifest. Evaluator-owned impossible invariants are
+distinct engineering failures. Rollback-integrity and fatal CLR failures retain
+their established propagation behavior. The target-context observational count
+API remains available for accounting where needed, but it is not Profile
+Manager's primary historical authority; its cleanup must leave project data,
+Gameplay Operation State, Undo/Redo, open dialogs, and pending input unchanged.
 
 ## Profile Apply Presentation Synchronization
 

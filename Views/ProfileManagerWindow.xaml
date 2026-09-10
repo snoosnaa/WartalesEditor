@@ -159,7 +159,7 @@
                     <DataGridTextColumn Header="Profile Version"
                                         Binding="{Binding ProfileVersion}"
                                         Width="85"/>
-                    <DataGridTextColumn Header="Changes"
+                    <DataGridTextColumn Header="Profile Changes"
                                         Binding="{Binding ChangeSummaryText}"
                                         Width="150"/>
                 </DataGrid.Columns>
@@ -261,7 +261,7 @@
 
                     <StackPanel Grid.Row="10">
                         <TextBlock FontWeight="SemiBold"
-                                   Text="Changes"/>
+                                   Text="Profile Changes"/>
                         <TextBlock Margin="0,5,0,0"
                                    Text="{Binding SelectedProfileChangeSummary}"
                                    TextWrapping="Wrap"/>

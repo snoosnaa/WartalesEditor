@@ -133,7 +133,8 @@ try
     string snapshotJson = new ModificationSnapshotSerializationService().Serialize(snapshot);
     Check(!snapshotJson.Contains("CurrentCdbContentIdentity", StringComparison.Ordinal), "49 snapshot excludes current identity");
     ModProfileModel profile = new ModProfileService().CreateProfile(trusted, "Update Survival");
-    Check(profile.FormatVersion == 4, "50 profile writer v4");
+    Check(profile.FormatVersion == ModProfileFormat.CurrentVersion,
+        "50 profile writer uses current root format");
     Check(profile.SourceCdbGenerationIdentity == trusted.SourceCdbGenerationIdentity, "51 profile diagnostic source");
     string profileJson = new ModProfileSerializationService().Serialize(profile);
     Check(!profileJson.Contains("CurrentCdbContentIdentity", StringComparison.Ordinal), "52 profile excludes current identity");

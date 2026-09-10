@@ -272,6 +272,9 @@ public sealed class ModProfileService
             SourceCdbGenerationIdentity =
                 profile.SourceCdbGenerationIdentity,
 
+            ImpactManifest =
+                profile.ImpactManifest?.DeepClone(),
+
             OperationRequests =
                 System.Linq.Enumerable.ToList(
                     System.Linq.Enumerable.Select(

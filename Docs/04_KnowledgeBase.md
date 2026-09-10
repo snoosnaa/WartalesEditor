@@ -1,8 +1,8 @@
 ﻿# Knowledge Base
 
-**Version:** 0.4
+**Version:** 0.5
 **Status:** Active
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-09-10
 **Applies To:** Entire Project
 
 ---
@@ -79,7 +79,11 @@ Golden CDB adds a third, deliberately separate identity:
 `<Documents>\Wartales Editor\Golden CDB\data.cdb`. It represents the one
 reference explicitly designated by the user. It neither proves pristine/vanilla
 status nor participates in source provenance, current-content binding, gameplay
-state, profiles, snapshots, Restore Previous Values, or Update Compatibility.
+state, portable profile Apply, snapshots, Restore Previous Values, or Update
+Compatibility. It may supply read-only Profile Impact Manifest baseline bytes
+only when its independently calculated exact content hash equals the profile's
+verified source-generation identity; this reporting role grants no other
+authority.
 
 Golden references are loaded through the shared exact-byte parsing core without
 reading adjacent `.wtstate`. Atomic Set/Replace uses only transient sibling
