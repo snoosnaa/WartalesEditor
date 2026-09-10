@@ -2,9 +2,8 @@
 
 **Published reference release:** Wartales Editor 1.1.0
 
-**Status:** VERSION 1.1.0 PUBLISHED — RELEASE LIFECYCLE COMPLETE; subsequent
-portable-layout work accepted and awaiting commit/push and later candidate
-validation
+**Status:** VERSION 1.1.0 PUBLISHED — RELEASE LIFECYCLE COMPLETE; Version 1.1.1
+local candidate prepared and technically validated
 
 **Version 1.1.0 scope:** Accepted post-1.0.0 work is committed and includes
 Paths Gameplay Tools, stronger Profile Update Survival, Starting Resources
@@ -86,7 +85,7 @@ The proven external toolchain is QuickBMS `0.12.0` (SHA-256
 `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
 The public authorities and review PDFs now record this exact combination. RC2
 remains immutable, rejected/superseded for publication, and must not be mutated,
-relabeled, tagged, or published. No fresh candidate has been generated.
+relabeled, tagged, or published. It was not reused for later release work.
 
 **Tag:** `v1.1.0`, targeting
 `9db2841e9f74bef3eb1e07eddd82265a15b2a3ba`. **GitHub Release:** PUBLISHED at
@@ -104,15 +103,21 @@ installation, automatic Wartales discovery, Import, the QuickBMS prerequisite
 flow, User Guide access, and Language Data. The QuickBMS-missing message now
 points players to the User Guide for detailed setup instructions. The work is
 closed: implemented, reviewed, Project Owner accepted, committed, and pushed.
-RC2 is superseded for publication. No fresh candidate has been generated.
+RC2 remains superseded and was not reused for Version 1.1.1.
 
-## Current Post-1.1 Portable Package Architecture
+## Version 1.1.1 Local Release Candidate
 
-The next candidate uses the accepted root-launcher plus `App\` layout. This is
-implemented, passed renewed Engineering Review after focused corrections,
-passed Project Owner Acceptance, and is documentation-reconciled. Commit/push
-and release-candidate validation remain pending; Version 1.1.0 is unchanged and
-no later version or release has been assigned.
+Version 1.1.1 is selected for Profile Impact Manifest and stable historical
+Profile Changes, expanded Random Trait Exclusions, and the accepted root
+launcher plus `App\` layout. All three workstreams are implemented,
+Engineering-reviewed, Project Owner accepted, documented, committed, and
+pushed. Shared version/release metadata is reconciled, and a fresh local
+candidate has passed repository, package, extraction, version, Defender, normal
+non-admin, restricted/non-writable-location, local launcher, and Project Owner
+Quick Help PDF-viewer validation. **1.1.1 RELEASE CANDIDATE VALIDATION — PASS.**
+SmartScreen / real downloaded Mark-of-the-Web behavior remains unvalidated and
+non-blocking until a public distribution context exists. No `v1.1.1` tag,
+public release, or upload exists.
 
 ```text
 WartalesEditor.exe
@@ -298,10 +303,11 @@ validated SDK-supported publish policy changes them.
 - Root `THIRD-PARTY-NOTICES.txt`.
 - `Docs/CHANGELOG.md`, copied as `CHANGELOG.md`.
 
-## Current Release ZIP Manifest
+## Version 1.1.1 Release ZIP Manifest
 
-The next artifact name is assigned only during an authorized release lifecycle.
-The published 1.1.0 artifact remains historical and unchanged.
+The selected local candidate artifact is
+`WartalesEditor-1.1.1-win-x64.zip`. The published 1.1.0 artifact remains
+historical and unchanged.
 
 Archive entries are placed directly at the ZIP root so a player can extract to
 one chosen folder and run the executable. Do not add a second nested wrapper

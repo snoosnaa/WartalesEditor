@@ -8,6 +8,16 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 # Unreleased
 
+No additional changes are currently assigned beyond the Version 1.1.1 release
+candidate below.
+
+---
+
+# Version 1.1.1 — Release Candidate
+
+**Status:** Local release candidate prepared and validated; not tagged or
+published.
+
 ## Added
 
 - Added a dedicated root `WartalesEditor.exe` launcher for the next portable

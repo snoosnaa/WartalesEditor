@@ -2,7 +2,7 @@
 
 ## Project Snapshot
 
-**Application Version:** 1.1.0
+**Application Version:** 1.1.1 Release Candidate
 
 **Documentation Version:** 1.3
 
@@ -22,21 +22,26 @@ The long-term goal is to provide a complete content creation platform that allow
 
 # Project Status
 
-**Status:** Public Release Preparation In Progress
+**Status:** Version 1.1.1 Local Release Candidate Validated
 
-**Current Development Version:** 1.0.0
+**Current Development Version:** 1.1.1
 
 **Current Milestone:**
 
-Public Release Preparation
+Version 1.1.1 Release Candidate Validation
 
-**Status:** Phase 1 complete; overall release preparation remains in progress
+**Status:** Local technical validation complete; environment-specific release
+gates remain
 
-Legal/public metadata, public onboarding, version reconciliation, repository
-hygiene, release-note groundwork, and the history privacy plan are implemented
-and repository-verified. Packaging, history sanitization, clean-machine
-validation, checksums, tagging, and publication remain pending. Earlier capability and milestone
-sections below are retained as historical snapshot context.
+Version 1.1.1 reconciles stable Profile Changes, expanded Random Trait
+Exclusions, and the portable root launcher plus intact `App\` layout. The fresh
+local candidate, checksum, clean extraction, version checks, Defender scan,
+normal non-admin and restricted-location use, local launcher smoke, and Project
+Owner Quick Help PDF validation have passed. **1.1.1 RELEASE CANDIDATE
+VALIDATION — PASS.** SmartScreen / downloaded Mark-of-the-Web behavior remains
+unvalidated and non-blocking. Tagging and publication remain separately
+authorized. Earlier capability and milestone sections below are retained as
+historical snapshot context.
 
 The editor now provides:
 
@@ -337,14 +342,12 @@ No milestone is considered complete until runtime testing has been successfully 
 
 # Current Task
 
-1. Complete final repository verification for the accepted root launcher and
-   intact `App\` portable-package architecture.
-2. Await explicit commit/push authorization.
-3. Perform Defender, SmartScreen/Downloads-zone, clean non-admin,
-   Program Files-like, fresh-folder update/extraction, PDF-viewer, and final
-   immutable ZIP/checksum validation only in a later authorized release-
-   candidate lifecycle.
-4. Assign no release version, tag, or publication without separate authority.
+1. Checkpoint the verified Version 1.1.1 release-state documentation and shared
+   version metadata.
+2. Retain the immutable candidate ZIP and checksum under untracked `output\`.
+3. Await separate Project Owner authorization to tag and publish.
+4. Keep SmartScreen / real downloaded Mark-of-the-Web behavior recorded as an
+   unvalidated, non-blocking distribution-context check.
 
 ---
 

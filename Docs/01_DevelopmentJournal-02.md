@@ -7,6 +7,25 @@
 
 ------------------------------------------------------------------------
 
+# 2026-09-10 — Version 1.1.1 Candidate Prepared and Locally Validated
+
+The Project Owner selected Version 1.1.1 for the three completed post-1.1.0
+workstreams: Profile Impact Manifest and stable historical Profile Changes,
+expanded Random Trait Exclusions, and the portable root launcher plus intact
+`App\` layout. Shared version metadata and release-facing documentation are
+now reconciled. The complete regression suite and zero-warning Debug/Release
+builds passed before fresh package generation. The immutable ZIP, checksum,
+clean-extraction comparison, exact payload/version checks, and local launcher
+smoke then passed. Defender reported zero detections; normal non-admin and
+restricted/non-writable-location use passed; and the Project Owner confirmed
+Quick Help opened the packaged User Guide in the external PDF viewer. **1.1.1
+RELEASE CANDIDATE VALIDATION — PASS.** SmartScreen / real downloaded
+Mark-of-the-Web behavior remains unvalidated and non-blocking until public
+distribution. No tag, public release, upload, or live Export was authorized by
+this preparation step.
+
+------------------------------------------------------------------------
+
 # 2026-09-10 — Root Launcher and Portable Package Layout Accepted
 
 Investigation and architecture review approved a dedicated root launcher with

@@ -2,9 +2,16 @@
 
 ## Current Milestone
 
-Post-1.1.0 — Root Launcher and Portable Package Layout
+Version 1.1.1 — Validated Release-State Checkpoint
 
 ## Current Status
+
+The Project Owner selected Version 1.1.1 for the three completed post-1.1.0
+workstreams: stable historical Profile Changes, expanded Random Trait
+Exclusions, and the root launcher plus intact `App\` portable layout. Shared
+version authority and release documentation are reconciled, and the fresh local
+candidate has passed repository, package, extraction, version, and local
+launcher validation. No tag, public release, or upload exists yet.
 
 The root launcher plus intact `App\` portable-package implementation is
 complete. The initial Engineering Review returned **FAIL** because recursive
@@ -19,17 +26,19 @@ Renewed Engineering Review returned **PASS**, Project Owner Acceptance returned
 **PASS**, and documentation reconciliation is complete. The root launcher opens
 only `App\WartalesEditor.exe`; the real WPF application's existing
 self-contained, multi-file, untrimmed payload remains intact under `App\`; the
-five public documents remain at root. Both projects share version authority and
-the version remains 1.1.0.
+five public documents remain at root. Both projects share Version 1.1.1
+authority.
 
 Accepted evidence includes Launcher/package smoke 26, Quick Help 49, all listed
 feature suites, Debug and Release builds with zero warnings/errors, parser and
 package validation, zero source/staged path and SHA-256 differences, launcher
-hash provenance, and a successful local staged-launcher smoke. Commit/push is
-pending. Defender, SmartScreen/Downloads-zone, clean non-admin,
-Program Files-like, fresh-folder update/extraction, manual PDF-viewer, and final
-immutable ZIP/checksum validation remain later release-candidate gates. No new
-release/version decision has started.
+hash provenance, and successful local staged and clean-extracted launcher
+smokes. **1.1.1 RELEASE CANDIDATE VALIDATION — PASS.** Defender, normal
+non-admin use, fresh-folder extraction, restricted/non-writable-location use,
+and Project Owner Quick Help PDF-viewer validation passed. SmartScreen / real
+downloaded Mark-of-the-Web behavior remains unvalidated and non-blocking until
+a public distribution context exists. Version 1.1.1 is selected but not yet
+released.
 
 ## Previous Post-Release Milestone
 
@@ -169,8 +178,8 @@ the QuickBMS prerequisite flow, User Guide access, Language Data, loading the
 full mod set, starting a new game, and successful gameplay all worked.
 The final QuickBMS-missing message now points players to the User Guide for
 detailed setup instructions. Wartales Installation Resolution is closed:
-implemented, reviewed, Project Owner accepted, committed, and pushed. RC2 is
-superseded for publication, and no fresh candidate has been generated.
+implemented, reviewed, Project Owner accepted, committed, and pushed. RC2
+remains superseded and was not reused for Version 1.1.1.
 
 The bounded pre-release Save feedback and Run Speed presentation corrections
 are implemented and repository-verified. The normal Save command now presents
@@ -643,7 +652,7 @@ configured 645-change state.
 
 ## Next Required Step
 
-Perform final repository verification, then await explicit authorization to
-commit and push the accepted root launcher, portable-package flow, related
-tests, and reconciled documentation. Do not begin the separate release-candidate
-validation gates, assign a version, tag, create a public ZIP, or publish.
+Checkpoint the verified Version 1.1.1 release state locally and remotely, retain
+candidate artifacts under untracked `output\`, and await separate Project Owner
+authorization to tag and publish. Do not upload release artifacts or perform
+live Export.

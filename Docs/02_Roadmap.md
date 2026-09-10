@@ -43,7 +43,8 @@ personal gameplay experience through safe, reusable editing tools.
 
 -   Root launcher plus intact `App\` portable-package layout — implementation,
     focused corrections, renewed Engineering Review, Project Owner Acceptance,
-    and documentation reconciliation complete; commit/push pending ✅
+    documentation reconciliation, and Version 1.1.1 candidate validation
+    complete ✅
 -   QuickBMS Export Back to Wartales Version 1 — Engineering reviewed, exact-byte
     verification complete, Project Owner live-package accepted, and closed ✅
 -   Shared Restore Previous Values local-chain authority correction — reviewed,
@@ -53,8 +54,8 @@ personal gameplay experience through safe, reusable editing tools.
 
 ## Next Milestone
 
--   Final verification and authorized commit/push, followed separately by
-    release-candidate validation if authorized
+-   Checkpoint the validated Version 1.1.1 release state, then await separate
+    Project Owner authorization to tag and publish
 
 ------------------------------------------------------------------------
 

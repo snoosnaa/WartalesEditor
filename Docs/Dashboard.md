@@ -1,6 +1,6 @@
 ﻿# Wartales Editor Dashboard
 
-**Application Version:** 1.1.0
+**Application Version:** 1.1.1 Release Candidate
 
 **Document Version:** 2.0
 
@@ -10,7 +10,7 @@
 
 # Project Status
 
-**Current Phase:** Version 1.1.0 — RELEASED
+**Current Phase:** Version 1.1.1 — LOCAL RELEASE CANDIDATE VALIDATED
 
 Version 1.1.0 was released publicly on September 8, 2026. The 405-file
 self-contained Windows x64 package is available from the official GitHub
@@ -22,6 +22,14 @@ to the accepted release commit. GitHub publication and independent download/hash
 verification are complete. Nexus publication and VirusTotal submission were not
 performed. Earlier milestone sections remain as historical dashboard context.
 
+Version 1.1.1 is selected for stable historical Profile Changes, expanded
+Random Trait Exclusions, and the portable root launcher package layout. Its
+fresh local candidate has passed repository, package, extraction, version,
+Defender, normal non-admin, restricted-location, local launcher, and Project
+Owner Quick Help PDF validation. SmartScreen / downloaded Mark-of-the-Web
+behavior remains unvalidated and non-blocking. No `v1.1.1` tag, public release,
+or upload exists yet.
+
 ## Post-Release Portable Package Layout
 
 The dedicated root launcher and intact `App\` application-payload layout are
@@ -30,8 +38,9 @@ safety and filename-only equivalence; focused corrections closed both findings.
 Renewed Engineering Review and Project Owner Acceptance passed, and
 documentation reconciliation is complete. The tracked builder and validator
 now provide bounded staging, SHA-256 payload equivalence, launcher provenance,
-and exact layout checks. Commit/push and later release-candidate validation are
-pending; no new version is assigned.
+and exact layout checks. **1.1.1 RELEASE CANDIDATE VALIDATION — PASS.** Only
+SmartScreen / real downloaded Mark-of-the-Web behavior remains unvalidated and
+non-blocking before a public distribution context exists.
 
 ## Post-Release Random Trait Exclusions Expansion
 
@@ -226,10 +235,8 @@ Planned features include:
 # Current Priorities
 
 1. Preserve the released Version 1.1.0 tag and immutable package.
-2. Await final verification and commit/push authorization for the accepted root
-   launcher and portable-package layout.
-3. Complete the deferred release-candidate validation gates only in a separately
-   authorized lifecycle.
+2. Checkpoint the validated Version 1.1.1 release state locally and remotely.
+3. Await separate Project Owner authorization before tagging or publication.
 4. Keep Nexus and VirusTotal pending unless separately authorized.
 
 ---

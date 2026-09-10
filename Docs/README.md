@@ -1,12 +1,12 @@
 # Wartales Editor Documentation
 
-**Application Version:** 1.1.0
+**Application Version:** 1.1.1 Release Candidate
 
-**Current lifecycle:** Version 1.1.0 released September 8, 2026; the post-release
-root-launcher plus `App\` portable-package architecture is implemented,
-Engineering Review passed after focused corrections, Project Owner Acceptance
-passed, and documentation reconciliation is complete. Commit/push and later
-release-candidate validation remain pending; no new version is assigned.
+**Current lifecycle:** Version 1.1.1 has been selected for the three accepted
+post-1.1.0 workstreams. Version metadata and release documentation are
+reconciled, and **1.1.1 RELEASE CANDIDATE VALIDATION — PASS**. SmartScreen / real
+downloaded Mark-of-the-Web behavior remains unvalidated and non-blocking. No
+tag, public release, or upload exists yet.
 
 The root [README](../README.md) is the public introduction and quick-start
 guide. This directory retains the complete user, architecture, engineering,
@@ -19,6 +19,8 @@ testing, roadmap, and historical record for the source repository.
 - [Changelog](CHANGELOG.md) — public release groundwork and historical changes.
 - [Version 1.1.0 Release Notes](ReleaseNotes-1.1.0.md) — published release
   summary.
+- [Version 1.1.1 Release Notes](ReleaseNotes-1.1.1.md) — local release-candidate
+  summary; not yet published.
 - [Public Release Preparation](PublicReleasePreparation.md) — intended V1
   release model, lifecycle state, pending work, and history-sanitization plan.
 - [Project Status](ProjectStatus.md) — authoritative current project state.

@@ -1,6 +1,6 @@
 # Wartales Editor User Manual
 
-This manual covers Wartales Editor 1.1.0. It is written for players and does
+This manual covers Wartales Editor 1.1.1. It is written for players and does
 not require knowledge of CDB internals.
 
 ## 1. What Wartales Editor Is
@@ -34,7 +34,7 @@ Other Windows versions, operating systems, processor architectures, stores,
 unverified Wartales builds, co-op behavior, and arbitrary combinations of
 third-party CDB changes are not currently part of the verified support claim.
 Steam Wartales BuildID 25172421 is the currently validated build for Version
-1.1.0. The Project Owner confirmed it directly from installed Steam content
+1.1.x. The Project Owner confirmed it directly from installed Steam content
 updated September 7, 2026. QuickBMS and Shiro script requirements remain
 unchanged.
 
@@ -44,7 +44,7 @@ Wartales Editor is distributed as a portable ZIP. It has no installer and does
 not require a separate .NET runtime. The package root contains the launcher and
 the public documents; the `App\` folder contains the application files it needs.
 
-1. Download `WartalesEditor-1.1.0-win-x64.zip` from the official GitHub or
+1. Download `WartalesEditor-1.1.1-win-x64.zip` from the official GitHub or
    authorized Nexus release page.
 2. Verify its SHA-256 checksum against the published checksum file.
 3. Extract the entire ZIP to a normal user-writable folder.

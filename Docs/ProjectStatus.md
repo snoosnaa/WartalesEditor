@@ -1,8 +1,8 @@
 ﻿Project Status
 
-Application Version: 1.1.0 (Released)
+Application Version: 1.1.1 (Local Release Candidate)
 
-Status: Root Launcher and Portable Package Layout Accepted and Reconciled
+Status: Version 1.1.1 Local Release Candidate Validated
 
 Last Updated: 2026-09-10
 
@@ -32,6 +32,15 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
+The Project Owner selected Version 1.1.1 for the three completed and
+checkpointed post-1.1.0 workstreams: Profile Impact Manifest and stable
+historical Profile Changes, expanded Random Trait Exclusions, and the portable
+root launcher plus intact `App\` layout. Shared version metadata and active
+release documentation are reconciled. A fresh local candidate has passed the
+complete repository regression suite, Debug and Release builds, package and
+extraction equivalence, version checks, and local launcher smoke validation. No
+`v1.1.1` tag, public release, or upload exists yet.
+
 The post-1.1 root launcher plus `App\` portable-package architecture is
 implemented and accepted. The initial Engineering Review failed on unsafe
 output-authority reparse handling and filename-only payload equivalence. Focused
@@ -44,7 +53,7 @@ The package root contains the dedicated `WartalesEditor.exe` launcher, the five
 public/legal documents, and one `App\` directory holding the intact real WPF
 application payload. The main application remains self-contained, multi-file,
 untrimmed `win-x64`; the launcher alone is self-contained, trimmed, and
-single-file. Both use shared Version 1.1.0 authority. Package generation is
+single-file. Both use shared Version 1.1.1 authority. Package generation is
 tracked and bounded but does not tag or publish.
 
 Accepted verification includes Launcher/package smoke 26, Quick Help 49,
@@ -52,9 +61,12 @@ Class A PASS, Golden 203, Paths 208, Atomic Profile Apply 121, Profile Impact
 Manifest 131, Profile Intent Update 35, Profile Operation Intent 59, Profile
 Operation Replay 209, Profile Presentation 75, QuickBMS Export 215/215, Request
 Board Rewards 101, Update Survival 180, zero-warning/error Debug and Release
-builds, and passing staging/hash/launch verification. Commit/push and the later
-release-candidate gates remain pending. No new release/version decision has
-started.
+builds, and passing staging/hash/launch verification. **1.1.1 RELEASE CANDIDATE
+VALIDATION — PASS.** Defender, normal non-admin use, fresh-folder extraction,
+restricted/non-writable-location use, and Project Owner Quick Help PDF-viewer
+validation passed. SmartScreen / real downloaded Mark-of-the-Web behavior
+remains unvalidated and non-blocking until public distribution exists.
+Publication remains separately authorized.
 
 Previous accepted post-release work follows for context.
 
@@ -248,8 +260,8 @@ Import, the QuickBMS prerequisite flow, User Guide access, Language Data,
 loading the full mod set, starting a new game, and successful gameplay.
 The QuickBMS-missing message now points players to the User Guide for detailed
 setup instructions. Wartales Installation Resolution is closed: implemented,
-reviewed, Project Owner accepted, committed, and pushed. RC2 is superseded for
-publication; no fresh candidate has been generated.
+reviewed, Project Owner accepted, committed, and pushed. RC2 remains superseded
+and was not reused for Version 1.1.1.
 
 The bounded pre-release Save feedback and Run Speed presentation corrections
 are implemented and locally verified. The user-invoked Save command now uses
@@ -1027,10 +1039,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Perform final repository verification, then await explicit authorization to
-commit and push the accepted launcher/package implementation, tests, and
-documentation. Release-candidate validation, tagging, publication, and version
-assignment remain separate and unauthorized.
+Checkpoint the verified Version 1.1.1 release state, then await separate Project
+Owner authorization to tag and publish. Keep candidate artifacts untracked and
+do not perform live Export.
 
 Document Maintenance
 

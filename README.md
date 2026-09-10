@@ -6,6 +6,9 @@ CDB comparison, and integrated QuickBMS import/export workflows.
 
 Current public version: **1.1.0**, released September 8, 2026. Download the
 official package from the [Wartales Editor 1.1.0 GitHub Release](https://github.com/snoosnaa/WartalesEditor/releases/tag/v1.1.0).
+Version **1.1.1** has been selected for the next release. Its local release
+candidate has passed repository, package, extraction, and launch validation; it
+has not yet been tagged or published.
 
 ## AI Development Disclosure
 
@@ -39,7 +42,7 @@ validation, and lifecycle reconciliation before accepted commits.
 
 ## Supported Platform and Game Version
 
-Wartales Editor 1.1.0 supports **Windows 11 x64** and the **Steam version of
+Wartales Editor 1.1.1 supports **Windows 11 x64** and the **Steam version of
 Wartales**. It can automatically locate Wartales across Steam libraries. If
 automatic detection fails, select the Wartales installation folder containing
 `Wartales.exe` and `res.pak`; use **Tools → Wartales Location…** to change that
@@ -55,7 +58,7 @@ Validated with `Shiro_Games_PAK_script.bms` **v0.2**, dated **10.03.2022**
 (SHA-256 `3FF096363BCDBAEEADBC67B66F91FFD5E0AB424006049B0194BCB0EB433C35B6`).
 
 Steam Wartales BuildID 25172421 is the currently validated build for Version
-1.1.0, confirmed directly by the Project Owner from installed Steam content
+1.1.x, confirmed directly by the Project Owner from installed Steam content
 updated September 7, 2026. The QuickBMS and Shiro script combination remains
 validated as recorded below. Later game or toolchain updates may require renewed
 compatibility validation. Other operating systems, CPU architectures, stores,
@@ -66,9 +69,9 @@ integrated-support claim.
 
 ## Download and Installation
 
-The published 1.1 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
+The published 1.1.0 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
 self-contained Windows x64 portable build. No installer or updater is included.
-Future packages use a cleaner layout: the obvious `WartalesEditor.exe` at the
+The 1.1.1 candidate uses a cleaner layout: the obvious `WartalesEditor.exe` at the
 package root launches the complete application payload kept intact under
 `App\`. The public documents remain at the package root.
 
