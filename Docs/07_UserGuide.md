@@ -40,15 +40,17 @@ unchanged.
 
 ## 3. Installation
 
-Wartales Editor is distributed as a portable, multi-file ZIP. It has no
-installer and does not require a separate .NET runtime.
+Wartales Editor is distributed as a portable ZIP. It has no installer and does
+not require a separate .NET runtime. The package root contains the launcher and
+the public documents; the `App\` folder contains the application files it needs.
 
 1. Download `WartalesEditor-1.1.0-win-x64.zip` from the official GitHub or
    authorized Nexus release page.
 2. Verify its SHA-256 checksum against the published checksum file.
 3. Extract the entire ZIP to a normal user-writable folder.
-4. Keep all extracted files together.
-5. Run `WartalesEditor.exe` from the extracted folder.
+4. Keep all extracted files together and leave the `App\` folder intact.
+5. Run the root `WartalesEditor.exe` from the extracted folder. Do not launch or
+   rearrange files inside `App\`.
 
 Do not run the application from inside the ZIP. Do not download repackaged
 copies from an unknown source.
@@ -139,8 +141,9 @@ no CDB is open. It opens a compact reference window with five tabs: **Import**,
 Each tab provides short step-by-step reminders for that common workflow.
 
 Choose **Open User Guide** in Quick Help to open the complete
-`USER-GUIDE.pdf` included beside the application. Quick Help is a reference
-tool, not a tutorial or support system.
+`USER-GUIDE.pdf` at the package root. Quick Help locates it from the supported
+package layout. Quick Help is a reference tool, not a tutorial or support
+system.
 
 ## 9. Profiles
 
@@ -688,6 +691,10 @@ Version 1 has no updater.
 3. Verify its checksum.
 4. Extract it to a new folder.
 5. Preserve any manually saved CDBs and companion files you still need.
+
+Do not extract a new version over an older 1.1.x folder. Old root-level runtime
+files can otherwise remain beside the new launcher. The launcher deliberately
+opens only the application under `App\`, but it does not delete stale files.
 
 Profiles, Language Data, and Golden data stored under Documents normally remain
 available.

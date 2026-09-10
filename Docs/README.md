@@ -2,9 +2,11 @@
 
 **Application Version:** 1.1.0
 
-**Current lifecycle:** Version 1.1.0 released September 8, 2026; post-release
-Random Trait Exclusions discovery and changed-source replay expansion accepted
-and reconciled, with commit/push pending
+**Current lifecycle:** Version 1.1.0 released September 8, 2026; the post-release
+root-launcher plus `App\` portable-package architecture is implemented,
+Engineering Review passed after focused corrections, Project Owner Acceptance
+passed, and documentation reconciliation is complete. Commit/push and later
+release-candidate validation remain pending; no new version is assigned.
 
 The root [README](../README.md) is the public introduction and quick-start
 guide. This directory retains the complete user, architecture, engineering,

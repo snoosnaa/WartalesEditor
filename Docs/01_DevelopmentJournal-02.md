@@ -7,6 +7,42 @@
 
 ------------------------------------------------------------------------
 
+# 2026-09-10 — Root Launcher and Portable Package Layout Accepted
+
+Investigation and architecture review approved a dedicated root launcher with
+the complete real WPF application publish preserved under `App\`. The package
+keeps `README.pdf`, `USER-GUIDE.pdf`, `LICENSE`,
+`THIRD-PARTY-NOTICES.txt`, and `CHANGELOG.md` at root. The main application
+remains self-contained, multi-file, untrimmed `win-x64`; the launcher alone is
+self-contained, trimmed, single-file, and dependency-light. Both projects use
+shared Version 1.1.0 authority.
+
+The first Engineering Review returned **FAIL**. Before recursive recreation,
+the packaging script did not reject repository `output\` itself as a possible
+reparse/junction authority, and source/staged application equivalence compared
+filenames without proving same-name content. Non-blocking test notes also asked
+for an explicit empty-string argument and Unicode package-path coverage.
+
+Focused corrections introduced bounded output-path safety, real Windows
+junction regressions, per-file SHA-256 payload equivalence, root-launcher
+provenance by SHA-256, corruption and launcher-substitution regressions, and the
+requested argument/path coverage. Renewed Engineering Review returned **PASS —
+READY FOR PROJECT OWNER ACCEPTANCE**. Project Owner Acceptance then returned
+**PASS**.
+
+Final accepted evidence includes Launcher/package smoke 26, Quick Help 49,
+Class A PASS, Golden 203, Paths 208, Atomic Profile Apply 121, Profile Impact
+Manifest 131, Profile Intent Update 35, Profile Operation Intent 59, Profile
+Operation Replay 209, Profile Presentation 75, QuickBMS Export 215/215, Request
+Board Rewards 101, Update Survival 180, zero-warning/error Debug and Release
+builds, passing parser/staging/package validation, zero source/staged path or
+SHA-256 differences, launcher hash match, and a successful staged-launcher
+smoke returning exit code 0. Documentation reconciliation completed. Commit,
+push, version assignment, release-candidate gates, tag, publication, public ZIP,
+and live Export did not occur.
+
+------------------------------------------------------------------------
+
 # 2026-09-10 — Random Trait Exclusions Expansion Accepted and Reconciled
 
 Investigation established that fixed Starting/Recruitment ranges were no longer

@@ -2,7 +2,7 @@
 
 Application Version: 1.1.0 (Released)
 
-Status: Random Trait Exclusions Expansion Accepted and Reconciled
+Status: Root Launcher and Portable Package Layout Accepted and Reconciled
 
 Last Updated: 2026-09-10
 
@@ -31,6 +31,32 @@ Product philosophy belongs in PlayerFirstDesign.md.
 Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
+
+The post-1.1 root launcher plus `App\` portable-package architecture is
+implemented and accepted. The initial Engineering Review failed on unsafe
+output-authority reparse handling and filename-only payload equivalence. Focused
+corrections added bounded path safety, junction regressions, SHA-256 payload and
+launcher provenance validation, corruption/substitution rejection, and
+empty-string/Unicode launcher coverage. Renewed Engineering Review and Project
+Owner Acceptance passed; documentation reconciliation is complete.
+
+The package root contains the dedicated `WartalesEditor.exe` launcher, the five
+public/legal documents, and one `App\` directory holding the intact real WPF
+application payload. The main application remains self-contained, multi-file,
+untrimmed `win-x64`; the launcher alone is self-contained, trimmed, and
+single-file. Both use shared Version 1.1.0 authority. Package generation is
+tracked and bounded but does not tag or publish.
+
+Accepted verification includes Launcher/package smoke 26, Quick Help 49,
+Class A PASS, Golden 203, Paths 208, Atomic Profile Apply 121, Profile Impact
+Manifest 131, Profile Intent Update 35, Profile Operation Intent 59, Profile
+Operation Replay 209, Profile Presentation 75, QuickBMS Export 215/215, Request
+Board Rewards 101, Update Survival 180, zero-warning/error Debug and Release
+builds, and passing staging/hash/launch verification. Commit/push and the later
+release-candidate gates remain pending. No new release/version decision has
+started.
+
+Previous accepted post-release work follows for context.
 
 Random Trait Exclusions weighted discovery and changed-source profile replay are
 implemented and accepted as post-1.1.0 work. The initial Engineering Review
@@ -1002,9 +1028,9 @@ When available, PlayerFirstDesign.md should be added to this list.
 Next Task
 
 Perform final repository verification, then await explicit authorization to
-commit and push the accepted Random Trait Exclusions implementation, tests, and
-documentation. No release candidate, tag, publication, or version decision is
-authorized.
+commit and push the accepted launcher/package implementation, tests, and
+documentation. Release-candidate validation, tagging, publication, and version
+assignment remain separate and unauthorized.
 
 Document Maintenance
 

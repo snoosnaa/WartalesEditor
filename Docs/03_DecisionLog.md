@@ -19,6 +19,7 @@
 - Decision 0008
 - Decision 0009
 - Decision 0010
+- Decision 0011
 
 ---
 
@@ -203,3 +204,33 @@ only a requested trait genuinely absent from the complete destination sheet,
 while preserving that source-independent intent in the profile. A present but
 ineligible, polarity/group-drifted, or duplicate identity remains incompatible
 and fails before mutation.
+
+---
+
+# Decision 0011
+
+## Title
+
+Use a deterministic root launcher and preserve the main application payload
+under `App\`.
+
+## Status
+
+Accepted
+
+## Reason
+
+The portable package should present one obvious root executable and visible
+public/legal documents without manually relocating the SDK-authored WPF runtime
+payload. A dedicated launcher therefore resolves only the exact
+`App\WartalesEditor.exe` child from its own package root, forwards arguments,
+waits, and propagates the child exit code. The main application remains
+self-contained, multi-file, and untrimmed under `App\`; only the launcher is
+single-file and trimmed.
+
+The package uses no `Docs\` wrapper, installer, main-application single-file
+conversion, update/repair behavior, or old-install cleanup. Updates are
+extracted to a fresh folder. Root documents remain directly visible, and Quick
+Help uses only executable-adjacent or the bounded immediate-parent package-root
+resolution. Tracked construction and SHA-256 validation prove staging identity;
+package creation remains separate from release authorization.

@@ -1,7 +1,7 @@
 ﻿# Developer Guide
 
 **Document Version:** 1.2  
-**Last Updated:** 2026-07-17
+**Last Updated:** 2026-09-10
 
 ---
 
@@ -380,6 +380,34 @@ Commit
 Shared infrastructure changes require regression testing.
 
 Features are not complete until runtime verification succeeds.
+
+---
+
+# Portable Package Workflow
+
+The solution has two release projects that share the repository version
+properties authority. `WartalesEditor.csproj` is the real WPF application and
+remains self-contained, multi-file, untrimmed `win-x64` with ReadyToRun
+disabled. The dedicated launcher project is self-contained, trimmed,
+single-file `win-x64`, with ReadyToRun disabled and no WPF/WinForms dependency.
+The launcher is not independently versioned.
+
+Use the tracked portable-package build flow rather than manually assembling a
+release folder. The release workflow builds/tests first; the package script then
+publishes the main application into the package's `App\` subtree, publishes the
+launcher separately to the root, copies the five approved public documents, and
+validates the result. Staging must be a
+proper descendant of the repository's exact `output\` directory; path,
+reparse-point, and input-containment checks must complete before any recursive
+recreation.
+
+Package validation compares the complete allowed main-publish relative path set
+and the SHA-256 of every file, rejects ambiguous, missing, extra, unreadable, or
+same-name/different-content files, and proves the root launcher against its
+authoritative publish executable by SHA-256. It also enforces the root/`App\`
+layout, required documents and runtime metadata, culture/native structure, and
+PDB/root-runtime exclusions. A local validation ZIP may be created only when
+requested; tagging and publication remain separate authorized lifecycle steps.
 
 ---
 

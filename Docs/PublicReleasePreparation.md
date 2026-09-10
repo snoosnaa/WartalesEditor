@@ -1,8 +1,10 @@
 # Public Release Preparation
 
-**Target release:** Wartales Editor 1.1.0
+**Published reference release:** Wartales Editor 1.1.0
 
-**Status:** VERSION 1.1.0 PUBLISHED — RELEASE LIFECYCLE COMPLETE
+**Status:** VERSION 1.1.0 PUBLISHED — RELEASE LIFECYCLE COMPLETE; subsequent
+portable-layout work accepted and awaiting commit/push and later candidate
+validation
 
 **Version 1.1.0 scope:** Accepted post-1.0.0 work is committed and includes
 Paths Gameplay Tools, stronger Profile Update Survival, Starting Resources
@@ -104,6 +106,44 @@ points players to the User Guide for detailed setup instructions. The work is
 closed: implemented, reviewed, Project Owner accepted, committed, and pushed.
 RC2 is superseded for publication. No fresh candidate has been generated.
 
+## Current Post-1.1 Portable Package Architecture
+
+The next candidate uses the accepted root-launcher plus `App\` layout. This is
+implemented, passed renewed Engineering Review after focused corrections,
+passed Project Owner Acceptance, and is documentation-reconciled. Commit/push
+and release-candidate validation remain pending; Version 1.1.0 is unchanged and
+no later version or release has been assigned.
+
+```text
+WartalesEditor.exe
+App\
+    WartalesEditor.exe
+    WartalesEditor.dll
+    WartalesEditor.deps.json
+    WartalesEditor.runtimeconfig.json
+    [complete self-contained main application payload]
+README.pdf
+USER-GUIDE.pdf
+LICENSE
+THIRD-PARTY-NOTICES.txt
+CHANGELOG.md
+```
+
+The root executable is a dedicated self-contained, trimmed, single-file
+`win-x64` launcher. The real WPF application remains self-contained,
+multi-file, untrimmed, and ReadyToRun-disabled under `App\`. The launcher uses
+only the absolute `App\WartalesEditor.exe` path derived from its own base
+directory, sets `App\` as the child working directory, forwards arguments,
+waits, and propagates the child exit code. It performs no discovery, update,
+repair, cleanup, elevation, or migration.
+
+`Build\WartalesEditor.Version.props` is shared product-version authority for
+both projects. The tracked `Scripts\Build-PortablePackage.ps1` flow publishes
+the projects separately, constructs a fresh bounded staging tree below the
+repository's exact `output\` authority, and invokes the package validator.
+Creating local staging or an explicitly requested local validation ZIP does not
+authorize tagging or publication.
+
 ## Release Authority
 
 - Free and MIT licensed.
@@ -113,8 +153,10 @@ RC2 is superseded for publication. No fresh candidate has been generated.
   installation-folder selection when needed.
 - Steam App ID `1527950`, Wartales BuildID `25172421`, directly confirmed by the
   Project Owner from installed content updated September 7, 2026 at 5:39 PM.
-- Self-contained, untrimmed, multi-file `win-x64` portable ZIP.
-- No installer, updater, single-file publish, trimming, or ReadyToRun.
+- Self-contained `win-x64` portable ZIP with a single-file root launcher and an
+  intact untrimmed, multi-file main application payload under `App\`.
+- No installer, updater, main-application single-file conversion, or
+  ReadyToRun.
 - Unsigned V1 with a published SHA-256 checksum.
 - QuickBMS and the Shiro Games PAK script remain external and user-supplied.
 - GitHub Issues is for general reproducible defects, not a personal support
@@ -147,7 +189,36 @@ git rev-parse HEAD
 git tag --list
 ```
 
-## Exact Publish Command
+## Current Tracked Package Build
+
+After the source and PDF inputs are verified, use the tracked package builder:
+
+```powershell
+& .\Scripts\Build-PortablePackage.ps1
+```
+
+Optional input and output parameters are described by the script. Its output
+must remain a proper descendant of repository `output\`; the script validates
+the exact output authority, existing descendant components, reparse-point and
+file substitutions, normalized containment, and required-input separation
+before recursive recreation.
+
+The script runs two explicit publishes: the main application remains
+self-contained, multi-file, untrimmed `win-x64`; the launcher is
+self-contained, trimmed, single-file `win-x64`; both disable ReadyToRun. It
+copies the complete main payload, except approved exclusions such as PDBs, to
+`staging\App\`, copies only the launcher executable to the staging root, copies
+the five root documents, and validates the package.
+
+`Scripts\Test-PortablePackageLayout.ps1` requires exact source/staged relative
+path sets and compares every main-application file by SHA-256. It rejects
+ambiguous, missing, extra, unreadable, and same-name altered content. The root
+launcher must also SHA-256-match its authoritative launcher publish. Layout
+validation requires one root executable, the expected real application and
+runtime metadata under `App\`, culture/native payload structure, no root
+runtime clutter, no PDBs, all five documents, and no wrapper directory.
+
+## Historical Version 1.1 Publish Command
 
 Run from the repository root after the release source is clean and all required
 regressions pass:
@@ -178,7 +249,7 @@ This preserves portable debug metadata while preventing the repository's local
 absolute path from being embedded in application CodeView and PDB document
 records. Debug builds remain unchanged.
 
-## Verified Publish Output
+## Historical Version 1.1 Verified Publish Output
 
 The Phase 2 isolated test publish used the exact properties above with an
 external temporary output directory. It completed with zero warnings and zero
@@ -227,9 +298,10 @@ validated SDK-supported publish policy changes them.
 - Root `THIRD-PARTY-NOTICES.txt`.
 - `Docs/CHANGELOG.md`, copied as `CHANGELOG.md`.
 
-## Release ZIP Manifest
+## Current Release ZIP Manifest
 
-Artifact: `WartalesEditor-1.1.0-win-x64.zip`.
+The next artifact name is assigned only during an authorized release lifecycle.
+The published 1.1.0 artifact remains historical and unchanged.
 
 Archive entries are placed directly at the ZIP root so a player can extract to
 one chosen folder and run the executable. Do not add a second nested wrapper
@@ -237,11 +309,12 @@ folder.
 
 ```text
 WartalesEditor.exe
-WartalesEditor.dll
-WartalesEditor.deps.json
-WartalesEditor.runtimeconfig.json
-Newtonsoft.Json.dll
-<all other vetted self-contained publish runtime files/directories>
+App\
+    WartalesEditor.exe
+    WartalesEditor.dll
+    WartalesEditor.deps.json
+    WartalesEditor.runtimeconfig.json
+    <all other vetted self-contained main publish files/directories>
 README.pdf
 USER-GUIDE.pdf
 LICENSE
@@ -249,13 +322,13 @@ THIRD-PARTY-NOTICES.txt
 CHANGELOG.md
 ```
 
-The staging directory must contain exactly the vetted publish output minus
-`*.pdb`, plus those five public documents. Compare a recursive manifest against
-this rule before creating the ZIP. Because Quick Help resolves
-`USER-GUIDE.pdf` beside the executable, the final manifest and launch audit must
-explicitly verify that both files are present together at the ZIP root.
+The staging directory must contain exactly one root directory, `App`, and the
+six root files shown above. Quick Help first checks beside the real executable
+and, because it runs from a directory named `App`, may resolve
+`USER-GUIDE.pdf` from the immediate parent package root. It does not use the
+current working directory or unrestricted upward search.
 
-## Artifact Names
+## Historical Version 1.1 Artifact Names
 
 ```text
 Binary ZIP:      WartalesEditor-1.1.0-win-x64.zip
@@ -478,14 +551,18 @@ candidate.
 
 1. Verify clean, synchronized, sanitized release source and authorized version.
 2. Confirm SDK `10.0.400`, no unexpected refs/tags, and exact dependency state.
-3. Clean build all release projects and run the full required regression suite.
-4. Delete/recreate known release staging; run the exact publish command once.
-5. Validate the publish directory and smoke-launch its executable.
-6. Copy publish output except `*.pdb` into empty package staging.
-7. Copy the accepted README as `README.pdf`, the accepted manual as
-   `USER-GUIDE.pdf`, LICENSE, notices, and changelog.
-8. Audit required/prohibited files and retain symbols privately.
-9. Construct `WartalesEditor-1.1.0-win-x64.zip` from staging root.
+3. Clean build both release projects and run the full required regression suite.
+4. Run the tracked portable-package builder against a fresh validated
+   descendant of repository `output\`.
+5. Validate both publishes, the exact root/`App\` layout, all source/staged
+   relative paths and SHA-256 values, and root-launcher provenance.
+6. Smoke-launch the staged root launcher and confirm it starts the exact
+   `App\WartalesEditor.exe`, remains responsive, closes normally, and returns
+   the child exit code.
+7. Retain symbols and evidence privately.
+8. Construct the separately authorized immutable ZIP from staging root without
+   an outer wrapper directory.
+9. Use the authorized release/version artifact name.
 10. Generate the immutable ZIP SHA-256 file.
 11. Scan extracted staging and ZIP with updated Windows Defender.
 12. Perform the complete clean-machine validation plan.
@@ -493,8 +570,9 @@ candidate.
     authorities.
 14. Perform final release reconciliation and obtain Project Owner acceptance.
 15. Commit/push only the separately approved final source/document state.
-16. Create annotated/lightweight `v1.1.0` only as separately authorized.
-17. Create the GitHub Release and upload ZIP/checksum.
+16. Create only the separately authorized new release tag; never reuse or move
+    the published `v1.1.0` tag.
+17. Create the separately authorized GitHub Release and upload ZIP/checksum.
 18. Redownload both published files and verify SHA-256.
 19. Extract and launch the downloaded published artifact.
 20. Publish to Nexus only if separately authorized, then verify that download.
@@ -502,21 +580,28 @@ candidate.
 Each mutating Git/hosting/publication action requires its own applicable
 authorization. A failed gate stops the sequence.
 
-## Release Script Decision
+## Release Script Authority
 
-A release script is **unnecessary for V1**. The explicit one-project publish,
-five-document copy, one PDB exclusion, ZIP, checksum, and audit sequence is
-short enough to review directly and avoids introducing unreviewed release
-tooling immediately before V1. The documented command sequence is authoritative.
-If future releases add multiple packages or repeated channels, investigate a
-small fail-fast script then; it should verify source/SDK, publish once, stage
-from an allowlisted manifest, reject prohibited files, archive deterministically,
-hash, and print an audit without tagging or publishing.
+The tracked `Scripts\Build-PortablePackage.ps1` and
+`Scripts\Test-PortablePackageLayout.ps1` flow is authoritative for the new
+two-project layout. `Scripts\PortablePackagePathSafety.ps1` owns bounded output
+validation. The initial Engineering Review failed because output authority
+could be a reparse point before recursive deletion and publish equivalence used
+filenames rather than content. Focused corrections added authority/descendant
+junction checks, SHA-256 payload equivalence, launcher provenance, same-name
+corruption and substitution rejection, empty-string argument coverage, and
+Unicode package-path coverage. Renewed Engineering Review and Project Owner
+Acceptance passed.
+
+The builder does not tag, publish, upload, delete an old installation, or imply
+release authorization. Users must extract an update to a fresh folder; the
+launcher ignores stale root runtime files but deliberately removes none.
 
 ## Post-Release External Follow-Up
 
 - Publish to Nexus only if separately authorized.
 - Submit to VirusTotal only if separately authorized.
 
-The Version 1.1.0 GitHub release lifecycle is complete. No further release
-action is active.
+The Version 1.1.0 GitHub release lifecycle is complete. No further public
+release action is active; validation for a later candidate remains deferred and
+separately authorized.

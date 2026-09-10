@@ -10,6 +10,10 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ## Added
 
+- Added a dedicated root `WartalesEditor.exe` launcher for the next portable
+  package layout. The complete application remains grouped under `App\`, while
+  the User Guide, README, license, notices, and changelog remain easy to find at
+  the package root.
 - Added optional format-5 Profile Impact Manifest authority so Profile Manager
   can display stable historical **Profile Changes** for a profile gameplay
   revision.
@@ -19,6 +23,11 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ## Changed
 
+- Quick Help continues to open the packaged User Guide from the new bounded
+  root/`App\` layout.
+- Updated installation guidance now directs players to run the root launcher,
+  leave `App\` intact, and extract updates into a fresh folder so obsolete files
+  from an older installation are not left behind.
 - Profile Changes now represents the number of distinct game values the profile
   changes relative to its verified pristine source. The count no longer
   collapses toward zero because the profile is already applied or the modified
@@ -37,6 +46,12 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ## Compatibility and safety
 
+- The real WPF application keeps its established self-contained, multi-file,
+  untrimmed publish payload under `App\`; there is no installer, automatic
+  cleanup, or main-application single-file conversion.
+- Tracked package construction now validates bounded staging and proves the
+  staged application payload and root launcher against their publish sources by
+  SHA-256 before a package can pass local validation.
 - The manifest is reporting-only. Profile Apply, mutation, compatibility,
   Restore Previous Values, and Gameplay Operation State remain independently
   authoritative.
@@ -52,6 +67,11 @@ The format is inspired by Keep a Changelog and adapted for this project.
 
 ## Verification
 
+- Root Launcher/package smoke passed 26 checks and Quick Help passed 49. Renewed
+  Engineering Review and Project Owner Acceptance passed after corrections for
+  output-authority junction safety and full content equivalence. Debug and
+  Release builds completed with zero warnings and errors; staging, package
+  layout, SHA-256 equivalence, and local launcher smoke also passed.
 - Final Engineering Review and delegated Project Owner Acceptance passed.
 - Accepted evidence includes zero-warning Debug and Release builds; Profile
   Impact Manifest 131; Profile Operation Intent 86; Profile Operation Replay

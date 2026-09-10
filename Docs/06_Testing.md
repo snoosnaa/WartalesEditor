@@ -25,6 +25,46 @@ No milestone is complete until it has been successfully:
 - Documented
 - Committed
 
+## Root Launcher and Portable Package Acceptance — 2026-09-10
+
+The accepted post-1.1 portable-package work passed renewed Engineering Review
+and Project Owner Acceptance. The package smoke suite passed 26 checks and
+proves exact-path launch of `App\WartalesEditor.exe`, child working directory,
+individual argument forwarding including an empty string, child-exit-code
+propagation, native failure reporting, Unicode package paths, and the expected
+two-process wait lifecycle.
+
+Package safety coverage proves that the exact repository `output\` authority
+and descendant components reject junction/reparse redirection, traversal,
+sibling-prefix escape, output-root selection, file masquerading as a directory,
+and required inputs inside the destination before recursive recreation.
+Package validation rejects missing/extra/ambiguous paths, unreadable content,
+same-name SHA-256 corruption, and root-launcher substitution. It validates one
+root launcher, the intact main payload under `App\`, required runtime metadata,
+culture/native structure, five root documents, no wrapper directory, no root
+runtime clutter, and no PDB leakage.
+
+Quick Help passed 49 checks, including executable-adjacent resolution and the
+bounded immediate-parent lookup only when the real executable directory is
+named `App`. Final accepted evidence also includes Class A Compatibility PASS;
+Golden CDB 203; Paths Gameplay 208; Profile Atomic Apply 121; Profile Impact
+Manifest 131; Profile Intent Update 35; Profile Operation Intent 59; Profile
+Operation Replay 209; Profile Presentation 75; QuickBMS Export 215/215;
+Request Board Rewards 101; Update Survival 180; Debug and Release builds with
+zero warnings and errors; PowerShell parser validation; fresh staging; package
+validation; zero source/staged path or SHA-256 differences; launcher hash match;
+and a successful staged-launcher smoke ending with exit code 0. The existing
+QuickBMS symbolic-link privilege skip is unrelated.
+
+Accepted staging evidence was six root files, one root `App` directory, 400
+application files, 13 culture directories, and zero PDBs. These counts are test
+evidence, not permanent format constants.
+
+Later release-candidate gates remain separate: Defender, SmartScreen and
+Downloads-zone observation, clean non-admin Windows, Program Files-like
+location, fresh-folder update/extraction, manual PDF-viewer interaction, and
+final immutable ZIP/checksum equivalence.
+
 ## Version 1.1.0 Release Candidate Evidence — 2026-09-08
 
 The complete release regression passed before packaging:

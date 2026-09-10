@@ -2,11 +2,11 @@
 
 ## Project Snapshot
 
-**Application Version:** 1.0.0
+**Application Version:** 1.1.0
 
 **Documentation Version:** 1.3
 
-**Last Updated:** 2026-08-31
+**Last Updated:** 2026-09-10
 
 ---
 
@@ -337,10 +337,14 @@ No milestone is considered complete until runtime testing has been successfully 
 
 # Current Task
 
-1. Perform Git-history sanitization only with separate explicit authorization.
-2. Define the publish process and create the release candidate in later phases.
-3. Generate checksums, scan, clean-machine validate, record exact supported
-   versions, tag, and publish only when authorized.
+1. Complete final repository verification for the accepted root launcher and
+   intact `App\` portable-package architecture.
+2. Await explicit commit/push authorization.
+3. Perform Defender, SmartScreen/Downloads-zone, clean non-admin,
+   Program Files-like, fresh-folder update/extraction, PDF-viewer, and final
+   immutable ZIP/checksum validation only in a later authorized release-
+   candidate lifecycle.
+4. Assign no release version, tag, or publication without separate authority.
 
 ---
 

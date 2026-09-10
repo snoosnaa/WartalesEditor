@@ -25,6 +25,57 @@ Core principles:
 
 ---
 
+# Portable Package and Launcher Boundary
+
+The accepted portable-package architecture separates the player-facing entry
+point from the real WPF application payload:
+
+```text
+WartalesEditor.exe          dedicated launcher
+App\WartalesEditor.exe     real WPF application
+App\...                     intact self-contained application payload
+README.pdf
+USER-GUIDE.pdf
+LICENSE
+THIRD-PARTY-NOTICES.txt
+CHANGELOG.md
+```
+
+The main application remains a self-contained, multi-file, untrimmed
+`net10.0-windows` `win-x64` WPF `WinExe` with ReadyToRun disabled. Its SDK
+publish payload is preserved under `App\` except for approved public-package
+exclusions such as PDBs. Runtime files are not manually relocated.
+
+The separate launcher is a self-contained, trimmed, single-file
+`net10.0-windows` `win-x64` `WinExe` with ReadyToRun disabled and no WPF or
+WinForms dependency. From `AppContext.BaseDirectory`, it launches only the
+absolute `App\WartalesEditor.exe` path with `UseShellExecute = false`, sets the
+child working directory to `App\`, forwards each argument through
+`ArgumentList`, waits, and returns the child's exit code. It does not search,
+elevate, update, repair, migrate, download, or clean files. Startup failure is
+reported through the native Windows message box.
+
+Quick Help resolves `USER-GUIDE.pdf` beside the real executable first. Only
+when that executable directory is specifically named `App` may it resolve the
+guide from the immediate parent package root. Current working directory and
+unbounded parent searching are never authorities.
+
+Package construction publishes the main application and launcher separately,
+stages the intact application under `App\`, and keeps the five public/legal
+documents at root. Before any bounded staging recreation, the exact repository
+`output\` authority and descendant path are validated against traversal,
+file/directory confusion, reparse-point redirection, and destruction of package
+inputs. Validation then proves exact relative-path-set and SHA-256 equivalence
+for the staged application payload, proves root-launcher provenance by SHA-256,
+and enforces the layout and exclusion rules. Package creation does not imply a
+tag, release, or publication.
+
+This boundary changes distribution and startup only. Project mutation,
+transactions, validation, profiles, snapshots, gameplay state, QuickBMS, and
+all editor behavior remain unchanged.
+
+---
+
 # Application Language Data
 
 Wartales export localization is application-level, read-only presentation

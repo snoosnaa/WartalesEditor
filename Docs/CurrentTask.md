@@ -2,9 +2,36 @@
 
 ## Current Milestone
 
-Post-1.1.0 — Random Trait Exclusions Discovery and Profile Replay
+Post-1.1.0 — Root Launcher and Portable Package Layout
 
 ## Current Status
+
+The root launcher plus intact `App\` portable-package implementation is
+complete. The initial Engineering Review returned **FAIL** because recursive
+staging recreation did not first reject a reparse-point output authority and
+payload equivalence compared filenames without proving content. Focused
+corrections added bounded output-path safety, Windows junction regressions,
+full SHA-256 payload equivalence, launcher provenance checks, corruption and
+substitution rejection, empty-string argument coverage, and Unicode-path
+coverage.
+
+Renewed Engineering Review returned **PASS**, Project Owner Acceptance returned
+**PASS**, and documentation reconciliation is complete. The root launcher opens
+only `App\WartalesEditor.exe`; the real WPF application's existing
+self-contained, multi-file, untrimmed payload remains intact under `App\`; the
+five public documents remain at root. Both projects share version authority and
+the version remains 1.1.0.
+
+Accepted evidence includes Launcher/package smoke 26, Quick Help 49, all listed
+feature suites, Debug and Release builds with zero warnings/errors, parser and
+package validation, zero source/staged path and SHA-256 differences, launcher
+hash provenance, and a successful local staged-launcher smoke. Commit/push is
+pending. Defender, SmartScreen/Downloads-zone, clean non-admin,
+Program Files-like, fresh-folder update/extraction, manual PDF-viewer, and final
+immutable ZIP/checksum validation remain later release-candidate gates. No new
+release/version decision has started.
+
+## Previous Post-Release Milestone
 
 Random Trait Exclusions weighted discovery and changed-source profile replay are
 implemented and accepted. The first Engineering Review failed on a mixed
@@ -169,8 +196,9 @@ commit/push checkpoint. Quick Help V1 is **CLOSED**. See
 Quick Help V1 adds one always-visible main-screen action and an owned, modeless,
 single-instance reference window with Import, Gameplay Tools, Profiles, Restore
 Previous Values, and Export tabs. One footer reminder points to the packaged
-`USER-GUIDE.pdf`; Open User Guide resolves that local file beside the executable
-through Windows shell association. The feature has no project dependency,
+`USER-GUIDE.pdf`; Open User Guide resolves beside the real executable first or,
+from the supported `App\` directory, at the immediate parent package root, then
+opens it through Windows shell association. The feature has no project dependency,
 persistence, first-run behavior, or network behavior. The final focused suite
 passes 41 checks, and the existing Export/MainWindow suite passes 202/202.
 
@@ -616,7 +644,6 @@ configured 645-change state.
 ## Next Required Step
 
 Perform final repository verification, then await explicit authorization to
-commit and push the accepted Random Trait Exclusions implementation, tests, and
-documentation. No tag, release, or version decision is authorized. Nexus
-publication and VirusTotal submission remain separate optional actions and were
-not performed.
+commit and push the accepted root launcher, portable-package flow, related
+tests, and reconciled documentation. Do not begin the separate release-candidate
+validation gates, assign a version, tag, create a public ZIP, or publish.

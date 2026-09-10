@@ -67,18 +67,23 @@ integrated-support claim.
 ## Download and Installation
 
 The published 1.1 artifact is `WartalesEditor-1.1.0-win-x64.zip`: a free,
-self-contained, untrimmed, multi-file Windows x64 portable build. No installer
-or updater is included.
+self-contained Windows x64 portable build. No installer or updater is included.
+Future packages use a cleaner layout: the obvious `WartalesEditor.exe` at the
+package root launches the complete application payload kept intact under
+`App\`. The public documents remain at the package root.
 
 To install it:
 
 1. Download the ZIP only from the official GitHub Release page.
 2. Compare its SHA-256 checksum with the published checksum.
 3. Extract the complete ZIP to a normal user-writable folder.
-4. Run `WartalesEditor.exe` from that extracted folder.
+4. Run the root `WartalesEditor.exe` from that extracted folder. Leave the
+   `App\` folder and its contents intact.
 
-Do not run the executable from inside the ZIP. Keep all extracted files
-together.
+Do not run the executable from inside the ZIP or launch files from inside
+`App\`. Keep all extracted files together. When updating, extract the new
+version into a fresh folder instead of overwriting an older installation;
+overwriting can leave obsolete runtime files behind.
 
 Published ZIP SHA-256:
 `401D5247667A65E93911D5836BD018B14716F960C25E73C6F33F2E1C7003CCCC`.

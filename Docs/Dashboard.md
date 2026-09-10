@@ -22,6 +22,17 @@ to the accepted release commit. GitHub publication and independent download/hash
 verification are complete. Nexus publication and VirusTotal submission were not
 performed. Earlier milestone sections remain as historical dashboard context.
 
+## Post-Release Portable Package Layout
+
+The dedicated root launcher and intact `App\` application-payload layout are
+implemented. Initial Engineering Review failed on output-authority reparse
+safety and filename-only equivalence; focused corrections closed both findings.
+Renewed Engineering Review and Project Owner Acceptance passed, and
+documentation reconciliation is complete. The tracked builder and validator
+now provide bounded staging, SHA-256 payload equivalence, launcher provenance,
+and exact layout checks. Commit/push and later release-candidate validation are
+pending; no new version is assigned.
+
 ## Post-Release Random Trait Exclusions Expansion
 
 Weighted personality discovery and changed-source missing-trait replay are
@@ -215,9 +226,11 @@ Planned features include:
 # Current Priorities
 
 1. Preserve the released Version 1.1.0 tag and immutable package.
-2. Await final verification and commit/push authorization for the accepted
-   Random Trait Exclusions expansion.
-3. Keep Nexus and VirusTotal pending unless separately authorized.
+2. Await final verification and commit/push authorization for the accepted root
+   launcher and portable-package layout.
+3. Complete the deferred release-candidate validation gates only in a separately
+   authorized lifecycle.
+4. Keep Nexus and VirusTotal pending unless separately authorized.
 
 ---
 

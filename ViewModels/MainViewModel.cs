@@ -187,6 +187,11 @@ public class MainViewModel : ObservableObject
                     "Windows did not start an application for the User Guide.");
         };
 
+    private Func<string> resolveUserGuidePath =
+        static () =>
+            UserGuidePathResolver.Resolve(
+                AppContext.BaseDirectory);
+
     private ValidationResultsWindow?
         validationResultsWindow;
 
@@ -5977,6 +5982,14 @@ public class MainViewModel : ObservableObject
                 nameof(processStarter));
     }
 
+    internal void UseUserGuidePathResolverForTesting(
+        Func<string> pathResolver)
+    {
+        resolveUserGuidePath = pathResolver ??
+            throw new ArgumentNullException(
+                nameof(pathResolver));
+    }
+
 
     internal void UseProjectPublicationFailureForTesting(
         Action? failure)
@@ -6337,10 +6350,7 @@ public class MainViewModel : ObservableObject
         object? sender,
         EventArgs e)
     {
-        string userGuidePath =
-            Path.Combine(
-                AppContext.BaseDirectory,
-                "USER-GUIDE.pdf");
+        string userGuidePath = resolveUserGuidePath();
 
         if (!File.Exists(userGuidePath))
         {

@@ -44,6 +44,8 @@ Console.WriteLine(
 
 void RunQuickHelpSmoke()
 {
+    VerifyUserGuidePathResolution();
+
     App application = new()
     {
         ShutdownMode = ShutdownMode.OnExplicitShutdown
@@ -496,6 +498,76 @@ void RunQuickHelpSmoke()
     application.Shutdown();
 }
 
+void VerifyUserGuidePathResolution()
+{
+    string testRoot = Path.Combine(
+        Path.GetTempPath(),
+        "Wartales Editor Guide Resolver",
+        Guid.NewGuid().ToString("N"));
+    string appDirectory = Path.Combine(testRoot, "App");
+    string packageGuide =
+        Path.Combine(testRoot, UserGuidePathResolver.FileName);
+    string applicationGuide =
+        Path.Combine(appDirectory, UserGuidePathResolver.FileName);
+    string originalCurrentDirectory =
+        Directory.GetCurrentDirectory();
+
+    try
+    {
+        Directory.CreateDirectory(appDirectory);
+        File.WriteAllText(packageGuide, "package guide");
+        File.WriteAllText(applicationGuide, "application guide");
+
+        Check(
+            string.Equals(
+                UserGuidePathResolver.Resolve(appDirectory),
+                applicationGuide,
+                StringComparison.OrdinalIgnoreCase),
+            "User Guide beside the executable takes precedence");
+
+        File.Delete(applicationGuide);
+        string unrelatedCurrentDirectory =
+            Path.Combine(testRoot, "Unrelated Working Directory");
+        Directory.CreateDirectory(unrelatedCurrentDirectory);
+        Directory.SetCurrentDirectory(unrelatedCurrentDirectory);
+
+        Check(
+            string.Equals(
+                UserGuidePathResolver.Resolve(appDirectory),
+                packageGuide,
+                StringComparison.OrdinalIgnoreCase),
+            "Packaged App layout resolves the root User Guide independently of the working directory");
+
+        File.Delete(packageGuide);
+        Check(
+            string.Equals(
+                UserGuidePathResolver.Resolve(appDirectory),
+                applicationGuide,
+                StringComparison.OrdinalIgnoreCase),
+            "Missing packaged User Guide returns the deterministic beside-application path");
+
+        string otherDirectory = Path.Combine(testRoot, "Application");
+        Directory.CreateDirectory(otherDirectory);
+        File.WriteAllText(packageGuide, "package guide");
+        Check(
+            string.Equals(
+                UserGuidePathResolver.Resolve(otherDirectory),
+                Path.Combine(
+                    otherDirectory,
+                    UserGuidePathResolver.FileName),
+                StringComparison.OrdinalIgnoreCase),
+            "Parent resolution is restricted to a directory named App");
+    }
+    finally
+    {
+        Directory.SetCurrentDirectory(originalCurrentDirectory);
+        if (Directory.Exists(testRoot))
+        {
+            Directory.Delete(testRoot, recursive: true);
+        }
+    }
+}
+
 void VerifyUserGuideBehavior(
     QuickHelpWindow window,
     MainViewModel viewModel,
@@ -562,6 +634,42 @@ void VerifyUserGuideBehavior(
             !captured.FileName.StartsWith("http:", StringComparison.OrdinalIgnoreCase) &&
             !captured.FileName.StartsWith("https:", StringComparison.OrdinalIgnoreCase),
             "User Guide launch has no URL or network fallback");
+
+        string packagedRoot = Path.Combine(
+            Path.GetTempPath(),
+            "Wartales Editor Packaged Quick Help",
+            Guid.NewGuid().ToString("N"));
+        string packagedApp = Path.Combine(packagedRoot, "App");
+        string packagedGuide =
+            Path.Combine(packagedRoot, UserGuidePathResolver.FileName);
+        try
+        {
+            Directory.CreateDirectory(packagedApp);
+            File.WriteAllText(packagedGuide, "packaged guide fixture");
+            viewModel.UseUserGuidePathResolverForTesting(
+                () => UserGuidePathResolver.Resolve(packagedApp));
+            captured = null;
+            viewModel.UseUserGuideProcessStarterForTesting(
+                startInfo => captured = startInfo);
+            FindButton(window, "Open User Guide").RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            Check(
+                string.Equals(
+                    captured?.FileName,
+                    packagedGuide,
+                    StringComparison.OrdinalIgnoreCase) &&
+                captured?.UseShellExecute == true,
+                "Quick Help opens the root User Guide from the packaged App layout");
+        }
+        finally
+        {
+            viewModel.UseUserGuidePathResolverForTesting(
+                () => guidePath);
+            if (Directory.Exists(packagedRoot))
+            {
+                Directory.Delete(packagedRoot, recursive: true);
+            }
+        }
 
         viewModel.UseUserGuideProcessStarterForTesting(
             _ => throw new InvalidOperationException(

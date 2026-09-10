@@ -24,6 +24,33 @@
 
 # Architecture
 
+## Portable root launcher and intact application payload
+
+The portable package keeps a small player-facing root and preserves the real
+self-contained application publish intact under `App\`. Arbitrarily moving
+runtime DLLs away from their SDK-authored relationships is unsafe, while
+converting the WPF application to a trimmed single file would be a materially
+different publish model. A dedicated root launcher provides an obvious entry
+point without either change.
+
+The launcher resolves exactly `App\WartalesEditor.exe` from its own base
+directory. Search paths, the current working directory, registry entries, and
+neighboring executables are not authority. It waits for the real application
+and propagates its exit code, so detailed process tools may legitimately show
+both processes while the editor is running.
+
+Release staging is disposable only inside a validated descendant of the exact
+repository `output\` authority. Reparse points, traversal, sibling-prefix
+escapes, file/directory substitutions, and inputs inside the destination are
+rejected before deletion. Filename equality is not content identity, so the
+validator compares both relative paths and SHA-256 for every staged application
+file and separately proves the root launcher. This prevents a same-name altered
+payload from passing validation.
+
+Old root runtime files are outside the supported new layout and are ignored by
+the exact-path launcher, but no cleanup is attempted. Fresh-folder extraction
+is therefore the safe supported update practice.
+
 ## QuickBMS export transport
 
 Export Back to Wartales is a transport operation over exact persisted CDB bytes.
