@@ -9,8 +9,23 @@ using WartalesEditor.Services.Operations;
 
 namespace WartalesEditor.Services;
 
+internal enum ProfileReplaySourceContext
+{
+    ExactSource,
+    ChangedSource
+}
+
+internal sealed record ProfileOperationReplayResult(
+    ProjectOperationResult OperationResult,
+    IReadOnlyList<string> UnavailableTraitIds,
+    bool AllRequestedTraitsUnavailable)
+{
+    public bool HasUnavailableTraits => UnavailableTraitIds.Count > 0;
+}
+
 public sealed class ProfileOperationReplayService
 {
+    private readonly LocalizationService localizationService;
     private readonly ProfileOperationIntentRegistry registry;
     private readonly ProfileOperationReplayBaselineService baselineService;
     private readonly GameplayOperationStateService stateService;
@@ -37,6 +52,7 @@ public sealed class ProfileOperationReplayService
         LocalizationService localizationService)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+        this.localizationService = localizationService;
         ProjectMutationService mutations = new();
         stateService = new GameplayOperationStateService(
             mutations, localizationService);
@@ -70,6 +86,19 @@ public sealed class ProfileOperationReplayService
         ProfileOperationRequestModel intent,
         GameplayOperationStateModel? exactSourceBaselineSeed = null)
     {
+        return Preflight(
+            targetProject,
+            intent,
+            exactSourceBaselineSeed,
+            ProfileReplaySourceContext.ExactSource);
+    }
+
+    internal GameplayOperationStateModel? Preflight(
+        ProjectModel targetProject,
+        ProfileOperationRequestModel intent,
+        GameplayOperationStateModel? exactSourceBaselineSeed,
+        ProfileReplaySourceContext sourceContext)
+    {
         ArgumentNullException.ThrowIfNull(targetProject);
         ArgumentNullException.ThrowIfNull(intent);
 
@@ -95,7 +124,21 @@ public sealed class ProfileOperationReplayService
 
         JArray? baseline;
         GameplayOperationStateModel? acceptedSeed;
-        try
+        if (sourceContext == ProfileReplaySourceContext.ChangedSource)
+        {
+            acceptedSeed = FindCompatibleTargetState(
+                targetProject,
+                operationType.Value,
+                intent);
+            baseline = acceptedSeed == null
+                ? null
+                : baselineService.SelectExactSourceBaseline(
+                    targetProject,
+                    operationType.Value,
+                    acceptedSeed,
+                    intent);
+        }
+        else try
         {
             baseline = baselineService.SelectExactSourceBaseline(
                 targetProject,
@@ -128,7 +171,9 @@ public sealed class ProfileOperationReplayService
             traitService.PreflightReplay(
                 targetProject,
                 (JArray)intent.Settings!["traits"]!,
-                baseline);
+                baseline,
+                allowUnavailableTraits:
+                    sourceContext == ProfileReplaySourceContext.ChangedSource);
         }
 
         return acceptedSeed;
@@ -153,6 +198,32 @@ public sealed class ProfileOperationReplayService
         ProfileOperationRequestModel intent,
         GameplayOperationStateModel? exactSourceBaselineSeed = null)
     {
+        return ReplayCore(
+            targetProject,
+            intent,
+            exactSourceBaselineSeed,
+            ProfileReplaySourceContext.ExactSource).OperationResult;
+    }
+
+    internal ProfileOperationReplayResult ReplayForProfile(
+        ProjectModel targetProject,
+        ProfileOperationRequestModel intent,
+        GameplayOperationStateModel? exactSourceBaselineSeed,
+        ProfileReplaySourceContext sourceContext)
+    {
+        return ReplayCore(
+            targetProject,
+            intent,
+            exactSourceBaselineSeed,
+            sourceContext);
+    }
+
+    private ProfileOperationReplayResult ReplayCore(
+        ProjectModel targetProject,
+        ProfileOperationRequestModel intent,
+        GameplayOperationStateModel? exactSourceBaselineSeed,
+        ProfileReplaySourceContext sourceContext)
+    {
         ArgumentNullException.ThrowIfNull(targetProject);
         ArgumentNullException.ThrowIfNull(intent);
 
@@ -173,9 +244,12 @@ public sealed class ProfileOperationReplayService
                         "gameplay-state baseline.");
                 }
 
-                return operationService.Execute(
-                    additiveResolver.Resolve(intent),
-                    targetProject);
+                return new ProfileOperationReplayResult(
+                    operationService.Execute(
+                        additiveResolver.Resolve(intent),
+                        targetProject),
+                    Array.Empty<string>(),
+                    false);
             }
 
             ProgressionType operationType = registry
@@ -183,32 +257,40 @@ public sealed class ProfileOperationReplayService
                 ?? throw new InvalidOperationException(
                     $"Profile operation '{intent.OperationId}' is not " +
                     "stateful.");
-            JArray? baseline = baselineService.SelectExactSourceBaseline(
-                targetProject,
-                operationType,
-                exactSourceBaselineSeed,
-                intent);
+            JArray? baseline = sourceContext ==
+                    ProfileReplaySourceContext.ExactSource ||
+                exactSourceBaselineSeed != null
+                ? baselineService.SelectExactSourceBaseline(
+                    targetProject,
+                    operationType,
+                    exactSourceBaselineSeed,
+                    intent)
+                : null;
             ProjectOperationExecutionContext context = new();
 
             try
             {
-                ReplayStateful(
+                RandomTraitExclusionsReplayResult? traitReplay = ReplayStateful(
                     targetProject,
                     intent,
                     operationType,
                     baseline,
+                    sourceContext,
                     context);
 
-                GameplayOperationStateModel state = stateService.FindState(
-                        targetProject,
-                        operationType)
-                    ?? throw new InvalidOperationException(
-                        "Replay did not create gameplay-operation state.");
-                stateService.ValidateState(targetProject, state);
-                if (!state.IsCompatible)
+                if (traitReplay?.AllRequestedTraitsUnavailable != true)
                 {
-                    throw new InvalidOperationException(
-                        state.CompatibilityMessage);
+                    GameplayOperationStateModel state = stateService.FindState(
+                            targetProject,
+                            operationType)
+                        ?? throw new InvalidOperationException(
+                            "Replay did not create gameplay-operation state.");
+                    stateService.ValidateState(targetProject, state);
+                    if (!state.IsCompatible)
+                    {
+                        throw new InvalidOperationException(
+                            state.CompatibilityMessage);
+                    }
                 }
 
                 bool stateOnly =
@@ -219,12 +301,13 @@ public sealed class ProfileOperationReplayService
                     context.MutationResult.UpdatedProperties.Count == 0 &&
                     context.MutationResult.RemovedProperties.Count == 0;
 
-                return ProjectOperationResult.Success(
-                    context.MutationResult,
-                    stateOnly
-                        ? "These settings were already configured; " +
-                          "restore information was established."
-                        : null);
+                string? message = BuildReplayMessage(traitReplay, stateOnly);
+                return new ProfileOperationReplayResult(
+                    ProjectOperationResult.Success(
+                        context.MutationResult,
+                        message),
+                    traitReplay?.UnavailableTraitIds ?? Array.Empty<string>(),
+                    traitReplay?.AllRequestedTraitsUnavailable ?? false);
             }
             catch (Exception operationException)
             {
@@ -253,10 +336,56 @@ public sealed class ProfileOperationReplayService
         }
         catch (Exception exception)
         {
-            return ProjectOperationResult.Failure(
-                "The profile gameplay setting could not be replayed." +
-                Environment.NewLine + Environment.NewLine +
-                exception.Message);
+            return new ProfileOperationReplayResult(
+                ProjectOperationResult.Failure(
+                    "The profile gameplay setting could not be replayed." +
+                    Environment.NewLine + Environment.NewLine +
+                    exception.Message),
+                Array.Empty<string>(),
+                false);
+        }
+    }
+
+    private string? BuildReplayMessage(
+        RandomTraitExclusionsReplayResult? traitReplay,
+        bool stateOnly)
+    {
+        if (traitReplay is { UnavailableTraitIds.Count: > 0 })
+        {
+            string names = string.Join(", ", traitReplay.UnavailableTraitIds
+                .Select(id => localizationService.GetLocalizedName(id) ?? id));
+            return traitReplay.AllRequestedTraitsUnavailable
+                ? "Random Trait Exclusions was not applied because none of " +
+                  "its saved traits are available in this Wartales file: " + names + "."
+                : "Some saved random recruit traits are not available in this " +
+                  "Wartales file and were skipped: " + names + ".";
+        }
+
+        return stateOnly
+            ? "These settings were already configured; restore information " +
+              "was established."
+            : null;
+    }
+
+    private GameplayOperationStateModel? FindCompatibleTargetState(
+        ProjectModel project,
+        ProgressionType operationType,
+        ProfileOperationRequestModel intent)
+    {
+        GameplayOperationStateModel? targetState = project
+            .GameplayOperationStates
+            .SingleOrDefault(state => state.OperationType == operationType);
+        if (targetState == null)
+            return null;
+
+        try
+        {
+            registry.ValidateStateMatchesRequest(targetState, intent);
+            return targetState.DeepClone();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
         }
     }
 
@@ -378,11 +507,12 @@ public sealed class ProfileOperationReplayService
         };
     }
 
-    private void ReplayStateful(
+    private RandomTraitExclusionsReplayResult? ReplayStateful(
         ProjectModel project,
         ProfileOperationRequestModel intent,
         ProgressionType operationType,
         JArray? baseline,
+        ProfileReplaySourceContext sourceContext,
         ProjectOperationExecutionContext context)
     {
         JObject settings = intent.Settings
@@ -399,14 +529,14 @@ public sealed class ProfileOperationReplayService
                     settings.Value<int>("percentage"),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.StartingResources:
                 startingResourcesService.Replay(
                     project,
                     ReadStartingResources(settings),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.VolunteerWages:
             case ProgressionType.ValourPoints:
             case ProgressionType.CarryingCapacity:
@@ -416,7 +546,7 @@ public sealed class ProfileOperationReplayService
                     ReadPartyEconomy(settings, operationType),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.OverworldMovementSpeed:
                 movementService.Replay(
                     project,
@@ -425,7 +555,7 @@ public sealed class ProfileOperationReplayService
                         ignoreCase: false),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.RainFrequency:
                 rainService.Replay(
                     project,
@@ -434,28 +564,29 @@ public sealed class ProfileOperationReplayService
                         ignoreCase: false),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.RandomTraitExclusions:
-                traitService.Replay(
+                return traitService.Replay(
                     project,
                     (JArray)settings["traits"]!,
                     baseline,
+                    allowUnavailableTraits:
+                        sourceContext == ProfileReplaySourceContext.ChangedSource,
                     context);
-                break;
             case ProgressionType.RequestBoardRewards:
                 requestBoardService.Replay(
                     project,
                     settings.Value<int>("percentage"),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.PathLevelRequirements:
                 pathLevelService.Replay(
                     project,
                     settings.Value<int>("percentage"),
                     baseline,
                     context);
-                break;
+                return null;
             case ProgressionType.PathXpRewardsMight:
             case ProgressionType.PathXpRewardsTrade:
             case ProgressionType.PathXpRewardsCrime:
@@ -466,7 +597,7 @@ public sealed class ProfileOperationReplayService
                     settings.Value<int>("multiplier"),
                     baseline,
                     context);
-                break;
+                return null;
             default:
                 presetService.Replay(
                     project,
@@ -474,7 +605,7 @@ public sealed class ProfileOperationReplayService
                     settings.Value<string>("preset")!,
                     baseline,
                     context);
-                break;
+                return null;
         }
     }
 

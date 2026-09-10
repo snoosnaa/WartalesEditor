@@ -3682,18 +3682,194 @@ static void VerifyRandomTraitExclusions()
     Check(service.Discover(CreateRandomTraitExclusionProject()).Count == 4,
         "malformed candidate-only data on unsupported and personality-less traits is ignored");
 
+    ProjectModel weightedProject = CreateWeightedRandomTraitExclusionProject();
+    ((JArray)weightedProject.Sheets.Single(sheet => sheet.Name == "trait")
+        .SourceSheet!["separators"]!).Add(new JObject
+    {
+        ["title"] = "NestedFutureGroup",
+        ["level"] = 1,
+        ["id"] = "Ascetic"
+    });
+    IReadOnlyList<RandomTraitExclusionCandidate> weightedCandidates =
+        service.Discover(weightedProject);
+    Check(weightedCandidates.Count(candidate =>
+              candidate.SemanticGroup == "Hidden" &&
+              new[]
+              {
+                  "Ascetic", "Resilient", "Sociable", "Brave",
+                  "Humanist", "Masochist", "Delicate", "Allergic"
+              }.Contains(candidate.Id, StringComparer.Ordinal)) == 8 &&
+          weightedCandidates.Any(candidate =>
+              candidate.Id == "LegacyMalformedWeight") &&
+          weightedCandidates.Count(candidate =>
+              candidate.Id == "LegacyAndWeighted") == 1 &&
+          weightedCandidates.Any(candidate =>
+              candidate.Id == "PositiveIntegerWeight") &&
+          weightedCandidates.All(candidate =>
+              candidate.Id is not "ZeroWeight" and not "NegativeWeight" and
+              not "MalformedWeight" and not "NaNWeight" and
+              not "InfinityWeight" and not "MissingWeight" and
+              not "WeightWithoutPersonality" and
+              not "UnsupportedPersonality") &&
+          weightedCandidates.Select(candidate => candidate.Id)
+              .SequenceEqual(weightedCandidates.Select(candidate => candidate.Id)
+                  .OrderBy(id => id, StringComparer.Ordinal)),
+        "weighted candidate union discovers all current-style Hidden traits while isolating invalid weights");
+    RandomTraitExclusionsDialogViewModel weightedDialog = new(
+        weightedProject,
+        service,
+        new LocalizationService());
+    weightedDialog.NegativeTraits.Single(item =>
+        item.Id == "Resilient").IsAllowed = false;
+    SheetModel weightedSheet = weightedProject.Sheets.Single(sheet =>
+        sheet.Name == "trait");
+    JObject newlyWeighted = RandomTraitEntry(
+        "NewWeightedHidden", 0, null, recruitWeight: 0.75);
+    JArray weightedLines = (JArray)weightedSheet.SourceSheet!["lines"]!;
+    int weightedStartingIndex = weightedLines.OfType<JObject>().ToList()
+        .FindIndex(source => source.Value<string>("id") ==
+            "RecruitmentAnchor");
+    weightedLines.Insert(weightedStartingIndex, newlyWeighted);
+    weightedSheet.Entries.Add(new ProjectModelFactory().CreateEntryModel(
+        "trait", newlyWeighted, weightedSheet.Entries.Count + 1));
+    EntryModel removedWeighted = Entry(
+        weightedProject, "trait", "Brave");
+    weightedSheet.Entries.Remove(removedWeighted);
+    removedWeighted.SourceEntry!.Remove();
+    weightedDialog.RefreshAfterProjectOperation();
+    Check(!weightedDialog.NegativeTraits.Single(item =>
+              item.Id == "Resilient").IsAllowed &&
+          weightedDialog.PositiveTraits.Single(item =>
+              item.Id == "NewWeightedHidden").IsAllowed &&
+          weightedDialog.PositiveTraits.Concat(weightedDialog.NegativeTraits)
+              .All(item => item.Id != "Brave"),
+        "dialog refresh preserves matching pending choices, defaults new candidates, and removes missing candidates");
+    weightedDialog.SearchText = "Ascetic";
+    Check(weightedDialog.PositiveTraitsView.Cast<object>().Count() == 1 &&
+          weightedDialog.NegativeTraitsView.Cast<object>().Count() == 0,
+        "weighted candidates retain localized-name fallback search behavior");
+    weightedDialog.SearchText = string.Empty;
+    Entry(weightedProject, "trait", "Resilient").SourceEntry!
+        .SelectToken("props.personality")!.Replace(0);
+    weightedDialog.RefreshAfterProjectOperation();
+    Check(weightedDialog.NegativeTraits.All(item => item.Id != "Resilient") &&
+          weightedDialog.PositiveTraits.Single(item =>
+              item.Id == "Resilient").IsAllowed,
+        "polarity drift moves the candidate and does not preserve a stale pending selection");
+
+    ProjectModel weightedMutationProject =
+        CreateWeightedRandomTraitExclusionProject();
+    ProjectMutationService weightedMutationService = new();
+    RandomTraitExclusionsService weightedExclusionsService = new(
+        weightedMutationService,
+        new GameplayOperationStateService(weightedMutationService));
+    string weightedBefore = Json(weightedMutationProject);
+    string[] weightedAllowed = weightedExclusionsService
+        .Discover(weightedMutationProject)
+        .Where(candidate => candidate.Id != "Ascetic")
+        .Select(candidate => candidate.Id)
+        .ToArray();
+    ProjectOperationResult weightedExcluded = executor.Execute(
+        new RandomTraitExclusionsOperation(
+            weightedExclusionsService,
+            weightedAllowed),
+        weightedMutationProject);
+    string weightedAfter = Json(weightedMutationProject);
+    Check(weightedExcluded.Succeeded &&
+          Entry(weightedMutationProject, "trait", "Ascetic")
+              .SourceEntry!["done"]!.Value<bool>() == false &&
+          weightedMutationProject.GameplayOperationStates.Single()
+              .BaselineArray.OfType<JObject>().Any(record =>
+                  record.Value<string>("id") == "Ascetic"),
+        "weighted candidates use the existing done mutation and state pipeline");
+    VerifyUndoRedo(
+        "weighted Random Trait Exclusions",
+        weightedExcluded,
+        weightedMutationProject,
+        weightedBefore,
+        weightedAfter);
+    ProjectOperationResult weightedRestored = executor.Execute(
+        new RandomTraitExclusionsOperation(
+            weightedExclusionsService,
+            weightedExclusionsService.Discover(weightedMutationProject)
+                .Select(candidate => candidate.Id).ToArray()),
+        weightedMutationProject);
+    Check(weightedRestored.Succeeded &&
+          Entry(weightedMutationProject, "trait", "Ascetic")
+              .SourceEntry!.Property("done") == null,
+        "weighted candidates restore an originally absent done property through removal");
+
+    ProjectModel reorderedGroups = CreateProject(
+        RandomTraitSheetWithOrderedGroups(
+            ("Hidden", new[]
+            {
+                RandomTraitEntry("ReorderedWeighted", 0, null,
+                    recruitWeight: 0.5)
+            }),
+            ("Starting", new[]
+            {
+                RandomTraitEntry("ReorderedStarting", 1, null)
+            }),
+            ("Acquired", new[]
+            {
+                RandomTraitEntry("ReorderedAcquired", null, "unsupported")
+            }),
+            ("Recruitment", new[]
+            {
+                RandomTraitEntry("ReorderedRecruitment", 0, null)
+            })));
+    IReadOnlyList<RandomTraitExclusionCandidate> reorderedCandidates =
+        service.Discover(reorderedGroups);
+    Check(reorderedCandidates.Select(candidate => candidate.Id)
+              .OrderBy(id => id, StringComparer.Ordinal)
+              .SequenceEqual(new[]
+              {
+                  "ReorderedRecruitment",
+                  "ReorderedStarting",
+                  "ReorderedWeighted"
+              }) &&
+          reorderedCandidates.Single(candidate =>
+              candidate.Id == "ReorderedWeighted").SemanticGroup == "Hidden",
+        "candidate discovery accepts structurally valid reordered top-level groups");
+
+    ProjectModel addedGroup = CreateProject(
+        RandomTraitSheetWithOrderedGroups(
+            ("Starting", new[]
+            {
+                RandomTraitEntry("AddedGroupStarting", 0, null)
+            }),
+            ("FutureRecruitTraits", new[]
+            {
+                RandomTraitEntry("AddedGroupWeighted", 1, null,
+                    recruitWeight: 0.25)
+            }),
+            ("Recruitment", new[]
+            {
+                RandomTraitEntry("AddedGroupRecruitment", 1, null)
+            })));
+    Check(service.Discover(addedGroup).Single(candidate =>
+              candidate.Id == "AddedGroupWeighted").SemanticGroup ==
+          "FutureRecruitTraits",
+        "candidate discovery accepts new top-level groups and does not require legacy optional groups");
+
+    ProjectModel unresolvedWeightedGroup = CreateWeightedRandomTraitExclusionProject();
+    SheetModel unresolvedSheet = unresolvedWeightedGroup.Sheets.Single(sheet =>
+        sheet.Name == "trait");
+    JObject unresolvedSource = RandomTraitEntry(
+        "BeforeFirstGroup", 0, null, recruitWeight: 1);
+    ((JArray)unresolvedSheet.SourceSheet!["lines"]!).Insert(0, unresolvedSource);
+    unresolvedSheet.Entries.Add(new ProjectModelFactory().CreateEntryModel(
+        "trait", unresolvedSource, unresolvedSheet.Entries.Count + 1));
+    CheckThrows<InvalidOperationException>(
+        () => service.Discover(unresolvedWeightedGroup),
+        "weighted candidate without a determinable containing group fails safely");
+
     VerifyRandomTraitSeparatorFailure(
         sheet => RemoveRequiredSeparator(sheet, "Starting"),
         "missing Starting separator is rejected");
     VerifyRandomTraitSeparatorFailure(
-        sheet => RemoveRequiredSeparator(sheet, "Hidden"),
-        "missing Hidden separator is rejected");
-    VerifyRandomTraitSeparatorFailure(
         sheet => RemoveRequiredSeparator(sheet, "Recruitment"),
         "missing Recruitment separator is rejected");
-    VerifyRandomTraitSeparatorFailure(
-        sheet => RemoveRequiredSeparator(sheet, "Acquired"),
-        "missing Acquired separator is rejected");
     VerifyRandomTraitSeparatorFailure(
         sheet => ((JArray)sheet["separators"]!).Add(
             RequiredSeparator(sheet, "Starting").DeepClone()),
@@ -3715,15 +3891,6 @@ static void VerifyRandomTraitExclusions()
         sheet => ((JArray)sheet["lines"]!).Add(
             ((JObject)((JArray)sheet["lines"]!)[0]!).DeepClone()),
         "ambiguous duplicate source anchor is rejected");
-    VerifyRandomTraitSeparatorFailure(
-        sheet =>
-        {
-            JToken startingId = RequiredSeparator(sheet, "Starting")["id"]!.DeepClone();
-            RequiredSeparator(sheet, "Starting")["id"] =
-                RequiredSeparator(sheet, "Hidden")["id"]!.DeepClone();
-            RequiredSeparator(sheet, "Hidden")["id"] = startingId;
-        },
-        "out-of-order separator anchors are rejected");
 
     ProjectModel disconnected = CreateRandomTraitExclusionProject();
     EntryModel disconnectedEntry = Entry(disconnected, "trait", "PositiveAbsent");
@@ -6912,7 +7079,8 @@ static JObject RandomTraitEntry(
     string id,
     int? personality,
     object? done,
-    int? generationEligibility = null)
+    int? generationEligibility = null,
+    object? recruitWeight = null)
 {
     JObject entry = new()
     {
@@ -6923,10 +7091,58 @@ static JObject RandomTraitEntry(
     };
     if (generationEligibility.HasValue)
         entry["gen"] = generationEligibility.Value;
+    if (recruitWeight != null)
+        ((JObject)entry["props"]!)["recruitWeight"] =
+            JToken.FromObject(recruitWeight);
     if (done != null)
         entry["done"] = JToken.FromObject(done);
     return entry;
 }
+
+static ProjectModel CreateWeightedRandomTraitExclusionProject() => CreateProject(
+    RandomTraitSheet(
+        new[]
+        {
+            RandomTraitEntry(
+                "LegacyMalformedWeight", 0, null,
+                recruitWeight: "not-a-number"),
+            RandomTraitEntry(
+                "LegacyAndWeighted", 1, null,
+                recruitWeight: 1)
+        },
+        new[]
+            {
+                "Ascetic", "Resilient", "Sociable", "Brave",
+                "Humanist", "Masochist", "Delicate", "Allergic"
+            }
+            .Select((id, index) => RandomTraitEntry(
+                id,
+                index % 2,
+                null,
+                recruitWeight: (index + 1) / 10.0))
+            .ToArray(),
+        new[]
+        {
+            RandomTraitEntry("RecruitmentAnchor", null, "unsupported")
+        },
+        new[]
+        {
+            RandomTraitEntry("ZeroWeight", 0, null, recruitWeight: 0),
+            RandomTraitEntry("NegativeWeight", 0, null, recruitWeight: -1),
+            RandomTraitEntry("PositiveIntegerWeight", 0, null,
+                recruitWeight: 2),
+            RandomTraitEntry("NaNWeight", 0, null,
+                recruitWeight: double.NaN),
+            RandomTraitEntry("InfinityWeight", 0, null,
+                recruitWeight: double.PositiveInfinity),
+            RandomTraitEntry("MissingWeight", 0, null),
+            RandomTraitEntry("WeightWithoutPersonality", null, null,
+                recruitWeight: 1),
+            RandomTraitEntry("UnsupportedPersonality", 2, null,
+                recruitWeight: 1),
+            RandomTraitEntry("MalformedWeight", 1, null,
+                recruitWeight: "invalid")
+        }));
 
 static JObject RandomTraitSheet(
     IReadOnlyList<JObject> starting,
@@ -6967,6 +7183,24 @@ static JObject RandomTraitSheet(
             new JObject { ["title"] = "Recruitment", ["id"] = recruitment[0]["id"]!.DeepClone() },
             new JObject { ["title"] = "Acquired", ["id"] = acquired[0]["id"]!.DeepClone() }
         }
+    };
+}
+
+static JObject RandomTraitSheetWithOrderedGroups(
+    params (string Title, IReadOnlyList<JObject> Entries)[] groups)
+{
+    if (groups.Length == 0 || groups.Any(group => group.Entries.Count == 0))
+        throw new ArgumentException("Random trait fixture groups require anchor entries.");
+
+    return new JObject
+    {
+        ["name"] = "trait",
+        ["lines"] = new JArray(groups.SelectMany(group => group.Entries)),
+        ["separators"] = new JArray(groups.Select(group => new JObject
+        {
+            ["title"] = group.Title,
+            ["id"] = group.Entries[0]["id"]!.DeepClone()
+        }))
     };
 }
 

@@ -18,6 +18,7 @@
 - Decision 0007
 - Decision 0008
 - Decision 0009
+- Decision 0010
 
 ---
 
@@ -174,3 +175,31 @@ stable reporting authority for one profile gameplay revision while remaining
 strictly separate from Apply, mutation, compatibility, Restore Previous Values,
 and Gameplay Operation State authority. Missing or invalid authority is shown as
 Unavailable rather than replaced with a fabricated count.
+
+---
+
+# Decision 0010
+
+## Title
+
+Discover procedural recruit traits semantically and preserve portable missing
+trait intent.
+
+## Status
+
+Accepted
+
+## Reason
+
+Fixed physical trait ranges are not complete recruitment authority. Random
+Trait Exclusions preserves legacy Starting/Recruitment candidates and also
+discovers Positive/Negative personality traits with finite positive numeric
+recruitment weight, unioned by canonical ID through one existing mutation/state
+pipeline. The feature controls procedural recruit assignment rather than every
+possible later trait-acquisition system.
+
+Exact-source replay remains strict. Changed-source profiles may omit and report
+only a requested trait genuinely absent from the complete destination sheet,
+while preserving that source-independent intent in the profile. A present but
+ineligible, polarity/group-drifted, or duplicate identity remains incompatible
+and fails before mutation.

@@ -12,7 +12,8 @@ public sealed class ProfileOperationApplyItemResultModel
             displayName,
             status,
             message,
-            null)
+            null,
+            false)
     {
     }
 
@@ -22,12 +23,30 @@ public sealed class ProfileOperationApplyItemResultModel
         ProfileOperationApplyStatus status,
         string message,
         string? alreadyConfiguredSummary)
+        : this(
+            operationId,
+            displayName,
+            status,
+            message,
+            alreadyConfiguredSummary,
+            false)
+    {
+    }
+
+    public ProfileOperationApplyItemResultModel(
+        string operationId,
+        string displayName,
+        ProfileOperationApplyStatus status,
+        string message,
+        string? alreadyConfiguredSummary,
+        bool hasWarning)
     {
         OperationId = operationId;
         DisplayName = displayName;
         Status = status;
         Message = message;
         AlreadyConfiguredSummary = alreadyConfiguredSummary;
+        HasWarning = hasWarning;
     }
 
     public string OperationId { get; }
@@ -39,4 +58,6 @@ public sealed class ProfileOperationApplyItemResultModel
     public string Message { get; }
 
     public string? AlreadyConfiguredSummary { get; }
+
+    public bool HasWarning { get; }
 }

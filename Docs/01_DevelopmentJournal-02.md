@@ -7,6 +7,42 @@
 
 ------------------------------------------------------------------------
 
+# 2026-09-10 — Random Trait Exclusions Expansion Accepted and Reconciled
+
+Investigation established that fixed Starting/Recruitment ranges were no longer
+complete procedural-recruit authority. The accepted design preserved that
+legacy path and added data-driven discovery for Positive/Negative personality
+traits with finite positive numeric `recruitWeight`, unioned by canonical ID.
+The current eight weighted Hidden traits now appear through that predicate and
+share the existing `done` mutation, Gameplay Operation State, Restore,
+validation, transaction, rollback, and Undo/Redo architecture.
+
+Changed-source profile replay was extended only for genuine removal from the
+complete destination trait sheet. Missing historical IDs are omitted and
+reported while compatible intent continues; stored Profile Operation Intent is
+preserved. Exact-source and direct replay remain strict, as do present
+ineligibility, polarity/group drift, and duplicate canonical identity. Missing
+IDs create no fabricated baseline, state, mutation, Undo entry, or Profile
+Impact Manifest leaf.
+
+The first Engineering Review returned **FAIL**. It found that one eligible and
+one noneligible destination entry sharing a canonical ID could bypass the
+candidate-only duplicate check, and it noted that inserting the transient
+`Unavailable` result had renumbered existing enum values. The correction built
+full-sheet ID cardinality before candidate acceptance, added atomic mixed-
+duplicate regression coverage, and restored Applied/AlreadyConfigured/Failed/
+Unsupported to 0/1/2/3 with Unavailable at 4.
+
+Renewed Engineering Review returned **PASS**, and Project Owner Acceptance
+returned **PASS**. Final evidence includes Profile Atomic Apply 121, Profile
+Operation Replay 209, all 13 smoke/regression projects, at least 1,696 explicitly
+counted checks plus Class A compatibility, QuickBMS 215/215, zero-warning Debug
+and Release builds, and `git diff --check`. The existing Windows symbolic-link
+privilege skip remained unchanged. Documentation reconciliation completed; no
+live Export, commit, push, tag, release, or version decision occurred.
+
+------------------------------------------------------------------------
+
 # 2026-09-10 — Profile Impact Manifest Accepted and Reconciled
 
 Format 5 introduced optional Profile Impact Manifest authority for stable

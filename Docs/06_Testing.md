@@ -109,6 +109,50 @@ Golden-optional scenarios.
 
 ---
 
+## Random Trait Exclusions Expansion Acceptance — 2026-09-10
+
+Discovery coverage preserves legacy Starting/Recruitment candidates and adds
+Positive/Negative personality traits with finite positive numeric
+`recruitWeight`. Tests cover the eight current weighted Hidden traits, integer
+and floating positive weights, zero/negative/missing/malformed/non-finite
+weights, legacy/weighted overlap, deterministic union ordering, reordered and
+additional top-level groups, nested separators, and unresolved group identity.
+The current eight are Ascetic, Resilient, Sociable, Brave, Humanist, Masochist,
+Delicate, and Allergic. These names are test evidence; production discovery
+remains data-driven.
+
+Mutation coverage proves weighted candidates use the existing `done` property,
+Gameplay Operation State, validation, rollback, exact absent-property Restore,
+and Undo/Redo paths. Dialog refresh preserves compatible pending selection,
+adds new candidates with authoritative defaults, removes vanished candidates,
+and rejects stale polarity/group identity.
+
+Replay coverage distinguishes exact and changed source. Exact-source and direct
+replay reject missing IDs. Changed-source replay omits and reports genuinely
+absent IDs, applies compatible remaining intent atomically, preserves stored
+intent, localizes unavailable names with canonical fallback, and creates no
+state or history for an all-unavailable operation. Present-but-ineligible,
+polarity drift, group drift, duplicate candidates, and a mixed eligible/
+noneligible duplicate canonical ID all fail preflight without trait, gameplay
+state, unrelated snapshot, or Undo/Redo mutation. Full destination-sheet
+cardinality makes the same strict duplicate result independent of candidate
+eligibility.
+
+The initial Engineering Review failed because a mixed eligible/noneligible
+duplicate could bypass candidate-only identity checking. The focused correction
+added full-sheet cardinality before candidate acceptance and restored existing
+public enum numeric assignments. Renewed Engineering Review returned **PASS**,
+and Project Owner Acceptance returned **PASS**.
+
+Final evidence: Profile Atomic Apply 121; Profile Operation Replay 209; all 13
+repository smoke/regression projects passing; at least 1,696 explicitly counted
+checks plus Class A compatibility; QuickBMS 215/215; Debug and Release builds
+with zero warnings and zero errors; and `git diff --check` passing. The existing
+Windows symbolic-link privilege skip remained unchanged and unrelated. No live
+Export was run.
+
+---
+
 # Testing Philosophy
 
 Every feature follows the same development pipeline.

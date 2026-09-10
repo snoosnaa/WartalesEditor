@@ -339,10 +339,13 @@ public sealed class ModProfileWorkflowService
             foreach (PlannedStatefulRequest planned in
                      plan.StatefulRequests)
             {
-                ProjectOperationResult result = replayService.Replay(
+                ProfileOperationReplayResult replay =
+                    replayService.ReplayForProfile(
                     targetProject,
                     planned.Request,
-                    planned.ExactSourceSeed);
+                    planned.ExactSourceSeed,
+                    planned.SourceContext);
+                ProjectOperationResult result = replay.OperationResult;
                 string displayName = replayService.GetDisplayName(
                     planned.Request);
 
@@ -370,7 +373,9 @@ public sealed class ModProfileWorkflowService
 
                 mutationResult.Merge(result.MutationResult);
                 ProfileOperationApplyStatus status =
-                    IsStateOnly(result.MutationResult) ||
+                    replay.AllRequestedTraitsUnavailable
+                        ? ProfileOperationApplyStatus.Unavailable
+                        : IsStateOnly(result.MutationResult) ||
                     !result.MutationResult.WasModified
                         ? ProfileOperationApplyStatus.AlreadyConfigured
                         : ProfileOperationApplyStatus.Applied;
@@ -384,7 +389,8 @@ public sealed class ModProfileWorkflowService
                             planned.Request,
                             displayName,
                             status,
-                            result.MutationResult)));
+                            result.MutationResult),
+                        replay.HasUnavailableTraits));
             }
 
             foreach (ProfileOperationRequestModel request in
@@ -568,7 +574,10 @@ public sealed class ModProfileWorkflowService
                 acceptedSeed = replayService.Preflight(
                     targetProject,
                     request,
-                    seed);
+                    seed,
+                    sameSource
+                        ? ProfileReplaySourceContext.ExactSource
+                        : ProfileReplaySourceContext.ChangedSource);
             }
             catch (Exception exception)
             {
@@ -582,7 +591,10 @@ public sealed class ModProfileWorkflowService
             replayedTypes.Add(operationType.Value);
             stateful.Add(new PlannedStatefulRequest(
                 request,
-                acceptedSeed));
+                acceptedSeed,
+                sameSource
+                    ? ProfileReplaySourceContext.ExactSource
+                    : ProfileReplaySourceContext.ChangedSource));
         }
 
         ModificationSnapshotModel applySnapshot = CreateApplySnapshot(
@@ -974,7 +986,8 @@ public sealed class ModProfileWorkflowService
 
     private sealed record PlannedStatefulRequest(
         ProfileOperationRequestModel Request,
-        GameplayOperationStateModel? ExactSourceSeed);
+        GameplayOperationStateModel? ExactSourceSeed,
+        ProfileReplaySourceContext SourceContext);
 
     private sealed record ProfileApplyPlan(
         IReadOnlyList<ProfileOperationRequestModel> StructuralRequests,

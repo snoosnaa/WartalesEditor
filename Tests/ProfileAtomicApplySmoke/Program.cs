@@ -6,9 +6,16 @@ using WartalesEditor.Models.Profiles;
 using WartalesEditor.Models.Snapshots;
 using WartalesEditor.Services;
 using WartalesEditor.Services.Operations;
+using WartalesEditor.ViewModels;
 
 int checks = 0;
 Console.WriteLine("Phase 3 atomic Profile Apply: changed source");
+Check((int)ProfileOperationApplyStatus.Applied == 0 &&
+      (int)ProfileOperationApplyStatus.AlreadyConfigured == 1 &&
+      (int)ProfileOperationApplyStatus.Failed == 2 &&
+      (int)ProfileOperationApplyStatus.Unsupported == 3 &&
+      (int)ProfileOperationApplyStatus.Unavailable == 4,
+    "profile operation result statuses preserve established numeric values");
 
 ProjectModel changedTarget = CombinedProject('b');
 ModProfileModel changedProfile = CombinedProfile('a');
@@ -433,15 +440,270 @@ missingSelection = new JArray(missingSelection
     .OrderBy(selection => selection.Value<string>("id"),
         StringComparer.Ordinal));
 string missingTraitBefore = Json(missingTraitTarget);
-CheckThrows<InvalidOperationException>(
-    () => ApplyIntent(
-        missingTraitTarget,
-        ProfileOperationIds.RandomTraitExclusions,
-        new JObject { ["traits"] = missingSelection }),
-    "missing Random Trait candidate fails preflight");
+ModificationSnapshotImportResultModel partialTraitResult = ApplyChangedTraitIntent(
+    missingTraitTarget,
+    missingSelection);
+ProfileOperationApplyItemResultModel partialTraitOperation =
+    partialTraitResult.OperationResults.Single();
+Check(partialTraitOperation.Status == ProfileOperationApplyStatus.Applied &&
+      partialTraitOperation.HasWarning &&
+      partialTraitOperation.Message.Contains("MissingCandidate", StringComparison.Ordinal) &&
+      !partialTraitOperation.Message.Contains("baseline", StringComparison.OrdinalIgnoreCase),
+    "changed-source replay skips genuinely absent traits with a player-safe warning");
+Check(Json(missingTraitTarget) != missingTraitBefore &&
+      missingTraitTarget.GameplayOperationStates.Count == 1 &&
+      !State(missingTraitTarget, ProgressionType.RandomTraitExclusions)
+          .TargetEntry.Contains("MissingCandidate", StringComparison.Ordinal) &&
+      missingSelection.OfType<JObject>().Any(selection =>
+          selection.Value<string>("id") == "MissingCandidate"),
+    "partial availability applies compatible traits and owns only current candidates");
+Check(MainViewModel.BuildProfileApplySummary(partialTraitResult).Contains(
+        "MissingCandidate", StringComparison.Ordinal),
+    "partial availability reaches the final Profile Apply summary");
+string partialTraitAfter = Json(missingTraitTarget);
+ProjectOperationHistoryAction partialTraitHistory = new(
+    "Partial Random Trait profile",
+    partialTraitResult.MutationResult,
+    new ProjectOperationTransactionService());
+partialTraitHistory.Undo();
 Check(Json(missingTraitTarget) == missingTraitBefore &&
       missingTraitTarget.GameplayOperationStates.Count == 0,
-    "Random Trait preflight failure is mutation-neutral");
+    "partial availability Undo restores properties and state atomically");
+partialTraitHistory.Redo();
+Check(Json(missingTraitTarget) == partialTraitAfter &&
+      missingTraitTarget.GameplayOperationStates.Count == 1,
+    "partial availability Redo restores properties and state atomically");
+
+ProjectModel allMissingTarget = TraitProject('e', includeNew: false);
+string allMissingBefore = Json(allMissingTarget);
+ModificationSnapshotImportResultModel allMissingResult = ApplyChangedTraitIntent(
+    allMissingTarget,
+    TraitIntent(("RemovedByUpdate", "Positive", "Hidden", false)));
+ProfileOperationApplyItemResultModel allMissingOperation =
+    allMissingResult.OperationResults.Single();
+Check(allMissingOperation.Status == ProfileOperationApplyStatus.Unavailable &&
+      allMissingOperation.HasWarning &&
+      !allMissingResult.MutationResult.WasModified &&
+      allMissingResult.AppliedEffectiveChangeCount == 0 &&
+      allMissingResult.OperationsUnavailableCount == 1 &&
+      allMissingResult.UnappliedEffectiveChangeCount == 0 &&
+      Json(allMissingTarget) == allMissingBefore &&
+      allMissingTarget.GameplayOperationStates.Count == 0,
+    "all-unavailable changed-source replay records no mutation, state, or undo work");
+Check(MainViewModel.BuildProfileApplySummary(allMissingResult).Contains(
+        "No changes were applied.", StringComparison.Ordinal) &&
+      !MainViewModel.BuildProfileApplySummary(allMissingResult).Contains(
+          "already applied", StringComparison.OrdinalIgnoreCase),
+    "all-unavailable Profile Apply summary is explicit and does not claim success");
+LocalizationService missingTraitLocalization = new();
+missingTraitLocalization.Apply(new LocalizationPreparation(
+    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["RemovedByUpdate"] = "Retired Recruit Trait"
+    }));
+ProfileOperationReplayResult localizedUnavailable =
+    new ProfileOperationReplayService(missingTraitLocalization)
+        .ReplayForProfile(
+            TraitProject('b', includeNew: false),
+            Request(
+                ProfileOperationIds.RandomTraitExclusions,
+                new JObject
+                {
+                    ["traits"] = TraitIntent(
+                        ("RemovedByUpdate", "Positive", "Hidden", false))
+                }),
+            null,
+            ProfileReplaySourceContext.ChangedSource);
+Check(localizedUnavailable.OperationResult.Succeeded &&
+      localizedUnavailable.OperationResult.Message!.Contains(
+          "Retired Recruit Trait", StringComparison.Ordinal) &&
+      !localizedUnavailable.OperationResult.Message.Contains(
+          "RemovedByUpdate", StringComparison.Ordinal),
+    "unavailable reporting resolves a localized name when available");
+
+ProjectModel mixedUnavailableTarget = TraitAndMovementProject('b', 7, 12);
+string mixedUnavailableBefore = Json(mixedUnavailableTarget);
+ProfileOperationRequestModel unavailableTraitRequest = Request(
+    ProfileOperationIds.RandomTraitExclusions,
+    new JObject
+    {
+        ["traits"] = TraitIntent(
+            ("RemovedByUpdate", "Positive", "Hidden", false))
+    });
+ProfileOperationRequestModel movementRequest = Request(
+    ProfileOperationIds.OverworldMovementSpeed,
+    Preset("Faster"));
+ModificationSnapshotImportResultModel mixedUnavailableResult =
+    new ModProfileWorkflowService().ApplyProfile(
+        mixedUnavailableTarget,
+        Profile(
+            TraitAndMovementProject('a', 6, 11),
+            new[] { unavailableTraitRequest, movementRequest }));
+Check(Value(mixedUnavailableTarget, "PlayerBaseSpeed") == 8 &&
+      Value(mixedUnavailableTarget, "PlayerRunSpeed") == 14 &&
+      mixedUnavailableTarget.GameplayOperationStates.Count == 1 &&
+      mixedUnavailableTarget.GameplayOperationStates.Single().OperationType ==
+          ProgressionType.OverworldMovementSpeed &&
+      mixedUnavailableResult.OperationResults.Any(result =>
+          result.Status == ProfileOperationApplyStatus.Unavailable) &&
+      mixedUnavailableResult.OperationResults.Any(result =>
+          result.Status == ProfileOperationApplyStatus.Applied),
+    "all-unavailable Random Traits does not block another compatible profile operation");
+ProjectOperationHistoryAction mixedUnavailableHistory = new(
+    "Mixed unavailable profile",
+    mixedUnavailableResult.MutationResult,
+    new ProjectOperationTransactionService());
+mixedUnavailableHistory.Undo();
+Check(Json(mixedUnavailableTarget) == mixedUnavailableBefore &&
+      mixedUnavailableTarget.GameplayOperationStates.Count == 0,
+    "mixed unavailable profile retains one atomic Undo for actual mutations");
+
+ProjectModel driftedTraitTarget = TraitProject('f', includeNew: false);
+EntryIn(driftedTraitTarget, "PositiveAbsent", "trait")
+    .SourceEntry!.SelectToken("props.personality")!.Replace(1);
+string driftedTraitBefore = Json(driftedTraitTarget);
+CheckThrows<InvalidOperationException>(
+    () => ApplyChangedTraitIntent(
+        driftedTraitTarget,
+        traitSelections),
+    "present but semantically drifted Random Trait fails changed-source preflight");
+Check(Json(driftedTraitTarget) == driftedTraitBefore &&
+      driftedTraitTarget.GameplayOperationStates.Count == 0,
+    "semantic drift failure remains mutation-neutral");
+
+ProjectModel groupDriftTarget = TraitProject('b', includeNew: false);
+SheetModel groupDriftSheet = groupDriftTarget.Sheets.Single(sheet =>
+    sheet.Name == "trait");
+JObject groupDriftSource = EntryIn(
+    groupDriftTarget, "PositiveAbsent", "trait").SourceEntry!;
+((JObject)groupDriftSource["props"]!)["recruitWeight"] = 0.5;
+groupDriftSource.Remove();
+JArray groupDriftLines = (JArray)groupDriftSheet.SourceSheet!["lines"]!;
+int groupRecruitmentAnchor = groupDriftLines.OfType<JObject>().ToList()
+    .FindIndex(entry => entry.Value<string>("id") == "RecruitmentAnchor");
+groupDriftLines.Insert(groupRecruitmentAnchor, groupDriftSource);
+string groupDriftBefore = Json(groupDriftTarget);
+CheckThrows<InvalidOperationException>(
+    () => ApplyChangedTraitIntent(groupDriftTarget, traitSelections),
+    "same canonical Random Trait ID with semantic-group drift fails preflight");
+Check(Json(groupDriftTarget) == groupDriftBefore,
+    "semantic-group drift failure is mutation-neutral");
+
+ProjectModel ineligibleTraitTarget = TraitProject('c', includeNew: false);
+SheetModel ineligibleTraitSheet = ineligibleTraitTarget.Sheets.Single(sheet =>
+    sheet.Name == "trait");
+JObject ineligibleSource = EntryIn(
+    ineligibleTraitTarget, "PositiveAbsent", "trait").SourceEntry!;
+ineligibleSource.Remove();
+JArray ineligibleLines = (JArray)ineligibleTraitSheet.SourceSheet!["lines"]!;
+int ineligibleRecruitmentAnchor = ineligibleLines.OfType<JObject>().ToList()
+    .FindIndex(entry => entry.Value<string>("id") == "RecruitmentAnchor");
+ineligibleLines.Insert(ineligibleRecruitmentAnchor, ineligibleSource);
+string ineligibleBefore = Json(ineligibleTraitTarget);
+CheckThrows<InvalidOperationException>(
+    () => ApplyChangedTraitIntent(ineligibleTraitTarget, traitSelections),
+    "present but no-longer-eligible Random Trait fails changed-source preflight");
+Check(Json(ineligibleTraitTarget) == ineligibleBefore,
+    "present-but-ineligible failure is mutation-neutral");
+
+ProjectModel duplicateTraitTarget = TraitProject('d', includeNew: false);
+SheetModel duplicateTraitSheet = duplicateTraitTarget.Sheets.Single(sheet =>
+    sheet.Name == "trait");
+JObject duplicateTraitSource = (JObject)EntryIn(
+    duplicateTraitTarget, "PositiveAbsent", "trait").SourceEntry!.DeepClone();
+JArray duplicateTraitLines = (JArray)duplicateTraitSheet.SourceSheet!["lines"]!;
+int duplicateAcquiredAnchor = duplicateTraitLines.OfType<JObject>().ToList()
+    .FindIndex(entry => entry.Value<string>("id") == "AcquiredAnchor");
+duplicateTraitLines.Insert(duplicateAcquiredAnchor, duplicateTraitSource);
+duplicateTraitSheet.Entries.Add(new ProjectModelFactory().CreateEntryModel(
+    "trait", duplicateTraitSource, duplicateTraitSheet.Entries.Count + 1));
+string duplicateTraitBefore = Json(duplicateTraitTarget);
+CheckThrows<InvalidOperationException>(
+    () => ApplyChangedTraitIntent(duplicateTraitTarget, traitSelections),
+    "ambiguous duplicate destination Random Trait identity fails preflight");
+Check(Json(duplicateTraitTarget) == duplicateTraitBefore,
+    "duplicate destination identity failure is mutation-neutral");
+
+ProjectModel mixedDuplicateTarget = TraitAndMovementProject(
+    'g', 7, 12);
+SheetModel mixedDuplicateSheet = mixedDuplicateTarget.Sheets.Single(sheet =>
+    sheet.Name == "trait");
+JObject mixedDuplicateSource = (JObject)EntryIn(
+    mixedDuplicateTarget, "PositiveAbsent", "trait").SourceEntry!.DeepClone();
+JArray mixedDuplicateLines =
+    (JArray)mixedDuplicateSheet.SourceSheet!["lines"]!;
+int mixedDuplicateAcquiredAnchor = mixedDuplicateLines
+    .OfType<JObject>()
+    .ToList()
+    .FindIndex(entry => entry.Value<string>("id") == "AcquiredAnchor");
+mixedDuplicateLines.Insert(
+    mixedDuplicateAcquiredAnchor + 1,
+    mixedDuplicateSource);
+mixedDuplicateSheet.Entries.Add(new ProjectModelFactory().CreateEntryModel(
+    "trait", mixedDuplicateSource, mixedDuplicateSheet.Entries.Count + 1));
+ProfileOperationRequestModel mixedDuplicateRequest = Request(
+    ProfileOperationIds.RandomTraitExclusions,
+    new JObject { ["traits"] = traitSelections.DeepClone() });
+ModProfileModel mixedDuplicateProfile = Profile(
+    MovementProject('0', 6, 11),
+    new[] { mixedDuplicateRequest });
+mixedDuplicateProfile.Snapshot.Categories.Add(
+    new ModificationSnapshotCategoryModel
+    {
+        Name = "constant",
+        Settings = new()
+        {
+            SnapshotSetting("PlayerBaseSpeed", "value", 7, 99)
+        }
+    });
+string mixedDuplicateBefore = Json(mixedDuplicateTarget);
+EditHistoryService mixedDuplicateHistory = new();
+InvalidOperationException mixedDuplicateFailure =
+    CheckThrows<InvalidOperationException>(
+        () =>
+        {
+            ModificationSnapshotImportResultModel result =
+                new ModProfileWorkflowService().ApplyProfile(
+                    mixedDuplicateTarget,
+                    mixedDuplicateProfile);
+            if (result.MutationResult.WasModified)
+            {
+                mixedDuplicateHistory.Record(new ProjectOperationHistoryAction(
+                    "Mixed duplicate profile",
+                    result.MutationResult,
+                    new ProjectOperationTransactionService()));
+            }
+        },
+        "mixed eligible/noneligible duplicate destination identity fails preflight");
+Check(mixedDuplicateFailure.ToString().Contains(
+          "ambiguous identities", StringComparison.Ordinal) &&
+      !mixedDuplicateFailure.ToString().Contains(
+          "not available", StringComparison.OrdinalIgnoreCase),
+    "mixed duplicate failure is strict ambiguity rather than unavailability");
+Check(Json(mixedDuplicateTarget) == mixedDuplicateBefore &&
+      Value(mixedDuplicateTarget, "PlayerBaseSpeed") == 7 &&
+      mixedDuplicateTarget.GameplayOperationStates.Count == 0 &&
+      !mixedDuplicateHistory.CanUndo &&
+      !mixedDuplicateHistory.CanRedo,
+    "mixed duplicate atomic Apply leaves traits, state, snapshots, and history unchanged");
+
+ProjectModel exactMissingTarget = TraitProject('a', includeNew: false);
+string exactMissingBefore = Json(exactMissingTarget);
+ProfileOperationRequestModel exactMissingRequest = Request(
+    ProfileOperationIds.RandomTraitExclusions,
+    new JObject
+    {
+        ["traits"] = TraitIntent(
+            ("RemovedByUpdate", "Positive", "Hidden", false))
+    });
+CheckThrows<InvalidOperationException>(
+    () => new ModProfileWorkflowService().ApplyProfile(
+        exactMissingTarget,
+        Profile(TraitProject('a', includeNew: false),
+            new[] { exactMissingRequest })),
+    "exact-source profile replay remains strict for missing traits");
+Check(Json(exactMissingTarget) == exactMissingBefore,
+    "exact-source missing-trait failure is mutation-neutral");
 
 Console.WriteLine("Phase 3 atomic Profile Apply: legacy and failure paths");
 ProjectModel replayFailureTarget = CombinedProject('7');
@@ -608,17 +870,17 @@ void Check(bool condition, string name)
 void CheckClose(double actual, double expected, string name) =>
     Check(Math.Abs(actual - expected) < 0.000001, name);
 
-void CheckThrows<TException>(Action action, string name)
+TException CheckThrows<TException>(Action action, string name)
     where TException : Exception
 {
     try
     {
         action();
     }
-    catch (TException)
+    catch (TException exception)
     {
         checks++;
-        return;
+        return exception;
     }
 
     throw new InvalidOperationException($"FAILED: {name}");
@@ -796,6 +1058,18 @@ ModificationSnapshotImportResultModel ApplyIntent(
           new EffectiveChangeCountService().Calculate(result.MutationResult),
         $"{operationId} manifest uses real replay and exact canonical leaf count");
     return result;
+}
+
+ModificationSnapshotImportResultModel ApplyChangedTraitIntent(
+    ProjectModel target,
+    JArray traits)
+{
+    ProfileOperationRequestModel request = Request(
+        ProfileOperationIds.RandomTraitExclusions,
+        new JObject { ["traits"] = traits });
+    return new ModProfileWorkflowService().ApplyProfile(
+        target,
+        Profile(MovementProject('0', 6, 11), new[] { request }));
 }
 
 ProfileImpactManifestModel? EstablishImpact(
@@ -1054,6 +1328,21 @@ static ProjectModel TraitProject(char marker, bool includeNew)
             Separator("Acquired", "AcquiredAnchor")
         }
     });
+}
+
+static ProjectModel TraitAndMovementProject(
+    char marker,
+    int walk,
+    int run)
+{
+    ProjectModel traits = TraitProject(marker, includeNew: false);
+    return CreateProject(
+        marker,
+        (JObject)traits.Sheets.Single(sheet => sheet.Name == "trait")
+            .SourceSheet!.DeepClone(),
+        Sheet("constant",
+            Scalar("PlayerBaseSpeed", walk),
+            Scalar("PlayerRunSpeed", run)));
 }
 
 static JObject Trait(string id, int? personality, object? done)

@@ -2,32 +2,38 @@
 
 ## Current Milestone
 
-Post-1.1.0 — Profile Impact Manifest Reconciliation
+Post-1.1.0 — Random Trait Exclusions Discovery and Profile Replay
 
 ## Current Status
 
-Profile Impact Manifest implementation is complete. Final renewed Engineering
-Review returned **PASS**, delegated Project Owner Acceptance returned **PASS**,
-and documentation reconciliation is complete. New gameplay Profile Create and
-Update use root format 5 with optional durable historical Profile Changes
-authority. Formats 1–4 remain readable and applicable.
+Random Trait Exclusions weighted discovery and changed-source profile replay are
+implemented and accepted. The first Engineering Review failed on a mixed
+eligible/noneligible duplicate-ID ambiguity and noted enum-number compatibility.
+The correction added full destination-sheet identity cardinality before
+candidate acceptance and preserved the established result-status values. The
+renewed Engineering Review returned **PASS**, Project Owner Acceptance returned
+**PASS**, and documentation reconciliation is complete.
 
-Profile Manager now reports the number of distinct canonical game-data leaves
-that one profile gameplay revision changes relative to its verified pristine
-source. This historical count remains stable after Apply, Undo/Redo, target
-Save/reopen, and target divergence. Valid zero authority displays `0 changes`;
-missing or invalid authority displays `Unavailable`. The manifest is reporting
-authority only and does not affect Apply, mutation, compatibility, Restore
-Previous Values, or Gameplay Operation State.
+Candidate discovery now unions the legacy Starting/Recruitment personality
+path with a data-driven weighted path requiring Positive/Negative personality
+and a finite numeric `recruitWeight` greater than zero. The current eight
+weighted Hidden traits are discovered from data, not hard-coded. All candidates
+continue through the same `done` mutation, Gameplay Operation State, Restore,
+rollback, transaction, and Undo/Redo pipeline.
 
-Final accepted evidence includes zero-warning Debug and Release builds; Profile
-Impact Manifest 131; Profile Operation Intent 86; Profile Operation Replay 209;
-Atomic Profile Apply 99; Profile Intent Update 123; Profile Presentation 75;
-Update Survival 180; Golden CDB 203; Request Board Rewards 101; Paths Gameplay
-208; QuickBMS Export/routing 215/215; Quick Help 44; and Class A compatibility.
-The controlled 744-leaf scenario established 744 historical changes in about
-117–134 ms. No live Export was run. The authorized commit/push checkpoint is
-complete; no release/version decision has started.
+Exact-source and direct replay remain strict. On a changed source, only a
+historical trait ID genuinely absent from the complete destination trait sheet
+may be omitted and reported unavailable while compatible intent continues.
+Present-but-ineligible, polarity-drifted, group-drifted, or duplicate identities
+fail before mutation. Stored Profile Operation Intent is preserved, and skipped
+IDs create no fabricated destination state or Profile Changes impact.
+
+Final accepted evidence includes Profile Atomic Apply 121, Profile Operation
+Replay 209, all 13 smoke/regression projects, at least 1,696 explicitly counted
+checks plus Class A compatibility, QuickBMS 215/215, zero-warning Debug and
+Release builds, and a passing `git diff --check`. The existing Windows
+symbolic-link privilege skip remains unchanged and unrelated. No live Export
+was run. Commit/push remains pending; no release/version decision has started.
 
 **Version 1.1.0 was released publicly on September 8, 2026.** All included feature work is
 accepted, and the self-contained `win-x64` package is published and independently
@@ -557,16 +563,14 @@ allowed-ID equality. Permanent smoke coverage also includes disconnected-target
 atomicity, identity failures, unrelated gameplay-state changes, validator
 mismatch rollback, and one complete managed Update Profile replay.
 
-The real-data dialog-open failure is corrected. Trait group membership now comes
-from the `trait` sheet's ordered `Starting`, `Hidden`, `Recruitment`, and
-`Acquired` separator anchors; the optional numeric per-entry `gen` field is no
-longer mistaken for group identity. Operation-state fingerprints retain the
-resolved Starting/Recruitment group. Realistic separator-shaped coverage now
-constructs the complete dialog ViewModel, proves opening is mutation-free,
-checks malformed candidate and noncandidate boundaries, and rejects invalid
-separator metadata. The current clean installed CDB resolves 37 candidates
-(22 Positive and 15 Negative), with Stoic and Gourmand initially disabled.
-This is a feature-specific correction and introduces no architecture changes.
+The historical real-data dialog-open correction derived legacy trait membership
+from the then-observed `Starting`, `Hidden`, `Recruitment`, and `Acquired`
+separator layout instead of the optional numeric `gen` field. That fixed-range
+eligibility description is now superseded: Starting and Recruitment remain
+legacy semantic paths, while positive finite `recruitWeight` supplies an
+additional data-driven path independent of Hidden placement. Containing group
+remains compatibility identity, and fixed separator ordering is no longer
+required.
 
 Direct Snapshot Preview remains read-only and can conservatively report an
 absent-baseline leaf as missing. Profile application materializes exclusion
@@ -612,7 +616,7 @@ configured 645-change state.
 ## Next Required Step
 
 Perform final repository verification, then await explicit authorization to
-commit and push the accepted Profile Impact Manifest implementation, tests, and
+commit and push the accepted Random Trait Exclusions implementation, tests, and
 documentation. No tag, release, or version decision is authorized. Nexus
 publication and VirusTotal submission remain separate optional actions and were
 not performed.

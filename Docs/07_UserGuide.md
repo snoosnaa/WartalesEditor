@@ -402,11 +402,24 @@ units are unchanged; normal eligibility and incompatibility rules still apply.
 
 #### Random Trait Exclusions
 
-Controls which discovered positive and negative traits may appear in future
-standard random generation. Checked means allowed; unchecked means excluded.
-Search, **Select All**, and **Clear All** assist selection. Existing units and
-generated recruits are unchanged. Restore returns the exact prior state,
-including a trait that originally had no explicit setting.
+Controls which discovered positive and negative traits the game may assign to
+future procedurally generated recruits. The list includes newly recognized
+recruit traits found in current game data. Checked means allowed; unchecked
+means excluded. Search, **Select All**, and **Clear All** assist selection.
+Existing units and recruits already generated are unchanged. Restore returns
+the exact prior state, including a trait that originally had no explicit
+setting.
+
+This tool controls procedural recruit assignment; it is not a global ban.
+Excluded traits may still be acquired later through normal gameplay actions,
+decisions, conditions, counters, events, or other special systems.
+
+When an older Profile is applied to changed game data, a saved trait that no
+longer exists may be reported as unavailable while the remaining compatible
+Profile settings continue. The missing choice stays in the Profile in case a
+later game version restores it. **Unavailable** does not mean the setting was
+already applied. If the trait still exists but its role has changed or its
+identity is ambiguous, the editor stops safely instead of guessing.
 
 ### World
 

@@ -28,14 +28,21 @@ public sealed class RandomTraitExclusionRestoreSelectionResult
     public IReadOnlyCollection<string> AllowedTraitIds { get; }
 }
 
+internal sealed record RandomTraitExclusionsReplayAvailability(
+    IReadOnlyList<string> UnavailableTraitIds,
+    bool AllRequestedTraitsUnavailable);
+
+internal sealed record RandomTraitExclusionsReplayResult(
+    ProjectMutationResult MutationResult,
+    IReadOnlyList<string> UnavailableTraitIds,
+    bool AllRequestedTraitsUnavailable);
+
 public sealed class RandomTraitExclusionsService
 {
     private const string TraitSheetName = "trait";
     private const string DonePath = "done";
     private const string StartingGroup = "Starting";
-    private const string HiddenGroup = "Hidden";
     private const string RecruitmentGroup = "Recruitment";
-    private const string AcquiredGroup = "Acquired";
     private const string GroupField = "group";
 
     private readonly ProjectMutationService mutationService;
@@ -168,10 +175,11 @@ public sealed class RandomTraitExclusionsService
         return ApplyCore(project, allowedTraitIds, context.MutationResult);
     }
 
-    internal ProjectMutationResult Replay(
+    internal RandomTraitExclusionsReplayResult Replay(
         ProjectModel project,
         JArray semanticSelections,
         JArray? exactSourceBaseline,
+        bool allowUnavailableTraits,
         ProjectOperationExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -179,7 +187,16 @@ public sealed class RandomTraitExclusionsService
         ReplayPreparation preparation = PrepareReplay(
             project,
             semanticSelections,
-            exactSourceBaseline);
+            exactSourceBaseline,
+            allowUnavailableTraits);
+
+        if (preparation.AllRequestedTraitsUnavailable)
+        {
+            return new RandomTraitExclusionsReplayResult(
+                context.MutationResult,
+                preparation.UnavailableTraitIds,
+                AllRequestedTraitsUnavailable: true);
+        }
 
         GameplayOperationStateModel? existing = stateService.FindState(
             project,
@@ -200,27 +217,39 @@ public sealed class RandomTraitExclusionsService
                 CaptureCurrent(preparation.Candidates),
                 preparation.Expected))
         {
-            return context.MutationResult;
+            return new RandomTraitExclusionsReplayResult(
+                context.MutationResult,
+                preparation.UnavailableTraitIds,
+                AllRequestedTraitsUnavailable: false);
         }
 
-        return ApplyResolved(
+        ProjectMutationResult result = ApplyResolved(
             project,
             preparation.Candidates,
             preparation.Expected,
             existing,
             replacement,
             context.MutationResult);
+        return new RandomTraitExclusionsReplayResult(
+            result,
+            preparation.UnavailableTraitIds,
+            AllRequestedTraitsUnavailable: false);
     }
 
-    internal void PreflightReplay(
+    internal RandomTraitExclusionsReplayAvailability PreflightReplay(
         ProjectModel project,
         JArray semanticSelections,
-        JArray? exactSourceBaseline)
+        JArray? exactSourceBaseline,
+        bool allowUnavailableTraits)
     {
-        _ = PrepareReplay(
+        ReplayPreparation preparation = PrepareReplay(
             project,
             semanticSelections,
-            exactSourceBaseline);
+            exactSourceBaseline,
+            allowUnavailableTraits);
+        return new RandomTraitExclusionsReplayAvailability(
+            preparation.UnavailableTraitIds,
+            preparation.AllRequestedTraitsUnavailable);
     }
 
     internal static bool CurrentMatchesBaseline(
@@ -252,35 +281,67 @@ public sealed class RandomTraitExclusionsService
     private static ReplayPreparation PrepareReplay(
         ProjectModel project,
         JArray semanticSelections,
-        JArray? exactSourceBaseline)
+        JArray? exactSourceBaseline,
+        bool allowUnavailableTraits)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(semanticSelections);
 
-        IReadOnlyList<ResolvedTrait> candidates = ResolveCandidates(project);
-        Dictionary<string, ResolvedTrait> byId = candidates.ToDictionary(
-            candidate => candidate.Entry.Id,
-            StringComparer.Ordinal);
         Dictionary<string, JObject> requested = semanticSelections
             .OfType<JObject>()
             .ToDictionary(
                 selection => ReadRequiredString(selection, "id"),
                 StringComparer.Ordinal);
-
-        string[] missing = requested.Keys
-            .Where(id => !byId.ContainsKey(id))
+        Dictionary<string, int> sourceOccurrences = GetTraitSourceEntries(project)
+            .Where(entry => entry["id"]?.Type == JTokenType.String)
+            .GroupBy(entry => entry.Value<string>("id")!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        string[] ambiguous = requested.Keys
+            .Where(id => sourceOccurrences.TryGetValue(id, out int count) && count > 1)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
-        if (missing.Length > 0)
+        if (ambiguous.Length > 0)
         {
             throw new InvalidOperationException(
-                "These profile traits are not available in the current " +
-                $"game data: {string.Join(", ", missing)}.");
+                "These profile traits have ambiguous identities in the current " +
+                $"game data: {string.Join(", ", ambiguous)}.");
+        }
+
+        IReadOnlyList<ResolvedTrait> candidates = ResolveCandidates(project);
+        Dictionary<string, ResolvedTrait> byId = candidates.ToDictionary(
+            candidate => candidate.Entry.Id,
+            StringComparer.Ordinal);
+
+        string[] unavailable = requested.Keys
+            .Where(id => !sourceOccurrences.ContainsKey(id))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        string[] presentButIncompatible = requested.Keys
+            .Where(id => sourceOccurrences.ContainsKey(id) && !byId.ContainsKey(id))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        if (presentButIncompatible.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "These profile traits still exist but are no longer valid " +
+                "random recruit traits: " +
+                $"{string.Join(", ", presentButIncompatible)}.");
+        }
+
+        if (unavailable.Length > 0)
+        {
+            if (!allowUnavailableTraits)
+            {
+                throw new InvalidOperationException(
+                    "These profile traits are not available in the current " +
+                    $"game data: {string.Join(", ", unavailable)}.");
+            }
         }
 
         foreach ((string id, JObject selection) in requested)
         {
-            ResolvedTrait candidate = byId[id];
+            if (!byId.TryGetValue(id, out ResolvedTrait? candidate))
+                continue;
             string personality = ReadRequiredString(
                 selection,
                 "personality");
@@ -366,14 +427,18 @@ public sealed class RandomTraitExclusionsService
             candidates,
             baseline,
             expected,
-            allowed);
+            allowed,
+            unavailable,
+            requested.Count > 0 && unavailable.Length == requested.Count);
     }
 
     private sealed record ReplayPreparation(
         IReadOnlyList<ResolvedTrait> Candidates,
         JArray Baseline,
         JArray Expected,
-        HashSet<string> Allowed);
+        HashSet<string> Allowed,
+        IReadOnlyList<string> UnavailableTraitIds,
+        bool AllRequestedTraitsUnavailable);
 
     private ProjectMutationResult ApplyCore(
         ProjectModel project,
@@ -676,6 +741,21 @@ public sealed class RandomTraitExclusionsService
         return candidates.OrderBy(candidate => candidate.Entry.Id, StringComparer.Ordinal).ToArray();
     }
 
+    private static IReadOnlyList<JObject> GetTraitSourceEntries(ProjectModel project)
+    {
+        SheetModel sheet = project.Sheets.SingleOrDefault(candidate =>
+            string.Equals(candidate.Name, TraitSheetName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "Random trait data is not available in this project.");
+        if (sheet.SourceSheet?["lines"] is not JArray lines ||
+            lines.Any(token => token is not JObject))
+        {
+            throw CreateSeparatorCompatibilityException();
+        }
+
+        return lines.OfType<JObject>().ToArray();
+    }
+
     private static IReadOnlyList<ResolvedSource> ResolveSupportedSources(SheetModel sheet)
     {
         if (sheet.SourceSheet?["lines"] is not JArray lines ||
@@ -685,25 +765,78 @@ public sealed class RandomTraitExclusionsService
             throw CreateSeparatorCompatibilityException();
 
         JObject[] sourceEntries = lines.OfType<JObject>().ToArray();
-        Dictionary<string, int> anchors = new(StringComparer.Ordinal);
-        foreach (string requiredGroup in new[]
-                 {
-                     StartingGroup, HiddenGroup, RecruitmentGroup, AcquiredGroup
-                 })
+        IReadOnlyList<ResolvedGroup> groups = ResolveTopLevelGroups(
+            sheet,
+            sourceEntries,
+            separators);
+        foreach (string requiredGroup in new[] { StartingGroup, RecruitmentGroup })
         {
-            JObject[] matches = separators.OfType<JObject>().Where(separator =>
-                    separator["title"]?.Type == JTokenType.String &&
-                    string.Equals(
-                        separator.Value<string>("title"),
-                        requiredGroup,
-                        StringComparison.Ordinal))
-                .ToArray();
-            if (matches.Length != 1 ||
-                matches.Single()["id"]?.Type != JTokenType.String ||
-                string.IsNullOrWhiteSpace(matches.Single().Value<string>("id")))
+            if (groups.Count(group => string.Equals(
+                    group.Title,
+                    requiredGroup,
+                    StringComparison.Ordinal)) != 1)
+            {
                 throw CreateSeparatorCompatibilityException();
+            }
+        }
 
-            string anchorId = matches.Single().Value<string>("id")!;
+        HashSet<JObject> supported = new(
+            ReferenceEqualityComparer.Instance);
+        foreach (ResolvedGroup group in groups.Where(group =>
+                     string.Equals(group.Title, StartingGroup, StringComparison.Ordinal) ||
+                     string.Equals(group.Title, RecruitmentGroup, StringComparison.Ordinal)))
+        {
+            for (int index = group.StartIndex; index < group.EndIndex; index++)
+                supported.Add(sourceEntries[index]);
+        }
+
+        foreach (JObject source in sourceEntries)
+        {
+            if (TryReadPersonality(source, out _) &&
+                HasPositiveFiniteRecruitWeight(source))
+            {
+                supported.Add(source);
+            }
+        }
+
+        List<ResolvedSource> resolved = new();
+        for (int index = 0; index < sourceEntries.Length; index++)
+        {
+            JObject source = sourceEntries[index];
+            if (!supported.Contains(source))
+                continue;
+
+            ResolvedGroup? group = groups.LastOrDefault(candidate =>
+                candidate.StartIndex <= index && index < candidate.EndIndex);
+            if (group == null)
+                throw CreateSeparatorCompatibilityException();
+            resolved.Add(new ResolvedSource(source, group.Title));
+        }
+
+        return resolved;
+    }
+
+    private static IReadOnlyList<ResolvedGroup> ResolveTopLevelGroups(
+        SheetModel sheet,
+        IReadOnlyList<JObject> sourceEntries,
+        JArray separators)
+    {
+        List<ResolvedGroup> anchors = new();
+        foreach (JObject separator in separators.OfType<JObject>())
+        {
+            JToken? level = separator["level"];
+            if (level != null)
+                continue;
+
+            if (separator["title"]?.Type != JTokenType.String ||
+                string.IsNullOrWhiteSpace(separator.Value<string>("title")) ||
+                separator["id"]?.Type != JTokenType.String ||
+                string.IsNullOrWhiteSpace(separator.Value<string>("id")))
+            {
+                throw CreateSeparatorCompatibilityException();
+            }
+
+            string anchorId = separator.Value<string>("id")!;
             int[] sourceMatches = sourceEntries.Select((entry, index) => new
                 {
                     Entry = entry,
@@ -717,31 +850,76 @@ public sealed class RandomTraitExclusionsService
                         StringComparison.Ordinal))
                 .Select(item => item.Index)
                 .ToArray();
-            if (sourceMatches.Length != 1)
+            if (sourceMatches.Length != 1 ||
+                sheet.Entries.Count(entry => ReferenceEquals(
+                    entry.SourceEntry,
+                    sourceEntries[sourceMatches.Single()])) != 1)
+            {
                 throw CreateSeparatorCompatibilityException();
+            }
 
-            JObject anchorSource = sourceEntries[sourceMatches.Single()];
-            if (sheet.Entries.Count(entry =>
-                    ReferenceEquals(entry.SourceEntry, anchorSource)) != 1)
-                throw CreateSeparatorCompatibilityException();
-            anchors.Add(requiredGroup, sourceMatches.Single());
+            anchors.Add(new ResolvedGroup(
+                separator.Value<string>("title")!,
+                sourceMatches.Single(),
+                sourceEntries.Count));
         }
 
-        if (!(anchors[StartingGroup] < anchors[HiddenGroup] &&
-              anchors[HiddenGroup] < anchors[RecruitmentGroup] &&
-              anchors[RecruitmentGroup] < anchors[AcquiredGroup]))
-            throw CreateSeparatorCompatibilityException();
-
-        List<ResolvedSource> supported = new();
-        AddRange(StartingGroup, anchors[StartingGroup], anchors[HiddenGroup]);
-        AddRange(RecruitmentGroup, anchors[RecruitmentGroup], anchors[AcquiredGroup]);
-        return supported;
-
-        void AddRange(string group, int start, int end)
+        ResolvedGroup[] ordered = anchors.OrderBy(group => group.StartIndex).ToArray();
+        if (ordered.Length == 0 ||
+            ordered.Select(group => group.StartIndex).Distinct().Count() != ordered.Length)
         {
-            for (int index = start; index < end; index++)
-                supported.Add(new ResolvedSource(sourceEntries[index], group));
+            throw CreateSeparatorCompatibilityException();
         }
+
+        for (int index = 0; index < ordered.Length - 1; index++)
+            ordered[index] = ordered[index] with { EndIndex = ordered[index + 1].StartIndex };
+        return ordered;
+    }
+
+    private static bool TryReadPersonality(
+        JObject source,
+        out long personality)
+    {
+        personality = default;
+        if (source.SelectToken("props.personality") is not JValue value ||
+            value.Type != JTokenType.Integer)
+        {
+            return false;
+        }
+
+        personality = value.Value<long>();
+        return personality is 0 or 1;
+    }
+
+    private static bool HasPositiveFiniteRecruitWeight(JObject source)
+    {
+        if (source["props"] is not JObject props)
+            return false;
+        JProperty[] properties = props.Properties().Where(property =>
+                string.Equals(
+                    property.Name,
+                    "recruitWeight",
+                    StringComparison.Ordinal))
+            .ToArray();
+        if (properties.Length != 1 ||
+            properties.Single().Value is not JValue value ||
+            value.Type is not (JTokenType.Integer or JTokenType.Float))
+        {
+            return false;
+        }
+
+        double weight;
+        try
+        {
+            weight = value.Value<double>();
+        }
+        catch (Exception exception) when (
+            exception is InvalidCastException or FormatException or OverflowException)
+        {
+            return false;
+        }
+
+        return double.IsFinite(weight) && weight > 0;
     }
 
     private static InvalidOperationException CreateSeparatorCompatibilityException() =>
@@ -914,4 +1092,9 @@ public sealed class RandomTraitExclusionsService
     private sealed record ResolvedSource(
         JObject Source,
         string Group);
+
+    private sealed record ResolvedGroup(
+        string Title,
+        int StartIndex,
+        int EndIndex);
 }

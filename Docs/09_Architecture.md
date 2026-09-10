@@ -567,6 +567,46 @@ classifies the operation as already configured, making Restore Previous Values
 available when the new state provides authority. Matching values plus matching
 valid state permit a true no-op while retaining the same semantic result.
 
+### Random Trait Exclusions discovery and replay
+
+Random Trait Exclusions has two data-driven candidate paths. The legacy path
+accepts Positive/Negative personality traits in the semantic `Starting` and
+`Recruitment` groups. The weighted path accepts a Positive/Negative personality
+trait in any structurally resolved group when `recruitWeight` is numeric,
+finite, and greater than zero. The paths are unioned by stable canonical trait
+ID and ordered deterministically. `recruitWeight` is read-only discovery
+metadata; it is not mutated or owned by the operation.
+
+Separators continue to identify containing semantic groups, but fixed physical
+`Starting → Hidden → Recruitment → Acquired` ordering is not eligibility
+authority. Starting and Recruitment spans are resolved structurally, weighted
+candidates may live outside them, and each candidate's containing semantic
+group remains part of replay compatibility identity. Every candidate then uses
+the same `done` mutation, validation, Gameplay Operation State, rollback,
+Restore Previous Values, and atomic Undo/Redo pipeline.
+
+Replay carries an explicit source context. Exact-source and public direct replay
+remain strict. Changed-source profile replay may omit a requested historical ID
+only when that ID has zero occurrences in the complete destination trait sheet;
+the unavailable ID is reported and retained in stored Profile Operation Intent.
+Skipped IDs create no destination baseline, state, mutation, or Profile Impact
+Manifest leaf.
+
+Before candidate acceptance, replay indexes canonical IDs across the complete
+destination trait sheet. More than one occurrence is an ambiguity failure.
+Exactly one occurrence must still qualify as a supported candidate and match
+saved Positive/Negative polarity and semantic group. Consequently,
+present-but-ineligible, polarity drift, group drift, and mixed candidate/
+noncandidate duplicates remain strict preflight failures rather than absence.
+All-unavailable changed-source replay creates no state or empty history action;
+other compatible profile operations may continue within the normal atomic
+Profile Apply.
+
+Unavailable replay is a transient operation/presentation result, not persisted
+profile authority. `ProfileOperationApplyStatus` preserves its established
+numeric values (`Applied` 0, `AlreadyConfigured` 1, `Failed` 2, `Unsupported`
+3) and appends `Unavailable` as 4.
+
 ## Profile Reconciliation (Formats 4–5)
 
 Profile Create captures canonical intent from compatible authoritative Gameplay

@@ -13,6 +13,9 @@ The format is inspired by Keep a Changelog and adapted for this project.
 - Added optional format-5 Profile Impact Manifest authority so Profile Manager
   can display stable historical **Profile Changes** for a profile gameplay
   revision.
+- Random Trait Exclusions now discovers additional procedural recruit traits
+  from current game data, including the current weighted Hidden personality
+  traits, without a fixed application trait list.
 
 ## Changed
 
@@ -24,6 +27,13 @@ The format is inspired by Keep a Changelog and adapted for this project.
   established authority display `Unavailable`.
 - New gameplay Profile Create/Update uses format 5. Formats 1–4 remain usable
   and may display `Unavailable` until new impact authority is established.
+- Random Trait Exclusions no longer treats fixed trait-section placement as its
+  complete eligibility rule. Existing Starting/Recruitment support remains, and
+  compatible weighted personality traits join the same player checklist.
+- When an older profile references a trait genuinely removed from changed game
+  data, compatible remaining Random Trait Exclusions settings can still apply.
+  Missing traits are reported as unavailable and remain preserved in the
+  profile for possible use with later game data.
 
 ## Compatibility and safety
 
@@ -33,6 +43,12 @@ The format is inspired by Keep a Changelog and adapted for this project.
 - Exact establishment requires independently verified pristine bytes or an
   optional Golden CDB with an exact matching content hash. Golden remains
   read-only and optional, and no automatic QuickBMS extraction occurs.
+- Random Trait Exclusions still affects procedural recruit assignment rather
+  than globally preventing traits from being acquired through actions, events,
+  conditions, or other gameplay systems.
+- Exact-source replay remains strict. A trait that still exists but is no
+  longer compatible, has changed category, or has duplicate identity fails
+  safely before any profile changes are applied.
 
 ## Verification
 
@@ -46,6 +62,11 @@ The format is inspired by Keep a Changelog and adapted for this project.
 - A controlled 744-leaf profile established all 744 historical changes in
   approximately 117–134 ms across final review and acceptance. No live Export
   was run.
+- Random Trait Exclusions renewed Engineering Review and Project Owner
+  Acceptance passed. Profile Atomic Apply passed 121 checks, Profile Operation
+  Replay passed 209, all 13 smoke/regression projects passed, Debug and Release
+  builds completed with zero warnings and errors, and `git diff --check`
+  passed. The existing Windows symbolic-link privilege skip was unchanged.
 
 ---
 
@@ -717,8 +738,10 @@ interactive acceptance passed, with positive runtime evidence
 
 - A Party Gameplay Tool with searchable Positive and Negative trait checklists,
   Select All, Clear All, Restore Previous Values, Apply, and shared feedback.
-- Dynamic candidate discovery for compatible Starting/Recruitment traits; no
-  trait identifiers or candidate counts are hard-coded.
+- The initial implementation dynamically discovered compatible
+  Starting/Recruitment traits; no trait identifiers or candidate counts were
+  hard-coded. The later Unreleased expansion above adds the weighted discovery
+  path.
 - Feature-specific operation state and validation for stable trait ownership,
   exact Boolean/absent baselines, fingerprints, and update compatibility.
 - Candidate preflight now requires an explicit nonblank source `id`, exact

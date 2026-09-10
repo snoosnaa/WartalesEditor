@@ -4,7 +4,7 @@
 
 **Document Version:** 2.0
 
-**Last Updated:** 2026-09-08
+**Last Updated:** 2026-09-10
 
 ---
 
@@ -21,6 +21,18 @@ The Project Owner directly confirmed Steam App ID 1527950, Wartales BuildID
 to the accepted release commit. GitHub publication and independent download/hash
 verification are complete. Nexus publication and VirusTotal submission were not
 performed. Earlier milestone sections remain as historical dashboard context.
+
+## Post-Release Random Trait Exclusions Expansion
+
+Weighted personality discovery and changed-source missing-trait replay are
+implemented, Engineering Review passed after a focused identity correction,
+Project Owner Acceptance passed, and documentation is reconciled. The feature
+retains legacy Starting/Recruitment discovery and now recognizes compatible
+Positive/Negative traits through finite positive recruitment weight without
+hard-coded trait IDs. Exact-source replay and present identity drift remain
+strict; changed-source profiles may report genuinely removed traits unavailable
+while applying compatible remaining intent. Commit/push is pending, and no new
+release/version decision has begun.
 
 ## Party Economy Custom Preservation
 
@@ -203,7 +215,8 @@ Planned features include:
 # Current Priorities
 
 1. Preserve the released Version 1.1.0 tag and immutable package.
-2. Begin future work only after Project Owner direction.
+2. Await final verification and commit/push authorization for the accepted
+   Random Trait Exclusions expansion.
 3. Keep Nexus and VirusTotal pending unless separately authorized.
 
 ---

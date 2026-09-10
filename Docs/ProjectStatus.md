@@ -2,7 +2,7 @@
 
 Application Version: 1.1.0 (Released)
 
-Status: Profile Impact Manifest Complete and Checkpointed
+Status: Random Trait Exclusions Expansion Accepted and Reconciled
 
 Last Updated: 2026-09-10
 
@@ -32,10 +32,36 @@ Historical information belongs in DevelopmentJournal.md and Changelog.md.
 
 Current State
 
-Profile Impact Manifest is implemented and accepted as post-1.1.0 work. Final
-renewed Engineering Review passed, delegated Project Owner Acceptance passed,
-documentation reconciliation is complete, and the authorized commit/push
-checkpoint is complete. No release or version assignment has begun.
+Random Trait Exclusions weighted discovery and changed-source profile replay are
+implemented and accepted as post-1.1.0 work. The initial Engineering Review
+failed on full-sheet duplicate identity enforcement; the focused correction
+closed that defect and preserved public enum numeric compatibility. Renewed
+Engineering Review and Project Owner Acceptance passed, and documentation
+reconciliation is complete. Commit/push remains pending. No release or version
+assignment has begun.
+
+Discovery preserves legacy Starting/Recruitment personality candidates and adds
+traits with Positive/Negative personality plus finite positive numeric
+`recruitWeight`. Both paths are unioned by canonical ID and share the existing
+mutation, state, validation, Restore, transaction, and Undo/Redo architecture.
+The current eight weighted Hidden traits are discovered from source data rather
+than an application catalog.
+
+Changed-source profile replay may skip and report only requested trait IDs that
+are genuinely absent from the complete destination trait sheet. Exact-source
+and direct replay remain strict. Present-but-ineligible, polarity/group drift,
+and duplicate identity remain strict preflight failures. Stored intent is not
+rewritten, and unavailable IDs create no fabricated state or historical Profile
+Changes.
+
+Accepted verification includes Profile Atomic Apply 121, Profile Operation
+Replay 209, all 13 smoke/regression projects, at least 1,696 explicitly counted
+checks plus Class A compatibility, QuickBMS 215/215, Debug and Release builds
+with zero warnings and errors, and `git diff --check`. The established Windows
+symbolic-link privilege skip remains unchanged. No live Export was run.
+
+The previously accepted Profile Impact Manifest remains the current format-5
+historical reporting authority and is unchanged by this work.
 
 New gameplay Profile Create/Update uses root format 5. Its optional manifest is
 reporting authority for stable historical **Profile Changes**: distinct
@@ -975,9 +1001,10 @@ When available, PlayerFirstDesign.md should be added to this list.
 
 Next Task
 
-Begin the next separately authorized post-1.1.0 workstream. No release candidate,
-tag, publication, or version decision is authorized by the completed Profile
-Impact Manifest checkpoint.
+Perform final repository verification, then await explicit authorization to
+commit and push the accepted Random Trait Exclusions implementation, tests, and
+documentation. No release candidate, tag, publication, or version decision is
+authorized.
 
 Document Maintenance
 

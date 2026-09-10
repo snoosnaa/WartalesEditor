@@ -195,6 +195,30 @@ The model exists to separate navigation data from the user interface.
 
 ---
 
+## Random Trait Exclusions candidate identity
+
+The `Hidden` group is not universal proof that a trait can never be assigned to
+a procedural recruit. Current data contains Positive/Negative personality
+traits in that group with positive recruitment weight. Random Trait Exclusions
+therefore combines two semantic discovery paths: legacy Starting/Recruitment
+membership, and any Positive/Negative personality trait whose numeric
+`recruitWeight` is finite and greater than zero.
+
+Recruitment weight alone is insufficient. Personality limits this feature to
+the supported Positive/Negative trait contract, while containing semantic group
+remains part of compatibility identity. The union is keyed by canonical source
+ID and uses the existing `done` mutation/state pipeline; discovery metadata is
+never mutated.
+
+Portable changed-source intent distinguishes absence from drift. A requested ID
+with no destination occurrence may be skipped and reported without rewriting
+the profile. An ID that is still present but ineligible, has changed polarity or
+group, or occurs more than once is incompatible and fails before mutation. The
+full destination-sheet count matters because a candidate-only dictionary cannot
+detect a second noncandidate entry with the same canonical ID.
+
+---
+
 # Parsing
 
 The application parses the extracted Wartales `data.cdb`.

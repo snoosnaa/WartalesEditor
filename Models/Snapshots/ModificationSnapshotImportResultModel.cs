@@ -116,6 +116,13 @@ public sealed class ModificationSnapshotImportResultModel
                 or
                 Profiles.ProfileOperationApplyStatus.Unsupported);
 
+    public int OperationsUnavailableCount =>
+        System.Linq.Enumerable.Count(
+            OperationResults,
+            result =>
+                result.Status ==
+                    Profiles.ProfileOperationApplyStatus.Unavailable);
+
     public int TotalCount =>
         PreviewResult.TotalCount;
 

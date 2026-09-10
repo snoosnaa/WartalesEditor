@@ -5206,6 +5206,13 @@ public class MainViewModel : ObservableObject
         string[] semanticAlreadyConfigured =
             GetSemanticAlreadyConfiguredSummaries(
                 result.OperationResults);
+        string[] operationWarnings = result.OperationResults
+            .Where(operation =>
+                operation.HasWarning &&
+                !string.IsNullOrWhiteSpace(operation.Message))
+            .GroupBy(operation => operation.OperationId, StringComparer.Ordinal)
+            .Select(group => group.Last().Message)
+            .ToArray();
 
         int applied =
             result.AppliedEffectiveChangeCount;
@@ -5237,21 +5244,35 @@ public class MainViewModel : ObservableObject
             AppendSemanticAlreadyConfigured(
                 message,
                 semanticAlreadyConfigured);
+            AppendOperationWarnings(message, operationWarnings);
             return message.ToString();
         }
 
         if (applied == 0)
         {
+            bool hasUnavailableOperation = result.OperationResults.Any(
+                operation => operation.Status ==
+                    ProfileOperationApplyStatus.Unavailable);
             message.AppendLine(
-                "No changes were needed.");
+                operationWarnings.Length > 0
+                    ? "No changes were applied."
+                    : "No changes were needed.");
 
             message.AppendLine();
             message.Append(
-                "This profile is already applied.");
+                hasUnavailableOperation
+                    ? "No compatible saved gameplay settings were available " +
+                      "to apply."
+                    : operationWarnings.Length > 0
+                    ? alreadyPresent > 0
+                        ? "Compatible profile settings were already active."
+                        : "No compatible saved settings needed a change."
+                    : "This profile is already applied.");
 
             AppendSemanticAlreadyConfigured(
                 message,
                 semanticAlreadyConfigured);
+            AppendOperationWarnings(message, operationWarnings);
 
             return message.ToString();
         }
@@ -5276,12 +5297,16 @@ public class MainViewModel : ObservableObject
 
             message.AppendLine();
             message.Append(
-                "All profile changes are now active.");
+                operationWarnings.Length > 0
+                    ? "Compatible profile changes are now active."
+                    : "All profile changes are now active.");
         }
         else
         {
             message.Append(
-                semanticAlreadyConfigured.Length > 0
+                operationWarnings.Length > 0
+                    ? "Compatible profile settings are now active."
+                    : semanticAlreadyConfigured.Length > 0
                     ? "All profile settings are now active."
                     : "Every profile change was applied.");
         }
@@ -5289,8 +5314,21 @@ public class MainViewModel : ObservableObject
         AppendSemanticAlreadyConfigured(
             message,
             semanticAlreadyConfigured);
+        AppendOperationWarnings(message, operationWarnings);
 
         return message.ToString();
+    }
+
+    private static void AppendOperationWarnings(
+        StringBuilder message,
+        IReadOnlyList<string> warnings)
+    {
+        foreach (string warning in warnings)
+        {
+            message.AppendLine();
+            message.AppendLine();
+            message.Append(warning);
+        }
     }
 
     internal static string[] GetSemanticAlreadyConfiguredSummaries(

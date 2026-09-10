@@ -5,5 +5,6 @@ public enum ProfileOperationApplyStatus
     Applied,
     AlreadyConfigured,
     Failed,
-    Unsupported
+    Unsupported,
+    Unavailable
 }
